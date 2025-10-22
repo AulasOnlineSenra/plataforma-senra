@@ -3,12 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   LayoutDashboard,
   CalendarDays,
   BookOpenCheck,
@@ -102,24 +96,15 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
             : 'text-sidebar-foreground/80',
-          isMobile ? 'text-lg' : 'text-base'
+          'text-base'
         )}
       >
         <item.icon className="h-5 w-5" />
-        <span className={isMobile ? 'font-medium' : 'sr-only'}>{item.label}</span>
+        <span className={'font-medium'}>{item.label}</span>
       </Link>
     );
 
-    if (isMobile) {
-      return <li key={item.href}>{renderLink(item)}</li>;
-    }
-
-    return (
-      <Tooltip key={item.href}>
-        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-        <TooltipContent side="right">{item.label}</TooltipContent>
-      </Tooltip>
-    );
+     return <div key={item.href}>{linkContent}</div>;
   };
 
   return (
@@ -127,8 +112,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
             <AppLogo />
         </div>
-        <div className="flex-1">
-            <TooltipProvider>
+        <div className="flex-1 overflow-y-auto">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
                     {filteredNavItems.map(renderLink)}
                     {filteredAdminNavItems.length > 0 && (
@@ -138,15 +122,12 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
                         </>
                     )}
                 </nav>
-            </TooltipProvider>
         </div>
-        <div className="mt-auto p-4">
-            <TooltipProvider>
+        <div className="mt-auto p-4 border-t border-sidebar-border">
                 <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
                     {renderLink({ href: '#', icon: Settings, label: 'Configurações', roles: ['student', 'teacher', 'admin']})}
                     {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: ['student', 'teacher', 'admin']})}
                 </nav>
-            </TooltipProvider>
         </div>
     </aside>
   );
