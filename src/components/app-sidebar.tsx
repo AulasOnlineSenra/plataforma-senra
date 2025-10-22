@@ -1,0 +1,153 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  BookOpenCheck,
+  MessageSquare,
+  WalletCards,
+  UserCircle,
+  Settings,
+  KeyRound,
+  FileText,
+  LogOut,
+} from 'lucide-react';
+import { AppLogo } from './app-logo';
+import { cn } from '@/lib/utils';
+import { UserRole } from '@/lib/types';
+
+// In a real app, this would come from an auth context
+const userRole: UserRole = 'student';
+
+const navItems = [
+  {
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    label: 'Dashboard',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/schedule',
+    icon: CalendarDays,
+    label: 'Agenda',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/booking',
+    icon: BookOpenCheck,
+    label: 'Agendar Aula',
+    roles: ['student'],
+  },
+  {
+    href: '/dashboard/chat',
+    icon: MessageSquare,
+    label: 'Chat',
+    roles: ['student', 'teacher'],
+  },
+  {
+    href: '/dashboard/packages',
+    icon: WalletCards,
+    label: 'Pacotes',
+    roles: ['student'],
+  },
+  {
+    href: '/dashboard/profile',
+    icon: UserCircle,
+    label: 'Meu Perfil',
+    roles: ['student', 'teacher'],
+  },
+];
+
+const adminNavItems = [
+  {
+    href: '/dashboard/admin/feedback-analysis',
+    icon: FileText,
+    label: 'Análise de Feedback',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/settings',
+    icon: KeyRound,
+    label: 'Credenciais',
+    roles: ['admin'],
+  },
+];
+
+export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
+  const pathname = usePathname();
+
+  const filteredNavItems = navItems.filter((item) =>
+    item.roles.includes(userRole)
+  );
+  const filteredAdminNavItems =
+    userRole === 'admin'
+      ? adminNavItems.filter((item) => item.roles.includes(userRole))
+      : [];
+
+  const renderLink = (item: typeof navItems[0]) => {
+    const isActive = pathname === item.href;
+    const linkContent = (
+      <Link
+        href={item.href}
+        className={cn(
+          'flex items-center gap-4 rounded-lg px-3 py-2 transition-all hover:text-primary-foreground hover:bg-sidebar-accent',
+          isActive
+            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+            : 'text-sidebar-foreground/80',
+          isMobile ? 'text-lg' : 'text-base'
+        )}
+      >
+        <item.icon className="h-5 w-5" />
+        <span className={isMobile ? 'font-medium' : 'sr-only'}>{item.label}</span>
+      </Link>
+    );
+
+    if (isMobile) {
+      return <li key={item.href}>{renderLink(item)}</li>;
+    }
+
+    return (
+      <Tooltip key={item.href}>
+        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+        <TooltipContent side="right">{item.label}</TooltipContent>
+      </Tooltip>
+    );
+  };
+
+  return (
+    <aside className={cn("flex h-full max-h-screen flex-col gap-2", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
+        <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
+            <AppLogo />
+        </div>
+        <div className="flex-1">
+            <TooltipProvider>
+                <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
+                    {filteredNavItems.map(renderLink)}
+                    {filteredAdminNavItems.length > 0 && (
+                        <>
+                            <div className="my-2 mx-3 h-px bg-sidebar-border" />
+                            {filteredAdminNavItems.map(renderLink)}
+                        </>
+                    )}
+                </nav>
+            </TooltipProvider>
+        </div>
+        <div className="mt-auto p-4">
+            <TooltipProvider>
+                <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
+                    {renderLink({ href: '#', icon: Settings, label: 'Configurações', roles: ['student', 'teacher', 'admin']})}
+                    {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: ['student', 'teacher', 'admin']})}
+                </nav>
+            </TooltipProvider>
+        </div>
+    </aside>
+  );
+}
