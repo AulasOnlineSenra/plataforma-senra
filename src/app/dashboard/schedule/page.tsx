@@ -12,16 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
 import { XCircle, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,14 +22,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date | undefined>();
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
+  const [events, setEvents] = useState<ScheduleEvent[]>(scheduleEvents);
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
 
 
   useEffect(() => {
-    // This now safely runs only on the client
     if (typeof window !== 'undefined') {
       setDate(new Date());
     }
@@ -46,9 +35,11 @@ export default function SchedulePage() {
 
   const filteredEvents = useMemo(() => {
     if (!date) return [];
+    
+    let relevantEvents = events.filter(e => e.status === 'scheduled');
 
     if (filterType === 'day') {
-        return scheduleEvents.filter(
+        return relevantEvents.filter(
             (e) =>
               e.start.getDate() === date.getDate() &&
               e.start.getMonth() === date.getMonth() &&
@@ -69,33 +60,39 @@ export default function SchedulePage() {
         };
     }
     
-    return scheduleEvents
+    return relevantEvents
         .filter(e => isWithinInterval(e.start, interval))
         .sort((a,b) => a.start.getTime() - b.start.getTime());
 
-  }, [date, filterType]);
+  }, [date, filterType, events]);
 
-  const handleCancelClick = (event: ScheduleEvent) => {
-    setSelectedEvent(event);
-    setIsCancelDialogOpen(true);
+  const handleConfirmCancel = (eventId: string) => {
+    setEvents(currentEvents => 
+        currentEvents.map(e => 
+            e.id === eventId ? { ...e, status: 'cancelled' } : e
+        )
+    );
+    const event = events.find(e => e.id === eventId);
+    toast({
+        title: "Aula Cancelada",
+        description: `A aula de ${event?.subject} foi cancelada.`,
+    });
   };
 
-  const handleConfirmCancel = () => {
-    if (selectedEvent) {
-        // Here you would typically call an API to cancel the event.
-        console.log("Cancelling event:", selectedEvent.id);
-        toast({
-            title: "Aula Cancelada",
-            description: `A aula de ${selectedEvent.subject} foi cancelada.`,
-        });
-        // You might want to update the state to reflect the cancellation
-    }
-    setIsCancelDialogOpen(false);
-    setSelectedEvent(null);
+  const handleCancelClick = (event: ScheduleEvent) => {
+    toast({
+      title: "Confirmar Cancelamento",
+      description: "Você tem certeza que deseja cancelar esta aula?",
+      variant: "destructive",
+      action: (
+        <ToastAction altText="Confirmar" onClick={() => handleConfirmCancel(event.id)}>
+          Confirmar
+        </ToastAction>
+      ),
+    });
   };
 
   const getStudentById = (studentId: string): User | undefined => {
-    // This is a mock function. In a real app, you'd fetch this from your data source.
     const allUsers = [...users];
     return allUsers.find(u => u.id === studentId);
   }
@@ -150,7 +147,7 @@ export default function SchedulePage() {
                 }}
                 locale={ptBR}
                 modifiers={{
-                  scheduled: scheduleEvents.map((e) => e.start),
+                  scheduled: events.filter(e => e.status === 'scheduled').map((e) => e.start),
                 }}
                 modifiersStyles={{
                   scheduled: {
@@ -219,23 +216,6 @@ export default function SchedulePage() {
           </Card>
         </div>
       </div>
-      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar Cancelamento</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Você tem certeza que deseja cancelar esta aula?
-                      Se o cancelamento for feito até 2 horas antes do início da aula, não haverá custo para reagendá-la.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Voltar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleConfirmCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Sim, cancelar
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
