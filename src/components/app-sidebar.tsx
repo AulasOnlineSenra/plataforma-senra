@@ -17,6 +17,7 @@ import {
   Users,
   Banknote,
   History,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -47,13 +48,19 @@ const navItems = [
     href: '/dashboard/chat',
     icon: MessageSquare,
     label: 'Chat',
-    roles: ['student', 'teacher'],
+    roles: ['student', 'teacher', 'admin'],
   },
   {
     href: '/dashboard/students',
     icon: Users,
-    label: 'Meus Alunos',
-    roles: ['teacher'],
+    label: 'Alunos',
+    roles: ['teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/teachers',
+    icon: Briefcase,
+    label: 'Professores',
+    roles: ['admin'],
   },
   {
     href: '/dashboard/packages',
@@ -143,7 +150,13 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   const filteredNavItems = navItems.filter(item =>
     item.roles.includes(userRole)
-  );
+  ).map(item => {
+    if (item.href === '/dashboard/students' && userRole === 'teacher') {
+      return { ...item, label: 'Meus Alunos' };
+    }
+    return item;
+  });
+
   const filteredAdminNavItems =
     userRole === 'admin'
       ? adminNavItems.filter(item => item.roles.includes(userRole))
