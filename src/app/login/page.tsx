@@ -67,21 +67,21 @@ export default function LoginPage() {
     <div className="grid gap-4">
       <Button
         variant="outline"
-        className="w-[95%] mx-auto justify-center h-12 text-lg"
+        className="w-[95%] mx-auto justify-center h-12 text-lg rounded-xl"
         onClick={() => setRole('teacher')}
       >
         Professor
       </Button>
       <Button
         variant="outline"
-        className="w-[95%] mx-auto justify-center h-12 text-lg"
+        className="w-[95%] mx-auto justify-center h-12 text-lg rounded-xl"
         onClick={() => setRole('student')}
       >
         Aluno
       </Button>
       <Button
         variant="outline"
-        className="w-[95%] mx-auto justify-center h-12 text-lg"
+        className="w-[95%] mx-auto justify-center h-12 text-lg rounded-xl"
         onClick={() => setRole('admin')}
       >
         Administrador
@@ -132,7 +132,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 relative">
-      <Button asChild variant="ghost" className="absolute top-4 left-4">
+      <Button asChild variant="ghost" className="absolute top-4 left-4 text-base">
         <Link href="/home">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para a página inicial
