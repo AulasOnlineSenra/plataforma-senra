@@ -203,58 +203,62 @@ export default function PackagesPage() {
               aula.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 items-center justify-center gap-6 text-center">
-             <div className="grid gap-2 text-center">
+          <CardContent className="grid lg:grid-cols-2 items-center justify-center gap-8 text-center p-6 md:p-8">
+            <div className="grid sm:grid-cols-2 gap-6 items-center">
+              <div className="grid gap-2 text-center">
                 <Label htmlFor="classes-per-week" className="text-base font-bold">
-                    Aulas por Semana
+                  Aulas por Semana
                 </Label>
                 <Input
                   id="classes-per-week"
                   type="number"
                   value={classesPerWeek}
-                  onChange={(e) => setClassesPerWeek(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  onChange={(e) =>
+                    setClassesPerWeek(Math.max(1, parseInt(e.target.value, 10) || 1))
+                  }
                   className="w-40 text-center text-lg h-12 mx-auto"
                   min="1"
                 />
               </div>
-             <div className="grid gap-2 text-center">
+              <div className="grid gap-2 text-center">
                 <Label htmlFor="number-of-weeks" className="text-base font-bold">
-                   Durante
+                  Durante
                 </Label>
-                 <Select
-                    value={String(numberOfWeeks)}
-                    onValueChange={(value) => setNumberOfWeeks(Number(value))}
-                  >
-                    <SelectTrigger className="w-40 text-lg h-12 mx-auto justify-center">
-                      <SelectValue placeholder="Selecione o período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 8, 12, 16, 24].map(w => (
-                         <SelectItem key={w} value={String(w)}>
-                          {w} {w > 1 ? 'semanas' : 'semana'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select
+                  value={String(numberOfWeeks)}
+                  onValueChange={(value) => setNumberOfWeeks(Number(value))}
+                >
+                  <SelectTrigger className="w-40 text-lg h-12 mx-auto justify-center">
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 8, 12, 16, 24].map((w) => (
+                      <SelectItem key={w} value={String(w)}>
+                        {w} {w > 1 ? 'semanas' : 'semana'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            
-            <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-accent/50 text-center lg:col-span-1">
-                 <p className="text-muted-foreground font-semibold">
-                    {calculatedPackage.totalClasses} aulas totais
-                 </p>
-                 <p className="text-4xl font-bold text-accent-foreground mt-1">
-                   R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}
-                 </p>
-                 <p className="text-accent-foreground/80 mt-1">
-                   (R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula)
-                 </p>
-                 <p className="text-xs text-muted-foreground mt-2">
-                    Frequência: {classesPerWeek}x por semana por {getPeriodLabel()}
-                 </p>
-                 <p className="text-xs text-muted-foreground mt-3 px-2">
-                   {getDiscountMessage()}
-                 </p>
-               </div>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-accent/50 text-center min-h-[200px]">
+              <p className="text-muted-foreground font-semibold">
+                {calculatedPackage.totalClasses} aulas totais
+              </p>
+              <p className="text-4xl font-bold text-accent-foreground mt-1">
+                R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}
+              </p>
+              <p className="text-accent-foreground/80 mt-1">
+                (R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula)
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Frequência: {classesPerWeek}x por semana por {getPeriodLabel()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-3 px-2">
+                {getDiscountMessage()}
+              </p>
+            </div>
           </CardContent>
           <CardFooter className="flex-col gap-2 pt-6">
             <Button size="lg" className="w-full max-w-xs mx-auto">
