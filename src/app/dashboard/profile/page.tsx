@@ -69,8 +69,8 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
   const handleSubjectChange = (subjectId: string, checked: boolean) => {
     setTeacher(prev => {
       const newSubjects = checked
-        ? [...prev.subjects, subjectId]
-        : prev.subjects.filter(id => id !== subjectId);
+        ? [...(prev.subjects || []), subjectId]
+        : (prev.subjects || []).filter(id => id !== subjectId);
       return { ...prev, subjects: newSubjects };
     });
   };
@@ -218,126 +218,132 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Serviços</CardTitle>
-            <CardDescription>
-              Selecione as disciplinas que você leciona.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {subjects.map((subject) => (
-              <div key={subject.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`subject-${subject.id}`}
-                  checked={teacher.subjects.includes(subject.id)}
-                  onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
-                />
-                <label
-                  htmlFor={`subject-${subject.id}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {subject.name}
-                </label>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Disponibilidade</CardTitle>
-            <CardDescription>
-              Defina os horários em que você pode dar aulas. Estes horários ficarão disponíveis para agendamento dos alunos.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <TooltipProvider>
-            {days.map((day) => (
-              <div
-                key={day.id}
-                className="grid grid-cols-[120px_1fr] items-start gap-4 border-b pb-4 last:border-b-0"
-              >
-                <h4 className="font-semibold pt-2">{day.label}</h4>
-                <div className="flex flex-col gap-2">
-                  {(availability[day.id] || []).map((slot, index) => {
-                    const isEditing = editingSlot?.dayId === day.id && editingSlot?.index === index;
-                    
-                    return (
-                    <div key={index} className="flex items-center gap-2">
-                      {isEditing ? (
-                          <>
-                              <Input type="time" id={`start-${day.id}-${index}`} defaultValue={slot.start} className="w-24"/>
-                              <span className="mx-2">-</span>
-                              <Input type="time" id={`end-${day.id}-${index}`} defaultValue={slot.end} className="w-24"/>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => handleSaveSlot(day.id, index)}>
-                                      <Save className="h-4 w-4 text-green-600" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Salvar horário</p></TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                                      <X className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Cancelar edição</p></TooltipContent>
-                              </Tooltip>
-                          </>
-                      ) : (
-                          <>
-                            <div className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm">
-                              <span>{slot.start}</span> - <span>{slot.end}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Editar horário</p></TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => handleAddSlot(day.id)}>
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Adicionar novo horário</p></TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(day.id, index)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Remover horário</p></TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </>
-                      )}
-                    </div>
-                  )})}
-                  {(availability[day.id] || []).length === 0 && (
-                    <Button
-                        variant="outline"
-                        className="mt-2 w-full sm:w-auto"
-                        onClick={() => handleAddSlot(day.id)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Adicionar Horário
-                      </Button>
-                  )}
+        { teacher.role === 'teacher' && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Serviços</CardTitle>
+              <CardDescription>
+                Selecione as disciplinas que você leciona.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {subjects.map((subject) => (
+                <div key={subject.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`subject-${subject.id}`}
+                    checked={(teacher.subjects || []).includes(subject.id)}
+                    onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
+                  />
+                  <label
+                    htmlFor={`subject-${subject.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {subject.name}
+                  </label>
                 </div>
-              </div>
-            ))}
-            </TooltipProvider>
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Disponibilidade</CardTitle>
+              <CardDescription>
+                Defina os horários em que você pode dar aulas. Estes horários ficarão disponíveis para agendamento dos alunos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <TooltipProvider>
+              {days.map((day) => (
+                <div
+                  key={day.id}
+                  className="grid grid-cols-[120px_1fr] items-start gap-4 border-b pb-4 last:border-b-0"
+                >
+                  <h4 className="font-semibold pt-2">{day.label}</h4>
+                  <div className="flex flex-col gap-2">
+                    {(availability[day.id] || []).map((slot, index) => {
+                      const isEditing = editingSlot?.dayId === day.id && editingSlot?.index === index;
+                      
+                      return (
+                      <div key={index} className="flex items-center gap-2">
+                        {isEditing ? (
+                            <>
+                                <Input type="time" id={`start-${day.id}-${index}`} defaultValue={slot.start} className="w-24"/>
+                                <span className="mx-2">-</span>
+                                <Input type="time" id={`end-${day.id}-${index}`} defaultValue={slot.end} className="w-24"/>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleSaveSlot(day.id, index)}>
+                                        <Save className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Salvar horário</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                                        <X className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Cancelar edição</p></TooltipContent>
+                                </Tooltip>
+                            </>
+                        ) : (
+                            <>
+                              <div className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm">
+                                <span>{slot.start}</span> - <span>{slot.end}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Editar horário</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleAddSlot(day.id)}>
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Adicionar novo horário</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(day.id, index)}>
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Remover horário</p></TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </>
+                        )}
+                      </div>
+                    )})}
+                    {(availability[day.id] || []).length === 0 && (
+                      <Button
+                          variant="outline"
+                          className="mt-2 w-full sm:w-auto"
+                          onClick={() => handleAddSlot(day.id)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Horário
+                        </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              </TooltipProvider>
+            </CardContent>
+          </Card>
+        
+        </>
+        )}
+
 
         <Card>
           <CardHeader>
@@ -445,7 +451,7 @@ const StudentProfileForm = ({ onSave, user }: { onSave: (data: User) => void; us
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -483,10 +489,10 @@ export default function ProfilePage() {
         </h1>
       </div>
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-        {currentUser.role === 'teacher' ? (
+        {currentUser.role === 'teacher' || currentUser.role === 'admin' ? (
             <TeacherProfileForm onSave={handleSaveChanges} user={currentUser as Teacher} />
         ) : (
-            <StudentProfileForm onSave={handleSaveChanges} user={currentUser} />
+            <StudentProfileForm onSave={handleSaveChanges} user={currentUser as User} />
         )}
       </div>
     </div>
