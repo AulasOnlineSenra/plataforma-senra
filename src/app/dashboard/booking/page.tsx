@@ -266,14 +266,24 @@ export default function BookingPage() {
     const teacher = teachers.find(t => t.id === selectedTeacher);
     if (!teacher) return [];
 
-    const times: string[] = [];
-    // Generate time slots from 08:00 to 22:00 in 30-minute intervals
+    const times: { start: string; end: string }[] = [];
+    const date = new Date();
+    // Generate time slots from 08:00, incrementing by 30 mins
     for (let h = 8; h <= 21; h++) {
         for (let m = 0; m < 60; m += 30) {
-             times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+             date.setHours(h, m, 0, 0);
+             const endDate = addMinutes(date, CLASS_DURATION_MINUTES);
+
+             if(endDate.getHours() > 22 || (endDate.getHours() === 22 && endDate.getMinutes() > 0)) {
+                break;
+             }
+
+             times.push({
+                start: format(date, 'HH:mm'),
+                end: format(endDate, 'HH:mm')
+             });
         }
     }
-    times.push('22:00');
     
     return times;
   }, [selectedTeacher, selectedDates]);
@@ -408,18 +418,19 @@ export default function BookingPage() {
               />
             </div>
             <div className="grid gap-4 self-start">
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {availableTimes.map((time) => (
                   <Button
-                    key={time}
+                    key={time.start}
                     variant="outline"
-                    onClick={() => setSelectedTime(time)}
+                    onClick={() => setSelectedTime(time.start)}
                     className={cn(
-                      selectedTime === time ? 'ring-2 ring-primary' : ''
+                      'text-sm',
+                      selectedTime === time.start ? 'ring-2 ring-primary' : ''
                     )}
                     disabled={!selectedTeacher || (selectedDates || []).length === 0}
                   >
-                    {time}
+                    {time.start} - {time.end}
                   </Button>
                 ))}
                 {availableTimes.length === 0 && selectedTeacher && (selectedDates || []).length > 0 && (
@@ -554,5 +565,3 @@ export default function BookingPage() {
     </div>
   );
 }
-
-    
