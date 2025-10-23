@@ -23,15 +23,15 @@ import { subjects, teachers } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday } from 'date-fns';
 import { Plus, Trash2, Repeat, X } from 'lucide-react';
 
 interface Booking {
   id: string;
   subjectId: string;
   teacherId: string;
-  date: Date;
-  time: string;
+  start: Date;
+  end: Date;
 }
 
 type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
@@ -42,8 +42,6 @@ export default function BookingPage() {
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
-
-
   const [bookings, setBookings] = useState<Booking[]>([]);
 
   const { toast } = useToast();
@@ -54,13 +52,26 @@ export default function BookingPage() {
     setSelectedDates([]);
     setSelectedTime(undefined);
     setRecurrence('none');
+  };
+
+  const isConflict = (newBooking: Booking): boolean => {
+    return bookings.some(existingBooking => {
+      const newStarts = newBooking.start.getTime();
+      const newEnds = newBooking.end.getTime();
+      const existingStarts = existingBooking.start.getTime();
+      const existingEnds = existingBooking.end.getTime();
+
+      // Check for overlap
+      return (newStarts < existingEnds && newEnds > existingStarts);
+    });
   }
 
   const handleAddBooking = () => {
     if (
       !selectedSubject ||
       !selectedTeacher ||
-      !selectedDates || selectedDates.length === 0 ||
+      !selectedDates ||
+      selectedDates.length === 0 ||
       !selectedTime
     ) {
       toast({
@@ -73,44 +84,97 @@ export default function BookingPage() {
     }
 
     const newBookings: Booking[] = [];
+    const today = startOfToday();
+    let conflictFound = false;
+
+    // Create bookings for all selected dates first
     selectedDates.forEach(date => {
-        newBookings.push({
-             id: `booking-${date.getTime()}-${Math.random()}`,
-             subjectId: selectedSubject,
-             teacherId: selectedTeacher,
-             date: date,
-             time: selectedTime,
-        });
+        if (conflictFound) return;
+        
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        const startDate = new Date(date);
+        startDate.setHours(hours, minutes, 0, 0);
+
+        if (isBefore(startDate, today)) {
+            toast({
+                variant: 'destructive',
+                title: 'Data Inválida',
+                description: `Não é possível agendar aulas em datas passadas. (${format(startDate, 'dd/MM/yyyy')})`,
+            });
+            conflictFound = true;
+            return;
+        }
+
+        const endDate = addMinutes(startDate, 90);
+
+        const newBooking: Booking = {
+            id: `booking-${startDate.getTime()}-${Math.random()}`,
+            subjectId: selectedSubject,
+            teacherId: selectedTeacher,
+            start: startDate,
+            end: endDate,
+        };
+
+        if (isConflict(newBooking)) {
+             toast({
+                variant: 'destructive',
+                title: 'Conflito de Horário',
+                description: `Já existe uma aula agendada que entra em conflito com ${format(startDate, "dd/MM 'às' HH:mm")}.`,
+            });
+            conflictFound = true;
+        } else {
+             newBookings.push(newBooking);
+        }
     });
+
+    if (conflictFound) {
+        return; // Stop if any initial conflict is found
+    }
 
     // Handle recurrence if selected
     if (recurrence !== 'none') {
-        const repeatCount = 4; // Add 4 more weeks/months of classes
-        const originalDates = [...newBookings];
+      const repeatCount = 4; // Add 4 more weeks/months of classes
+      const originalDates = [...newBookings];
+      let recurrenceConflictFound = false;
 
-        for (let i = 1; i <= repeatCount; i++) {
-            originalDates.forEach(booking => {
-                const newDate = new Date(booking.date);
-                if (recurrence === 'weekly') {
-                    newDate.setDate(newDate.getDate() + 7 * i);
-                } else if (recurrence === 'biweekly') {
-                    newDate.setDate(newDate.getDate() + 14 * i);
-                } else if (recurrence === 'monthly') {
-                    newDate.setMonth(newDate.getMonth() + 1 * i);
-                }
+      for (let i = 1; i <= repeatCount; i++) {
+        if (recurrenceConflictFound) break;
 
-                 newBookings.push({
-                    ...booking,
-                    id: `booking-${newDate.getTime()}-${Math.random()}`,
-                    date: newDate,
+        originalDates.forEach((booking) => {
+          if (recurrenceConflictFound) return;
+
+          const newStartDate = new Date(booking.start);
+          if (recurrence === 'weekly') {
+            newStartDate.setDate(newStartDate.getDate() + 7 * i);
+          } else if (recurrence === 'biweekly') {
+            newStartDate.setDate(newStartDate.getDate() + 14 * i);
+          } else if (recurrence === 'monthly') {
+            newStartDate.setMonth(newStartDate.getMonth() + i);
+          }
+           const newEndDate = addMinutes(newStartDate, 90);
+           const recurringBooking: Booking = {
+             ...booking,
+             id: `booking-${newStartDate.getTime()}-${Math.random()}`,
+             start: newStartDate,
+             end: newEndDate,
+           };
+
+           if (isConflict(recurringBooking) || newBookings.some(b => b.start.getTime() === recurringBooking.start.getTime())) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Conflito de Horário na Recorrência',
+                    description: `Não foi possível agendar a aula recorrente em ${format(newStartDate, "dd/MM 'às' HH:mm")}.`,
                 });
-            });
-        }
+                recurrenceConflictFound = true;
+           } else {
+               newBookings.push(recurringBooking);
+           }
+        });
+      }
     }
 
 
     setBookings((prev) => [...prev, ...newBookings]);
-    // Reset fields for next booking
     handleClearSelections();
 
     toast({
@@ -124,10 +188,24 @@ export default function BookingPage() {
   };
 
   const handleRepeatBooking = (booking: Booking) => {
+    // This function is now less relevant with multi-date select, but can be kept as a quick "duplicate"
+    const newStartDate = addMinutes(booking.end, 15); // Add a small buffer
     const newBooking: Booking = {
       ...booking,
-      id: `booking-${Date.now()}-${Math.random()}`,
+      id: `booking-${newStartDate.getTime()}-${Math.random()}`,
+      start: newStartDate,
+      end: addMinutes(newStartDate, 90)
     };
+
+    if(isConflict(newBooking)) {
+        toast({
+            variant: 'destructive',
+            title: 'Conflito de Horário',
+            description: `Não foi possível duplicar a aula para ${format(newStartDate, "dd/MM 'às' HH:mm")}.`,
+        });
+        return;
+    }
+
     setBookings((prev) => [...prev, newBooking]);
     toast({
       title: 'Aula Duplicada!',
@@ -150,19 +228,18 @@ export default function BookingPage() {
       title: 'Agendamentos Confirmados!',
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
-    // Reset state after booking
     setBookings([]);
   };
 
   const availableTimes = [
     '09:00',
-    '10:00',
-    '11:00',
+    '10:30',
     '12:00',
-    '14:00',
+    '13:30',
     '15:00',
-    '16:00',
-    '17:00',
+    '16:30',
+    '18:00',
+    '19:30',
   ];
 
   return (
@@ -172,7 +249,6 @@ export default function BookingPage() {
       </div>
 
       <div className="grid gap-6">
-        {/* Step 1 & 2 */}
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">
@@ -237,7 +313,7 @@ export default function BookingPage() {
             </CardTitle>
             <CardDescription>
               Você pode selecionar múltiplos dias no calendário. Os horários
-              exibidos são baseados na disponibilidade do professor.
+              exibidos são baseados na disponibilidade do professor. A duração de cada aula é de 90 minutos.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-6 items-start">
@@ -246,45 +322,66 @@ export default function BookingPage() {
                 mode="multiple"
                 selected={selectedDates}
                 onSelect={setSelectedDates}
-                className="rounded-md border"
+                className="rounded-md border p-0 sm:p-3"
                 locale={ptBR}
+                disabled={{ before: startOfToday() }}
+                 classNames={{
+                  root: 'w-full',
+                  months: 'w-full',
+                  month: 'w-full',
+                  table: 'w-full',
+                  caption_label: 'font-headline',
+                  head_row: 'w-full flex',
+                  head_cell: 'flex-1',
+                  row: 'w-full flex mt-2',
+                  cell: 'flex-1',
+                }}
               />
             </div>
             <div className="grid gap-4 self-start">
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {availableTimes.map((time) => (
-                    <Button
-                        key={time}
-                        variant="outline"
-                        onClick={() => setSelectedTime(time)}
-                        className={cn(
-                        selectedTime === time ? 'ring-2 ring-primary' : ''
-                        )}
-                    >
-                        {time}
-                    </Button>
-                    ))}
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="recurrence">Repetir Agendamento</Label>
-                    <Select value={recurrence} onValueChange={(value) => setRecurrence(value as Recurrence)}>
-                        <SelectTrigger id="recurrence">
-                            <SelectValue placeholder="Não repetir" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Não repetir</SelectItem>
-                            <SelectItem value="weekly">Semanalmente (próximas 4 semanas)</SelectItem>
-                            <SelectItem value="biweekly">Quinzenalmente (próximas 4 ocorrências)</SelectItem>
-                            <SelectItem value="monthly">Mensalmente (próximos 4 meses)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {availableTimes.map((time) => (
+                  <Button
+                    key={time}
+                    variant="outline"
+                    onClick={() => setSelectedTime(time)}
+                    className={cn(
+                      selectedTime === time ? 'ring-2 ring-primary' : ''
+                    )}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="recurrence">Repetir Agendamento</Label>
+                <Select
+                  value={recurrence}
+                  onValueChange={(value) => setRecurrence(value as Recurrence)}
+                >
+                  <SelectTrigger id="recurrence">
+                    <SelectValue placeholder="Não repetir" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não repetir</SelectItem>
+                    <SelectItem value="weekly">
+                      Semanalmente (próximas 4 semanas)
+                    </SelectItem>
+                    <SelectItem value="biweekly">
+                      Quinzenalmente (próximas 4 ocorrências)
+                    </SelectItem>
+                    <SelectItem value="monthly">
+                      Mensalmente (próximos 4 meses)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
           <CardContent className="flex justify-end pt-4 gap-2">
             <Button variant="ghost" onClick={handleClearSelections}>
-                <X className='mr-2' />
-                Limpar
+              <X className="mr-2" />
+              Limpar
             </Button>
             <Button onClick={handleAddBooking}>
               Adicionar aula <Plus className="ml-2" />
@@ -292,7 +389,6 @@ export default function BookingPage() {
           </CardContent>
         </Card>
 
-        {/* Step 3: Summary */}
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">
@@ -306,58 +402,60 @@ export default function BookingPage() {
           <CardContent>
             {bookings.length > 0 ? (
               <div className="space-y-4">
-                {bookings.sort((a,b) => a.date.getTime() - b.date.getTime()).map((booking) => {
-                  const subject = subjects.find(
-                    (s) => s.id === booking.subjectId
-                  );
-                  const teacher = teachers.find(
-                    (t) => t.id === booking.teacherId
-                  );
-                  return (
-                    <div
-                      key={booking.id}
-                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4"
-                    >
-                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <Label>Disciplina</Label>
-                          <p className="font-semibold">{subject?.name}</p>
+                {bookings
+                  .sort((a, b) => a.start.getTime() - b.start.getTime())
+                  .map((booking) => {
+                    const subject = subjects.find(
+                      (s) => s.id === booking.subjectId
+                    );
+                    const teacher = teachers.find(
+                      (t) => t.id === booking.teacherId
+                    );
+                    return (
+                      <div
+                        key={booking.id}
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4"
+                      >
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Disciplina</Label>
+                            <p className="font-semibold">{subject?.name}</p>
+                          </div>
+                          <div>
+                            <Label>Professor(a)</Label>
+                            <p className="font-semibold">{teacher?.name}</p>
+                          </div>
+                          <div>
+                            <Label>Data e Horário</Label>
+                            <p className="font-semibold">
+                              {format(booking.start, 'dd/MM/yyyy', {
+                                locale: ptBR,
+                              })}{' '}
+                              às {format(booking.start, 'HH:mm')}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <Label>Professor(a)</Label>
-                          <p className="font-semibold">{teacher?.name}</p>
-                        </div>
-                        <div>
-                          <Label>Data e Horário</Label>
-                          <p className="font-semibold">
-                            {format(booking.date, 'dd/MM/yyyy', {
-                              locale: ptBR,
-                            })}{' '}
-                            às {booking.time}
-                          </p>
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleRepeatBooking(booking)}
+                            title="Repetir agendamento"
+                          >
+                            <Repeat className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleRemoveBooking(booking.id)}
+                            title="Remover agendamento"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleRepeatBooking(booking)}
-                          title="Repetir agendamento"
-                        >
-                          <Repeat className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => handleRemoveBooking(booking.id)}
-                          title="Remover agendamento"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

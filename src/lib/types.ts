@@ -25,7 +25,8 @@ export interface ClassPackage {
   id: string;
   name: string;
   numClasses: number;
-  price: number;
+  pricePerClass: number;
+  popular: boolean;
 }
 
 export interface ScheduleEvent {

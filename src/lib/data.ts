@@ -31,9 +31,9 @@ export const teachers: Teacher[] = [
     bio: 'Professora apaixonada por matemática e física, com 5 anos de experiência em aulas particulares.',
     education: 'Mestrado em Física Aplicada - USP',
     availability: {
-      monday: ['09:00', '10:00', '11:00', '14:00'],
-      wednesday: ['09:00', '10:00', '11:00', '15:00', '16:00'],
-      friday: ['10:00', '11:00'],
+      monday: ['09:00', '10:30', '15:00'],
+      wednesday: ['09:00', '10:30', '15:00', '16:30'],
+      friday: ['10:30', '12:00'],
     },
   },
   {
@@ -46,8 +46,8 @@ export const teachers: Teacher[] = [
     bio: 'Especialista em literatura e redação, focado em preparar alunos para vestibulares e concursos.',
     education: 'Doutorado em Letras - UFRJ',
     availability: {
-      tuesday: ['10:00', '11:00', '12:00', '13:00'],
-      thursday: ['10:00', '11:00', '12:00'],
+      tuesday: ['10:30', '12:00', '13:30'],
+      thursday: ['10:30', '12:00', '13:30'],
     },
   },
   {
@@ -60,11 +60,11 @@ export const teachers: Teacher[] = [
     bio: 'Historiadora e geógrafa, adora contar histórias sobre o mundo e suas transformações.',
     education: 'Graduação em História - UNICAMP',
     availability: {
-      monday: ['18:00', '19:00'],
-      tuesday: ['18:00', '19:00'],
-      wednesday: ['18:00', '19:00'],
-      thursday: ['18:00', '19:00'],
-      friday: ['18:00', '19:00'],
+      monday: ['18:00', '19:30'],
+      tuesday: ['18:00', '19:30'],
+      wednesday: ['18:00', '19:30'],
+      thursday: ['18:00', '19:30'],
+      friday: ['18:00', '19:30'],
     },
   },
 ];
@@ -78,9 +78,9 @@ export const subjects: Subject[] = [
 ];
 
 export const classPackages: ClassPackage[] = [
-  { id: 'pkg-1', name: 'Pacote 4 Aulas', numClasses: 4, price: 380.00 },
-  { id: 'pkg-2', name: 'Pacote 8 Aulas', numClasses: 8, price: 720.00 },
-  { id: 'pkg-3', name: 'Pacote 12 Aulas', numClasses: 12, price: 1020.00 },
+    { id: 'pkg-1', name: 'Aula Avulsa', numClasses: 1, pricePerClass: 105.00, popular: false },
+    { id: 'pkg-2', name: 'Pacote 4 Aulas', numClasses: 4, pricePerClass: 95.00, popular: true },
+    { id: 'pkg-3', name: 'Pacote 8 Aulas', numClasses: 8, pricePerClass: 85.00, popular: false },
 ];
 
 const now = new Date();
@@ -89,7 +89,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     id: 'evt-1',
     title: 'Aula de Matemática',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0),
-    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 11, 0),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 11, 30),
     studentId: 'user-1',
     teacherId: 'teacher-1',
     subject: 'Matemática',
@@ -99,7 +99,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     id: 'evt-2',
     title: 'Aula de Redação',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 11, 0),
-    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12, 0),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12, 30),
     studentId: 'user-1',
     teacherId: 'teacher-2',
     subject: 'Redação',
@@ -109,7 +109,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     id: 'evt-3',
     title: 'Aula de Física',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 14, 0),
-    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 15, 0),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 15, 30),
     studentId: 'user-1',
     teacherId: 'teacher-1',
     subject: 'Física',
