@@ -144,7 +144,7 @@ export default function LoginPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setRole(null)}
-                className="absolute top-4 right-4"
+                className="absolute top-4 left-4"
                 aria-label="Voltar para a seleção de perfil"
             >
                 <ArrowLeft className="h-5 w-5" />
