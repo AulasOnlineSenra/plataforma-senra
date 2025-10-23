@@ -24,6 +24,7 @@ import {
   DollarSign,
   Package,
   Bot,
+  Lightbulb,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -91,6 +92,12 @@ const navItems = [
     icon: History,
     label: 'Histórico de Atividades',
     roles: ['student', 'teacher'],
+  },
+    {
+    href: '/dashboard/suggestions',
+    icon: Lightbulb,
+    label: 'Sugestões',
+    roles: ['student', 'teacher', 'admin'],
   },
 ];
 

@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'student' | 'teacher';
 
 export interface User {
@@ -60,4 +61,14 @@ export interface ChatContact {
   lastMessage: string;
   lastMessageTimestamp: Date;
   unreadCount: number;
+}
+
+export interface Suggestion {
+  id: string;
+  submittedBy: string;
+  userRole: UserRole;
+  type: 'bug' | 'suggestion';
+  content: string;
+  status: 'received' | 'rejected' | 'implemented';
+  timestamp: Date;
 }
