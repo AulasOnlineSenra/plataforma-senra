@@ -187,21 +187,27 @@ const TeacherProfileForm = () => {
           {days.map((day) => (
             <div
               key={day.id}
-              className="grid grid-cols-[100px_1fr] items-center gap-4 border-b pb-4 last:border-b-0"
+              className="grid grid-cols-[100px_1fr] items-start gap-4 border-b pb-4 last:border-b-0"
             >
-              <h4 className="font-semibold">{day.label}</h4>
+              <h4 className="font-semibold pt-2">{day.label}</h4>
               <div className="flex flex-col gap-2">
                 {(availability[day.id] || []).map((slot, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm">
                       <span>{slot.start}</span> - <span>{slot.end}</span>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(day.id, index)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center">
+                      <Button variant="ghost" size="icon">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveSlot(day.id, index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 <Button
