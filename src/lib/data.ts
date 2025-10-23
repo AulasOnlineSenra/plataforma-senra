@@ -1,5 +1,5 @@
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
@@ -216,4 +216,10 @@ export const suggestions: Suggestion[] = [
     { id: 'sug-2', submittedBy: 'Ana Silva', userRole: 'teacher', type: 'bug', content: 'O calendário de agendamento às vezes não carrega nos fins de semana.', status: 'received', timestamp: new Date(now.getTime() - 28 * 60 * 60 * 1000) },
     { id: 'sug-3', submittedBy: 'Mariana Santos', userRole: 'student', type: 'suggestion', content: 'Adicionar uma seção de "materiais de aula" para download seria muito útil.', status: 'implemented', timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) },
     { id: 'sug-4', submittedBy: 'Carlos Lima', userRole: 'teacher', type: 'suggestion', content: 'Poderíamos ter um sistema de gamificação com medalhas para os alunos.', status: 'rejected', timestamp: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000) },
+];
+
+export let referralData: Referral[] = [
+    { userId: 'teacher-1', code: 'ANA-5281', timesUsed: 5, totalBonus: 250.00 },
+    { userId: 'user-1', code: 'JOAO-9872', timesUsed: 2, totalBonus: 100.00 },
+    { userId: 'teacher-2', code: 'CARLOS-3456', timesUsed: 8, totalBonus: 400.00 },
 ];

@@ -25,6 +25,7 @@ import {
   Package,
   Bot,
   Lightbulb,
+  Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -93,10 +94,16 @@ const navItems = [
     label: 'Histórico de Atividades',
     roles: ['student', 'teacher'],
   },
-    {
+  {
     href: '/dashboard/suggestions',
     icon: Lightbulb,
     label: 'Sugestões',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/referrals',
+    icon: Gift,
+    label: 'Indicações',
     roles: ['student', 'teacher', 'admin'],
   },
 ];

@@ -72,3 +72,10 @@ export interface Suggestion {
   status: 'received' | 'rejected' | 'implemented';
   timestamp: Date;
 }
+
+export interface Referral {
+  userId: string;
+  code: string;
+  timesUsed: number;
+  totalBonus: number;
+}
