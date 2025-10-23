@@ -27,12 +27,32 @@ import {
   Users,
   Briefcase,
   DollarSign,
+  TrendingUp,
+  Activity,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents, users, teachers } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { UserRole, User } from '@/lib/types';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import { RevenueChart } from '@/components/charts/revenue-chart';
+import { SubjectsChart } from '@/components/charts/subjects-chart';
+import { NewUsersChart } from '@/components/charts/new-users-chart';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -55,7 +75,7 @@ export default function DashboardPage() {
 
   const renderAdminDashboard = () => (
     <>
-       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receitas do Mês</CardTitle>
@@ -88,16 +108,45 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alunos</CardTitle>
+            <CardTitle className="text-sm font-medium">Alunos Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.filter(u => u.role === 'student').length}</div>
-            <p className="text-xs text-muted-foreground">Total de alunos cadastrados</p>
+            <div className="text-2xl font-bold">{users.filter(u => u.role === 'student' && u.status === 'active').length}</div>
+            <p className="text-xs text-muted-foreground">+5 na última semana</p>
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8">
+       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Visão Geral da Receita</CardTitle>
+            <CardDescription>Receita mensal dos últimos 6 meses.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RevenueChart />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Aulas por Disciplina</CardTitle>
+            <CardDescription>Distribuição das aulas agendadas.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SubjectsChart />
+          </CardContent>
+        </Card>
+      </div>
+       <div className="grid gap-4 md:gap-8">
+         <Card>
+          <CardHeader>
+            <CardTitle>Aquisição de Novos Usuários</CardTitle>
+            <CardDescription>Novos alunos e professores registrados por mês.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <NewUsersChart />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
@@ -126,10 +175,10 @@ export default function DashboardPage() {
                 {upcomingEvents.map((event) => (
                   <TableRow key={event.id}>
                      <TableCell>
-                      {event.teacherId === 'teacher-1' ? 'Ana Silva' : 'Carlos Lima'}
+                      {teachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {event.studentId === 'user-1' ? 'João Aluno' : 'Mariana Santos'}
+                      {users.find(u => u.id === event.studentId)?.name || 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })}
@@ -213,8 +262,8 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {user.role === 'student' ? 
-                        (event.teacherId === 'teacher-1' ? 'Ana Silva' : 'Carlos Lima') :
-                        (event.studentId === 'user-1' ? 'João Aluno' : 'Mariana Santos')
+                        (teachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
+                        (users.find(u => u.id === event.studentId)?.name || 'N/A')
                       }
                     </TableCell>
                     <TableCell className="text-right">
