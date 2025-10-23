@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { classPackages } from '@/lib/data';
 import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const packageFeatures = [
     "Acesso a todos os professores",
