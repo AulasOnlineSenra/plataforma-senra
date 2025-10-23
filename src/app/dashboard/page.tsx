@@ -37,11 +37,11 @@ import { useEffect, useState } from 'react';
 import { UserRole, User } from '@/lib/types';
 import {
   Carousel,
+  CarouselApi,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
+import { cn } from '@/lib/utils';
 
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
@@ -49,6 +49,9 @@ import { NewUsersChart } from '@/components/charts/new-users-chart';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [slideCount, setSlideCount] = useState(0);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -56,6 +59,25 @@ export default function DashboardPage() {
       setUser(getMockUser(role));
     }
   }, []);
+  
+  useEffect(() => {
+    if (!carouselApi) {
+      return;
+    }
+
+    setSlideCount(carouselApi.scrollSnapList().length);
+    setCurrentSlide(carouselApi.selectedScrollSnap());
+
+    const onSelect = () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on('select', onSelect);
+
+    return () => {
+      carouselApi.off('select', onSelect);
+    };
+  }, [carouselApi]);
 
   const upcomingEvents = scheduleEvents
     .filter((e) => e.status === 'scheduled' && e.start > new Date())
@@ -110,7 +132,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <Carousel
+      <div>
+        <Carousel
+          setApi={setCarouselApi}
           opts={{
             align: "start",
           }}
@@ -151,9 +175,21 @@ export default function DashboardPage() {
               </Card>
             </CarouselItem>
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
         </Carousel>
+        <div className="flex justify-center gap-2 mt-4">
+          {Array.from({ length: slideCount }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => carouselApi?.scrollTo(index)}
+              className={cn(
+                'h-2 w-2 rounded-full transition-all',
+                currentSlide === index ? 'w-4 bg-primary' : 'bg-muted-foreground/50'
+              )}
+              aria-label={`Ir para o slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      </div>
       
        <div className="grid gap-4 md:gap-8">
         <Card>
