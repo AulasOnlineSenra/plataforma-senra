@@ -124,7 +124,10 @@ export default function TeachersPage() {
             Nossos Professores
           </h1>
           {currentUser?.role === 'admin' && (
-            <Button onClick={() => setIsInviteDialogOpen(true)}>
+            <Button
+              onClick={() => setIsInviteDialogOpen(true)}
+              className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
               <UserPlus className="mr-2" />
               Convidar Professor
             </Button>
