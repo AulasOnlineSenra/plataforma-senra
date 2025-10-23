@@ -1,15 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
-import { UserRole } from '@/lib/types';
-import { getMockUser } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft } from 'lucide-react';
@@ -45,16 +42,14 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 
-export default function LoginPage() {
-  const [role, setRole] = useState<UserRole>('student'); // Default to student
+export default function RegisterPage() {
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('userRole', role);
-    const user = getMockUser(role);
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    router.push('/dashboard');
+    // In a real app, you would handle user creation here
+    // For this prototype, we'll just redirect to the login page
+    router.push('/login');
   };
 
   return (
@@ -71,9 +66,19 @@ export default function LoginPage() {
                 <SenraLogo className="mx-auto" />
             </div>
             <h1 className="text-2xl font-bold font-headline text-center mb-4">
-              Entrar no Aulas Online Senra
+              Crie sua Conta
             </h1>
-            <form onSubmit={handleLogin} className="grid gap-6">
+            <form onSubmit={handleRegister} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Seu nome completo"
+                  required
+                  className="h-11"
+                />
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
@@ -84,8 +89,18 @@ export default function LoginPage() {
                   className="h-11"
                 />
               </div>
-              <Button type="submit" className="h-11 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
-                Continuar
+                <div className="grid gap-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Sua senha"
+                  required
+                  className="h-11"
+                />
+              </div>
+              <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+                Criar Conta
               </Button>
             </form>
             <div className="relative my-6">
@@ -99,13 +114,13 @@ export default function LoginPage() {
             <div className="grid gap-4">
               <Button variant="outline" className="h-11">
                 <GoogleIcon className="mr-2" />
-                Continuar com Google
+                Cadastrar com Google
               </Button>
             </div>
             <div className="mt-6 text-center text-sm">
-              Não tem uma conta?{' '}
-              <Link href="/register" className="underline font-semibold">
-                Cadastrar-se
+              Já tem uma conta?{' '}
+              <Link href="/login" className="underline font-semibold">
+                Faça login
               </Link>
             </div>
           </div>
@@ -134,3 +149,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
