@@ -86,9 +86,15 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 relative">
+        <Button asChild variant="ghost" className="absolute top-4 left-4">
+            <Link href="/home">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para a página inicial
+            </Link>
+        </Button>
       <Card className="mx-auto w-full max-w-sm shadow-2xl">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pt-12">
           <div className="w-full flex justify-center h-20 mb-4">
             <SenraLogo />
           </div>
