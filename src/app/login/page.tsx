@@ -105,10 +105,10 @@ export default function LoginPage() {
           <Label htmlFor="password">Senha</Label>
           <Input id="password" type="password" required />
         </div>
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-3/5 mx-auto">
           Login
         </Button>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-3/5 mx-auto">
           <GoogleIcon className="mr-2 h-4 w-4" />
           Login com Google
         </Button>
