@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -19,12 +19,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers } from '@/lib/data';
+import { subjects, teachers, getMockUser } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, addMinutes, isBefore, startOfToday, getDay } from 'date-fns';
-import { Plus, Trash2, Repeat, X } from 'lucide-react';
+import { Plus, Trash2, Repeat, X, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { User, Teacher } from '@/lib/types';
 
 interface Booking {
   id: string;
@@ -37,14 +39,22 @@ interface Booking {
 type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
 
 export default function BookingPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
   const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>();
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [timezoneDifference, setTimezoneDifference] = useState<string | null>(null);
 
   const { toast } = useToast();
+  
+  useEffect(() => {
+    // In a real app, this would come from an auth context
+    const user = getMockUser('student');
+    setCurrentUser(user);
+  }, []);
 
   const handleClearSelections = () => {
     setSelectedSubject(undefined);
@@ -238,20 +248,35 @@ export default function BookingPage() {
     
     const teacher = teachers.find(t => t.id === selectedTeacher);
     if (!teacher) return [];
-
-    const dayOfWeek = selectedDates[0] ? getDay(selectedDates[0]) : -1;
-    // JS week day: Sun-0, Mon-1... -> our format: mon-0, tue-1...
-    const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek];
     
     // In a real app, teacher.availability would be the source of truth
-    // For now, let's use the hardcoded list but this shows how it would be filtered
     const hardcodedTimes = [
       '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30',
     ];
-    // To use dynamic times based on profile:
-    // return teacher.availability[dayName] || [];
     return hardcodedTimes;
   }, [selectedTeacher, selectedDates]);
+  
+  useEffect(() => {
+    if (!selectedTeacher || !currentUser) {
+      setTimezoneDifference(null);
+      return;
+    }
+
+    const teacher = teachers.find(t => t.id === selectedTeacher);
+    const studentTimezone = currentUser.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const teacherTimezone = teacher?.timezone;
+
+    if (teacherTimezone && studentTimezone !== teacherTimezone) {
+      const now = new Date();
+      const studentTime = now.toLocaleString('pt-BR', { timeZone: studentTimezone, hour: '2-digit', minute: '2-digit', hour12: false });
+      const teacherTime = now.toLocaleString('pt-BR', { timeZone: teacherTimezone, hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short' });
+      
+      setTimezoneDifference(`Atualmente são ${studentTime} para você e ${teacherTime} para o professor(a) ${teacher.name}. Os horários são mostrados na hora local do professor.`);
+    } else {
+      setTimezoneDifference(null);
+    }
+  }, [selectedTeacher, currentUser]);
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -314,6 +339,17 @@ export default function BookingPage() {
                 </SelectContent>
               </Select>
             </div>
+             {timezoneDifference && (
+              <div className="md:col-span-2">
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Atenção ao Fuso Horário!</AlertTitle>
+                  <AlertDescription>
+                    {timezoneDifference}
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
           </CardContent>
         </Card>
 

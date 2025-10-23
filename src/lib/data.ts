@@ -11,6 +11,7 @@ export const users: User[] = [
     avatarUrl: findImage('user-avatar-1'),
     role: 'student',
     status: 'active',
+    timezone: 'America/Sao_Paulo',
   },
   {
     id: 'admin-1',
@@ -18,6 +19,7 @@ export const users: User[] = [
     email: 'admin@example.com',
     avatarUrl: findImage('user-avatar-2'),
     role: 'admin',
+    timezone: 'America/Sao_Paulo',
   },
   {
     id: 'user-2',
@@ -25,7 +27,8 @@ export const users: User[] = [
     email: 'mariana.santos@example.com',
     avatarUrl: 'https://picsum.photos/seed/student2/200/200',
     role: 'student',
-    status: 'active'
+    status: 'active',
+    timezone: 'America/Manaus',
   },
   {
     id: 'user-3',
@@ -33,7 +36,8 @@ export const users: User[] = [
     email: 'pedro.oliveira@example.com',
     avatarUrl: 'https://picsum.photos/seed/student3/200/200',
     role: 'student',
-    status: 'inactive'
+    status: 'inactive',
+    timezone: 'America/Recife',
   }
 ];
 
@@ -54,6 +58,7 @@ export const teachers: Teacher[] = [
       wednesday: ['09:00', '10:30', '15:00', '16:30'],
       friday: ['10:30', '12:00'],
     },
+    timezone: 'America/Sao_Paulo',
   },
   {
     id: 'teacher-2',
@@ -68,6 +73,7 @@ export const teachers: Teacher[] = [
       tuesday: ['10:30', '12:00', '13:30'],
       thursday: ['10:30', '12:00', '13:30'],
     },
+    timezone: 'America/Sao_Paulo',
   },
   {
     id: 'teacher-3',
@@ -85,6 +91,7 @@ export const teachers: Teacher[] = [
       thursday: ['18:00', '19:30'],
       friday: ['18:00', '19:30'],
     },
+    timezone: 'America/Noronha',
   },
 ];
 
@@ -173,7 +180,9 @@ export const getMockUser = (role: 'student' | 'admin' | 'teacher'): User => {
     return users.find(u => u.role === 'admin')!;
   }
   if (role === 'teacher') {
+    // In a real app, you'd get the currently logged-in teacher
     return teachers[0];
   }
-  return users.find(u => u.role === 'student')!;
+  // In a real app, you'd get the currently logged-in student
+  return users.find(u => u.role === 'student' && u.id === 'user-2')!; // Defaulting to a student with a different timezone
 };

@@ -7,6 +7,7 @@ export interface User {
   avatarUrl: string;
   role: UserRole;
   status?: 'active' | 'inactive';
+  timezone?: string;
 }
 
 export interface Subject {
