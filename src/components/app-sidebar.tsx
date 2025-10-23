@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, DragEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -26,132 +26,22 @@ import {
   Bot,
   Lightbulb,
   Gift,
+  GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole, User } from '@/lib/types';
-import { getMockUser } from '@/lib/data';
+import { UserRole, User, NavItem } from '@/lib/types';
+import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
-
-const navItems = [
-  {
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    roles: ['student', 'teacher', 'admin'],
-  },
-  {
-    href: '/dashboard/schedule',
-    icon: CalendarDays,
-    label: 'Agenda',
-    roles: ['student', 'teacher', 'admin'],
-  },
-  {
-    href: '/dashboard/booking',
-    icon: BookOpenCheck,
-    label: 'Agendar Aula',
-    roles: ['student'],
-  },
-  {
-    href: '/dashboard/chat',
-    icon: MessageSquare,
-    label: 'Chat',
-    roles: ['student', 'teacher', 'admin'],
-  },
-  {
-    href: '/dashboard/students',
-    icon: Users,
-    label: 'Alunos',
-    roles: ['teacher', 'admin'],
-  },
-  {
-    href: '/dashboard/teachers',
-    icon: Briefcase,
-    label: 'Professores',
-    roles: ['admin', 'student'],
-  },
-    {
-    href: '/dashboard/my-teachers',
-    icon: Briefcase,
-    label: 'Meus Professores',
-    roles: ['student'],
-  },
-  {
-    href: '/dashboard/packages',
-    icon: WalletCards,
-    label: 'Pacotes',
-    roles: ['student'],
-  },
-  {
-    href: '/dashboard/financial',
-    icon: DollarSign,
-    label: 'Financeiro',
-    roles: ['student', 'teacher', 'admin'],
-  },
-  {
-    href: '/dashboard/activity-history',
-    icon: History,
-    label: 'Histórico de Atividades',
-    roles: ['student', 'teacher'],
-  },
-  {
-    href: '/dashboard/suggestions',
-    icon: Lightbulb,
-    label: 'Sugestões',
-    roles: ['student', 'teacher', 'admin'],
-  },
-  {
-    href: '/dashboard/referrals',
-    icon: Gift,
-    label: 'Indicações',
-    roles: ['student', 'teacher', 'admin'],
-  },
-];
-
-const adminNavItems = [
-  {
-    href: '/dashboard/admin/packages',
-    icon: Package,
-    label: 'Planos',
-    roles: ['admin'],
-  },
-  {
-    href: '/dashboard/admin/feedback-analysis',
-    icon: FileText,
-    label: 'Análise de Feedback',
-    roles: ['admin'],
-  },
-  {
-    href: '/dashboard/admin/settings',
-    icon: KeyRound,
-    label: 'Credenciais',
-    roles: ['admin'],
-  },
-  {
-    href: '/dashboard/admin/marketing',
-    icon: TrendingUp,
-    label: 'Marketing',
-    roles: ['admin'],
-  },
-  {
-    href: '/dashboard/admin/crm',
-    icon: HeartHandshake,
-    label: 'CRM',
-    roles: ['admin'],
-  },
-  {
-    href: '/dashboard/admin/aos-agents',
-    icon: Bot,
-    label: 'AOS Agents',
-    roles: ['admin'],
-  },
-];
+import { Button } from './ui/button';
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems);
+  const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
 
   const updateUser = useCallback(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -173,7 +63,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   useEffect(() => {
     updateUser();
 
-    // Listen for storage changes to update the sidebar in real-time
     const handleStorageChange = () => {
       updateUser();
     };
@@ -183,6 +72,55 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [updateUser]);
+  
+  useEffect(() => {
+    const storedNavOrder = localStorage.getItem('navOrder');
+    if (storedNavOrder) {
+      const orderedHrefs = JSON.parse(storedNavOrder);
+      const reorderedNavItems = orderedHrefs.map((href: string) => defaultNavItems.find(item => item.href === href)).filter(Boolean);
+      const remainingNavItems = defaultNavItems.filter(item => !orderedHrefs.includes(item.href));
+      setNavItems([...reorderedNavItems, ...remainingNavItems]);
+    }
+
+    const storedAdminNavOrder = localStorage.getItem('adminNavOrder');
+    if (storedAdminNavOrder) {
+      const orderedAdminHrefs = JSON.parse(storedAdminNavOrder);
+      const reorderedAdminNavItems = orderedAdminHrefs.map((href: string) => defaultAdminNavItems.find(item => item.href === href)).filter(Boolean);
+      const remainingAdminNavItems = defaultAdminNavItems.filter(item => !orderedAdminHrefs.includes(item.href));
+      setAdminNavItems([...reorderedAdminNavItems, ...remainingAdminNavItems]);
+    }
+  }, []);
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>, itemType: 'main' | 'admin') => {
+    const droppedOnHref = e.currentTarget.dataset.href;
+    const draggedHref = e.dataTransfer.getData('text/plain');
+    
+    if (droppedOnHref === draggedHref) return;
+
+    const currentItems = itemType === 'main' ? navItems : adminNavItems;
+    const setItems = itemType === 'main' ? setNavItems : setAdminNavItems;
+    const storageKey = itemType === 'main' ? 'navOrder' : 'adminNavOrder';
+
+    const draggedItem = currentItems.find(item => item.href === draggedHref);
+    if (!draggedItem) return;
+
+    const itemsWithoutDragged = currentItems.filter(item => item.href !== draggedHref);
+    const dropIndex = itemsWithoutDragged.findIndex(item => item.href === droppedOnHref);
+
+    const newItems = [
+        ...itemsWithoutDragged.slice(0, dropIndex + 1),
+        draggedItem,
+        ...itemsWithoutDragged.slice(dropIndex + 1)
+    ];
+
+    setItems(newItems);
+    localStorage.setItem(storageKey, JSON.stringify(newItems.map(item => item.href)));
+  };
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, href: string) => {
+    e.dataTransfer.setData('text/plain', href);
+  }
+
 
   if (!userRole || !user) {
     return null; // Or a loading spinner
@@ -197,6 +135,8 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('navOrder');
+    localStorage.removeItem('adminNavOrder');
     router.push('/login');
   };
 
@@ -214,36 +154,49 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       ? adminNavItems.filter(item => item.roles.includes(userRole))
       : [];
 
-  const renderLink = (item: {href: string, icon: React.ElementType, label: string, roles: string[]}, isLogout = false) => {
+  const renderLink = (item: NavItem, isLogout = false, itemType?: 'main' | 'admin') => {
     const isActive = pathname === item.href;
+    const isDraggable = userRole === 'admin' && itemType && !isMobile;
+    
     const LinkContent = (
       <div
         className={cn(
-          'flex items-center gap-4 rounded-lg px-3 py-2 transition-all hover:text-primary-foreground hover:bg-sidebar-accent',
+          'flex items-center gap-4 rounded-lg px-3 py-2 transition-all',
+          'text-base group',
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-            : 'text-sidebar-foreground/80',
-          'text-base'
+            : 'text-sidebar-foreground/80 hover:text-primary-foreground hover:bg-sidebar-accent'
         )}
       >
-        <item.icon className="h-5 w-5" />
+        {isDraggable && (
+          <GripVertical className="h-5 w-5 text-sidebar-foreground/30 group-hover:text-sidebar-accent-foreground cursor-grab" />
+        )}
+        <item.icon className={cn("h-5 w-5", isDraggable && "-ml-4")} />
         <span className={'font-medium'}>{item.label}</span>
       </div>
     );
 
-    if (isLogout) {
-        return (
+    const WrapperComponent = (
+        <div
+            data-href={item.href}
+            onDragStart={isDraggable ? (e) => handleDragStart(e, item.href) : undefined}
+            onDrop={isDraggable ? (e) => handleDrop(e, itemType!) : undefined}
+            onDragOver={isDraggable ? (e) => e.preventDefault() : undefined}
+            draggable={isDraggable}
+        >
+        { isLogout ? (
             <button key={item.href} onClick={handleLogout} className="w-full text-left">
                 {LinkContent}
             </button>
-        )
-    }
+        ) : (
+             <Link key={item.href} href={item.href}>
+              {LinkContent}
+            </Link>
+        )}
+      </div>
+    );
 
-     return (
-        <Link key={item.href} href={item.href}>
-          {LinkContent}
-        </Link>
-     );
+    return WrapperComponent;
   };
 
   return (
@@ -264,11 +217,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </Link>
         <div className="flex-1 overflow-y-auto">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
-                    {filteredNavItems.map(item => renderLink(item))}
+                    {filteredNavItems.map(item => renderLink(item, false, 'main'))}
                     {filteredAdminNavItems.length > 0 && (
                         <>
                             <div className="my-2 mx-3 h-px bg-sidebar-border" />
-                            {filteredAdminNavItems.map(item => renderLink(item))}
+                            {filteredAdminNavItems.map(item => renderLink(item, false, 'admin'))}
                         </>
                     )}
                 </nav>

@@ -1,6 +1,26 @@
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  BookOpenCheck,
+  MessageSquare,
+  WalletCards,
+  KeyRound,
+  FileText,
+  Users,
+  Briefcase,
+  TrendingUp,
+  HeartHandshake,
+  DollarSign,
+  Package,
+  Bot,
+  Lightbulb,
+  Gift,
+  History,
+} from 'lucide-react';
+
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
@@ -222,4 +242,119 @@ export let referralData: Referral[] = [
     { userId: 'teacher-1', code: 'ANA-5281', timesUsed: 5, totalBonus: 250.00 },
     { userId: 'user-1', code: 'JOAO-9872', timesUsed: 2, totalBonus: 100.00 },
     { userId: 'teacher-2', code: 'CARLOS-3456', timesUsed: 8, totalBonus: 400.00 },
+];
+
+
+export const navItems: NavItem[] = [
+  {
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    label: 'Dashboard',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/schedule',
+    icon: CalendarDays,
+    label: 'Agenda',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/booking',
+    icon: BookOpenCheck,
+    label: 'Agendar Aula',
+    roles: ['student'],
+  },
+  {
+    href: '/dashboard/chat',
+    icon: MessageSquare,
+    label: 'Chat',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/students',
+    icon: Users,
+    label: 'Alunos',
+    roles: ['teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/teachers',
+    icon: Briefcase,
+    label: 'Professores',
+    roles: ['admin', 'student'],
+  },
+    {
+    href: '/dashboard/my-teachers',
+    icon: Briefcase,
+    label: 'Meus Professores',
+    roles: ['student'],
+  },
+  {
+    href: '/dashboard/packages',
+    icon: WalletCards,
+    label: 'Pacotes',
+    roles: ['student'],
+  },
+  {
+    href: '/dashboard/financial',
+    icon: DollarSign,
+    label: 'Financeiro',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/activity-history',
+    icon: History,
+    label: 'Histórico de Atividades',
+    roles: ['student', 'teacher'],
+  },
+  {
+    href: '/dashboard/suggestions',
+    icon: Lightbulb,
+    label: 'Sugestões',
+    roles: ['student', 'teacher', 'admin'],
+  },
+  {
+    href: '/dashboard/referrals',
+    icon: Gift,
+    label: 'Indicações',
+    roles: ['student', 'teacher', 'admin'],
+  },
+];
+
+export const adminNavItems: NavItem[] = [
+  {
+    href: '/dashboard/admin/packages',
+    icon: Package,
+    label: 'Planos',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/feedback-analysis',
+    icon: FileText,
+    label: 'Análise de Feedback',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/settings',
+    icon: KeyRound,
+    label: 'Credenciais',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/marketing',
+    icon: TrendingUp,
+    label: 'Marketing',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/crm',
+    icon: HeartHandshake,
+    label: 'CRM',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/aos-agents',
+    icon: Bot,
+    label: 'AOS Agents',
+    roles: ['admin'],
+  },
 ];

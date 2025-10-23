@@ -79,3 +79,10 @@ export interface Referral {
   timesUsed: number;
   totalBonus: number;
 }
+
+export interface NavItem {
+    href: string;
+    icon: React.ElementType;
+    label: string;
+    roles: UserRole[];
+}
