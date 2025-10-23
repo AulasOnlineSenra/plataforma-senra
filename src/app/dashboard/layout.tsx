@@ -1,6 +1,9 @@
+
+'use client';
+
 import { AppSidebar } from '@/components/app-sidebar';
 import { Header } from '@/components/header';
-import { redirect } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
@@ -8,8 +11,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-
-  const isChatPage = false; // This will be dynamic in a real app
+  const pathname = usePathname();
+  const isChatPage = pathname === '/dashboard/chat';
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
