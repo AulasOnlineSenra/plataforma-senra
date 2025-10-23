@@ -33,6 +33,9 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  Briefcase,
+  Layers,
+  Webhook,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -78,6 +81,17 @@ const CollapsibleCard = ({
     )
 }
 
+const TrelloIcon = () => (
+    <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="#0079BF">
+      <path d="M19.52 3H4.48A1.48 1.48 0 003 4.48v15.04A1.48 1.48 0 004.48 21h15.04A1.48 1.48 0 0021 19.52V4.48A1.48 1.48 0 0019.52 3zM12.96 17.52h-2.4a.8.8 0 01-.8-.8v-8.8a.8.8 0 01.8-.8h2.4a.8.8 0 01.8.8v8.8a.8.8 0 01-.8.8zm-5.6-3.2h-2.4a.8.8 0 01-.8-.8V7.92a.8.8 0 01.8-.8h2.4a.8.8 0 01.8.8v5.6a.8.8 0 01-.8.8zm11.2 0h-2.4a.8.8 0 01-.8-.8V11.2a.8.8 0 01.8-.8h2.4a.8.8 0 01.8.8v3.12a.8.8 0 01-.8.8z"/>
+    </svg>
+);
+
+const NotionIcon = () => (
+    <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+        <path d="M22.5 3.375a.375.375 0 00-.375.375v16.5a.375.375 0 00.375.375h.75a.375.375 0 00.375-.375V3.75a.375.375 0 00-.375-.375h-.75zM19.5 3.375A.375.375 0 0019.125 3h-3.75a.375.375 0 00-.375.375v16.875a.375.375 0 00.375.375h3.75a.375.375 0 00.375-.375V3.75a.375.375 0 00-.375-.375zM.375 3.375h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375H.375a.375.375 0 01-.375-.375V3.75A.375.375 0 01.375 3.375zm3.75 0h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375h-.75a.375.375 0 01-.375-.375V3.75a.375.375 0 01.375-.375zm3.75 0h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375h-.75a.375.375 0 01-.375-.375V3.75a.375.375 0 01.375-.375zM12 3.375h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375H12a.375.375 0 01-.375-.375V3.75a.375.375 0 01.375-.375z"/>
+    </svg>
+);
 const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void; user: Teacher }) => {
   const { toast } = useToast();
   const [teacher, setTeacher] = useState<Teacher>(user);
@@ -409,6 +423,70 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
               </div>
               <Button variant="outline">Conectar</Button>
             </div>
+            { user.role === 'admin' && (
+                <>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                            <TrelloIcon />
+                            <div>
+                            <h4 className="font-semibold">Trello</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Crie cartões para novos alunos e agendamentos.
+                            </p>
+                            </div>
+                        </div>
+                        <Button variant="outline">Conectar</Button>
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                            <Briefcase className="h-6 w-6" style={{color: '#E65100'}} />
+                            <div>
+                            <h4 className="font-semibold">Rub.App</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Automatize a gestão de contatos e funis de venda.
+                            </p>
+                            </div>
+                        </div>
+                        <Button variant="outline">Conectar</Button>
+                    </div>
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                            <NotionIcon />
+                            <div>
+                            <h4 className="font-semibold">Notion</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Crie páginas para alunos e registre o progresso.
+                            </p>
+                            </div>
+                        </div>
+                        <Button variant="outline">Conectar</Button>
+                    </div>
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                            <Layers className="h-6 w-6 text-black dark:text-white" />
+                            <div>
+                            <h4 className="font-semibold">Make</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Crie cenários complexos de automação.
+                            </p>
+                            </div>
+                        </div>
+                        <Button variant="outline">Conectar</Button>
+                    </div>
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                            <Webhook className="h-6 w-6" style={{color: '#FF4F43'}} />
+                            <div>
+                            <h4 className="font-semibold">n8n</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Integre com centenas de outros aplicativos.
+                            </p>
+                            </div>
+                        </div>
+                        <Button variant="outline">Conectar</Button>
+                    </div>
+                </>
+            )}
           </CardContent>
         </CollapsibleCard>
       </div>
