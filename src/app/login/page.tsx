@@ -12,6 +12,7 @@ import { UserRole } from '@/lib/types';
 import { getMockUser } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { ArrowLeft } from 'lucide-react';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -59,7 +60,12 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-card">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
-        <div className="flex flex-col items-center justify-center p-8">
+        <div className="relative flex flex-col items-center justify-center p-8">
+          <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
+            <Link href="/home" aria-label="Voltar para a página inicial">
+                <ArrowLeft />
+            </Link>
+          </Button>
           <div className="w-full max-w-sm">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
