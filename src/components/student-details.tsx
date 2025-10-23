@@ -18,9 +18,11 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
-import { Mail, Phone, Clock, Calendar, CheckCircle, BookOpen } from 'lucide-react';
+import { Mail, Phone, Clock, Calendar, CheckCircle, BookOpen, Plus, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from './ui/button';
+import Link from 'next/link';
 
 interface StudentDetailsProps {
   student: User;
@@ -71,6 +73,24 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                             <span>{student.phone}</span>
                         </div>
                     )}
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle className='text-lg'>Ações Rápidas</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                    <Button asChild>
+                        <Link href="/dashboard/booking">
+                            <Plus /> Agendar Nova Aula
+                        </Link>
+                    </Button>
+                     <Button asChild variant="outline">
+                        <Link href="/dashboard/schedule">
+                            <XCircle /> Cancelar Aula
+                        </Link>
+                    </Button>
                 </CardContent>
             </Card>
 
