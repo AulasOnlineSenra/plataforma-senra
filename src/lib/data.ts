@@ -24,7 +24,9 @@ export const teachers: Teacher[] = [
   {
     id: 'teacher-1',
     name: 'Ana Silva',
+    nickname: 'Aninha',
     email: 'ana.silva@example.com',
+    phone: '(11) 98765-4321',
     avatarUrl: findImage('teacher-photo-1'),
     role: 'teacher',
     subjects: ['subj-1', 'subj-3'],
@@ -75,6 +77,12 @@ export const subjects: Subject[] = [
   { id: 'subj-3', name: 'Física' },
   { id: 'subj-4', name: 'Redação' },
   { id: 'subj-5', name: 'História' },
+  { id: 'subj-6', name: 'Ciências' },
+  { id: 'subj-7', name: 'Espanhol' },
+  { id: 'subj-8', name: 'Filosofia' },
+  { id: 'subj-9', name: 'Geografia' },
+  { id: 'subj-10', name: 'Inglês' },
+  { id: 'subj-11', name: 'Sociologia' },
 ];
 
 export const classPackages: ClassPackage[] = [

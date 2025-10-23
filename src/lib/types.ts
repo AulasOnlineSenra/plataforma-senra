@@ -15,6 +15,8 @@ export interface Subject {
 
 export interface Teacher extends User {
   role: 'teacher';
+  nickname?: string;
+  phone?: string;
   subjects: string[]; // array of subject IDs
   bio: string;
   education: string;
