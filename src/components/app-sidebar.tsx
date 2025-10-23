@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -65,7 +66,13 @@ const navItems = [
     href: '/dashboard/teachers',
     icon: Briefcase,
     label: 'Professores',
-    roles: ['admin'],
+    roles: ['admin', 'student'],
+  },
+    {
+    href: '/dashboard/my-teachers',
+    icon: Briefcase,
+    label: 'Meus Professores',
+    roles: ['student'],
   },
   {
     href: '/dashboard/packages',
