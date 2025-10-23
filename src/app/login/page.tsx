@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -51,61 +52,120 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const router = useRouter();
-  
-  const handleRoleSelect = (selectedRole: UserRole) => {
-    localStorage.setItem('userRole', selectedRole);
-    const user = getMockUser(selectedRole);
+  const { toast } = useToast();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!role) return;
+    localStorage.setItem('userRole', role);
+    const user = getMockUser(role);
     localStorage.setItem('currentUser', JSON.stringify(user));
     router.push('/dashboard');
-  }
+  };
 
   const RoleSelection = () => (
     <div className="grid gap-4">
       <Button
         variant="outline"
         className="w-[95%] mx-auto justify-center h-12 text-lg"
-        onClick={() => handleRoleSelect('teacher')}
+        onClick={() => setRole('teacher')}
       >
         Professor
       </Button>
       <Button
         variant="outline"
         className="w-[95%] mx-auto justify-center h-12 text-lg"
-        onClick={() => handleRoleSelect('student')}
+        onClick={() => setRole('student')}
       >
         Aluno
       </Button>
       <Button
         variant="outline"
         className="w-[95%] mx-auto justify-center h-12 text-lg"
-        onClick={() => handleRoleSelect('admin')}
+        onClick={() => setRole('admin')}
       >
         Administrador
       </Button>
     </div>
   );
 
+  const LoginForm = () => (
+    <form onSubmit={handleLogin}>
+      <div className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="m@example.com"
+            required
+          />
+        </div>
+        <div className="grid gap-2">
+          <div className="flex items-center">
+            <Label htmlFor="password">Senha</Label>
+            <Link
+              href="#"
+              className="ml-auto inline-block text-sm underline"
+            >
+              Esqueceu sua senha?
+            </Link>
+          </div>
+          <Input id="password" type="password" required />
+        </div>
+        <Button type="submit" className="w-full">
+          Login
+        </Button>
+        <Button variant="outline" className="w-full">
+          <GoogleIcon className="mr-2 h-4 w-4" />
+          Login com Google
+        </Button>
+      </div>
+    </form>
+  );
+
+  const roleLabels: Record<UserRole, string> = {
+    student: 'Aluno',
+    teacher: 'Professor',
+    admin: 'Administrador',
+  };
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 relative">
-        <Button asChild variant="ghost" className="absolute top-4 left-4">
-            <Link href="/home">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para a página inicial
-            </Link>
-        </Button>
+      <Button asChild variant="ghost" className="absolute top-4 left-4">
+        <Link href="/home">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para a página inicial
+        </Link>
+      </Button>
       <Card className="mx-auto w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center pt-12">
           <div className="w-full flex justify-center h-20 mb-4">
             <SenraLogo />
           </div>
           <CardTitle className="text-2xl font-headline">
-            Bem-vindo(a)!
+            {role ? `Login como ${roleLabels[role]}` : 'Bem-vindo(a)!'}
           </CardTitle>
           <CardDescription>
-            Selecione seu tipo de perfil para continuar.
+            {role
+              ? 'Insira seus dados para acessar a plataforma.'
+              : 'Selecione seu tipo de perfil para continuar.'}
           </CardDescription>
         </CardHeader>
-        <CardContent><RoleSelection /></CardContent>
+        <CardContent>
+          {role ? <LoginForm /> : <RoleSelection />}
+          {role && (
+            <div className="mt-4 text-center text-sm">
+              <Button
+                variant="link"
+                onClick={() => setRole(null)}
+                className="p-0 h-auto"
+              >
+                Voltar para a seleção de perfil
+              </Button>
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );
