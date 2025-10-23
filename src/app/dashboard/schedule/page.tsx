@@ -10,11 +10,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
-import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
-import { XCircle, User as UserIcon } from 'lucide-react';
+import { XCircle, Pencil } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -110,15 +110,24 @@ export default function SchedulePage() {
       return `${classCount} ${pluralize(classCount)} de ${format(start, 'dd/MM')} a ${format(end, 'dd/MM/yyyy')}`;
     }
     if (filterType === 'month') {
-      return `${classCount} ${pluralize(classCount)} para ${format(date, 'MMMM \'de\' yyyy', { locale: ptBR })}`;
+      return `${classCount} ${pluralize(classCount)} para ${format(date, "MMMM 'de' yyyy", { locale: ptBR })}`;
     }
+  };
+  
+  const handleEditClick = (event: ScheduleEvent) => {
+    // In a real app, this would likely open a modal or navigate to a dedicated editing page
+    // For this example, we'll just show a toast.
+    toast({
+        title: "Editar Agendamento",
+        description: `Função para editar a aula de ${event.subject} ainda não implementada.`
+    });
   };
 
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 md:gap-8">
         <div className="flex items-center">
-          <h1 className="font-headline text-2xl md:text-3xl">Agenda de Aulas</h1>
+          <h1 className="font-headline text-2xl md:text-3xl font-bold">Agenda de Aulas</h1>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -202,10 +211,16 @@ export default function SchedulePage() {
                         <div className="text-center text-sm text-muted-foreground">
                           {event.title}
                         </div>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
-                            <XCircle className="h-5 w-5" />
-                            <span className="sr-only">Cancelar Aula</span>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
+                              <Pencil className="h-5 w-5 text-muted-foreground" />
+                              <span className="sr-only">Editar Aula</span>
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
+                              <XCircle className="h-5 w-5" />
+                              <span className="sr-only">Cancelar Aula</span>
+                          </Button>
+                        </div>
                       </div>
                     )
                 })
