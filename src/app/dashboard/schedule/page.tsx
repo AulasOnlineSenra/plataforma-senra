@@ -16,7 +16,10 @@ export default function SchedulePage() {
   const [date, setDate] = useState<Date | undefined>();
 
   useEffect(() => {
-    setDate(new Date());
+    // This now safely runs only on the client
+    if (typeof window !== 'undefined') {
+      setDate(new Date());
+    }
   }, []);
 
   const todayEvents = scheduleEvents.filter(
@@ -41,7 +44,7 @@ export default function SchedulePage() {
               Selecione um dia para ver os detalhes.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex justify-center items-center">
+          <CardContent className="flex-1 flex justify-center items-center p-0">
             <Calendar
               mode="multiple"
               selected={scheduleEvents.map(e => e.start)}
@@ -52,14 +55,14 @@ export default function SchedulePage() {
                     setDate(undefined);
                 }
               }}
-              className="p-0"
+              className="p-0 sm:p-3"
               classNames={{
                 root: 'w-full',
                 months: 'w-full',
                 month: 'w-full',
                 table: 'w-full',
                 caption_label: 'font-headline',
-                head_cell: 'w-[110%]',
+                head_cell: 'w-full',
               }}
               locale={ptBR}
               modifiers={{
