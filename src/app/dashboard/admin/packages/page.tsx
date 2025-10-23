@@ -8,24 +8,30 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { classPackages, updateClassPackages } from '@/lib/data';
+import { classPackages as defaultClassPackages, updateClassPackages } from '@/lib/data';
 import { ClassPackage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Trash2, Plus } from 'lucide-react';
+
+const PACKAGES_STORAGE_KEY = 'classPackages';
 
 export default function AdminPackagesPage() {
   const [packages, setPackages] = useState<ClassPackage[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    // In a real app, this would be fetched from a database
-    setPackages(JSON.parse(JSON.stringify(classPackages)));
+    const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
+    if (storedPackages) {
+      setPackages(JSON.parse(storedPackages));
+    } else {
+      // Deep copy to avoid mutating the original data from lib/data
+      setPackages(JSON.parse(JSON.stringify(defaultClassPackages)));
+    }
   }, []);
 
   const handleInputChange = (
@@ -58,7 +64,10 @@ export default function AdminPackagesPage() {
 
   const handleSaveChanges = () => {
     // In a real app, this would send the updated data to the server
-    updateClassPackages(packages);
+    localStorage.setItem(PACKAGES_STORAGE_KEY, JSON.stringify(packages));
+    updateClassPackages(packages); // Also update the in-memory export for other pages
+    window.dispatchEvent(new Event('storage')); // Notify other components of storage change
+
     toast({
       title: 'Planos Salvos!',
       description: 'As alterações nos pacotes de aulas foram salvas com sucesso.',

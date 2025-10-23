@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { classPackages } from '@/lib/data';
+import { classPackages as defaultClassPackages } from '@/lib/data';
 import { Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ClassPackage } from '@/lib/types';
@@ -24,17 +24,30 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const packageFeatures = [
-  'Duração de 90 minutos por aula',
-  'Acesso a todos os professores',
-  'Material de apoio incluso',
-  'Agendamento flexível',
-  'Suporte via chat',
-];
+const PACKAGES_STORAGE_KEY = 'classPackages';
 
 export default function PackagesPage() {
   const [classesPerWeek, setClassesPerWeek] = useState<number>(1);
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
+  const [classPackages, setClassPackages] = useState<ClassPackage[]>(defaultClassPackages);
+
+  useEffect(() => {
+    const updatePackages = () => {
+      const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
+      if (storedPackages) {
+        setClassPackages(JSON.parse(storedPackages));
+      } else {
+        setClassPackages(defaultClassPackages);
+      }
+    };
+
+    updatePackages(); // Initial load
+
+    window.addEventListener('storage', updatePackages); // Listen for changes from other tabs/components
+    return () => {
+      window.removeEventListener('storage', updatePackages);
+    };
+  }, []);
 
   const tiers = useMemo(() => {
     const sortedPackages = [...classPackages].sort(
@@ -44,9 +57,10 @@ export default function PackagesPage() {
       ...pkg,
       tierIndex: index,
     }));
-  }, []);
+  }, [classPackages]);
 
   const getPriceTier = (numClasses: number): (ClassPackage & { tierIndex: number }) | undefined => {
+    if (tiers.length === 0) return undefined;
     let bestTier = tiers[0];
     for (const tier of tiers) {
       if (numClasses >= tier.numClasses) {
@@ -59,7 +73,7 @@ export default function PackagesPage() {
   };
 
   const calculatedPackage = useMemo(() => {
-    if (classesPerWeek <= 0 || numberOfWeeks <= 0)
+    if (classesPerWeek <= 0 || numberOfWeeks <= 0 || tiers.length === 0)
       return { total: 0, pricePerClass: 0, totalClasses: 0, tier: tiers[0] };
     const totalClasses = classesPerWeek * numberOfWeeks;
     const tier = getPriceTier(totalClasses);
@@ -81,7 +95,7 @@ export default function PackagesPage() {
   }
 
   const getDiscountMessage = () => {
-    if (!calculatedPackage.tier) return null;
+    if (!calculatedPackage.tier || tiers.length <= 1) return null;
   
     const currentTier = calculatedPackage.tier;
     const nextTierIndex = currentTier.tierIndex + 1;
