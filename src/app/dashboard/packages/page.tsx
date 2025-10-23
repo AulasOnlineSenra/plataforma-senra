@@ -23,7 +23,7 @@ export default function PackagesPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex flex-col items-center text-center">
-        <h1 className="font-headline text-3xl md:text-4xl">
+        <h1 className="font-headline text-3xl md:text-4xl font-bold">
           Pacotes de Aulas
         </h1>
         <p className="max-w-2xl text-muted-foreground mt-2">

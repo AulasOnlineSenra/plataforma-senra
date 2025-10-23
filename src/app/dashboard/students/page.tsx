@@ -71,7 +71,7 @@ export default function StudentsPage() {
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
             <div className="flex items-center">
-                <h1 className="font-headline text-2xl md:text-3xl">Meus Alunos</h1>
+                <h1 className="font-headline text-2xl md:text-3xl font-bold">Meus Alunos</h1>
             </div>
             <div className="grid gap-6">
                 <StudentList title="Alunos Ativos" students={activeStudents} />
