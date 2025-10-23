@@ -14,7 +14,7 @@ import { teachers, subjects, getMockUser } from '@/lib/data';
 import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -30,13 +30,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-function TeacherCard({ teacher }: { teacher: Teacher }) {
+function TeacherCard({ teacher, currentUser }: { teacher: Teacher, currentUser: User | null }) {
   const teacherSubjects = teacher.subjects
     .map((subjectId) => subjects.find((s) => s.id === subjectId)?.name)
     .filter(Boolean);
 
   // Mock rating for demonstration
   const rating = 4.5 + (parseInt(teacher.id.slice(-1), 16) % 5) / 10;
+  
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
     <Card className="flex flex-col">
@@ -75,10 +77,25 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
           {teacher.bio}
         </p>
       </CardContent>
-      <CardFooter className="flex-col gap-4">
-        <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-          <Link href={`/dashboard/profile`}>Ver Perfil e Agendar</Link>
-        </Button>
+      <CardFooter className="flex-col gap-2">
+        {isAdmin ? (
+          <>
+            <Button asChild className="w-full">
+              <Link href={`/dashboard/profile`}>
+                <Edit /> Ver/Editar Perfil
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/schedule">
+                <Calendar /> Ver Agenda
+              </Link>
+            </Button>
+          </>
+        ) : (
+          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <Link href={`/dashboard/profile`}>Ver Perfil e Agendar</Link>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -135,7 +152,7 @@ export default function TeachersPage() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {teachers.map((teacher) => (
-            <TeacherCard key={teacher.id} teacher={teacher} />
+            <TeacherCard key={teacher.id} teacher={teacher} currentUser={currentUser} />
           ))}
         </div>
       </div>
