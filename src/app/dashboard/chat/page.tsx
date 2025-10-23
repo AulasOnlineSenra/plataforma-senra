@@ -4,13 +4,15 @@
 import { useState } from 'react';
 import {
   Card,
-  CardContent
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare } from 'lucide-react';
 import { chatContacts, chatMessages, getMockUser, teachers, users } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -40,7 +42,7 @@ const roleLabels: Record<UserRole, string> = {
 
 export default function ChatPage() {
     const currentUser = getMockUser('student');
-    const activeChatPartner = teachers[0];
+    const [activeChatPartner, setActiveChatPartner] = useState<User | null>(null);
     const { toast } = useToast();
 
     const [isScheduling, setIsScheduling] = useState(false);
@@ -53,6 +55,13 @@ export default function ChatPage() {
 
     const getContactDetails = (contactId: string) => {
         return allUsers.find(u => u.id === contactId);
+    }
+    
+    const handleContactSelect = (contactId: string) => {
+        const contact = getContactDetails(contactId);
+        if (contact) {
+            setActiveChatPartner(contact);
+        }
     }
 
     const groupedMessages = chatMessages.reduce((acc, message) => {
@@ -111,9 +120,9 @@ export default function ChatPage() {
                                 if (!contactDetails) return null;
                                 
                                 return (
-                                <button key={contact.id} className={cn(
+                                <button key={contact.id} onClick={() => handleContactSelect(contact.id)} className={cn(
                                     "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-all hover:bg-accent/50",
-                                    contact.id === activeChatPartner.id ? "bg-accent/70" : ""
+                                    activeChatPartner && contact.id === activeChatPartner.id ? "bg-accent/70" : ""
                                 )}>
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage src={contact.avatarUrl} alt={contact.name} />
@@ -144,88 +153,102 @@ export default function ChatPage() {
                     </ScrollArea>
                 </Card>
 
-                <Card className="flex flex-col h-full rounded-none md:rounded-lg border-0 md:border">
-                    <div className="flex items-center gap-4 p-4 border-b">
-                        <Avatar className="h-10 w-10">
-                            <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
-                            <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-semibold">{activeChatPartner.name}</p>
-                            <p className="text-sm text-muted-foreground">Online</p>
-                        </div>
-                    </div>
-                    <ScrollArea className="flex-1 p-4">
-                        <div className="flex flex-col gap-2">
-                           {Object.keys(groupedMessages).sort().map(date => (
-                             <div key={date}>
-                                <div className="flex justify-center my-4">
-                                  <div className="text-xs text-muted-foreground bg-card px-3 py-1 rounded-full border">
-                                    {formatDateSeparator(date)}
-                                  </div>
-                                </div>
-                                <div className="flex flex-col gap-4">
-                                {groupedMessages[date].map(message => (
-                                    <div key={message.id} className={cn(
-                                        "flex items-end gap-2",
-                                        message.senderId === currentUser.id ? "justify-end" : "justify-start"
-                                    )}>
-                                        {message.senderId !== currentUser.id && (
-                                            <Avatar className="h-8 w-8 self-end">
-                                                <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
-                                                <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                        )}
-                                        <div className={cn(
-                                            "max-w-xs lg:max-w-md rounded-lg p-3 text-sm flex flex-col shadow",
-                                            message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
-                                        )}>
-                                            <p className="break-words whitespace-pre-wrap">{message.content}</p>
-                                            <p className={cn(
-                                                "text-xs shrink-0 self-end pt-1",
-                                                message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
-                                            )}>
-                                                {format(message.timestamp, 'HH:mm')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                                </div>
-                             </div>
-                           ))}
-                        </div>
-                    </ScrollArea>
-                    <div className="p-4 border-t bg-card/50">
-                        {scheduledDateTime && (
-                            <div className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md mb-2 text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4" />
-                                    <span>Mensagem agendada para: {format(scheduledDateTime, "dd/MM 'às' HH:mm")}</span>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setScheduledDateTime(null)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
+                { activeChatPartner ? (
+                    <Card className="flex flex-col h-full rounded-none md:rounded-lg border-0 md:border">
+                        <div className="flex items-center gap-4 p-4 border-b">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
+                                <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold">{activeChatPartner.name}</p>
+                                <p className="text-sm text-muted-foreground">Online</p>
                             </div>
-                        )}
-                        <div className="relative">
-                            <Input placeholder="Digite uma mensagem..." className="pr-24" />
-                             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                                 <Button type="button" size="icon" variant="ghost">
-                                     <Paperclip className="h-5 w-5 text-muted-foreground" />
-                                     <span className="sr-only">Anexar</span>
-                                 </Button>
-                                 <Button type="button" size="icon" variant="ghost" onClick={() => setIsScheduling(true)}>
-                                     <Clock className="h-5 w-5 text-muted-foreground" />
-                                     <span className="sr-only">Agendar</span>
-                                 </Button>
-                                <Button type="submit" size="icon" variant="ghost" className="h-8 w-8">
-                                    <Send className="h-5 w-5 text-muted-foreground" />
-                                    <span className="sr-only">Enviar</span>
-                                </Button>
-                             </div>
                         </div>
-                    </div>
-                </Card>
+                        <ScrollArea className="flex-1 p-4">
+                            <div className="flex flex-col gap-2">
+                            {Object.keys(groupedMessages).sort().map(date => (
+                                <div key={date}>
+                                    <div className="flex justify-center my-4">
+                                    <div className="text-xs text-muted-foreground bg-card px-3 py-1 rounded-full border">
+                                        {formatDateSeparator(date)}
+                                    </div>
+                                    </div>
+                                    <div className="flex flex-col gap-4">
+                                    {groupedMessages[date].map(message => (
+                                        <div key={message.id} className={cn(
+                                            "flex items-end gap-2",
+                                            message.senderId === currentUser.id ? "justify-end" : "justify-start"
+                                        )}>
+                                            {message.senderId !== currentUser.id && activeChatPartner && (
+                                                <Avatar className="h-8 w-8 self-end">
+                                                    <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
+                                                    <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                            )}
+                                            <div className={cn(
+                                                "max-w-xs lg:max-w-md rounded-lg p-3 text-sm flex flex-col shadow",
+                                                message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
+                                            )}>
+                                                <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                                                <p className={cn(
+                                                    "text-xs shrink-0 self-end pt-1",
+                                                    message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                )}>
+                                                    {format(message.timestamp, 'HH:mm')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    </div>
+                                </div>
+                            ))}
+                            </div>
+                        </ScrollArea>
+                        <div className="p-4 border-t bg-card/50">
+                            {scheduledDateTime && (
+                                <div className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md mb-2 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        <span>Mensagem agendada para: {format(scheduledDateTime, "dd/MM 'às' HH:mm")}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setScheduledDateTime(null)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="relative">
+                                <Input placeholder="Digite uma mensagem..." className="pr-24" />
+                                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                                    <Button type="button" size="icon" variant="ghost">
+                                        <Paperclip className="h-5 w-5 text-muted-foreground" />
+                                        <span className="sr-only">Anexar</span>
+                                    </Button>
+                                    <Button type="button" size="icon" variant="ghost" onClick={() => setIsScheduling(true)}>
+                                        <Clock className="h-5 w-5 text-muted-foreground" />
+                                        <span className="sr-only">Agendar</span>
+                                    </Button>
+                                    <Button type="submit" size="icon" variant="ghost" className="h-8 w-8">
+                                        <Send className="h-5 w-5 text-muted-foreground" />
+                                        <span className="sr-only">Enviar</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                ) : (
+                    <Card className="flex flex-col items-center justify-center h-full rounded-none md:rounded-lg border-0 md:border">
+                        <CardHeader className="text-center">
+                            <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit">
+                                <MessageSquare className="h-10 w-10 text-primary" />
+                            </div>
+                            <CardTitle className="mt-4 text-xl font-headline">Bem-vindo ao Chat</CardTitle>
+                            <p className="text-muted-foreground">
+                                Selecione um contato para começar a conversar.
+                            </p>
+                        </CardHeader>
+                    </Card>
+                )}
             </div>
 
             <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
