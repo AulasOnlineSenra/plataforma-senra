@@ -76,7 +76,7 @@ export default function AdminPackagesPage() {
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Plano
             </Button>
-            <Button onClick={handleSaveChanges}>
+            <Button onClick={handleSaveChanges} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Save className="mr-2 h-4 w-4" />
                 Salvar Alterações
             </Button>

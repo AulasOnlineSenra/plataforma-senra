@@ -380,14 +380,6 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
           </CardContent>
         </Card>
       </div>
-       <div className="flex justify-end mt-8">
-          <Button
-            size="lg"
-            onClick={handleSaveChanges}
-          >
-            Salvar Alterações
-          </Button>
-        </div>
     </>
   );
 };
@@ -437,14 +429,6 @@ const StudentProfileForm = ({ onSave, user }: { onSave: (data: User) => void; us
             />
           </div>
         </CardContent>
-         <CardFooter>
-          <Button
-            className="w-full"
-            onClick={handleSaveChanges}
-          >
-            Salvar Alterações
-          </Button>
-        </CardFooter>
       </Card>
   );
 };
@@ -483,10 +467,17 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           Configurações de Perfil
         </h1>
+        <Button
+            size="lg"
+            onClick={() => handleSaveChanges(currentUser)}
+            className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            Salvar Alterações
+          </Button>
       </div>
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
         {currentUser.role === 'teacher' || currentUser.role === 'admin' ? (
