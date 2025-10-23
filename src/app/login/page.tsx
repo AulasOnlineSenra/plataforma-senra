@@ -17,6 +17,7 @@ import { SenraLogo } from '@/components/senra-logo';
 import { UserRole } from '@/lib/types';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getMockUser } from '@/lib/data';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -53,6 +54,8 @@ export default function LoginPage() {
   
   const handleRoleSelect = (selectedRole: UserRole) => {
     localStorage.setItem('userRole', selectedRole);
+    const user = getMockUser(selectedRole);
+    localStorage.setItem('currentUser', JSON.stringify(user));
     router.push('/dashboard');
   }
 

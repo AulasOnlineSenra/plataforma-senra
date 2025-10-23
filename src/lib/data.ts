@@ -1,4 +1,4 @@
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
@@ -175,7 +175,7 @@ export const chatMessages: ChatMessage[] = [
     { id: 'msg-4', senderId: 'teacher-1', receiverId: 'user-1', content: 'Claro, podemos revisar o último tópico na próxima aula.', timestamp: new Date(now.getTime() - 10 * 60000)},
 ];
 
-export const getMockUser = (role: 'student' | 'admin' | 'teacher'): User => {
+export const getMockUser = (role: UserRole): User | Teacher => {
   if (role === 'admin') {
     return users.find(u => u.role === 'admin')!;
   }
@@ -184,5 +184,6 @@ export const getMockUser = (role: 'student' | 'admin' | 'teacher'): User => {
     return teachers[0];
   }
   // In a real app, you'd get the currently logged-in student
-  return users.find(u => u.role === 'student' && u.id === 'user-2')!; // Defaulting to a student with a different timezone
+  const student = users.find(u => u.role === 'student' && u.id === 'user-1')!;
+  return { ...student, nickname: student.name.split(' ')[0] }; // Add nickname for testing
 };

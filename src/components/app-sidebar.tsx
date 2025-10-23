@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -19,7 +19,7 @@ import {
   History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole } from '@/lib/types';
+import { UserRole, User } from '@/lib/types';
 import { getMockUser } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
@@ -94,39 +94,59 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const role = localStorage.getItem('userRole') as UserRole;
+  const updateUser = useCallback(() => {
+    const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setUserRole(role);
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        setUser(getMockUser(role));
+      }
     } else {
       router.push('/login');
     }
   }, [router]);
 
-  if (!userRole) {
+  useEffect(() => {
+    updateUser();
+
+    // Listen for storage changes to update the sidebar in real-time
+    const handleStorageChange = () => {
+      updateUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [updateUser]);
+
+  if (!userRole || !user) {
     return null; // Or a loading spinner
   }
-  
-  const user = getMockUser(userRole);
 
   const roleLabels: Record<UserRole, string> = {
     student: 'Aluno',
     teacher: 'Professor',
     admin: 'Administrador',
   };
-  
+
   const handleLogout = () => {
     localStorage.removeItem('userRole');
+    localStorage.removeItem('currentUser');
     router.push('/login');
-  }
+  };
 
-  const filteredNavItems = navItems.filter((item) =>
+  const filteredNavItems = navItems.filter(item =>
     item.roles.includes(userRole)
   );
   const filteredAdminNavItems =
     userRole === 'admin'
-      ? adminNavItems.filter((item) => item.roles.includes(userRole))
+      ? adminNavItems.filter(item => item.roles.includes(userRole))
       : [];
 
   const renderLink = (item: {href: string, icon: React.ElementType, label: string, roles: string[]}, isLogout = false) => {
