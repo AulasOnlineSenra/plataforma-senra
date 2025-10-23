@@ -59,12 +59,6 @@ const navItems = [
     label: 'Pacotes',
     roles: ['student'],
   },
-  {
-    href: '/dashboard/profile',
-    icon: UserCircle,
-    label: 'Meu Perfil',
-    roles: ['student', 'teacher'],
-  },
 ];
 
 const adminNavItems = [
