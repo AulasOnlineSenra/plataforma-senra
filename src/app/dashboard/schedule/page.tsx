@@ -7,9 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { scheduleEvents } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,8 +19,9 @@ export default function SchedulePage() {
     (e) =>
       date &&
       e.start.getDate() === date.getDate() &&
-      e.start.getMonth() === date.getMonth()
-  );
+      e.start.getMonth() === date.getMonth() &&
+      e.start.getFullYear() === date.getFullYear()
+  ).sort((a,b) => a.start.getTime() - b.start.getTime());
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -31,18 +30,24 @@ export default function SchedulePage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-4 flex flex-col">
           <CardHeader>
             <CardTitle>Calendário</CardTitle>
             <CardDescription>
               Selecione um dia para ver os detalhes.
             </CardDescription>
           </CardHeader>
-          <CardContent className="pl-0 pt-0">
+          <CardContent className="flex-1 flex justify-center items-center">
             <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
+              mode="multiple"
+              selected={scheduleEvents.map(e => e.start)}
+              onSelect={(dates) => {
+                if (dates && dates.length > 0) {
+                    setDate(dates[dates.length -1]);
+                } else {
+                    setDate(undefined);
+                }
+              }}
               className="p-0"
               classNames={{
                 root: 'w-full',
