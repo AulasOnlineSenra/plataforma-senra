@@ -90,8 +90,22 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     }
   }, []);
 
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, href: string) => {
+    e.dataTransfer.setData('text/plain', href);
+    e.dataTransfer.effectAllowed = 'move';
+    (e.currentTarget as HTMLDivElement).classList.add('dragging');
+  };
+
+  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLDivElement).classList.remove('dragging');
+  };
+
   const handleDrop = (e: DragEvent<HTMLDivElement>, itemType: 'main' | 'admin') => {
-    const droppedOnHref = e.currentTarget.dataset.href;
+    e.preventDefault();
+    const droppedOnElement = e.currentTarget as HTMLDivElement;
+    droppedOnElement.classList.remove('drag-over');
+
+    const droppedOnHref = droppedOnElement.dataset.href;
     const draggedHref = e.dataTransfer.getData('text/plain');
     
     if (droppedOnHref === draggedHref) return;
@@ -104,20 +118,32 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     if (!draggedItem) return;
 
     const itemsWithoutDragged = currentItems.filter(item => item.href !== draggedHref);
-    const dropIndex = itemsWithoutDragged.findIndex(item => item.href === droppedOnHref);
+    let dropIndex = itemsWithoutDragged.findIndex(item => item.href === droppedOnHref);
+
+    // Adjust drop index based on mouse position
+    const targetRect = droppedOnElement.getBoundingClientRect();
+    const isAfter = e.clientY > targetRect.top + targetRect.height / 2;
+    if (isAfter) {
+      dropIndex++;
+    }
 
     const newItems = [
-        ...itemsWithoutDragged.slice(0, dropIndex + 1),
+        ...itemsWithoutDragged.slice(0, dropIndex),
         draggedItem,
-        ...itemsWithoutDragged.slice(dropIndex + 1)
+        ...itemsWithoutDragged.slice(dropIndex)
     ];
 
     setItems(newItems);
     localStorage.setItem(storageKey, JSON.stringify(newItems.map(item => item.href)));
   };
 
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, href: string) => {
-    e.dataTransfer.setData('text/plain', href);
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).classList.add('drag-over');
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLDivElement).classList.remove('drag-over');
   }
 
 
@@ -177,8 +203,10 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         <div
             data-href={item.href}
             onDragStart={isDraggable ? (e) => handleDragStart(e, item.href) : undefined}
+            onDragEnd={isDraggable ? handleDragEnd : undefined}
             onDrop={isDraggable ? (e) => handleDrop(e, itemType!) : undefined}
-            onDragOver={isDraggable ? (e) => e.preventDefault() : undefined}
+            onDragOver={isDraggable ? handleDragOver : undefined}
+            onDragLeave={isDraggable ? handleDragLeave : undefined}
             draggable={isDraggable}
         >
         { isLogout ? (
@@ -186,7 +214,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
                 {LinkContent}
             </button>
         ) : (
-             <Link key={item.href} href={item.href}>
+             <Link key={item.href} href={item.href} onDragStart={(e) => e.preventDefault()} draggable={false}>
               {LinkContent}
             </Link>
         )}
