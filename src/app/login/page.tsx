@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,9 +14,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
-import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
 import { ArrowLeft } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -48,6 +49,30 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const credentials = {
+        student: { email: 'aluno@senra.com', pass: '123' },
+        teacher: { email: 'professor@senra.com', pass: '123' },
+        admin: { email: 'admin@senra.com', pass: '123' },
+    };
+
+    if (role && email === credentials[role].email && password === credentials[role].pass) {
+        localStorage.setItem('userRole', role);
+        router.push('/dashboard');
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Credenciais inválidas!",
+            description: "Por favor, verifique seu e-mail e senha.",
+        })
+    }
+  };
 
   const RoleSelection = () => (
     <div className="grid gap-4">
@@ -76,11 +101,11 @@ export default function LoginPage() {
   );
 
   const LoginForm = () => (
-    <>
+    <form onSubmit={handleLogin}>
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="seu@email.com" required />
+          <Input id="email" type="email" placeholder="seu@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="grid gap-2">
           <div className="flex items-center">
@@ -89,10 +114,10 @@ export default function LoginPage() {
               Esqueceu sua senha?
             </Link>
           </div>
-          <Input id="password" type="password" required />
+          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        <Button type="submit" className="w-full" asChild>
-          <Link href="/dashboard">Entrar</Link>
+        <Button type="submit" className="w-full">
+          Entrar
         </Button>
         <div className="relative my-2">
           <div className="absolute inset-0 flex items-center">
@@ -117,7 +142,7 @@ export default function LoginPage() {
           Inscreva-se
         </Link>
       </div>
-    </>
+    </form>
   );
 
   return (

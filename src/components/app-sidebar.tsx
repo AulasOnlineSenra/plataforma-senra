@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -18,9 +19,7 @@ import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
 import { getMockUser } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-
-// In a real app, this would come from an auth context
-const userRole: UserRole = 'student';
+import { useRouter } from 'next/navigation';
 
 const navItems = [
   {
@@ -78,6 +77,22 @@ const adminNavItems = [
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserRole;
+    if (role) {
+      setUserRole(role);
+    } else {
+      router.push('/login');
+    }
+  }, [router]);
+
+  if (!userRole) {
+    return null; // Or a loading spinner
+  }
+  
   const user = getMockUser(userRole);
 
   const roleLabels: Record<UserRole, string> = {
@@ -85,6 +100,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     teacher: 'Professor',
     admin: 'Administrador',
   };
+  
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    router.push('/login');
+  }
 
   const filteredNavItems = navItems.filter((item) =>
     item.roles.includes(userRole)
@@ -94,11 +114,10 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       ? adminNavItems.filter((item) => item.roles.includes(userRole))
       : [];
 
-  const renderLink = (item: typeof navItems[0]) => {
+  const renderLink = (item: {href: string, icon: React.ElementType, label: string, roles: string[]}, isLogout = false) => {
     const isActive = pathname === item.href;
-    const linkContent = (
-      <Link
-        href={item.href}
+    const LinkContent = (
+      <div
         className={cn(
           'flex items-center gap-4 rounded-lg px-3 py-2 transition-all hover:text-primary-foreground hover:bg-sidebar-accent',
           isActive
@@ -109,10 +128,22 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       >
         <item.icon className="h-5 w-5" />
         <span className={'font-medium'}>{item.label}</span>
-      </Link>
+      </div>
     );
 
-     return <div key={item.href}>{linkContent}</div>;
+    if (isLogout) {
+        return (
+            <button key={item.href} onClick={handleLogout} className="w-full text-left">
+                {LinkContent}
+            </button>
+        )
+    }
+
+     return (
+        <Link key={item.href} href={item.href}>
+          {LinkContent}
+        </Link>
+     );
   };
 
   return (
@@ -131,19 +162,19 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </div>
         <div className="flex-1 overflow-y-auto">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
-                    {filteredNavItems.map(renderLink)}
+                    {filteredNavItems.map(item => renderLink(item))}
                     {filteredAdminNavItems.length > 0 && (
                         <>
                             <div className="my-2 mx-3 h-px bg-sidebar-border" />
-                            {filteredAdminNavItems.map(renderLink)}
+                            {filteredAdminNavItems.map(item => renderLink(item))}
                         </>
                     )}
                 </nav>
         </div>
         <div className="mt-auto p-4 border-t border-sidebar-border">
                 <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
-                    {renderLink({ href: '#', icon: Settings, label: 'Configurações', roles: ['student', 'teacher', 'admin']})}
-                    {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: ['student', 'teacher', 'admin']})}
+                    {renderLink({ href: '#', icon: Settings, label: 'Configurações', roles: []})}
+                    {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: []}, true)}
                 </nav>
         </div>
     </aside>

@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +16,28 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getMockUser } from '@/lib/data';
 import { User, LogOut, Settings, UserCircle } from 'lucide-react';
+import { UserRole } from '@/lib/types';
+
 
 export function UserNav() {
-  // In a real app, you'd get the user from a session or context
-  const user = getMockUser('student');
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserRole;
+    if (role) {
+      setUser(getMockUser(role));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    router.push('/login');
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <DropdownMenu>
@@ -51,18 +71,16 @@ export function UserNav() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/admin/settings">
+            <Link href="#">
               <Settings className="mr-2 h-4 w-4" />
               <span>Configurações</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/login">
+        <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>
-          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
