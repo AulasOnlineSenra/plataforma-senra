@@ -19,8 +19,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarCheck, BookCopy, Star, ArrowUpRight } from 'lucide-react';
-import { getMockUser, scheduleEvents } from '@/lib/data';
+import {
+  CalendarCheck,
+  BookCopy,
+  Star,
+  ArrowUpRight,
+  Users,
+  Briefcase,
+} from 'lucide-react';
+import { getMockUser, scheduleEvents, users, teachers } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -45,21 +52,89 @@ export default function DashboardPage() {
     return null; // Or a loading spinner
   }
 
-
-  return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl">
-          Bem-vindo(a) de volta, {user.name.split(' ')[0]}!
-        </h1>
-        {user.role === 'student' && (
-          <div className="ml-auto flex items-center gap-2">
-            <Button asChild>
-              <Link href="/dashboard/booking">Agendar Nova Aula</Link>
-            </Button>
-          </div>
-        )}
+  const renderAdminDashboard = () => (
+    <>
+       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
+            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'scheduled').length}</div>
+            <p className="text-xs text-muted-foreground">Total de aulas na plataforma</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Professores</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teachers.length}</div>
+            <p className="text-xs text-muted-foreground">Total de professores cadastrados</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Alunos</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{users.filter(u => u.role === 'student').length}</div>
+            <p className="text-xs text-muted-foreground">Total de alunos cadastrados</p>
+          </CardContent>
+        </Card>
       </div>
+      <div className="grid gap-4 md:gap-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center">
+            <div className="grid gap-2">
+              <CardTitle>Próximas Aulas (Geral)</CardTitle>
+              <CardDescription>
+                Aulas agendadas para os próximos dias em toda a plataforma.
+              </CardDescription>
+            </div>
+            <Button asChild size="sm" className="ml-auto gap-1">
+              <Link href="/dashboard/schedule">
+                Ver Todas
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Professor(a)</TableHead>
+                  <TableHead>Aluno(a)</TableHead>
+                  <TableHead className="text-right">Data e Horário</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {upcomingEvents.map((event) => (
+                  <TableRow key={event.id}>
+                     <TableCell>
+                      {event.teacherId === 'teacher-1' ? 'Ana Silva' : 'Carlos Lima'}
+                    </TableCell>
+                    <TableCell>
+                      {event.studentId === 'user-1' ? 'João Aluno' : 'Mariana Santos'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+
+  const renderStudentTeacherDashboard = () => (
+    <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -92,8 +167,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <div className="grid gap-4 md:gap-8">
+        <Card>
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
               <CardTitle>Próximas Aulas</CardTitle>
@@ -161,6 +236,25 @@ export default function DashboardPage() {
             </CardFooter>
         </Card>
       </div>
+    </>
+  );
+
+
+  return (
+    <div className="flex flex-1 flex-col gap-4 md:gap-8">
+      <div className="flex items-center">
+        <h1 className="font-headline text-2xl md:text-3xl">
+          Bem-vindo(a) de volta, {user.name.split(' ')[0]}!
+        </h1>
+        {user.role === 'student' && (
+          <div className="ml-auto flex items-center gap-2">
+            <Button asChild>
+              <Link href="/dashboard/booking">Agendar Nova Aula</Link>
+            </Button>
+          </div>
+        )}
+      </div>
+      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
     </div>
   );
 }
