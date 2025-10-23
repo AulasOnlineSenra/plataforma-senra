@@ -109,11 +109,16 @@ export const subjects: Subject[] = [
   { id: 'subj-11', name: 'Sociologia' },
 ];
 
-export const classPackages: ClassPackage[] = [
-    { id: 'pkg-1', name: 'Aula Avulsa', numClasses: 1, pricePerClass: 105.00, popular: false },
-    { id: 'pkg-2', name: 'Pacote 4 Aulas', numClasses: 4, pricePerClass: 95.00, popular: true },
-    { id: 'pkg-3', name: 'Pacote 8 Aulas', numClasses: 8, pricePerClass: 85.00, popular: false },
+export let classPackages: ClassPackage[] = [
+    { id: 'pkg-1', name: 'Aula Avulsa', numClasses: 1, pricePerClass: 105.00, durationMinutes: 90, popular: false },
+    { id: 'pkg-2', name: 'Pacote 4 Aulas', numClasses: 4, pricePerClass: 95.00, durationMinutes: 90, popular: true },
+    { id: 'pkg-3', name: 'Pacote 8 Aulas', numClasses: 8, pricePerClass: 85.00, durationMinutes: 90, popular: false },
 ];
+
+// Function to update packages in memory (for prototype purposes)
+export const updateClassPackages = (newPackages: ClassPackage[]) => {
+  classPackages = newPackages;
+};
 
 const now = new Date();
 export const scheduleEvents: ScheduleEvent[] = [
@@ -177,7 +182,12 @@ export const chatMessages: ChatMessage[] = [
 
 export const getMockUser = (role: UserRole): User | Teacher => {
   if (role === 'admin') {
-    return users.find(u => u.role === 'admin')!;
+    const adminUser = users.find(u => u.role === 'admin')! as Teacher;
+    // Add teacher properties for profile editing
+    adminUser.subjects = [];
+    adminUser.bio = 'Administrador da plataforma Aulas Online Senra.';
+    adminUser.education = 'Gerenciamento de Sistemas';
+    return adminUser;
   }
   if (role === 'teacher') {
     // In a real app, you'd get the currently logged-in teacher

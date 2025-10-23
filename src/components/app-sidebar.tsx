@@ -21,6 +21,7 @@ import {
   TrendingUp,
   HeartHandshake,
   DollarSign,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -87,6 +88,12 @@ const navItems = [
 
 const adminNavItems = [
   {
+    href: '/dashboard/admin/packages',
+    icon: Package,
+    label: 'Planos',
+    roles: ['admin'],
+  },
+  {
     href: '/dashboard/admin/feedback-analysis',
     icon: FileText,
     label: 'Análise de Feedback',
@@ -126,7 +133,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       } else {
-        setUser(getMockUser(role));
+        const newUser = getMockUser(role);
+        setUser(newUser);
+        localStorage.setItem('currentUser', JSON.stringify(newUser));
       }
     } else {
       router.push('/login');

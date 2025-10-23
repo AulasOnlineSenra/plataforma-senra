@@ -30,6 +30,7 @@ export interface ClassPackage {
   name: string;
   numClasses: number;
   pricePerClass: number;
+  durationMinutes: number;
   popular: boolean;
 }
 
