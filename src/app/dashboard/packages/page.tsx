@@ -33,37 +33,34 @@ const packageFeatures = [
 ];
 
 export default function PackagesPage() {
-  const [classesPerWeek, setClassesPerWeek] = useState<number>(2);
+  const [classesPerWeek, setClassesPerWeek] = useState<number>(1);
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
 
   const tiers = useMemo(() => {
     const sortedPackages = [...classPackages].sort(
       (a, b) => a.numClasses - b.numClasses
     );
-    return sortedPackages.map((pkg) => ({
-      minClasses: pkg.numClasses,
-      pricePerClass: pkg.pricePerClass,
+    return sortedPackages.map((pkg, index) => ({
+      ...pkg,
+      tierIndex: index,
     }));
   }, []);
 
-  const getPriceTier = (numClasses: number): ClassPackage | undefined => {
+  const getPriceTier = (numClasses: number): (ClassPackage & { tierIndex: number }) | undefined => {
     let bestTier = tiers[0];
     for (const tier of tiers) {
-      if (numClasses >= tier.minClasses) {
+      if (numClasses >= tier.numClasses) {
         bestTier = tier;
       } else {
         break;
       }
     }
-    const fullPackageInfo = classPackages.find(
-      (p) => p.pricePerClass === bestTier.pricePerClass
-    );
-    return fullPackageInfo;
+    return bestTier;
   };
 
   const calculatedPackage = useMemo(() => {
     if (classesPerWeek <= 0 || numberOfWeeks <= 0)
-      return { total: 0, pricePerClass: 0, totalClasses: 0 };
+      return { total: 0, pricePerClass: 0, totalClasses: 0, tier: tiers[0] };
     const totalClasses = classesPerWeek * numberOfWeeks;
     const tier = getPriceTier(totalClasses);
     const pricePerClass = tier?.pricePerClass ?? tiers[0].pricePerClass;
@@ -71,6 +68,7 @@ export default function PackagesPage() {
       total: totalClasses * pricePerClass,
       pricePerClass: pricePerClass,
       totalClasses: totalClasses,
+      tier: tier,
     };
   }, [classesPerWeek, numberOfWeeks, tiers]);
   
@@ -81,6 +79,46 @@ export default function PackagesPage() {
     }
     return `${numberOfWeeks} ${numberOfWeeks > 1 ? 'semanas' : 'semana'}`;
   }
+
+  const getDiscountMessage = () => {
+    if (!calculatedPackage.tier) return null;
+  
+    const currentTier = calculatedPackage.tier;
+    const nextTierIndex = currentTier.tierIndex + 1;
+  
+    if (nextTierIndex < tiers.length) {
+      const nextTier = tiers[nextTierIndex];
+      const classesNeeded = nextTier.numClasses - calculatedPackage.totalClasses;
+  
+      if (classesNeeded > 0) {
+        if (currentTier.numClasses === 1) {
+           return (
+            <span>
+              Adicione mais {classesNeeded} {classesNeeded > 1 ? 'aulas' : 'aula'} para economizar{' '}
+              <span className="font-bold text-green-600">
+                R$ {(currentTier.pricePerClass - nextTier.pricePerClass).toFixed(2).replace('.',',')}
+              </span> por aula!
+            </span>
+          );
+        }
+        return (
+          <span>
+            Você está no nível <span className="font-bold">{currentTier.name}</span>. Adicione mais {classesNeeded} {classesNeeded > 1 ? 'aulas' : 'aula'} para o próximo desconto!
+          </span>
+        );
+      }
+    }
+  
+    if (currentTier.tierIndex > 0) {
+      return (
+        <span className="text-green-600 font-semibold">
+          Ótimo! Você atingiu um dos nossos melhores descontos!
+        </span>
+      );
+    }
+  
+    return 'Nenhum desconto aplicado para aulas avulsas.';
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -166,8 +204,8 @@ export default function PackagesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 items-center justify-center gap-6 text-center">
-             <div className="grid gap-2">
-                <Label htmlFor="classes-per-week" className="text-base font-medium">
+             <div className="grid gap-2 text-center">
+                <Label htmlFor="classes-per-week" className="text-base font-bold">
                     Aulas por Semana
                 </Label>
                 <Input
@@ -179,7 +217,7 @@ export default function PackagesPage() {
                   min="1"
                 />
               </div>
-             <div className="grid gap-2">
+             <div className="grid gap-2 text-center">
                 <Label htmlFor="number-of-weeks" className="text-base font-medium">
                    Durante
                 </Label>
@@ -212,6 +250,9 @@ export default function PackagesPage() {
                  </p>
                  <p className="text-xs text-muted-foreground mt-2">
                     Frequência: {classesPerWeek}x por semana por {getPeriodLabel()}
+                 </p>
+                 <p className="text-xs text-muted-foreground mt-3 px-2">
+                   {getDiscountMessage()}
                  </p>
                </div>
           </CardContent>
