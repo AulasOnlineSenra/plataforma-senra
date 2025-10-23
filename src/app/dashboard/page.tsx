@@ -36,20 +36,13 @@ import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { UserRole, User } from '@/lib/types';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
 import { NewUsersChart } from '@/components/charts/new-users-chart';
@@ -117,36 +110,52 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Visão Geral da Receita</CardTitle>
-            <CardDescription>Receita mensal dos últimos 6 meses.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RevenueChart />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Aulas por Disciplina</CardTitle>
-            <CardDescription>Distribuição das aulas agendadas.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SubjectsChart />
-          </CardContent>
-        </Card>
-      </div>
+      <Carousel
+          opts={{
+            align: "start",
+          }}
+          className="w-full"
+        >
+          <CarouselContent>
+            <CarouselItem className="md:basis-1/2 lg:basis-2/3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Visão Geral da Receita</CardTitle>
+                  <CardDescription>Receita mensal dos últimos 6 meses.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RevenueChart />
+                </CardContent>
+              </Card>
+            </CarouselItem>
+            <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Aulas por Disciplina</CardTitle>
+                  <CardDescription>Distribuição das aulas agendadas.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SubjectsChart />
+                </CardContent>
+              </Card>
+            </CarouselItem>
+            <CarouselItem className="md:basis-1/2 lg:basis-full">
+               <Card>
+                <CardHeader>
+                  <CardTitle>Aquisição de Novos Usuários</CardTitle>
+                  <CardDescription>Novos alunos e professores registrados por mês.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <NewUsersChart />
+                </CardContent>
+              </Card>
+            </CarouselItem>
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+      
        <div className="grid gap-4 md:gap-8">
-         <Card>
-          <CardHeader>
-            <CardTitle>Aquisição de Novos Usuários</CardTitle>
-            <CardDescription>Novos alunos e professores registrados por mês.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <NewUsersChart />
-          </CardContent>
-        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
