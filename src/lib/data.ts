@@ -13,6 +13,10 @@ export const users: User[] = [
     role: 'student',
     status: 'active',
     timezone: 'America/Sao_Paulo',
+    nickname: 'João',
+    phone: '(11) 91234-5678',
+    bio: 'Estudante de engenharia buscando aprofundar meus conhecimentos em cálculo e física.',
+    education: 'Cursando Engenharia Civil - Mackenzie',
   },
   {
     id: 'admin-1',
@@ -204,7 +208,7 @@ export const getMockUser = (role: UserRole): User | Teacher => {
   }
   // In a real app, you'd get the currently logged-in student
   const student = users.find(u => u.role === 'student' && u.id === 'user-1')!;
-  return { ...student, nickname: student.name.split(' ')[0] }; // Add nickname for testing
+  return student as Teacher;
 };
 
 export const suggestions: Suggestion[] = [

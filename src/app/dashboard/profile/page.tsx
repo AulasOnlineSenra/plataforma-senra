@@ -480,11 +480,7 @@ export default function ProfilePage() {
           </Button>
       </div>
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-        {currentUser.role === 'teacher' || currentUser.role === 'admin' ? (
-            <TeacherProfileForm onSave={handleSaveChanges} user={currentUser as Teacher} />
-        ) : (
-            <StudentProfileForm onSave={handleSaveChanges} user={currentUser as User} />
-        )}
+        <TeacherProfileForm onSave={handleSaveChanges} user={currentUser as Teacher} />
       </div>
     </div>
   );

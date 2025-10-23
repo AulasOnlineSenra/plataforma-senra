@@ -9,6 +9,10 @@ export interface User {
   role: UserRole;
   status?: 'active' | 'inactive';
   timezone?: string;
+  nickname?: string;
+  phone?: string;
+  bio?: string;
+  education?: string;
 }
 
 export interface Subject {
@@ -18,11 +22,7 @@ export interface Subject {
 
 export interface Teacher extends User {
   role: 'teacher';
-  nickname?: string;
-  phone?: string;
   subjects: string[]; // array of subject IDs
-  bio: string;
-  education: string;
   availability: Record<string, string[]>; // e.g. { "monday": ["09:00", "10:00"] }
 }
 
