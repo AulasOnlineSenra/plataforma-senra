@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -16,18 +19,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { CalendarCheck, BookCopy, Star, ArrowUpRight } from 'lucide-react';
 import { getMockUser, scheduleEvents } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
+import { UserRole, User } from '@/lib/types';
 
 export default function DashboardPage() {
-  const user = getMockUser('student');
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserRole | null;
+    if (role) {
+      setUser(getMockUser(role));
+    }
+  }, []);
+
   const upcomingEvents = scheduleEvents
     .filter((e) => e.status === 'scheduled' && e.start > new Date())
     .sort((a, b) => a.start.getTime() - b.start.getTime())
     .slice(0, 3);
+    
+  if (!user) {
+    return null; // Or a loading spinner
+  }
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -35,11 +52,13 @@ export default function DashboardPage() {
         <h1 className="font-headline text-2xl md:text-3xl">
           Bem-vindo(a) de volta, {user.name.split(' ')[0]}!
         </h1>
-        <div className="ml-auto flex items-center gap-2">
-          <Button asChild>
-            <Link href="/dashboard/booking">Agendar Nova Aula</Link>
-          </Button>
-        </div>
+        {user.role === 'student' && (
+          <div className="ml-auto flex items-center gap-2">
+            <Button asChild>
+              <Link href="/dashboard/booking">Agendar Nova Aula</Link>
+            </Button>
+          </div>
+        )}
       </div>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
@@ -95,7 +114,7 @@ export default function DashboardPage() {
                 <TableRow>
                   <TableHead>Disciplina</TableHead>
                   <TableHead className="hidden sm:table-cell">
-                    Professor(a)
+                    {user.role === 'student' ? 'Professor(a)' : 'Aluno(a)'}
                   </TableHead>
                   <TableHead className="text-right">Data e Horário</TableHead>
                 </TableRow>
@@ -107,7 +126,10 @@ export default function DashboardPage() {
                       <div className="font-medium">{event.subject}</div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {event.teacherId === 'teacher-1' ? 'Ana Silva' : 'Carlos Lima'}
+                      {user.role === 'student' ? 
+                        (event.teacherId === 'teacher-1' ? 'Ana Silva' : 'Carlos Lima') :
+                        (event.studentId === 'user-1' ? 'João Aluno' : 'Mariana Santos')
+                      }
                     </TableCell>
                     <TableCell className="text-right">
                       {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })}
