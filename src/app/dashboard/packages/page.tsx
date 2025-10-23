@@ -218,14 +218,14 @@ export default function PackagesPage() {
                 />
               </div>
              <div className="grid gap-2 text-center">
-                <Label htmlFor="number-of-weeks" className="text-base font-medium">
+                <Label htmlFor="number-of-weeks" className="text-base font-bold">
                    Durante
                 </Label>
                  <Select
                     value={String(numberOfWeeks)}
                     onValueChange={(value) => setNumberOfWeeks(Number(value))}
                   >
-                    <SelectTrigger className="w-40 text-lg h-12 mx-auto">
+                    <SelectTrigger className="w-40 text-lg h-12 mx-auto justify-center">
                       <SelectValue placeholder="Selecione o período" />
                     </SelectTrigger>
                     <SelectContent>
