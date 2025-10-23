@@ -22,6 +22,7 @@ import {
   HeartHandshake,
   DollarSign,
   Package,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -115,6 +116,12 @@ const adminNavItems = [
     href: '/dashboard/admin/crm',
     icon: HeartHandshake,
     label: 'CRM',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/aos-agents',
+    icon: Bot,
+    label: 'AOS Agents',
     roles: ['admin'],
   },
 ];
