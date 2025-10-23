@@ -93,7 +93,13 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const handleDragStart = (e: DragEvent<HTMLDivElement>, href: string) => {
     e.dataTransfer.setData('text/plain', href);
     e.dataTransfer.effectAllowed = 'move';
-    (e.currentTarget as HTMLDivElement).classList.add('dragging');
+    const target = e.currentTarget as HTMLDivElement;
+    target.classList.add('dragging');
+    // Prevent the default drag ghost image (link preview)
+    if (e.dataTransfer) {
+      const empty = new Image();
+      e.dataTransfer.setDragImage(empty, 0, 0);
+    }
   };
 
   const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
@@ -201,6 +207,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
     const WrapperComponent = (
         <div
+            key={item.href}
             data-href={item.href}
             onDragStart={isDraggable ? (e) => handleDragStart(e, item.href) : undefined}
             onDragEnd={isDraggable ? handleDragEnd : undefined}
@@ -210,11 +217,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
             draggable={isDraggable}
         >
         { isLogout ? (
-            <button key={item.href} onClick={handleLogout} className="w-full text-left">
+            <button onClick={handleLogout} className="w-full text-left">
                 {LinkContent}
             </button>
         ) : (
-             <Link key={item.href} href={item.href} onDragStart={(e) => e.preventDefault()} draggable={false}>
+             <Link href={item.href} onDragStart={(e) => e.preventDefault()} draggable={false}>
               {LinkContent}
             </Link>
         )}
