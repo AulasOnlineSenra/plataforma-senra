@@ -204,7 +204,7 @@ export default function PackagesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid lg:grid-cols-2 items-center justify-center gap-8 text-center p-6 md:p-8">
-            <div className="grid sm:grid-cols-2 gap-6 items-center">
+            <div className="grid grid-cols-1 gap-6 items-center">
               <div className="grid gap-2 text-center">
                 <Label htmlFor="classes-per-week" className="text-base font-bold">
                   Aulas por Semana
