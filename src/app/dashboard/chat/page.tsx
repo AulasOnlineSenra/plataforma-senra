@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   CardContent
@@ -9,13 +10,27 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X } from 'lucide-react';
 import { chatContacts, chatMessages, getMockUser, teachers, users } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { User, UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+
 
 const roleLabels: Record<UserRole, string> = {
   admin: 'Admin',
@@ -26,6 +41,13 @@ const roleLabels: Record<UserRole, string> = {
 export default function ChatPage() {
     const currentUser = getMockUser('student');
     const activeChatPartner = teachers[0];
+    const { toast } = useToast();
+
+    const [isScheduling, setIsScheduling] = useState(false);
+    const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
+    const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
+    const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
+
 
     const allUsers: User[] = [...users, ...teachers];
 
@@ -48,6 +70,28 @@ export default function ChatPage() {
       if (isYesterday(date)) return 'Ontem';
       return format(date, 'dd \'de\' MMMM \'de\' yyyy', { locale: ptBR });
     }
+    
+    const handleScheduleMessage = () => {
+        if (!selectedScheduleDate || !selectedScheduleTime) return;
+
+        const [hours, minutes] = selectedScheduleTime.split(':').map(Number);
+        const newScheduledDate = new Date(selectedScheduleDate);
+        newScheduledDate.setHours(hours, minutes, 0, 0);
+
+        setScheduledDateTime(newScheduledDate);
+        setIsScheduling(false);
+        toast({
+            title: 'Mensagem Agendada',
+            description: `Sua mensagem será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+        });
+    }
+
+    const availableTimes = Array.from({ length: 24 * 2 }, (_, i) => {
+        const hours = Math.floor(i / 2);
+        const minutes = (i % 2) * 30;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    });
+
 
     return (
         <div className="flex-1 flex flex-col bg-gradient-to-br from-background to-accent/20 p-0 -m-4 sm:-m-6">
@@ -152,6 +196,17 @@ export default function ChatPage() {
                         </div>
                     </ScrollArea>
                     <div className="p-4 border-t bg-card/50">
+                        {scheduledDateTime && (
+                            <div className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md mb-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Mensagem agendada para: {format(scheduledDateTime, "dd/MM 'às' HH:mm")}</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setScheduledDateTime(null)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                         <div className="relative">
                             <Input placeholder="Digite uma mensagem..." className="pr-24" />
                              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
@@ -159,7 +214,7 @@ export default function ChatPage() {
                                      <Paperclip className="h-5 w-5 text-muted-foreground" />
                                      <span className="sr-only">Anexar</span>
                                  </Button>
-                                 <Button type="button" size="icon" variant="ghost">
+                                 <Button type="button" size="icon" variant="ghost" onClick={() => setIsScheduling(true)}>
                                      <Clock className="h-5 w-5 text-muted-foreground" />
                                      <span className="sr-only">Agendar</span>
                                  </Button>
@@ -172,6 +227,49 @@ export default function ChatPage() {
                     </div>
                 </Card>
             </div>
+
+            <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                    <DialogTitle>Agendar Mensagem</DialogTitle>
+                    <DialogDescription>
+                        Selecione a data e o horário para enviar esta mensagem.
+                    </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="flex justify-center">
+                            <Calendar
+                                mode="single"
+                                selected={selectedScheduleDate}
+                                onSelect={setSelectedScheduleDate}
+                                className="rounded-md border"
+                                locale={ptBR}
+                                disabled={{ before: new Date() }}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="time">Horário</Label>
+                            <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Selecione um horário" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-60">
+                                {availableTimes.map((time) => (
+                                    <SelectItem key={time} value={time}>{time}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleScheduleMessage}>Agendar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     )
 }
