@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getMockUser, teachers, subjects } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserRole } from '@/lib/types';
+import { UserRole, Teacher, User } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Calendar,
@@ -38,8 +38,10 @@ type AvailabilitySlot = {
 };
 
 const TeacherProfileForm = () => {
-  const teacher = teachers[0];
+  const initialTeacher = teachers[0];
   const { toast } = useToast();
+  const [teacher, setTeacher] = useState<Teacher>(initialTeacher);
+
   const days = [
     { id: 'monday', label: 'Segunda-feira' },
     { id: 'tuesday', label: 'Terça-feira' },
@@ -58,8 +60,21 @@ const TeacherProfileForm = () => {
   const [availability, setAvailability] = useState(initialAvailability);
   const [editingSlot, setEditingSlot] = useState<{ dayId: string; index: number } | null>(null);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setTeacher(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubjectChange = (subjectId: string, checked: boolean) => {
+    setTeacher(prev => {
+      const newSubjects = checked
+        ? [...prev.subjects, subjectId]
+        : prev.subjects.filter(id => id !== subjectId);
+      return { ...prev, subjects: newSubjects };
+    });
+  };
+
   const handleAddSlot = (dayId: string) => {
-    // In a real app, this would open a modal to select times
     const newSlot = { start: '09:00', end: '12:00' };
     setAvailability((prev) => ({
       ...prev,
@@ -124,20 +139,26 @@ const TeacherProfileForm = () => {
                 <Label htmlFor="name">Nome</Label>
                 <Input
                   id="name"
-                  defaultValue={teacher.name.split(' ')[0]}
+                  value={teacher.name}
+                  onChange={handleInputChange}
                 />
               </div>
-              <div className="grid gap-2">
+               <div className="grid gap-2">
                 <Label htmlFor="lastName">Sobrenome</Label>
                 <Input
                   id="lastName"
-                  defaultValue={teacher.name.split(' ').slice(1).join(' ')}
+                  placeholder="Não aplicável"
+                  value={teacher.name.split(' ').slice(1).join(' ')}
+                  onChange={(e) => {
+                    const firstName = teacher.name.split(' ')[0];
+                    setTeacher(prev => ({...prev, name: `${firstName} ${e.target.value}`}))
+                  }}
                 />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="nickname">Apelido (opcional)</Label>
-              <Input id="nickname" defaultValue={teacher.nickname} />
+              <Input id="nickname" value={teacher.nickname} onChange={handleInputChange} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -145,7 +166,8 @@ const TeacherProfileForm = () => {
                 <Input
                   id="email"
                   type="email"
-                  defaultValue={teacher.email}
+                  value={teacher.email}
+                  onChange={handleInputChange}
                 />
               </div>
               <div className="grid gap-2">
@@ -153,7 +175,8 @@ const TeacherProfileForm = () => {
                 <Input
                   id="phone"
                   type="tel"
-                  defaultValue={teacher.phone}
+                  value={teacher.phone}
+                  onChange={handleInputChange}
                   placeholder="(DDD) 99999-9999"
                 />
               </div>
@@ -165,7 +188,8 @@ const TeacherProfileForm = () => {
             <Label htmlFor="bio">Descrição (Bio)</Label>
             <Textarea
               id="bio"
-              defaultValue={teacher.bio}
+              value={teacher.bio}
+              onChange={handleInputChange}
               rows={4}
               placeholder="Fale um pouco sobre sua experiência, metodologia e paixão por ensinar."
             />
@@ -176,7 +200,8 @@ const TeacherProfileForm = () => {
             <Label htmlFor="education">Formação</Label>
             <Input
               id="education"
-              defaultValue={teacher.education}
+              value={teacher.education}
+              onChange={handleInputChange}
               placeholder="Ex: Mestrado em Física Aplicada - USP"
             />
           </div>
@@ -195,7 +220,8 @@ const TeacherProfileForm = () => {
             <div key={subject.id} className="flex items-center space-x-2">
               <Checkbox
                 id={`subject-${subject.id}`}
-                defaultChecked={teacher.subjects.includes(subject.id)}
+                checked={teacher.subjects.includes(subject.id)}
+                onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
               />
               <label
                 htmlFor={`subject-${subject.id}`}
@@ -342,7 +368,21 @@ const TeacherProfileForm = () => {
 };
 
 const StudentProfileForm = () => {
-  const student = getMockUser('student');
+  const [student, setStudent] = useState<User | null>(null);
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    const mockStudent = getMockUser('student');
+    setStudent(mockStudent);
+  }, []);
+  
+  if (!student) return null;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setStudent(prev => prev ? { ...prev, [id]: value } : null);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -352,11 +392,11 @@ const StudentProfileForm = () => {
       <CardContent className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="name">Nome Completo</Label>
-          <Input id="name" defaultValue={student.name} />
+          <Input id="name" value={student.name} onChange={handleInputChange} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" defaultValue={student.email} />
+          <Input id="email" type="email" value={student.email} onChange={handleInputChange} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="password">Nova Senha</Label>
@@ -364,6 +404,8 @@ const StudentProfileForm = () => {
             id="password"
             type="password"
             placeholder="Deixe em branco para não alterar"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
       </CardContent>
@@ -373,6 +415,12 @@ const StudentProfileForm = () => {
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserRole | null;
+    setCurrentRole(role);
+  }, []);
 
   const handleSaveChanges = () => {
     // In a real application, you would handle the form submission here.
@@ -383,6 +431,8 @@ export default function ProfilePage() {
     });
   };
 
+  if (!currentRole) return null; // or a loading spinner
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
@@ -391,11 +441,10 @@ export default function ProfilePage() {
         </h1>
       </div>
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-        {userRole === 'teacher' ? <TeacherProfileForm /> : <StudentProfileForm />}
+        {currentRole === 'teacher' ? <TeacherProfileForm /> : <StudentProfileForm />}
         <div className="flex justify-end">
           <Button
             size="lg"
-            className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={handleSaveChanges}
           >
             Salvar Alterações
@@ -405,3 +454,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
