@@ -113,15 +113,13 @@ export default function ChatPage() {
                                             "max-w-xs lg:max-w-md rounded-lg p-3 text-sm flex flex-col shadow",
                                             message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
                                         )}>
-                                            <div className="flex items-end gap-2">
-                                                <p className="break-words">{message.content}</p>
-                                                <p className={cn(
-                                                  "text-xs shrink-0",
-                                                   message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
-                                                )}>
-                                                  {format(message.timestamp, 'HH:mm')}
-                                                </p>
-                                            </div>
+                                            <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                                            <p className={cn(
+                                                "text-xs shrink-0 self-end pt-1",
+                                                message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                            )}>
+                                                {format(message.timestamp, 'HH:mm')}
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
