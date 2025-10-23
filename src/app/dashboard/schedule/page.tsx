@@ -92,22 +92,16 @@ export default function SchedulePage() {
             </CardHeader>
             <CardContent className="flex-1 flex justify-center items-center p-0">
               <Calendar
-                mode="multiple"
-                selected={scheduleEvents.map(e => e.start)}
-                onSelect={(dates) => {
-                  if (dates && dates.length > 0) {
-                      setDate(dates[dates.length -1]);
-                  } else {
-                      setDate(undefined);
-                  }
-                }}
+                mode="single"
+                selected={date}
+                onSelect={setDate}
                 className="p-0 sm:p-3"
                 classNames={{
                   root: 'w-full',
                   months: 'w-full',
                   month: 'w-full',
                   table: 'w-full',
-                  caption_label: 'font-headline text-lg mb-2',
+                  caption_label: 'font-headline text-lg mb-4',
                   head_row: 'w-full flex',
                   head_cell: 'flex-1',
                   row: 'w-full flex mt-2',

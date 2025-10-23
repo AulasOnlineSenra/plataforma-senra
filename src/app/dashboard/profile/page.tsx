@@ -27,6 +27,7 @@ import {
   Trash2,
   Plus,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const userRole: UserRole = 'teacher';
 
@@ -37,12 +38,13 @@ type AvailabilitySlot = {
 
 const TeacherProfileForm = () => {
   const teacher = teachers[0];
+  const { toast } = useToast();
   const days = [
-    { id: 'monday', label: 'Segunda' },
-    { id: 'tuesday', label: 'Terça' },
-    { id: 'wednesday', label: 'Quarta' },
-    { id: 'thursday', label: 'Quinta' },
-    { id: 'friday', label: 'Sexta' },
+    { id: 'monday', label: 'Segunda-feira' },
+    { id: 'tuesday', label: 'Terça-feira' },
+    { id: 'wednesday', label: 'Quarta-feira' },
+    { id: 'thursday', label: 'Quinta-feira' },
+    { id: 'friday', label: 'Sexta-feira' },
     { id: 'saturday', label: 'Sábado' },
   ];
 
@@ -61,6 +63,13 @@ const TeacherProfileForm = () => {
       [dayId]: [...(prev[dayId] || []), newSlot],
     }));
   };
+
+  const handleEditSlot = (dayId: string, index: number) => {
+    toast({
+        title: "Funcionalidade em desenvolvimento",
+        description: "A edição de horários estará disponível em breve."
+    })
+  }
 
   const handleRemoveSlot = (dayId: string, index: number) => {
     setAvailability((prev) => ({
@@ -187,7 +196,7 @@ const TeacherProfileForm = () => {
           {days.map((day) => (
             <div
               key={day.id}
-              className="grid grid-cols-[100px_1fr] items-start gap-4 border-b pb-4 last:border-b-0"
+              className="grid grid-cols-[120px_1fr] items-start gap-4 border-b pb-4 last:border-b-0"
             >
               <h4 className="font-semibold pt-2">{day.label}</h4>
               <div className="flex flex-col gap-2">
@@ -197,7 +206,7 @@ const TeacherProfileForm = () => {
                       <span>{slot.start}</span> - <span>{slot.end}</span>
                     </div>
                     <div className="flex items-center">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                        <Button
