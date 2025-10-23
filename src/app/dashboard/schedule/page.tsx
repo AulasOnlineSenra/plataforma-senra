@@ -102,14 +102,17 @@ export default function SchedulePage() {
 
   const getCardDescription = () => {
     if (!date) return 'Resumo das suas aulas para o período selecionado.';
-    if (filterType === 'day') return `Aulas para ${format(date, 'dd/MM/yyyy')}`;
+    const classCount = filteredEvents.length;
+    const pluralize = (count: number) => count === 1 ? 'aula agendada' : 'aulas agendadas';
+
+    if (filterType === 'day') return `${classCount} ${pluralize(classCount)} para ${format(date, 'dd/MM/yyyy')}`;
     if (filterType === 'week') {
       const start = startOfWeek(date, { locale: ptBR });
       const end = endOfWeek(date, { locale: ptBR });
-      return `Aulas de ${format(start, 'dd/MM')} a ${format(end, 'dd/MM/yyyy')}`;
+      return `${classCount} ${pluralize(classCount)} de ${format(start, 'dd/MM')} a ${format(end, 'dd/MM/yyyy')}`;
     }
     if (filterType === 'month') {
-      return `Aulas para ${format(date, 'MMMM \'de\' yyyy', { locale: ptBR })}`;
+      return `${classCount} ${pluralize(classCount)} para ${format(date, 'MMMM \'de\' yyyy', { locale: ptBR })}`;
     }
   };
 
@@ -186,29 +189,17 @@ export default function SchedulePage() {
                         key={event.id}
                         className="flex items-center gap-4 rounded-lg border p-3"
                       >
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-center flex-col leading-tight">
-                          <span className="text-xs">{format(event.start, 'dd/MM')}</span>
-                          <span className="font-bold">
-                            {format(event.start, 'HH:mm')}
-                          </span>
-                        </div>
+                        <Avatar className='h-12 w-12'>
+                            <AvatarImage src={student?.avatarUrl} alt={student?.name} />
+                            <AvatarFallback>{student ? student.name.charAt(0) : '?'}</AvatarFallback>
+                        </Avatar>
                         <div className="grid flex-1 gap-1">
                           <p className="font-semibold">{event.title}</p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            {student ? (
-                                <>
-                                    <Avatar className='h-5 w-5'>
-                                        <AvatarImage src={student.avatarUrl} alt={student.name} />
-                                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span>{student.name}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <UserIcon className="h-4 w-4" />
-                                    <span>Aluno não encontrado</span>
-                                </>
-                            )}
+                            <span>{student?.name}</span>
+                          </div>
+                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>{format(event.start, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</span>
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
