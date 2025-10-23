@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
-import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
@@ -81,9 +81,10 @@ export default function SchedulePage() {
 
   const handleCancelClick = (event: ScheduleEvent) => {
     toast({
-      title: "Confirmar Cancelamento",
-      description: "Você tem certeza que deseja cancelar esta aula?",
-      variant: "destructive",
+      title: `Cancelar aula de ${event.subject}?`,
+      description: 'A ação será confirmada em 5 segundos.',
+      variant: 'destructive',
+      duration: 5000,
       action: (
         <ToastAction altText="Confirmar" onClick={() => handleConfirmCancel(event.id)}>
           Confirmar
@@ -139,7 +140,7 @@ export default function SchedulePage() {
                   months: 'w-full',
                   month: 'w-full',
                   table: 'w-full',
-                  caption_label: 'font-headline text-lg mb-4',
+                  caption_label: 'font-headline text-lg mb-2',
                   head_row: 'w-full flex',
                   head_cell: 'flex-1',
                   row: 'w-full flex mt-2',
@@ -186,18 +187,20 @@ export default function SchedulePage() {
                         key={event.id}
                         className="flex items-center gap-4 rounded-lg border p-3"
                       >
-                        <Avatar className='h-12 w-12'>
-                            <AvatarImage src={student?.avatarUrl} alt={student?.name} />
-                            <AvatarFallback>{student ? student.name.charAt(0) : '?'}</AvatarFallback>
-                        </Avatar>
-                        <div className="grid flex-1 gap-1">
-                          <p className="font-semibold">{event.title}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{student?.name}</span>
-                          </div>
-                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{format(event.start, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</span>
-                          </div>
+                        <div className="flex items-center gap-3 flex-1">
+                            <Avatar className='h-12 w-12'>
+                                <AvatarImage src={student?.avatarUrl} alt={student?.name} />
+                                <AvatarFallback>{student ? student.name.charAt(0) : '?'}</AvatarFallback>
+                            </Avatar>
+                            <div className="grid gap-1">
+                              <p className="font-semibold">{student?.name}</p>
+                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>{format(event.start, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</span>
+                              </div>
+                            </div>
+                        </div>
+                        <div className="text-center text-sm text-muted-foreground">
+                          {event.title}
                         </div>
                         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
                             <XCircle className="h-5 w-5" />
