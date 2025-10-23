@@ -18,7 +18,6 @@ import { getMockUser, teachers, subjects } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserRole } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import {
   Link,
   Calendar,
@@ -26,6 +25,8 @@ import {
   Pencil,
   Trash2,
   Plus,
+  Save,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,6 +55,7 @@ const TeacherProfileForm = () => {
   }, {} as Record<string, AvailabilitySlot[]>);
 
   const [availability, setAvailability] = useState(initialAvailability);
+  const [editingSlot, setEditingSlot] = useState<{ dayId: string; index: number } | null>(null);
 
   const handleAddSlot = (dayId: string) => {
     // In a real app, this would open a modal to select times
@@ -65,10 +67,28 @@ const TeacherProfileForm = () => {
   };
 
   const handleEditSlot = (dayId: string, index: number) => {
-    toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "A edição de horários estará disponível em breve."
-    })
+    setEditingSlot({ dayId, index });
+  }
+
+  const handleCancelEdit = () => {
+    setEditingSlot(null);
+  };
+
+  const handleSaveSlot = (dayId: string, index: number, newStart: string, newEnd: string) => {
+    if (!newStart || !newEnd || newStart >= newEnd) {
+        toast({
+            variant: "destructive",
+            title: "Horário Inválido",
+            description: "O horário de início deve ser anterior ao horário de término."
+        });
+        return;
+    }
+    setAvailability(prev => {
+        const newAvailability = { ...prev };
+        newAvailability[dayId][index] = { start: newStart, end: newEnd };
+        return newAvailability;
+    });
+    setEditingSlot(null);
   }
 
   const handleRemoveSlot = (dayId: string, index: number) => {
@@ -200,32 +220,51 @@ const TeacherProfileForm = () => {
             >
               <h4 className="font-semibold pt-2">{day.label}</h4>
               <div className="flex flex-col gap-2">
-                {(availability[day.id] || []).map((slot, index) => (
+                {(availability[day.id] || []).map((slot, index) => {
+                  const isEditing = editingSlot?.dayId === day.id && editingSlot?.index === index;
+                  
+                  return (
                   <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm">
-                      <span>{slot.start}</span> - <span>{slot.end}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                       <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleAddSlot(day.id)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveSlot(day.id, index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                    {isEditing ? (
+                        <>
+                            <Input type="time" id={`start-${day.id}-${index}`} defaultValue={slot.start} className="w-24"/>
+                            <span className="mx-2">-</span>
+                            <Input type="time" id={`end-${day.id}-${index}`} defaultValue={slot.end} className="w-24"/>
+                            <Button variant="ghost" size="icon" onClick={() => handleSaveSlot(day.id, index, (document.getElementById(`start-${day.id}-${index}`) as HTMLInputElement).value, (document.getElementById(`end-${day.id}-${index}`) as HTMLInputElement).value)}>
+                                <Save className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                                <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                           <div className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm">
+                             <span>{slot.start}</span> - <span>{slot.end}</span>
+                           </div>
+                           <div className="flex items-center">
+                             <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
+                               <Pencil className="h-4 w-4" />
+                             </Button>
+                              <Button
+                               variant="ghost"
+                               size="icon"
+                               onClick={() => handleAddSlot(day.id)}
+                             >
+                               <Plus className="h-4 w-4" />
+                             </Button>
+                             <Button
+                               variant="ghost"
+                               size="icon"
+                               onClick={() => handleRemoveSlot(day.id, index)}
+                             >
+                               <Trash2 className="h-4 w-4 text-destructive" />
+                             </Button>
+                           </div>
+                        </>
+                    )}
                   </div>
-                ))}
+                )})}
                 {(availability[day.id] || []).length === 0 && (
                    <Button
                       variant="outline"
