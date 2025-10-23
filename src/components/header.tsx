@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { AppSidebar } from './app-sidebar';
 import { UserNav } from './user-nav';
-import { AppLogo } from './app-logo';
+import { SenraLogo } from './senra-logo';
 
 export function Header() {
   return (
@@ -21,7 +21,9 @@ export function Header() {
       </Sheet>
       <div className="flex w-full items-center justify-between sm:justify-end">
         <div className="sm:hidden">
-          <AppLogo />
+            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                <SenraLogo className="h-10 w-auto" />
+            </Link>
         </div>
         <UserNav />
       </div>

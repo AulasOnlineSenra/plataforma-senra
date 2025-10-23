@@ -14,9 +14,10 @@ import {
   FileText,
   LogOut,
 } from 'lucide-react';
-import { AppLogo } from './app-logo';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
+import { getMockUser } from '@/lib/data';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
 // In a real app, this would come from an auth context
 const userRole: UserRole = 'student';
@@ -77,6 +78,13 @@ const adminNavItems = [
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
+  const user = getMockUser(userRole);
+
+  const roleLabels: Record<UserRole, string> = {
+    student: 'Aluno',
+    teacher: 'Professor',
+    admin: 'Administrador',
+  };
 
   const filteredNavItems = navItems.filter((item) =>
     item.roles.includes(userRole)
@@ -109,8 +117,17 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   return (
     <aside className={cn("flex h-full max-h-screen flex-col gap-2", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
-        <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
-            <AppLogo />
+        <div className="flex h-auto items-center border-b border-sidebar-border p-4 lg:h-auto">
+             <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 border-2 border-primary">
+                    <AvatarImage src={user.avatarUrl} alt={user.name} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className='flex flex-col'>
+                    <span className="font-semibold text-lg text-sidebar-foreground">{user.name}</span>
+                    <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role]}</span>
+                </div>
+            </div>
         </div>
         <div className="flex-1 overflow-y-auto">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
