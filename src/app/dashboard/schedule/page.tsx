@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
-import { format } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { XCircle, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 export default function SchedulePage() {
@@ -33,6 +34,7 @@ export default function SchedulePage() {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
   const { toast } = useToast();
+  const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
 
 
   useEffect(() => {
@@ -42,13 +44,36 @@ export default function SchedulePage() {
     }
   }, []);
 
-  const todayEvents = scheduleEvents.filter(
-    (e) =>
-      date &&
-      e.start.getDate() === date.getDate() &&
-      e.start.getMonth() === date.getMonth() &&
-      e.start.getFullYear() === date.getFullYear()
-  ).sort((a,b) => a.start.getTime() - b.start.getTime());
+  const filteredEvents = useMemo(() => {
+    if (!date) return [];
+
+    if (filterType === 'day') {
+        return scheduleEvents.filter(
+            (e) =>
+              e.start.getDate() === date.getDate() &&
+              e.start.getMonth() === date.getMonth() &&
+              e.start.getFullYear() === date.getFullYear()
+        ).sort((a,b) => a.start.getTime() - b.start.getTime());
+    }
+
+    let interval;
+    if (filterType === 'week') {
+        interval = {
+            start: startOfWeek(date, { locale: ptBR }),
+            end: endOfWeek(date, { locale: ptBR }),
+        };
+    } else { // month
+        interval = {
+            start: startOfMonth(date),
+            end: endOfMonth(date),
+        };
+    }
+    
+    return scheduleEvents
+        .filter(e => isWithinInterval(e.start, interval))
+        .sort((a,b) => a.start.getTime() - b.start.getTime());
+
+  }, [date, filterType]);
 
   const handleCancelClick = (event: ScheduleEvent) => {
     setSelectedEvent(event);
@@ -74,6 +99,19 @@ export default function SchedulePage() {
     const allUsers = [...users];
     return allUsers.find(u => u.id === studentId);
   }
+
+  const getCardDescription = () => {
+    if (!date) return 'Resumo das suas aulas para o período selecionado.';
+    if (filterType === 'day') return `Aulas para ${format(date, 'dd/MM/yyyy')}`;
+    if (filterType === 'week') {
+      const start = startOfWeek(date, { locale: ptBR });
+      const end = endOfWeek(date, { locale: ptBR });
+      return `Aulas de ${format(start, 'dd/MM')} a ${format(end, 'dd/MM/yyyy')}`;
+    }
+    if (filterType === 'month') {
+      return `Aulas para ${format(date, 'MMMM \'de\' yyyy', { locale: ptBR })}`;
+    }
+  };
 
   return (
     <>
@@ -121,24 +159,35 @@ export default function SchedulePage() {
             </CardContent>
           </Card>
           <Card className="lg:col-span-4">
+            <Tabs value={filterType} onValueChange={(value) => setFilterType(value as any)} className="w-full">
             <CardHeader>
-              <CardTitle>
-                Resumo de Aulas
-              </CardTitle>
-              <CardDescription>
-                {date ? `Aulas para ${format(date, 'dd/MM/yyyy')}`: 'Resumo das suas aulas para o dia selecionado.'}
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div className="grid gap-1">
+                  <CardTitle>
+                    Resumo de Aulas
+                  </CardTitle>
+                  <CardDescription>
+                    {getCardDescription()}
+                  </CardDescription>
+                </div>
+                <TabsList className="grid w-full grid-cols-3 sm:w-auto">
+                    <TabsTrigger value="day">Dia</TabsTrigger>
+                    <TabsTrigger value="week">Semana</TabsTrigger>
+                    <TabsTrigger value="month">Mês</TabsTrigger>
+                </TabsList>
+              </div>
             </CardHeader>
             <CardContent className="grid gap-4">
-              {todayEvents.length > 0 ? (
-                todayEvents.map((event) => {
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((event) => {
                     const student = getStudentById(event.studentId);
                     return (
                         <div
                         key={event.id}
                         className="flex items-center gap-4 rounded-lg border p-3"
                       >
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-center flex-col leading-tight">
+                          <span className="text-xs">{format(event.start, 'dd/MM')}</span>
                           <span className="font-bold">
                             {format(event.start, 'HH:mm')}
                           </span>
@@ -171,10 +220,11 @@ export default function SchedulePage() {
                 })
               ) : (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-8">
-                  <p>Nenhuma aula agendada para este dia.</p>
+                  <p>Nenhuma aula agendada para este período.</p>
                 </div>
               )}
             </CardContent>
+            </Tabs>
           </Card>
         </div>
       </div>
