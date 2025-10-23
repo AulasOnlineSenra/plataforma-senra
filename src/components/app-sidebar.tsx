@@ -148,18 +148,20 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   return (
     <aside className={cn("flex h-full max-h-screen flex-col gap-2", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
-        <div className="flex h-auto items-center border-b border-sidebar-border p-4 lg:h-auto">
-             <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 border-2 border-primary">
-                    <AvatarImage src={user.avatarUrl} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className='flex flex-col'>
-                    <span className="font-semibold text-lg text-sidebar-foreground">{user.name}</span>
-                    <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role]}</span>
-                </div>
-            </div>
-        </div>
+        <Link href="/dashboard/profile" className="block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors">
+          <div className="flex h-auto items-center p-4 lg:h-auto">
+              <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 border-2 border-primary">
+                      <AvatarImage src={user.avatarUrl} alt={user.name} />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className='flex flex-col'>
+                      <span className="font-semibold text-lg text-sidebar-foreground">{user.name}</span>
+                      <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role]}</span>
+                  </div>
+              </div>
+          </div>
+        </Link>
         <div className="flex-1 overflow-y-auto">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
                     {filteredNavItems.map(item => renderLink(item))}
