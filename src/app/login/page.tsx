@@ -53,24 +53,24 @@ export default function LoginPage() {
     <div className="grid gap-4">
       <Button
         variant="outline"
-        className="w-full justify-start h-12 text-base"
+        className="w-full justify-center h-12 text-lg"
         onClick={() => setRole('student')}
       >
-        Sou Aluno
+        Aluno
       </Button>
       <Button
         variant="outline"
-        className="w-full justify-start h-12 text-base"
+        className="w-full justify-center h-12 text-lg"
         onClick={() => setRole('teacher')}
       >
-        Sou Professor
+        Professor
       </Button>
       <Button
         variant="outline"
-        className="w-full justify-start h-12 text-base"
+        className="w-full justify-center h-12 text-lg"
         onClick={() => setRole('admin')}
       >
-        Sou Administrador
+        Administrador
       </Button>
     </div>
   );
