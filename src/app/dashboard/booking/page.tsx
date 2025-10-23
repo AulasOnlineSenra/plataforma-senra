@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -19,14 +20,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers, getMockUser } from '@/lib/data';
+import { subjects, teachers, getMockUser, scheduleEvents as existingSchedule } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes } from 'date-fns';
 import { Plus, Trash2, Repeat, X, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { User, Teacher } from '@/lib/types';
+import { User, Teacher, ScheduleEvent } from '@/lib/types';
 
 interface Booking {
   id: string;
@@ -37,6 +38,8 @@ interface Booking {
 }
 
 type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
+
+const CLASS_DURATION_MINUTES = 90;
 
 export default function BookingPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -64,14 +67,24 @@ export default function BookingPage() {
     setRecurrence('none');
   };
 
-  const isConflict = (newBooking: Booking): boolean => {
-    return bookings.some(existingBooking => {
+  const isConflict = (newBooking: Booking, studentId: string): boolean => {
+    const allExistingEvents: (Booking | ScheduleEvent)[] = [...existingSchedule, ...bookings];
+
+    return allExistingEvents.some(existingBooking => {
+      // Check if the event is relevant (involves the same teacher or student)
+      const isTeacherBusy = 'teacherId' in existingBooking && existingBooking.teacherId === newBooking.teacherId;
+      const isStudentBusy = ('studentId' in existingBooking && existingBooking.studentId === studentId);
+      
+      if (!isTeacherBusy && !isStudentBusy) {
+        return false;
+      }
+
       const newStarts = newBooking.start.getTime();
       const newEnds = newBooking.end.getTime();
       const existingStarts = existingBooking.start.getTime();
       const existingEnds = existingBooking.end.getTime();
 
-      // Check for overlap
+      // Check for overlap: (StartA < EndB) and (EndA > StartB)
       return (newStarts < existingEnds && newEnds > existingStarts);
     });
   }
@@ -82,7 +95,8 @@ export default function BookingPage() {
       !selectedTeacher ||
       !selectedDates ||
       selectedDates.length === 0 ||
-      !selectedTime
+      !selectedTime ||
+      !currentUser
     ) {
       toast({
         variant: 'destructive',
@@ -115,7 +129,7 @@ export default function BookingPage() {
             return;
         }
 
-        const endDate = addMinutes(startDate, 90);
+        const endDate = addMinutes(startDate, CLASS_DURATION_MINUTES);
 
         const newBooking: Booking = {
             id: `booking-${startDate.getTime()}-${Math.random()}`,
@@ -125,11 +139,11 @@ export default function BookingPage() {
             end: endDate,
         };
 
-        if (isConflict(newBooking)) {
+        if (isConflict(newBooking, currentUser.id)) {
              toast({
                 variant: 'destructive',
                 title: 'Conflito de Horário',
-                description: `Já existe uma aula agendada que entra em conflito com ${format(startDate, "dd/MM 'às' HH:mm")}.`,
+                description: `Já existe uma aula agendada (sua ou do professor) que entra em conflito com ${format(startDate, "dd/MM 'às' HH:mm")}.`,
             });
             conflictFound = true;
         } else {
@@ -161,7 +175,7 @@ export default function BookingPage() {
           } else if (recurrence === 'monthly') {
             newStartDate.setMonth(newStartDate.getMonth() + i);
           }
-           const newEndDate = addMinutes(newStartDate, 90);
+           const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES);
            const recurringBooking: Booking = {
              ...booking,
              id: `booking-${newStartDate.getTime()}-${Math.random()}`,
@@ -169,7 +183,7 @@ export default function BookingPage() {
              end: newEndDate,
            };
 
-           if (isConflict(recurringBooking) || newBookings.some(b => b.start.getTime() === recurringBooking.start.getTime())) {
+           if (isConflict(recurringBooking, currentUser.id) || newBookings.some(b => b.start.getTime() === recurringBooking.start.getTime())) {
                 toast({
                     variant: 'destructive',
                     title: 'Conflito de Horário na Recorrência',
@@ -198,16 +212,16 @@ export default function BookingPage() {
   };
 
   const handleRepeatBooking = (booking: Booking) => {
-    // This function is now less relevant with multi-date select, but can be kept as a quick "duplicate"
+    if (!currentUser) return;
     const newStartDate = addMinutes(booking.end, 15); // Add a small buffer
     const newBooking: Booking = {
       ...booking,
       id: `booking-${newStartDate.getTime()}-${Math.random()}`,
       start: newStartDate,
-      end: addMinutes(newStartDate, 90)
+      end: addMinutes(newStartDate, CLASS_DURATION_MINUTES)
     };
 
-    if(isConflict(newBooking)) {
+    if(isConflict(newBooking, currentUser.id)) {
         toast({
             variant: 'destructive',
             title: 'Conflito de Horário',
@@ -233,11 +247,14 @@ export default function BookingPage() {
       return;
     }
     // Here you would typically call an API to save the bookings.
+    // This would also update the `existingSchedule` source.
     console.log('Confirming bookings:', bookings);
     toast({
       title: 'Agendamentos Confirmados!',
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
+    // In a real app, you'd probably refetch the `existingSchedule`
+    // For this prototype, we'll just clear the temporary list.
     setBookings([]);
   };
 
@@ -248,12 +265,17 @@ export default function BookingPage() {
     
     const teacher = teachers.find(t => t.id === selectedTeacher);
     if (!teacher) return [];
+
+    const times: string[] = [];
+    // Generate time slots from 08:00 to 22:00 in 30-minute intervals
+    for (let h = 8; h <= 21; h++) {
+        for (let m = 0; m < 60; m += 30) {
+             times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+        }
+    }
+    times.push('22:00');
     
-    // In a real app, teacher.availability would be the source of truth
-    const hardcodedTimes = [
-      '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30',
-    ];
-    return hardcodedTimes;
+    return times;
   }, [selectedTeacher, selectedDates]);
   
   useEffect(() => {
@@ -360,7 +382,7 @@ export default function BookingPage() {
             </CardTitle>
             <CardDescription>
               Você pode selecionar múltiplos dias no calendário. Os horários
-              exibidos são baseados na disponibilidade do professor. A duração de cada aula é de 90 minutos.
+              exibidos são baseados na disponibilidade do professor. A duração de cada aula é de {CLASS_DURATION_MINUTES} minutos.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-6 items-start">
@@ -532,3 +554,5 @@ export default function BookingPage() {
     </div>
   );
 }
+
+    
