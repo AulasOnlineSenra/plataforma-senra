@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { scheduleEvents, ScheduleEvent } from '@/lib/data';
+import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -23,7 +23,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { XCircle } from 'lucide-react';
+import { XCircle, User as UserIcon } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User } from '@/lib/types';
+
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date | undefined>();
@@ -66,6 +69,12 @@ export default function SchedulePage() {
     setSelectedEvent(null);
   };
 
+  const getStudentById = (studentId: string): User | undefined => {
+    // This is a mock function. In a real app, you'd fetch this from your data source.
+    const allUsers = [...users];
+    return allUsers.find(u => u.id === studentId);
+  }
+
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -74,7 +83,7 @@ export default function SchedulePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="lg:col-span-4 flex flex-col justify-center">
+          <Card className="lg:col-span-3 flex flex-col justify-center">
             <CardHeader>
               <CardTitle>Calendário</CardTitle>
               <CardDescription>
@@ -117,43 +126,55 @@ export default function SchedulePage() {
               />
             </CardContent>
           </Card>
-          <Card className="lg:col-span-3">
+          <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>
-                Aulas para{' '}
-                {date ? format(date, 'dd/MM/yyyy') : 'a data selecionada'}
+                Resumo de Aulas
               </CardTitle>
               <CardDescription>
-                Resumo das suas aulas para o dia.
+                {date ? `Aulas para ${format(date, 'dd/MM/yyyy')}`: 'Resumo das suas aulas para o dia selecionado.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               {todayEvents.length > 0 ? (
-                todayEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-center gap-4 rounded-lg border p-3"
-                  >
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <span className="font-bold">
-                        {format(event.start, 'HH:mm')}
-                      </span>
-                    </div>
-                    <div className="grid flex-1 gap-1">
-                      <p className="font-semibold">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        com Prof.{' '}
-                        {event.teacherId === 'teacher-1'
-                          ? 'Ana Silva'
-                          : 'Carlos Lima'}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
-                        <XCircle className="h-5 w-5" />
-                        <span className="sr-only">Cancelar Aula</span>
-                    </Button>
-                  </div>
-                ))
+                todayEvents.map((event) => {
+                    const student = getStudentById(event.studentId);
+                    return (
+                        <div
+                        key={event.id}
+                        className="flex items-center gap-4 rounded-lg border p-3"
+                      >
+                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <span className="font-bold">
+                            {format(event.start, 'HH:mm')}
+                          </span>
+                        </div>
+                        <div className="grid flex-1 gap-1">
+                          <p className="font-semibold">{event.title}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {student ? (
+                                <>
+                                    <Avatar className='h-5 w-5'>
+                                        <AvatarImage src={student.avatarUrl} alt={student.name} />
+                                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span>{student.name}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <UserIcon className="h-4 w-4" />
+                                    <span>Aluno não encontrado</span>
+                                </>
+                            )}
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
+                            <XCircle className="h-5 w-5" />
+                            <span className="sr-only">Cancelar Aula</span>
+                        </Button>
+                      </div>
+                    )
+                })
               ) : (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-8">
                   <p>Nenhuma aula agendada para este dia.</p>

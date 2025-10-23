@@ -14,6 +14,7 @@ import {
   KeyRound,
   FileText,
   LogOut,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
@@ -45,6 +46,12 @@ const navItems = [
     icon: MessageSquare,
     label: 'Chat',
     roles: ['student', 'teacher'],
+  },
+  {
+    href: '/dashboard/students',
+    icon: Users,
+    label: 'Meus Alunos',
+    roles: ['teacher'],
   },
   {
     href: '/dashboard/packages',

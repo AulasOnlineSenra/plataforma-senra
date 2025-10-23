@@ -10,6 +10,7 @@ export const users: User[] = [
     email: 'joao.aluno@example.com',
     avatarUrl: findImage('user-avatar-1'),
     role: 'student',
+    status: 'active',
   },
   {
     id: 'admin-1',
@@ -18,6 +19,22 @@ export const users: User[] = [
     avatarUrl: findImage('user-avatar-2'),
     role: 'admin',
   },
+  {
+    id: 'user-2',
+    name: 'Mariana Santos',
+    email: 'mariana.santos@example.com',
+    avatarUrl: 'https://picsum.photos/seed/student2/200/200',
+    role: 'student',
+    status: 'active'
+  },
+  {
+    id: 'user-3',
+    name: 'Pedro Oliveira',
+    email: 'pedro.oliveira@example.com',
+    avatarUrl: 'https://picsum.photos/seed/student3/200/200',
+    role: 'student',
+    status: 'inactive'
+  }
 ];
 
 export const teachers: Teacher[] = [
@@ -118,7 +135,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     title: 'Aula de Física',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 14, 0),
     end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 15, 30),
-    studentId: 'user-1',
+    studentId: 'user-2',
     teacherId: 'teacher-1',
     subject: 'Física',
     status: 'scheduled'

@@ -6,6 +6,7 @@ export interface User {
   email: string;
   avatarUrl: string;
   role: UserRole;
+  status?: 'active' | 'inactive';
 }
 
 export interface Subject {
