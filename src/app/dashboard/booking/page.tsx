@@ -23,6 +23,17 @@ import { subjects, teachers } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Plus, Trash2, Copy, Repeat } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+interface Booking {
+  id: string;
+  subjectId: string;
+  teacherId: string;
+  date: Date;
+  time: string;
+}
 
 export default function BookingPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
@@ -30,37 +41,84 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
 
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
   const { toast } = useToast();
 
-  const handleBooking = () => {
+  const handleAddBooking = () => {
     if (!selectedSubject || !selectedTeacher || !selectedDate || !selectedTime) {
       toast({
         variant: 'destructive',
         title: 'Campos Incompletos',
-        description: 'Por favor, selecione disciplina, professor, data e horário.',
+        description:
+          'Por favor, selecione disciplina, professor, data e horário.',
       });
       return;
     }
-    // Here you would typically call an API to save the booking.
-    // For this example, we'll just show a success message.
-    console.log({
-      subject: selectedSubject,
-      teacher: selectedTeacher,
+    const newBooking: Booking = {
+      id: `booking-${Date.now()}-${Math.random()}`,
+      subjectId: selectedSubject,
+      teacherId: selectedTeacher,
       date: selectedDate,
       time: selectedTime,
-    });
-    toast({
-      title: 'Agendamento Confirmado!',
-      description: 'Sua aula foi agendada com sucesso.',
-    });
-    // Reset state after booking
+    };
+    setBookings((prev) => [...prev, newBooking]);
+    // Reset fields for next booking
     setSelectedSubject(undefined);
     setSelectedTeacher(undefined);
     setSelectedDate(undefined);
     setSelectedTime(undefined);
+    toast({
+        title: 'Aula Adicionada!',
+        description: 'A aula foi adicionada ao resumo de agendamentos.',
+      });
+  };
+  
+  const handleRemoveBooking = (id: string) => {
+    setBookings(bookings.filter(b => b.id !== id));
+  }
+  
+  const handleRepeatBooking = (booking: Booking) => {
+     const newBooking: Booking = {
+      ...booking,
+      id: `booking-${Date.now()}-${Math.random()}`,
+    };
+    setBookings(prev => [...prev, newBooking]);
+     toast({
+        title: 'Aula Duplicada!',
+        description: 'Um novo agendamento idêntico foi adicionado.',
+      });
+  }
+
+  const handleConfirmAllBookings = () => {
+    if (bookings.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhuma aula no resumo',
+        description: 'Adicione pelo menos uma aula antes de confirmar.',
+      });
+      return;
+    }
+    // Here you would typically call an API to save the bookings.
+    console.log('Confirming bookings:', bookings);
+    toast({
+      title: 'Agendamentos Confirmados!',
+      description: 'Suas aulas foram agendadas com sucesso.',
+    });
+    // Reset state after booking
+    setBookings([]);
   };
 
-  const availableTimes = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"];
+  const availableTimes = [
+    '09:00',
+    '10:00',
+    '11:00',
+    '12:00',
+    '14:00',
+    '15:00',
+    '16:00',
+    '17:00',
+  ];
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -69,9 +127,12 @@ export default function BookingPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* Step 1 & 2 */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Passo 1: Selecione a Disciplina e Professor</CardTitle>
+            <CardTitle className="font-headline">
+              Passo 1: Selecione a Disciplina e Professor
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-6">
             <div className="grid gap-2">
@@ -100,7 +161,10 @@ export default function BookingPage() {
                     <SelectItem key={teacher.id} value={teacher.id}>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                          <AvatarImage
+                            src={teacher.avatarUrl}
+                            alt={teacher.name}
+                          />
                           <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <span>{teacher.name}</span>
@@ -131,22 +195,81 @@ export default function BookingPage() {
               />
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 self-start">
-              {availableTimes.map(time => (
-                  <Button 
-                    key={time} 
-                    variant="outline"
-                    onClick={() => setSelectedTime(time)}
-                    className={cn(selectedTime === time ? "ring-2 ring-primary" : "")}
-                  >
-                    {time}
-                  </Button>
+              {availableTimes.map((time) => (
+                <Button
+                  key={time}
+                  variant="outline"
+                  onClick={() => setSelectedTime(time)}
+                  className={cn(selectedTime === time ? 'ring-2 ring-primary' : '')}
+                >
+                  {time}
+                </Button>
               ))}
             </div>
           </CardContent>
+          <CardContent className="flex justify-end pt-4">
+              <Button onClick={handleAddBooking}>
+                  <Plus className='mr-2' />
+                  Adicionar Agendamento
+              </Button>
+          </CardContent>
+        </Card>
+
+        {/* Step 3: Summary */}
+         <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Passo 3: Resumo dos Agendamentos</CardTitle>
+                <CardDescription>
+                    Confira as aulas adicionadas antes de confirmar. Você pode remover ou duplicar aulas da lista.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {bookings.length > 0 ? (
+                    <div className="space-y-4">
+                        {bookings.map(booking => {
+                            const subject = subjects.find(s => s.id === booking.subjectId);
+                            const teacher = teachers.find(t => t.id === booking.teacherId);
+                            return (
+                                <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4">
+                                    <div className='flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4'>
+                                        <div>
+                                            <Label>Disciplina</Label>
+                                            <p className="font-semibold">{subject?.name}</p>
+                                        </div>
+                                        <div>
+                                            <Label>Professor(a)</Label>
+                                            <p className="font-semibold">{teacher?.name}</p>
+                                        </div>
+                                         <div>
+                                            <Label>Data e Horário</Label>
+                                            <p className="font-semibold">{format(booking.date, "dd/MM/yyyy", {locale: ptBR})} às {booking.time}</p>
+                                        </div>
+                                    </div>
+                                     <div className="flex items-center gap-2 self-end sm:self-center">
+                                        <Button variant="outline" size="icon" onClick={() => handleRepeatBooking(booking)} title="Repetir agendamento">
+                                            <Repeat className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="destructive" size="icon" onClick={() => handleRemoveBooking(booking.id)} title="Remover agendamento">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                        <p>Nenhuma aula adicionada ao resumo ainda.</p>
+                        <p className="text-sm">Use o formulário acima para começar a agendar.</p>
+                    </div>
+                )}
+            </CardContent>
         </Card>
 
         <div className="flex justify-end">
-          <Button size="lg" onClick={handleBooking}>Confirmar Agendamento</Button>
+          <Button size="lg" onClick={handleConfirmAllBookings} disabled={bookings.length === 0}>
+            Confirmar Todos os Agendamentos ({bookings.length})
+          </Button>
         </div>
       </div>
     </div>
