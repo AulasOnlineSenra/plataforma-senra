@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { AgentManager } from '@/components/agent-manager';
 
 export default function AosAgentsPage() {
   return (
@@ -14,22 +8,7 @@ export default function AosAgentsPage() {
           AOS Agents
         </h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Gerenciamento de Agentes de IA</CardTitle>
-          <CardDescription>
-            Crie, configure e monitore seus agentes de inteligência artificial.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <p>A funcionalidade de Agentes de IA ainda não foi implementada.</p>
-            <p className="text-sm">
-              Em breve, você poderá gerenciar seus agentes aqui.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <AgentManager />
     </div>
   );
 }
