@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -9,13 +10,25 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import { teachers, subjects } from '@/lib/data';
-import { Teacher } from '@/lib/types';
+import { teachers, subjects, getMockUser } from '@/lib/data';
+import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 function TeacherCard({ teacher }: { teacher: Teacher }) {
   const teacherSubjects = teacher.subjects
@@ -40,7 +53,7 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
             </Badge>
           ))}
         </div>
-         <div className="flex items-center gap-1 pt-3">
+        <div className="flex items-center gap-1 pt-3">
           {Array(5)
             .fill(0)
             .map((_, i) => (
@@ -72,18 +85,95 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
 }
 
 export default function TeachersPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserRole | null;
+    if (role) {
+      setCurrentUser(getMockUser(role));
+    }
+  }, []);
+
+  const handleSendInvite = () => {
+    if (!inviteEmail) {
+      toast({
+        variant: 'destructive',
+        title: 'Email inválido',
+        description: 'Por favor, insira um endereço de email válido.',
+      });
+      return;
+    }
+    // In a real app, you would send an invitation email via a backend service.
+    console.log(`Sending invite to: ${inviteEmail}`);
+    toast({
+      title: 'Convite Enviado!',
+      description: `Um convite foi enviado para ${inviteEmail}.`,
+    });
+    setInviteEmail('');
+    setIsInviteDialogOpen(false);
+  };
+
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Nossos Professores
-        </h1>
+    <>
+      <div className="flex flex-1 flex-col gap-4 md:gap-8">
+        <div className="flex items-center justify-between">
+          <h1 className="font-headline text-2xl md:text-3xl font-bold">
+            Nossos Professores
+          </h1>
+          {currentUser?.role === 'admin' && (
+            <Button onClick={() => setIsInviteDialogOpen(true)}>
+              <UserPlus className="mr-2" />
+              Convidar Professor
+            </Button>
+          )}
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {teachers.map((teacher) => (
+            <TeacherCard key={teacher.id} teacher={teacher} />
+          ))}
+        </div>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {teachers.map((teacher) => (
-          <TeacherCard key={teacher.id} teacher={teacher} />
-        ))}
-      </div>
-    </div>
+
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Convidar Novo Professor</DialogTitle>
+            <DialogDescription>
+              Insira o email do professor que você deseja convidar para a
+              plataforma. Ele receberá um link para completar o cadastro.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email-invite">Email do Professor</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email-invite"
+                  type="email"
+                  placeholder="nome.sobrenome@exemplo.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleSendInvite}>
+              Enviar Convite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
