@@ -136,7 +136,7 @@ export default function LoginPage() {
             </Button>
           )}
           <div className="w-full flex justify-center h-20 mb-4">
-            <SenraLogo className="h-full w-auto text-primary-foreground" />
+            <SenraLogo />
           </div>
           <CardTitle className="text-2xl font-headline">
             {role
