@@ -330,7 +330,7 @@ export default function BookingPage() {
                   months: 'w-full',
                   month: 'w-full',
                   table: 'w-full',
-                  caption_label: 'font-headline',
+                  caption_label: 'font-headline text-lg mb-2',
                   head_row: 'w-full flex',
                   head_cell: 'flex-1',
                   row: 'w-full flex mt-2',
