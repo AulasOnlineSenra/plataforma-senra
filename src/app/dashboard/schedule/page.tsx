@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -13,7 +13,11 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function SchedulePage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>();
+
+  useEffect(() => {
+    setDate(new Date());
+  }, []);
 
   const todayEvents = scheduleEvents.filter(
     (e) =>
