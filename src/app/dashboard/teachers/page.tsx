@@ -33,14 +33,13 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
           <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <CardTitle className="font-headline text-xl">{teacher.name}</CardTitle>
-        <CardDescription>{teacher.education}</CardDescription>
-        <div className="flex items-center gap-1 pt-2">
+         <div className="flex items-center gap-1 pt-1">
           {Array(5)
             .fill(0)
             .map((_, i) => (
               <Star
                 key={i}
-                className={`h-5 w-5 ${
+                className={`h-4 w-4 ${
                   rating > i ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
                 }`}
               />
@@ -49,6 +48,7 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
             ({rating.toFixed(1)})
           </span>
         </div>
+        <CardDescription>{teacher.education}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 text-center">
         <p className="text-sm text-muted-foreground line-clamp-3">

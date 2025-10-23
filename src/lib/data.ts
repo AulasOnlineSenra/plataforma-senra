@@ -156,6 +156,14 @@ export const scheduleEvents: ScheduleEvent[] = [
 
 export const chatContacts: ChatContact[] = [
   {
+    id: 'admin-1',
+    name: 'Admin Senra',
+    avatarUrl: findImage('user-avatar-2'),
+    lastMessage: 'Bem-vindo! Como posso ajudar?',
+    lastMessageTimestamp: new Date(now.getTime() - 5 * 60000),
+    unreadCount: 1,
+  },
+  {
     id: 'teacher-1',
     name: 'Ana Silva',
     avatarUrl: findImage('teacher-photo-1'),
