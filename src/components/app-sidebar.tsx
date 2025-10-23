@@ -15,6 +15,8 @@ import {
   FileText,
   LogOut,
   Users,
+  Banknote,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
@@ -58,6 +60,18 @@ const navItems = [
     icon: WalletCards,
     label: 'Pacotes',
     roles: ['student'],
+  },
+  {
+    href: '/dashboard/revenue',
+    icon: Banknote,
+    label: 'Receitas',
+    roles: ['teacher'],
+  },
+  {
+    href: '/dashboard/activity-history',
+    icon: History,
+    label: 'Histórico de Atividades',
+    roles: ['student', 'teacher'],
   },
 ];
 
