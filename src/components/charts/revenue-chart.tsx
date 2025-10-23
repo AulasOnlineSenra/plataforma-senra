@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,24 +10,87 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { format } from 'date-fns';
+import {
+  startOfDay,
+  startOfWeek,
+  startOfMonth,
+  startOfYear,
+  endOfDay,
+  endOfWeek,
+  endOfMonth,
+  endOfYear,
+  eachDayOfInterval,
+  eachWeekOfInterval,
+  eachMonthOfInterval,
+  getYear,
+  format,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const data = [
-  { month: 'Jan', revenue: 45231.89 },
-  { month: 'Fev', revenue: 39876.54 },
-  { month: 'Mar', revenue: 51098.21 },
-  { month: 'Abr', revenue: 48765.43 },
-  { month: 'Mai', revenue: 55643.21 },
-  { month: 'Jun', revenue: 60123.45 },
-];
+const allData = Array.from({ length: 365 * 2 }).map((_, i) => {
+  const date = new Date(2023, 0, 1);
+  date.setDate(date.getDate() + i);
+  return {
+    date: date,
+    revenue: Math.random() * 1000 + 500,
+  };
+});
 
-export function RevenueChart() {
+type FilterType = 'day' | 'week' | 'month' | 'year';
+
+interface RevenueChartProps {
+  filter: FilterType;
+}
+
+export function RevenueChart({ filter }: RevenueChartProps) {
+  const chartData = useMemo(() => {
+    const now = new Date();
+    switch (filter) {
+      case 'day': {
+        const interval = { start: startOfDay(now), end: endOfDay(now) };
+        const dayData = allData.filter(d => d.date >= interval.start && d.date <= interval.end);
+        return dayData.map(d => ({ name: format(d.date, 'HH:mm'), revenue: d.revenue }));
+      }
+      case 'week': {
+        const interval = { start: startOfWeek(now, { locale: ptBR }), end: endOfWeek(now, { locale: ptBR }) };
+        const weekData = eachDayOfInterval(interval);
+        return weekData.map(day => {
+          const dayRevenue = allData
+            .filter(d => d.date.toDateString() === day.toDateString())
+            .reduce((acc, curr) => acc + curr.revenue, 0);
+          return { name: format(day, 'EEE', { locale: ptBR }), revenue: dayRevenue };
+        });
+      }
+      case 'month': {
+        const interval = { start: startOfMonth(now), end: endOfMonth(now) };
+        const monthData = eachDayOfInterval(interval);
+        return monthData.map(day => {
+            const dayRevenue = allData
+              .filter(d => d.date.toDateString() === day.toDateString())
+              .reduce((acc, curr) => acc + curr.revenue, 0);
+            return { name: format(day, 'd'), revenue: dayRevenue };
+        });
+      }
+      case 'year': {
+        const interval = { start: startOfYear(now), end: endOfYear(now) };
+        const yearData = eachMonthOfInterval(interval);
+        return yearData.map(month => {
+          const monthRevenue = allData
+            .filter(d => d.date.getMonth() === month.getMonth() && d.date.getFullYear() === month.getFullYear())
+            .reduce((acc, curr) => acc + curr.revenue, 0);
+          return { name: format(month, 'MMM', { locale: ptBR }), revenue: monthRevenue };
+        });
+      }
+      default:
+        return [];
+    }
+  }, [filter]);
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
+      <BarChart data={chartData}>
         <XAxis
-          dataKey="month"
+          dataKey="name"
           stroke="#888888"
           fontSize={12}
           tickLine={false}

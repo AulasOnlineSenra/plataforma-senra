@@ -42,6 +42,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
@@ -52,6 +53,7 @@ export default function DashboardPage() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
+  const [filter, setFilter] = useState('week');
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -144,11 +146,23 @@ export default function DashboardPage() {
             <CarouselItem>
               <Card>
                 <CardHeader>
-                  <CardTitle>Visão Geral da Receita</CardTitle>
-                  <CardDescription>Receita mensal dos últimos 6 meses.</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Visão Geral da Receita</CardTitle>
+                      <CardDescription>Receita por período.</CardDescription>
+                    </div>
+                     <Tabs defaultValue="week" value={filter} onValueChange={setFilter} className="hidden sm:block">
+                        <TabsList>
+                          <TabsTrigger value="day">Dia</TabsTrigger>
+                          <TabsTrigger value="week">Semana</TabsTrigger>
+                          <TabsTrigger value="month">Mês</TabsTrigger>
+                          <TabsTrigger value="year">Ano</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <RevenueChart />
+                  <RevenueChart filter={filter} />
                 </CardContent>
               </Card>
             </CarouselItem>
@@ -166,11 +180,23 @@ export default function DashboardPage() {
             <CarouselItem>
                <Card>
                 <CardHeader>
-                  <CardTitle>Aquisição de Novos Usuários</CardTitle>
-                  <CardDescription>Novos alunos e professores registrados por mês.</CardDescription>
+                   <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle>Aquisição de Novos Usuários</CardTitle>
+                        <CardDescription>Novos usuários por período.</CardDescription>
+                      </div>
+                      <Tabs defaultValue="week" value={filter} onValueChange={setFilter} className="hidden sm:block">
+                        <TabsList>
+                          <TabsTrigger value="day">Dia</TabsTrigger>
+                          <TabsTrigger value="week">Semana</TabsTrigger>
+                          <TabsTrigger value="month">Mês</TabsTrigger>
+                          <TabsTrigger value="year">Ano</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                  <NewUsersChart />
+                  <NewUsersChart filter={filter} />
                 </CardContent>
               </Card>
             </CarouselItem>
