@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -36,7 +37,7 @@ export default function ChatPage() {
 
     return (
         <div className="flex-1 flex flex-col bg-gradient-to-br from-background to-accent/20 p-0 -m-4 sm:-m-6">
-            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-0 md:gap-4 md:p-4">
+            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-0 md:gap-2 md:p-4">
                 <Card className="flex flex-col rounded-none md:rounded-lg border-0 md:border">
                     <div className="p-4 border-b">
                         <h2 className="font-headline text-xl">Conversas</h2>
@@ -112,13 +113,15 @@ export default function ChatPage() {
                                             "max-w-xs lg:max-w-md rounded-lg p-3 text-sm flex flex-col shadow",
                                             message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
                                         )}>
-                                            <p>{message.content}</p>
-                                            <p className={cn(
-                                              "text-xs mt-2 self-end",
-                                               message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
-                                            )}>
-                                              {format(message.timestamp, 'HH:mm')}
-                                            </p>
+                                            <div className="flex items-end gap-2">
+                                                <p className="break-words">{message.content}</p>
+                                                <p className={cn(
+                                                  "text-xs shrink-0",
+                                                   message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                )}>
+                                                  {format(message.timestamp, 'HH:mm')}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -151,3 +154,5 @@ export default function ChatPage() {
         </div>
     )
 }
+
+    
