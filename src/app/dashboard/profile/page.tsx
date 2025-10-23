@@ -372,6 +372,17 @@ const StudentProfileForm = () => {
 };
 
 export default function ProfilePage() {
+  const { toast } = useToast();
+
+  const handleSaveChanges = () => {
+    // In a real application, you would handle the form submission here.
+    // For this example, we'll just show a toast notification.
+    toast({
+      title: "Alterações Salvas!",
+      description: "Suas informações de perfil foram atualizadas com sucesso.",
+    });
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
@@ -382,7 +393,13 @@ export default function ProfilePage() {
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
         {userRole === 'teacher' ? <TeacherProfileForm /> : <StudentProfileForm />}
         <div className="flex justify-end">
-          <Button size="lg" className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">Salvar Alterações</Button>
+          <Button
+            size="lg"
+            className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            onClick={handleSaveChanges}
+          >
+            Salvar Alterações
+          </Button>
         </div>
       </div>
     </div>
