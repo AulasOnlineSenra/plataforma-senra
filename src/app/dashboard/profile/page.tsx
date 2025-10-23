@@ -10,6 +10,11 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +31,8 @@ import {
   Plus,
   Save,
   X,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -34,6 +41,42 @@ type AvailabilitySlot = {
   start: string;
   end: string;
 };
+
+const CollapsibleCard = ({
+    title,
+    description,
+    children,
+    defaultOpen = false,
+} : {
+    title: string,
+    description: string,
+    children: React.ReactNode,
+    defaultOpen?: boolean
+}) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <Card>
+                <CardHeader className="flex flex-row items-start justify-between">
+                    <div>
+                        <CardTitle>{title}</CardTitle>
+                        <CardDescription>{description}</CardDescription>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            <span className="sr-only">{isOpen ? "Recolher" : "Expandir"}</span>
+                        </Button>
+                    </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                    {children}
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
+    )
+}
 
 const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void; user: Teacher }) => {
   const { toast } = useToast();
@@ -92,8 +135,8 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
   };
 
   const handleSaveSlot = (dayId: string, index: number) => {
-    const newStart = (document.getElementById(`start-${dayId}-${index}`) as HTMLInputElement).value;
-    const newEnd = (document.getElementById(`end-${dayId}-${index}`) as HTMLInputElement).value;
+    const newStart = (document.getElementById(`start-${day.id}-${index}`) as HTMLInputElement).value;
+    const newEnd = (document.getElementById(`end-${day.id}-${index}`) as HTMLInputElement).value;
     if (!newStart || !newEnd || newStart >= newEnd) {
         toast({
             variant: "destructive",
@@ -125,13 +168,11 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
   return (
     <>
       <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações Pessoais</CardTitle>
-            <CardDescription>
-              Atualize seus dados, foto de perfil e informações de contato.
-            </CardDescription>
-          </CardHeader>
+        <CollapsibleCard 
+            title="Informações Pessoais" 
+            description="Atualize seus dados, foto de perfil e informações de contato."
+            defaultOpen={true}
+        >
           <CardContent className="grid md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center gap-4 md:col-span-1">
               <Avatar className="h-32 w-32">
@@ -216,17 +257,14 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
               />
             </div>
           </CardContent>
-        </Card>
+        </CollapsibleCard>
 
         { teacher.role === 'teacher' && (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Serviços</CardTitle>
-              <CardDescription>
-                Selecione as disciplinas que você leciona.
-              </CardDescription>
-            </CardHeader>
+          <CollapsibleCard 
+            title="Serviços" 
+            description="Selecione as disciplinas que você leciona."
+          >
             <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {subjects.map((subject) => (
                 <div key={subject.id} className="flex items-center space-x-2">
@@ -244,15 +282,12 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
                 </div>
               ))}
             </CardContent>
-          </Card>
+          </CollapsibleCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Disponibilidade</CardTitle>
-              <CardDescription>
-                Defina os horários em que você pode dar aulas. Estes horários ficarão disponíveis para agendamento dos alunos.
-              </CardDescription>
-            </CardHeader>
+          <CollapsibleCard
+            title="Disponibilidade"
+            description="Defina os horários em que você pode dar aulas."
+          >
             <CardContent className="grid gap-4">
               <TooltipProvider>
               {days.map((day) => (
@@ -339,19 +374,16 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
               ))}
               </TooltipProvider>
             </CardContent>
-          </Card>
+          </CollapsibleCard>
         
         </>
         )}
 
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Integrações</CardTitle>
-            <CardDescription>
-              Conecte suas contas para automatizar agendamentos e comunicações.
-            </CardDescription>
-          </CardHeader>
+        <CollapsibleCard
+            title="Integrações"
+            description="Conecte suas contas para automatizar agendamentos e comunicações."
+        >
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-4">
@@ -378,7 +410,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
               <Button variant="outline">Conectar</Button>
             </div>
           </CardContent>
-        </Card>
+        </CollapsibleCard>
       </div>
     </>
   );
