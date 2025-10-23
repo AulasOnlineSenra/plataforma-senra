@@ -117,7 +117,7 @@ export default function DashboardPage() {
           className="w-full"
         >
           <CarouselContent>
-            <CarouselItem className="md:basis-1/2 lg:basis-2/3">
+            <CarouselItem>
               <Card>
                 <CardHeader>
                   <CardTitle>Visão Geral da Receita</CardTitle>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </CarouselItem>
-            <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+            <CarouselItem>
               <Card>
                 <CardHeader>
                   <CardTitle>Aulas por Disciplina</CardTitle>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </CarouselItem>
-            <CarouselItem className="md:basis-1/2 lg:basis-full">
+            <CarouselItem>
                <Card>
                 <CardHeader>
                   <CardTitle>Aquisição de Novos Usuários</CardTitle>
@@ -327,3 +327,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
