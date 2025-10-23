@@ -20,6 +20,7 @@ import {
   Briefcase,
   TrendingUp,
   HeartHandshake,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -71,10 +72,10 @@ const navItems = [
     roles: ['student'],
   },
   {
-    href: '/dashboard/revenue',
-    icon: Banknote,
-    label: 'Receitas',
-    roles: ['teacher'],
+    href: '/dashboard/financial',
+    icon: DollarSign,
+    label: 'Financeiro',
+    roles: ['student', 'teacher', 'admin'],
   },
   {
     href: '/dashboard/activity-history',

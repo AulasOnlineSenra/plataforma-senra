@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -6,12 +7,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-export default function RevenuePage() {
+export default function TeacherFinancials() {
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">Receitas</h1>
-      </div>
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Receitas</CardTitle>
@@ -25,6 +22,5 @@ export default function RevenuePage() {
           </div>
         </CardContent>
       </Card>
-    </div>
   );
 }
