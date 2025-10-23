@@ -49,136 +49,54 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const router = useRouter();
-  const { toast } = useToast();
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const credentials = {
-        student: { email: 'aluno@senra.com', pass: '123' },
-        teacher: { email: 'professor@senra.com', pass: '123' },
-        admin: { email: 'admin@senra.com', pass: '123' },
-    };
-
-    if (role && email === credentials[role].email && password === credentials[role].pass) {
-        localStorage.setItem('userRole', role);
-        router.push('/dashboard');
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Credenciais inválidas!",
-            description: "Por favor, verifique seu e-mail e senha.",
-        })
-    }
-  };
+  
+  const handleRoleSelect = (selectedRole: UserRole) => {
+    localStorage.setItem('userRole', selectedRole);
+    router.push('/dashboard');
+  }
 
   const RoleSelection = () => (
     <div className="grid gap-4">
       <Button
         variant="outline"
         className="w-full justify-center h-12 text-lg"
-        onClick={() => setRole('student')}
+        onClick={() => handleRoleSelect('student')}
       >
         Aluno
       </Button>
       <Button
         variant="outline"
         className="w-full justify-center h-12 text-lg"
-        onClick={() => setRole('teacher')}
+        onClick={() => handleRoleSelect('teacher')}
       >
         Professor
       </Button>
       <Button
         variant="outline"
         className="w-full justify-center h-12 text-lg"
-        onClick={() => setRole('admin')}
+        onClick={() => handleRoleSelect('admin')}
       >
         Administrador
       </Button>
     </div>
   );
 
-  const LoginForm = () => (
-    <form onSubmit={handleLogin}>
-      <div className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="seu@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="grid gap-2">
-          <div className="flex items-center">
-            <Label htmlFor="password">Senha</Label>
-            <Link href="#" className="ml-auto inline-block text-sm underline">
-              Esqueceu sua senha?
-            </Link>
-          </div>
-          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <Button type="submit" className="w-full">
-          Entrar
-        </Button>
-        <div className="relative my-2">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Ou continue com
-            </span>
-          </div>
-        </div>
-        <Button variant="outline" className="w-full" asChild>
-          <Link href="/dashboard">
-            <GoogleIcon className="mr-2 h-4 w-4" />
-            Google
-          </Link>
-        </Button>
-      </div>
-      <div className="mt-4 text-center text-sm">
-        Não tem uma conta?{' '}
-        <Link href="#" className="underline">
-          Inscreva-se
-        </Link>
-      </div>
-    </form>
-  );
-
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
       <Card className="mx-auto w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center">
-          {role && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute left-4 top-4 text-muted-foreground"
-              onClick={() => setRole(null)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Voltar</span>
-            </Button>
-          )}
           <div className="w-full flex justify-center h-20 mb-4">
             <SenraLogo />
           </div>
           <CardTitle className="text-2xl font-headline">
-            {role
-              ? `Login de ${
-                  {
-                    student: 'Aluno',
-                    teacher: 'Professor',
-                    admin: 'Administrador',
-                  }[role]
-                }`
-              : 'Bem-vindo(a)!'}
+            Bem-vindo(a)!
           </CardTitle>
           <CardDescription>
-            {role ? 'Acesse sua conta para continuar.' : 'Selecione seu tipo de perfil para continuar.'}
+            Selecione seu tipo de perfil para continuar.
           </CardDescription>
         </CardHeader>
-        <CardContent>{role ? <LoginForm /> : <RoleSelection />}</CardContent>
+        <CardContent><RoleSelection /></CardContent>
       </Card>
     </div>
   );

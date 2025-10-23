@@ -1,11 +1,13 @@
 import { AppSidebar } from '@/components/app-sidebar';
 import { Header } from '@/components/header';
+import { redirect } from 'next/navigation';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-sidebar md:block">
