@@ -33,7 +33,14 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
           <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <CardTitle className="font-headline text-xl">{teacher.name}</CardTitle>
-         <div className="flex items-center gap-1 pt-1">
+        <div className="flex flex-wrap justify-center gap-2 mt-1">
+          {teacherSubjects.map((subjectName) => (
+            <Badge key={subjectName} variant="secondary">
+              {subjectName}
+            </Badge>
+          ))}
+        </div>
+         <div className="flex items-center gap-1 pt-3">
           {Array(5)
             .fill(0)
             .map((_, i) => (
@@ -48,22 +55,15 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
             ({rating.toFixed(1)})
           </span>
         </div>
-        <CardDescription>{teacher.education}</CardDescription>
+        <CardDescription className="pt-1">{teacher.education}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 text-center">
+      <CardContent className="flex-1 text-center pt-0">
         <p className="text-sm text-muted-foreground line-clamp-3">
           {teacher.bio}
         </p>
       </CardContent>
       <CardFooter className="flex-col gap-4">
-        <div className="flex flex-wrap justify-center gap-2">
-          {teacherSubjects.map((subjectName) => (
-            <Badge key={subjectName} variant="secondary">
-              {subjectName}
-            </Badge>
-          ))}
-        </div>
-        <Button asChild className="w-full">
+        <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
           <Link href={`/dashboard/profile`}>Ver Perfil e Agendar</Link>
         </Button>
       </CardFooter>
