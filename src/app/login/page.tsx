@@ -102,15 +102,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="grid gap-2">
-          <div className="flex items-center">
-            <Label htmlFor="password">Senha</Label>
-            <Link
-              href="#"
-              className="ml-auto inline-block text-sm underline"
-            >
-              Esqueceu sua senha?
-            </Link>
-          </div>
+          <Label htmlFor="password">Senha</Label>
           <Input id="password" type="password" required />
         </div>
         <Button type="submit" className="w-full">
@@ -120,6 +112,14 @@ export default function LoginPage() {
           <GoogleIcon className="mr-2 h-4 w-4" />
           Login com Google
         </Button>
+         <div className="mt-4 text-center text-sm">
+          <Link
+            href="#"
+            className="underline"
+          >
+            Esqueceu sua senha?
+          </Link>
+        </div>
       </div>
     </form>
   );
@@ -138,7 +138,18 @@ export default function LoginPage() {
           Voltar para a página inicial
         </Link>
       </Button>
-      <Card className="mx-auto w-full max-w-sm shadow-2xl">
+      <Card className="mx-auto w-full max-w-md shadow-2xl relative">
+        {role && (
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setRole(null)}
+                className="absolute top-4 right-4"
+                aria-label="Voltar para a seleção de perfil"
+            >
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+        )}
         <CardHeader className="text-center pt-12">
           <div className="w-full flex justify-center h-20 mb-4">
             <SenraLogo />
@@ -154,17 +165,6 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {role ? <LoginForm /> : <RoleSelection />}
-          {role && (
-            <div className="mt-4 text-center text-sm">
-              <Button
-                variant="link"
-                onClick={() => setRole(null)}
-                className="p-0 h-auto"
-              >
-                Voltar para a seleção de perfil
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
