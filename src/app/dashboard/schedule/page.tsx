@@ -62,7 +62,7 @@ export default function SchedulePage() {
                 month: 'w-full',
                 table: 'w-full',
                 caption_label: 'font-headline',
-                head_cell: 'w-full',
+                head_row: 'w-full',
               }}
               locale={ptBR}
               modifiers={{
