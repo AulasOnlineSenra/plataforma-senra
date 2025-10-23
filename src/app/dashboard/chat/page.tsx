@@ -10,14 +10,28 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock } from 'lucide-react';
-import { chatContacts, chatMessages, getMockUser, teachers } from '@/lib/data';
+import { chatContacts, chatMessages, getMockUser, teachers, users } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { User, UserRole } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+
+const roleLabels: Record<UserRole, string> = {
+  admin: 'Admin',
+  student: 'Aluno',
+  teacher: 'Professor',
+};
 
 export default function ChatPage() {
     const currentUser = getMockUser('student');
     const activeChatPartner = teachers[0];
+
+    const allUsers: User[] = [...users, ...teachers];
+
+    const getContactDetails = (contactId: string) => {
+        return allUsers.find(u => u.id === contactId);
+    }
 
     const groupedMessages = chatMessages.reduce((acc, message) => {
         const date = format(message.timestamp, 'yyyy-MM-dd');
@@ -40,7 +54,7 @@ export default function ChatPage() {
             <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-0 md:gap-px md:p-4">
                 <Card className="flex flex-col rounded-none md:rounded-lg border-0 md:border">
                     <div className="p-4 border-b">
-                        <h2 className="font-headline text-xl">Conversas</h2>
+                        <h2 className="font-headline text-xl font-bold">Conversas</h2>
                         <div className="relative mt-2">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Pesquisar..." className="pl-8" />
@@ -48,9 +62,13 @@ export default function ChatPage() {
                     </div>
                     <ScrollArea className="flex-1">
                         <div className="p-2">
-                            {chatContacts.map(contact => (
+                            {chatContacts.map(contact => {
+                                const contactDetails = getContactDetails(contact.id);
+                                if (!contactDetails) return null;
+                                
+                                return (
                                 <button key={contact.id} className={cn(
-                                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all hover:bg-accent/50",
+                                    "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-all hover:bg-accent/50",
                                     contact.id === activeChatPartner.id ? "bg-accent/70" : ""
                                 )}>
                                     <Avatar className="h-10 w-10">
@@ -58,21 +76,26 @@ export default function ChatPage() {
                                         <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
-                                        <div className="flex items-baseline justify-between">
-                                            <p className="font-semibold truncate">{contact.name}</p>
-                                            <p className="text-xs text-muted-foreground shrink-0">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex flex-col">
+                                              <div className='flex items-center gap-2'>
+                                                <p className="font-semibold truncate">{contact.name}</p>
+                                                {contactDetails.role && <Badge variant="secondary" className="text-xs">{roleLabels[contactDetails.role]}</Badge>}
+                                              </div>
+                                              <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground shrink-0 pt-1">
                                                 {formatDistanceToNow(contact.lastMessageTimestamp, { locale: ptBR, addSuffix: true })}
                                             </p>
                                         </div>
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
-                                            {contact.unreadCount > 0 && (
+                                         {contact.unreadCount > 0 && (
+                                            <div className="flex justify-end mt-1">
                                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{contact.unreadCount}</span>
-                                            )}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </button>
-                            ))}
+                            )})}
                         </div>
                     </ScrollArea>
                 </Card>
