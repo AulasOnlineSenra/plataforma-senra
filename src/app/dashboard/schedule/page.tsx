@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import {
@@ -10,14 +11,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
-import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
 import { XCircle, Pencil } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 export default function SchedulePage() {
@@ -25,6 +37,9 @@ export default function SchedulePage() {
   const [events, setEvents] = useState<ScheduleEvent[]>(scheduleEvents);
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
+  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
+  const [newDate, setNewDate] = useState<Date | undefined>();
+  const [newTime, setNewTime] = useState<string | undefined>();
 
 
   useEffect(() => {
@@ -115,13 +130,39 @@ export default function SchedulePage() {
   };
   
   const handleEditClick = (event: ScheduleEvent) => {
-    // In a real app, this would likely open a modal or navigate to a dedicated editing page
-    // For this example, we'll just show a toast.
-    toast({
-        title: "Editar Agendamento",
-        description: `Função para editar a aula de ${event.subject} ainda não implementada.`
-    });
+    setEditingEvent(event);
+    setNewDate(event.start);
+    setNewTime(format(event.start, 'HH:mm'));
   };
+
+  const handleUpdateEvent = () => {
+    if (!editingEvent || !newDate || !newTime) return;
+
+    const [hours, minutes] = newTime.split(':').map(Number);
+    const updatedStartDate = new Date(newDate);
+    updatedStartDate.setHours(hours, minutes, 0, 0);
+
+    const updatedEndDate = addMinutes(updatedStartDate, 90); // Assuming 90-minute classes
+
+    setEvents(currentEvents =>
+      currentEvents.map(e =>
+        e.id === editingEvent.id
+          ? { ...e, start: updatedStartDate, end: updatedEndDate }
+          : e
+      )
+    );
+
+    toast({
+      title: 'Aula Remarcada!',
+      description: `A aula de ${editingEvent.subject} foi remarcada para ${format(updatedStartDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+    });
+
+    setEditingEvent(null);
+    setNewDate(undefined);
+    setNewTime(undefined);
+  };
+  
+  const availableTimes = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
 
   return (
     <>
@@ -234,6 +275,58 @@ export default function SchedulePage() {
           </Card>
         </div>
       </div>
+      {editingEvent && (
+        <Dialog open={!!editingEvent} onOpenChange={() => setEditingEvent(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Editar Agendamento</DialogTitle>
+              <DialogDescription>
+                Selecione a nova data e horário para a aula de {editingEvent.subject}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="date" className="text-right">
+                  Data
+                </Label>
+                <div className="col-span-3">
+                  <Calendar
+                    mode="single"
+                    selected={newDate}
+                    onSelect={setNewDate}
+                    className="rounded-md border"
+                    locale={ptBR}
+                    disabled={{ before: new Date() }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="time" className="text-right">
+                  Horário
+                </Label>
+                <div className="col-span-3">
+                  <Select value={newTime} onValueChange={setNewTime}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um horário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTimes.map((time) => (
+                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button onClick={handleUpdateEvent}>Salvar Alterações</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
