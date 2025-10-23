@@ -3,7 +3,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { AppSidebar } from './app-sidebar';
-import { UserNav } from './user-nav';
 import { SenraLogo } from './senra-logo';
 
 export function Header() {
@@ -26,7 +25,6 @@ export function Header() {
                 <SenraLogo className="h-10 w-auto" />
             </Link>
         </div>
-        <UserNav />
       </div>
     </header>
   );
