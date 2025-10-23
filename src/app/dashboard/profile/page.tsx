@@ -25,7 +25,7 @@ import {
   Mail,
   Pencil,
   Trash2,
-  PlusCircle,
+  Plus,
 } from 'lucide-react';
 
 const userRole: UserRole = 'teacher';
@@ -200,6 +200,13 @@ const TeacherProfileForm = () => {
                       <Button variant="ghost" size="icon">
                         <Pencil className="h-4 w-4" />
                       </Button>
+                       <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleAddSlot(day.id)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -210,14 +217,16 @@ const TeacherProfileForm = () => {
                     </div>
                   </div>
                 ))}
-                <Button
-                  variant="outline"
-                  className="mt-2 w-full sm:w-auto"
-                  onClick={() => handleAddSlot(day.id)}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Adicionar Horário
-                </Button>
+                {(availability[day.id] || []).length === 0 && (
+                   <Button
+                      variant="outline"
+                      className="mt-2 w-full sm:w-auto"
+                      onClick={() => handleAddSlot(day.id)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Horário
+                    </Button>
+                )}
               </div>
             </div>
           ))}
