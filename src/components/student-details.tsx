@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { User } from '@/lib/types';
@@ -82,7 +83,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4">
                     <Button asChild>
-                        <Link href="/dashboard/booking">
+                        <Link href={`/dashboard/booking?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}`}>
                             <Plus /> Agendar Nova Aula
                         </Link>
                     </Button>

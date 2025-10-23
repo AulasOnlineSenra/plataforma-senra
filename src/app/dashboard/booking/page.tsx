@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -20,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers, getMockUser, scheduleEvents as existingSchedule } from '@/lib/data';
+import { subjects, teachers, getMockUser, scheduleEvents as existingSchedule, users } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -41,7 +42,12 @@ type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
 
 const CLASS_DURATION_MINUTES = 90;
 
-export default function BookingPage() {
+function BookingPageComponent() {
+  const searchParams = useSearchParams();
+  const studentId = searchParams.get('studentId');
+  const studentName = searchParams.get('studentName');
+  const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
   const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>();
@@ -54,10 +60,15 @@ export default function BookingPage() {
   const { toast } = useToast();
   
   useEffect(() => {
-    // In a real app, this would come from an auth context
-    const user = getMockUser('student');
-    setCurrentUser(user);
-  }, []);
+    if (studentId) {
+        const studentUser = users.find(u => u.id === studentId);
+        setCurrentUser(studentUser || getMockUser('student'));
+    } else {
+        // In a real app, this would come from an auth context
+        const user = getMockUser('student');
+        setCurrentUser(user);
+    }
+  }, [studentId]);
 
   const handleClearSelections = () => {
     setSelectedSubject(undefined);
@@ -313,7 +324,7 @@ export default function BookingPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">Agendar Nova Aula</h1>
+        <h1 className="font-headline text-2xl md:text-3xl font-bold">{pageTitle}</h1>
       </div>
 
       <div className="grid gap-6">
@@ -564,4 +575,12 @@ export default function BookingPage() {
       </div>
     </div>
   );
+}
+
+export default function BookingPage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <BookingPageComponent />
+        </Suspense>
+    )
 }
