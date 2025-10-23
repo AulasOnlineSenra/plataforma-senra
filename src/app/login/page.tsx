@@ -63,21 +63,21 @@ export default function LoginPage() {
     <div className="grid gap-4">
       <Button
         variant="outline"
-        className="w-full justify-center h-12 text-lg"
-        onClick={() => handleRoleSelect('student')}
-      >
-        Aluno
-      </Button>
-      <Button
-        variant="outline"
-        className="w-full justify-center h-12 text-lg"
+        className="w-[95%] mx-auto justify-center h-12 text-lg"
         onClick={() => handleRoleSelect('teacher')}
       >
         Professor
       </Button>
       <Button
         variant="outline"
-        className="w-full justify-center h-12 text-lg"
+        className="w-[95%] mx-auto justify-center h-12 text-lg"
+        onClick={() => handleRoleSelect('student')}
+      >
+        Aluno
+      </Button>
+      <Button
+        variant="outline"
+        className="w-[95%] mx-auto justify-center h-12 text-lg"
         onClick={() => handleRoleSelect('admin')}
       >
         Administrador
