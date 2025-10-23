@@ -10,7 +10,6 @@ import {
   BookOpenCheck,
   MessageSquare,
   WalletCards,
-  UserCircle,
   Settings,
   KeyRound,
   FileText,
@@ -163,15 +162,13 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         className={cn(
           'flex items-center gap-4 rounded-lg px-3 py-2 transition-all',
           'text-base group',
+          isDraggable && 'cursor-grab',
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
             : 'text-sidebar-foreground/80 hover:text-primary-foreground hover:bg-sidebar-accent'
         )}
       >
-        {isDraggable && (
-          <GripVertical className="h-5 w-5 text-sidebar-foreground/30 group-hover:text-sidebar-accent-foreground cursor-grab" />
-        )}
-        <item.icon className={cn("h-5 w-5", isDraggable && "-ml-4")} />
+        <item.icon className="h-5 w-5" />
         <span className={'font-medium'}>{item.label}</span>
       </div>
     );

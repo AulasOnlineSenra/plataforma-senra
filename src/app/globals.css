@@ -86,4 +86,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  aside::-webkit-scrollbar {
+    display: none;
+  }
+
+  aside {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }
