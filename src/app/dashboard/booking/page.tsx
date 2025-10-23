@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -23,7 +23,7 @@ import { subjects, teachers } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday, getDay } from 'date-fns';
 import { Plus, Trash2, Repeat, X } from 'lucide-react';
 
 interface Booking {
@@ -95,11 +95,11 @@ export default function BookingPage() {
         const startDate = new Date(date);
         startDate.setHours(hours, minutes, 0, 0);
 
-        if (isBefore(startDate, today)) {
+        if (isBefore(startDate, new Date())) {
             toast({
                 variant: 'destructive',
-                title: 'Data Inválida',
-                description: `Não é possível agendar aulas em datas passadas. (${format(startDate, 'dd/MM/yyyy')})`,
+                title: 'Data/Horário Inválido',
+                description: `Não é possível agendar aulas em horários passados. (${format(startDate, 'dd/MM/yyyy HH:mm')})`,
             });
             conflictFound = true;
             return;
@@ -174,7 +174,7 @@ export default function BookingPage() {
     }
 
 
-    setBookings((prev) => [...prev, ...newBookings]);
+    setBookings((prev) => [...prev, ...newBookings].sort((a, b) => a.start.getTime() - b.start.getTime()));
     handleClearSelections();
 
     toast({
@@ -206,7 +206,7 @@ export default function BookingPage() {
         return;
     }
 
-    setBookings((prev) => [...prev, newBooking]);
+    setBookings((prev) => [...prev, newBooking].sort((a, b) => a.start.getTime() - b.start.getTime()));
     toast({
       title: 'Aula Duplicada!',
       description: 'Um novo agendamento idêntico foi adicionado.',
@@ -231,16 +231,27 @@ export default function BookingPage() {
     setBookings([]);
   };
 
-  const availableTimes = [
-    '09:00',
-    '10:30',
-    '12:00',
-    '13:30',
-    '15:00',
-    '16:30',
-    '18:00',
-    '19:30',
-  ];
+  const availableTimes = useMemo(() => {
+    if (!selectedTeacher || !selectedDates || selectedDates.length === 0) {
+      return [];
+    }
+    
+    const teacher = teachers.find(t => t.id === selectedTeacher);
+    if (!teacher) return [];
+
+    const dayOfWeek = selectedDates[0] ? getDay(selectedDates[0]) : -1;
+    // JS week day: Sun-0, Mon-1... -> our format: mon-0, tue-1...
+    const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek];
+    
+    // In a real app, teacher.availability would be the source of truth
+    // For now, let's use the hardcoded list but this shows how it would be filtered
+    const hardcodedTimes = [
+      '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30',
+    ];
+    // To use dynamic times based on profile:
+    // return teacher.availability[dayName] || [];
+    return hardcodedTimes;
+  }, [selectedTeacher, selectedDates]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -348,10 +359,14 @@ export default function BookingPage() {
                     className={cn(
                       selectedTime === time ? 'ring-2 ring-primary' : ''
                     )}
+                    disabled={!selectedTeacher || (selectedDates || []).length === 0}
                   >
                     {time}
                   </Button>
                 ))}
+                {availableTimes.length === 0 && selectedTeacher && (selectedDates || []).length > 0 && (
+                    <p className='col-span-full text-sm text-muted-foreground'>Não há horários disponíveis para este professor no dia selecionado.</p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="recurrence">Repetir Agendamento</Label>

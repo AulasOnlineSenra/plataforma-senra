@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserRole } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Link,
   Calendar,
   Mail,
   Pencil,
@@ -29,6 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const userRole: UserRole = 'teacher';
 
@@ -47,6 +47,7 @@ const TeacherProfileForm = () => {
     { id: 'thursday', label: 'Quinta-feira' },
     { id: 'friday', label: 'Sexta-feira' },
     { id: 'saturday', label: 'Sábado' },
+    { id: 'sunday', label: 'Domingo' },
   ];
 
   const initialAvailability = days.reduce((acc, day) => {
@@ -74,7 +75,9 @@ const TeacherProfileForm = () => {
     setEditingSlot(null);
   };
 
-  const handleSaveSlot = (dayId: string, index: number, newStart: string, newEnd: string) => {
+  const handleSaveSlot = (dayId: string, index: number) => {
+    const newStart = (document.getElementById(`start-${dayId}-${index}`) as HTMLInputElement).value;
+    const newEnd = (document.getElementById(`end-${dayId}-${index}`) as HTMLInputElement).value;
     if (!newStart || !newEnd || newStart >= newEnd) {
         toast({
             variant: "destructive",
@@ -209,10 +212,11 @@ const TeacherProfileForm = () => {
         <CardHeader>
           <CardTitle>Disponibilidade</CardTitle>
           <CardDescription>
-            Defina os horários em que você pode dar aulas.
+            Defina os horários em que você pode dar aulas. Estes horários ficarão disponíveis para agendamento dos alunos.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
+          <TooltipProvider>
           {days.map((day) => (
             <div
               key={day.id}
@@ -230,12 +234,22 @@ const TeacherProfileForm = () => {
                             <Input type="time" id={`start-${day.id}-${index}`} defaultValue={slot.start} className="w-24"/>
                             <span className="mx-2">-</span>
                             <Input type="time" id={`end-${day.id}-${index}`} defaultValue={slot.end} className="w-24"/>
-                            <Button variant="ghost" size="icon" onClick={() => handleSaveSlot(day.id, index, (document.getElementById(`start-${day.id}-${index}`) as HTMLInputElement).value, (document.getElementById(`end-${day.id}-${index}`) as HTMLInputElement).value)}>
-                                <Save className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                                <X className="h-4 w-4 text-destructive" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => handleSaveSlot(day.id, index)}>
+                                    <Save className="h-4 w-4 text-green-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Salvar horário</p></TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                                    <X className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Cancelar edição</p></TooltipContent>
+                            </Tooltip>
                         </>
                     ) : (
                         <>
@@ -243,23 +257,30 @@ const TeacherProfileForm = () => {
                              <span>{slot.start}</span> - <span>{slot.end}</span>
                            </div>
                            <div className="flex items-center">
-                             <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
-                               <Pencil className="h-4 w-4" />
-                             </Button>
-                              <Button
-                               variant="ghost"
-                               size="icon"
-                               onClick={() => handleAddSlot(day.id)}
-                             >
-                               <Plus className="h-4 w-4" />
-                             </Button>
-                             <Button
-                               variant="ghost"
-                               size="icon"
-                               onClick={() => handleRemoveSlot(day.id, index)}
-                             >
-                               <Trash2 className="h-4 w-4 text-destructive" />
-                             </Button>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
+                                   <Pencil className="h-4 w-4" />
+                                 </Button>
+                               </TooltipTrigger>
+                               <TooltipContent><p>Editar horário</p></TooltipContent>
+                             </Tooltip>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <Button variant="ghost" size="icon" onClick={() => handleAddSlot(day.id)}>
+                                   <Plus className="h-4 w-4" />
+                                 </Button>
+                               </TooltipTrigger>
+                               <TooltipContent><p>Adicionar novo horário</p></TooltipContent>
+                             </Tooltip>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(day.id, index)}>
+                                   <Trash2 className="h-4 w-4 text-destructive" />
+                                 </Button>
+                               </TooltipTrigger>
+                               <TooltipContent><p>Remover horário</p></TooltipContent>
+                             </Tooltip>
                            </div>
                         </>
                     )}
@@ -278,6 +299,7 @@ const TeacherProfileForm = () => {
               </div>
             </div>
           ))}
+          </TooltipProvider>
         </CardContent>
       </Card>
 
@@ -360,7 +382,7 @@ export default function ProfilePage() {
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
         {userRole === 'teacher' ? <TeacherProfileForm /> : <StudentProfileForm />}
         <div className="flex justify-end">
-          <Button size="lg">Salvar Alterações</Button>
+          <Button size="lg" className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">Salvar Alterações</Button>
         </div>
       </div>
     </div>
