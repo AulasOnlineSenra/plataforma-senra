@@ -18,6 +18,8 @@ import {
   Banknote,
   History,
   Briefcase,
+  TrendingUp,
+  HeartHandshake,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User } from '@/lib/types';
@@ -93,6 +95,18 @@ const adminNavItems = [
     href: '/dashboard/admin/settings',
     icon: KeyRound,
     label: 'Credenciais',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/marketing',
+    icon: TrendingUp,
+    label: 'Marketing',
+    roles: ['admin'],
+  },
+  {
+    href: '/dashboard/admin/crm',
+    icon: HeartHandshake,
+    label: 'CRM',
     roles: ['admin'],
   },
 ];
