@@ -11,7 +11,6 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
-  startOfToday,
   startOfWeek,
   startOfMonth,
   startOfYear,
@@ -130,8 +129,10 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
         accessibilityLayer
         data={chartData}
         margin={{
-          left: 12,
-          right: 12,
+          top: 5,
+          right: 20,
+          left: 10,
+          bottom: 5,
         }}
       >
         <CartesianGrid vertical={false} />
@@ -140,6 +141,7 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          interval={'preserveStartEnd'}
         />
         <YAxis
           tickLine={false}

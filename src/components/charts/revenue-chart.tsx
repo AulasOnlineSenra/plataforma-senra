@@ -7,12 +7,10 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
 import {
-  startOfToday,
   startOfWeek,
   startOfMonth,
   startOfYear,
@@ -67,7 +65,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
       case 'week': {
         const start = startOfYear(now);
         const end = endOfYear(now);
-        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 /* Monday */ });
+        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 /* Sunday */ });
         return weeks.map(weekStart => {
           const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
           const weekRevenue = allData
@@ -108,17 +106,28 @@ export function RevenueChart({ filter }: RevenueChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      <BarChart accessibilityLayer data={chartData}>
+      <BarChart 
+        accessibilityLayer 
+        data={chartData}
+        margin={{
+          top: 5,
+          right: 20,
+          left: 10,
+          bottom: 5,
+        }}
+      >
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="name"
           tickLine={false}
           tickMargin={10}
           axisLine={false}
+          interval={'preserveStartEnd'}
         />
         <YAxis
           tickLine={false}
           axisLine={false}
+          tickMargin={8}
           tickFormatter={(value) => `R$${Number(value) / 1000}k`}
         />
         <ChartTooltip
