@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function TeacherCard({
   teacher,
@@ -68,8 +69,59 @@ function TeacherCard({
         "flex flex-col transition-opacity",
         teacher.status === 'hidden' && 'opacity-60 bg-muted/50'
     )}>
-      <CardHeader className="items-center text-center">
-        <Avatar className="h-24 w-24 mb-4">
+      <CardHeader className="items-center text-center relative">
+         {isAdmin && (
+            <div className="absolute top-2 right-2 flex gap-1">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                                <Link href={`/dashboard/profile`}>
+                                    <Edit className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver / Editar Perfil</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleVisibility(teacher.id)}>
+                                {teacher.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>{teacher.status === 'active' ? 'Ocultar' : 'Mostrar'}</p></TooltipContent>
+                    </Tooltip>
+                     <AlertDialog>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Excluir Professor</p></TooltipContent>
+                        </Tooltip>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil do professor
+                                <span className="font-bold"> {teacher.name} </span> e removerá seus dados de nossos servidores.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(teacher.id)}>
+                                Continuar
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </TooltipProvider>
+            </div>
+        )}
+        <Avatar className="h-24 w-24 mb-4 mt-8 sm:mt-0">
           <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
           <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
         </Avatar>
@@ -104,47 +156,7 @@ function TeacherCard({
         </p>
       </CardContent>
       <CardFooter className="flex-col gap-2">
-        {isAdmin ? (
-          <>
-            <div className="flex w-full gap-2">
-                <Button asChild className="w-full">
-                <Link href={`/dashboard/profile`}>
-                    <Edit /> Ver
-                </Link>
-                </Button>
-                <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => onToggleVisibility(teacher.id)}
-                >
-                {teacher.status === 'active' ? <EyeOff /> : <Eye />}{' '}
-                {teacher.status === 'active' ? 'Ocultar' : 'Mostrar'}
-                </Button>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
-                  <Trash2 /> Excluir
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil do professor
-                    <span className="font-bold"> {teacher.name} </span> e removerá seus dados de nossos servidores.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(teacher.id)}>
-                    Continuar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </>
-        ) : (
+        {!isAdmin && (
           <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
             <Link href={`/dashboard/profile`}>Ver Perfil e Agendar</Link>
           </Button>
