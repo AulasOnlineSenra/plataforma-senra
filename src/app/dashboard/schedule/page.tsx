@@ -308,9 +308,9 @@ export default function SchedulePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Disciplina</TableHead>
                   <TableHead>Professor(a)</TableHead>
-                  <TableHead>Aluno(a)</TableHead>
+                  <TableHead>Disciplina</TableHead>
+                  <TableHead>Título da Aula</TableHead>
                   <TableHead className="text-right">Data</TableHead>
                 </TableRow>
               </TableHeader>
@@ -321,9 +321,9 @@ export default function SchedulePage() {
                     const teacher = getTeacherById(event.teacherId);
                     return (
                       <TableRow key={event.id}>
-                        <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell>{teacher?.name || 'N/A'}</TableCell>
-                        <TableCell>{student?.name || 'N/A'}</TableCell>
+                        <TableCell className="font-medium">{event.subject}</TableCell>
+                        <TableCell>{event.title}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
                           {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
