@@ -39,6 +39,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useFirebase, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 type AvailabilitySlot = {
   start: string;
@@ -88,17 +90,28 @@ const TrelloIcon = () => (
 );
 
 const NotionIcon = () => (
-    <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
-        <path d="M22.5 3.375a.375.375 0 00-.375.375v16.5a.375.375 0 00.375.375h.75a.375.375 0 00.375-.375V3.75a.375.375 0 00-.375-.375h-.75zM19.5 3.375A.375.375 0 0019.125 3h-3.75a.375.375 0 00-.375.375v16.875a.375.375 0 00.375.375h3.75a.375.375 0 00.375-.375V3.75a.375.375 0 00-.375-.375zM.375 3.375h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375H.375a.375.375 0 01-.375-.375V3.75A.375.375 0 01.375 3.375zm3.75 0h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375h-.75a.375.375 0 01-.375-.375V3.75a.375.375 0 01.375-.375zm3.75 0h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375h-.75a.375.375 0 01-.375-.375V3.75a.375.375 0 01.375-.375zM12 3.375h.75a.375.375 0 01.375.375v16.875a.375.375 0 01-.375.375H12a.375.375 0 01-.375-.375V3.75a.375.375 0 01.375-.375z"/>
-    </svg>
+  <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+    <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375A.375.375 0 0 0 19.125 3h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zM12 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H12a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375z" />
+  </svg>
 );
-const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void; user: Teacher }) => {
-  const { toast } = useToast();
-  const [teacher, setTeacher] = useState<Teacher>(user);
 
-  useEffect(() => {
-    setTeacher(user);
-  }, [user]);
+const TeacherProfileForm = ({ onSave, user, onUserChange }: { onSave: (data: Teacher | User) => void; user: Teacher | User, onUserChange: (user: Teacher | User) => void }) => {
+  const { toast } = useToast();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    onUserChange({ ...user, [id]: value });
+  };
+
+  const handleSubjectChange = (subjectId: string, checked: boolean) => {
+    if ('subjects' in user) {
+        const currentSubjects = (user as Teacher).subjects || [];
+        const newSubjects = checked
+        ? [...currentSubjects, subjectId]
+        : currentSubjects.filter(id => id !== subjectId);
+        onUserChange({ ...user, subjects: newSubjects });
+    }
+  };
 
   const days = [
     { id: 'monday', label: 'Segunda-feira' },
@@ -118,20 +131,6 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
   const [availability, setAvailability] = useState(initialAvailability);
   const [editingSlot, setEditingSlot] = useState<{ dayId: string; index: number } | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setTeacher(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleSubjectChange = (subjectId: string, checked: boolean) => {
-    setTeacher(prev => {
-      const newSubjects = checked
-        ? [...(prev.subjects || []), subjectId]
-        : (prev.subjects || []).filter(id => id !== subjectId);
-      return { ...prev, subjects: newSubjects };
-    });
-  };
-
   const handleAddSlot = (dayId: string) => {
     const newSlot = { start: '09:00', end: '12:00' };
     setAvailability((prev) => ({
@@ -149,8 +148,8 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
   };
 
   const handleSaveSlot = (dayId: string, index: number) => {
-    const newStart = (document.getElementById(`start-${day.id}-${index}`) as HTMLInputElement).value;
-    const newEnd = (document.getElementById(`end-${day.id}-${index}`) as HTMLInputElement).value;
+    const newStart = (document.getElementById(`start-${dayId}-${index}`) as HTMLInputElement).value;
+    const newEnd = (document.getElementById(`end-${dayId}-${index}`) as HTMLInputElement).value;
     if (!newStart || !newEnd || newStart >= newEnd) {
         toast({
             variant: "destructive",
@@ -173,11 +172,6 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
       [dayId]: prev[dayId].filter((_, i) => i !== index),
     }));
   };
-  
-  const handleSaveChanges = () => {
-    onSave(teacher);
-  }
-
 
   return (
     <>
@@ -190,8 +184,8 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
           <CardContent className="grid md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center gap-4 md:col-span-1">
               <Avatar className="h-32 w-32">
-                <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                <AvatarFallback>{teacher.name.substring(0, 2)}</AvatarFallback>
+                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
               </Avatar>
               <Button variant="outline">Alterar Foto</Button>
             </div>
@@ -201,10 +195,10 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
                   <Label htmlFor="name">Nome</Label>
                   <Input
                     id="name"
-                    value={teacher.name.split(' ')[0]}
+                    value={user.name.split(' ')[0]}
                     onChange={(e) => {
-                      const lastName = teacher.name.split(' ').slice(1).join(' ');
-                      setTeacher(prev => ({...prev, name: `${e.target.value} ${lastName}`}))
+                      const lastName = user.name.split(' ').slice(1).join(' ');
+                      onUserChange({ ...user, name: `${e.target.value} ${lastName}`});
                     }}
                   />
                 </div>
@@ -213,17 +207,17 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
                   <Input
                     id="lastName"
                     placeholder="Não aplicável"
-                    value={teacher.name.split(' ').slice(1).join(' ')}
-                    onChange={(e) => {
-                      const firstName = teacher.name.split(' ')[0];
-                      setTeacher(prev => ({...prev, name: `${firstName} ${e.target.value}`}))
+                    value={user.name.split(' ').slice(1).join(' ')}
+                     onChange={(e) => {
+                      const firstName = user.name.split(' ')[0];
+                      onUserChange({ ...user, name: `${firstName} ${e.target.value}`});
                     }}
                   />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="nickname">Apelido (opcional)</Label>
-                <Input id="nickname" value={teacher.nickname} onChange={handleInputChange} />
+                <Input id="nickname" value={user.nickname || ''} onChange={handleInputChange} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -231,7 +225,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
                   <Input
                     id="email"
                     type="email"
-                    value={teacher.email}
+                    value={user.email}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -240,7 +234,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
                   <Input
                     id="phone"
                     type="tel"
-                    value={teacher.phone}
+                    value={user.phone || ''}
                     onChange={handleInputChange}
                     placeholder="(DDD) 99999-9999"
                   />
@@ -253,7 +247,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
               <Label htmlFor="bio">Descrição (Bio)</Label>
               <Textarea
                 id="bio"
-                value={teacher.bio}
+                value={user.bio || ''}
                 onChange={handleInputChange}
                 rows={4}
                 placeholder="Fale um pouco sobre sua experiência, metodologia e paixão por ensinar."
@@ -265,7 +259,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
               <Label htmlFor="education">Formação</Label>
               <Input
                 id="education"
-                value={teacher.education}
+                value={user.education || ''}
                 onChange={handleInputChange}
                 placeholder="Ex: Mestrado em Física Aplicada - USP"
               />
@@ -273,7 +267,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
           </CardContent>
         </CollapsibleCard>
 
-        { teacher.role === 'teacher' && (
+        { user.role === 'teacher' && 'subjects' in user && (
         <>
           <CollapsibleCard 
             title="Serviços" 
@@ -284,7 +278,7 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
                 <div key={subject.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={`subject-${subject.id}`}
-                    checked={(teacher.subjects || []).includes(subject.id)}
+                    checked={(user as Teacher).subjects.includes(subject.id)}
                     onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
                   />
                   <label
@@ -494,57 +488,9 @@ const TeacherProfileForm = ({ onSave, user }: { onSave: (data: Teacher) => void;
   );
 };
 
-const StudentProfileForm = ({ onSave, user }: { onSave: (data: User) => void; user: User }) => {
-  const [student, setStudent] = useState<User>(user);
-  const [password, setPassword] = useState('');
-
-  useEffect(() => {
-    setStudent(user);
-  }, [user]);
-  
-  if (!student) return null;
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setStudent(prev => prev ? { ...prev, [id]: value } : null);
-  };
-  
-  const handleSaveChanges = () => {
-    onSave(student);
-  }
-
-  return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Meu Perfil</CardTitle>
-          <CardDescription>Mantenha seus dados atualizados.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nome Completo</Label>
-            <Input id="name" value={student.name} onChange={handleInputChange} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={student.email} onChange={handleInputChange} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Nova Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Deixe em branco para não alterar"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-  );
-};
-
 export default function ProfilePage() {
   const { toast } = useToast();
+  const { firestore, user: authUser } = useFirebase();
   const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
 
   useEffect(() => {
@@ -561,12 +507,43 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const handleSaveChanges = (data: User | Teacher) => {
-    setCurrentUser(data);
-    localStorage.setItem('currentUser', JSON.stringify(data));
-    // This custom event is to notify the sidebar to update
-    window.dispatchEvent(new Event('storage'));
+ const handleSaveChanges = () => {
+    if (!currentUser || !authUser || !firestore) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível salvar. Usuário ou conexão não encontrados.",
+      });
+      return;
+    }
+
+    // Create a new object with only the fields that should be updated.
+    const updateData: Partial<User | Teacher> = {
+      name: currentUser.name,
+      email: currentUser.email,
+      avatarUrl: currentUser.avatarUrl,
+      timezone: currentUser.timezone,
+      nickname: currentUser.nickname,
+      phone: currentUser.phone,
+      bio: currentUser.bio,
+      education: currentUser.education,
+    };
     
+    // Conditionally add teacher-specific fields.
+    if (currentUser.role === 'teacher' && 'subjects' in currentUser) {
+      (updateData as Partial<Teacher>).subjects = currentUser.subjects;
+      // You would also handle availability here if it were being saved to Firestore
+      // (updateData as Partial<Teacher>).availability = availability;
+    }
+
+    const docRef = doc(firestore, 'users', authUser.uid);
+    setDocumentNonBlocking(docRef, updateData, { merge: true });
+
+    // Also update local state and storage for immediate UI feedback.
+    setCurrentUser(currentUser);
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    window.dispatchEvent(new Event('storage'));
+
     toast({
       title: "Alterações Salvas!",
       description: "Suas informações de perfil foram atualizadas com sucesso.",
@@ -583,15 +560,17 @@ export default function ProfilePage() {
         </h1>
         <Button
             size="lg"
-            onClick={() => handleSaveChanges(currentUser)}
+            onClick={handleSaveChanges}
             className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             Salvar Alterações
           </Button>
       </div>
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-        <TeacherProfileForm onSave={handleSaveChanges} user={currentUser as Teacher} />
+        <TeacherProfileForm onSave={handleSaveChanges} user={currentUser} onUserChange={setCurrentUser} />
       </div>
     </div>
   );
 }
+
+    
