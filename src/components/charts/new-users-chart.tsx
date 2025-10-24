@@ -8,8 +8,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import {
@@ -26,7 +24,7 @@ import {
   format,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
 const allData = Array.from({ length: 365 * 2 }).map((_, i) => {
   const date = new Date(2023, 0, 1);
@@ -44,6 +42,18 @@ interface NewUsersChartProps {
   filter: FilterType;
 }
 
+const chartConfig = {
+  Alunos: {
+    label: 'Alunos',
+    color: 'hsl(var(--chart-1))',
+  },
+  Professores: {
+    label: 'Professores',
+    color: 'hsl(var(--chart-2))',
+  },
+} satisfies ChartConfig;
+
+
 export function NewUsersChart({ filter }: NewUsersChartProps) {
     const chartData = useMemo(() => {
     const now = new Date();
@@ -51,8 +61,6 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
       case 'day': {
         const interval = { start: startOfDay(now), end: endOfDay(now) };
         const dayData = allData.filter(d => d.date >= interval.start && d.date <= interval.end);
-        // This view is not very useful for new users, but we can aggregate per hour if needed.
-        // For simplicity, we'll show a single point.
         const total = dayData.reduce((acc, curr) => ({
             Alunos: acc.Alunos + curr.Alunos,
             Professores: acc.Professores + curr.Professores,
@@ -105,52 +113,45 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
 
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+      <LineChart
+        accessibilityLayer
+        data={chartData}
+        margin={{
+          left: 12,
+          right: 12,
+        }}
+      >
+        <CartesianGrid vertical={false} />
         <XAxis
           dataKey="name"
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={12}
           tickLine={false}
           axisLine={false}
+          tickMargin={8}
+          tickFormatter={(value) => value.slice(0, 3)}
         />
         <YAxis
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={12}
           tickLine={false}
           axisLine={false}
+          tickMargin={8}
           allowDecimals={false}
         />
-        <ChartTooltip
-          cursor={{
-            stroke: 'hsl(var(--border))',
-            strokeWidth: 2,
-            strokeDasharray: '3 3',
-          }}
-          content={<ChartTooltipContent
-              formatter={(value, name) => [`${value} ${name === 'Alunos' ? 'novos alunos' : 'novos professores'}`, '']}
-              labelClassName="font-bold"
-            />}
-        />
-        <Legend />
+        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
         <Line
-          type="monotone"
           dataKey="Alunos"
-          stroke="hsl(var(--chart-1))"
+          type="natural"
+          stroke="var(--color-Alunos)"
           strokeWidth={2}
-          activeDot={{ r: 8, fill: 'hsl(var(--chart-1))' }}
-          dot={{r: 4, fill: 'hsl(var(--chart-1))'}}
+          dot={false}
         />
-        <Line 
-          type="monotone" 
-          dataKey="Professores" 
-          stroke="hsl(var(--chart-2))" 
+        <Line
+          dataKey="Professores"
+          type="natural"
+          stroke="var(--color-Professores)"
           strokeWidth={2}
-          activeDot={{ r: 8, fill: 'hsl(var(--chart-2))' }}
-          dot={{r: 4, fill: 'hsl(var(--chart-2))'}}
+          dot={false}
         />
       </LineChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }
