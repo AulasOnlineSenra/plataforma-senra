@@ -1,7 +1,8 @@
 
 'use client';
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useState } from 'react';
+import { PieChart, Pie, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, ChartConfig } from '@/components/ui/chart';
 
 const data = [
@@ -25,7 +26,38 @@ const chartConfig = {
   }, {} as ChartConfig),
 } satisfies ChartConfig;
 
+const renderActiveShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + (outerRadius * 0.1)} // Increase size by 10%
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        stroke={fill}
+        strokeWidth={2}
+      />
+    </g>
+  );
+};
+
+
 export function SubjectsChart() {
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(undefined);
+  };
+
   return (
     <ChartContainer
       config={chartConfig}
@@ -37,11 +69,16 @@ export function SubjectsChart() {
           content={<ChartTooltipContent hideLabel />}
         />
         <Pie
+          activeIndex={activeIndex}
+          activeShape={renderActiveShape}
           data={data}
           dataKey="value"
           nameKey="name"
           innerRadius={60}
+          outerRadius={80}
           strokeWidth={5}
+          onMouseEnter={onPieEnter}
+          onMouseLeave={onPieLeave}
         >
            {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -49,7 +86,7 @@ export function SubjectsChart() {
         </Pie>
          <ChartLegend
           content={<ChartLegendContent nameKey="name" />}
-          className="flex items-center justify-center gap-4"
+          className="-mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-4"
         />
       </PieChart>
     </ChartContainer>
