@@ -169,7 +169,7 @@ export default function DashboardPage() {
                       </Tabs>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[350px]">
                   <RevenueChart filter={filter} />
                 </CardContent>
               </Card>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                   <CardTitle>Aulas por Disciplina</CardTitle>
                   <CardDescription>Distribuição das aulas agendadas.</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
+                <CardContent className="h-[350px]">
                   <SubjectsChart />
                 </CardContent>
               </Card>
@@ -203,7 +203,7 @@ export default function DashboardPage() {
                       </Tabs>
                     </div>
                 </CardHeader>
-                <CardContent className="h-[400px]">
+                <CardContent className="h-[350px]">
                   <NewUsersChart filter={filter} />
                 </CardContent>
               </Card>

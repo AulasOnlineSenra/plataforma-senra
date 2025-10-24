@@ -105,7 +105,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
   }, [filter]);
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
+    <ChartContainer config={chartConfig} className="h-full w-full">
       <BarChart 
         accessibilityLayer 
         data={chartData}

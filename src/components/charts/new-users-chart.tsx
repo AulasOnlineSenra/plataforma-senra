@@ -124,7 +124,7 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
 
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+    <ChartContainer config={chartConfig} className="h-full w-full">
       <LineChart
         accessibilityLayer
         data={chartData}
