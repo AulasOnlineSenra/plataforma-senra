@@ -11,23 +11,24 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
-  startOfDay,
+  startOfToday,
   startOfWeek,
   startOfMonth,
   startOfYear,
-  endOfDay,
   endOfWeek,
   endOfMonth,
   endOfYear,
   eachDayOfInterval,
+  eachWeekOfInterval,
   eachMonthOfInterval,
+  eachYearOfInterval,
   format,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
-const allData = Array.from({ length: 365 * 2 }).map((_, i) => {
-  const date = new Date(2023, 0, 1);
+const allData = Array.from({ length: 365 * 5 }).map((_, i) => {
+  const date = new Date(2022, 0, 1);
   date.setDate(date.getDate() + i);
   return {
     date: date,
@@ -59,44 +60,40 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
     const now = new Date();
     switch (filter) {
       case 'day': {
-        const interval = { start: startOfDay(now), end: endOfDay(now) };
-        const dayData = allData.filter(d => d.date >= interval.start && d.date <= interval.end);
-        const total = dayData.reduce((acc, curr) => ({
-            Alunos: acc.Alunos + curr.Alunos,
-            Professores: acc.Professores + curr.Professores,
-        }), { Alunos: 0, Professores: 0 });
-        return [{ name: format(now, 'dd/MM'), ...total }];
-      }
-      case 'week': {
-        const interval = { start: startOfWeek(now, { locale: ptBR }), end: endOfWeek(now, { locale: ptBR }) };
-        const weekData = eachDayOfInterval(interval);
-        return weekData.map(day => {
+        const interval = { start: new Date(2025, 0, 1), end: now };
+        const days = eachDayOfInterval(interval);
+        return days.map(day => {
           const dayUsers = allData
             .filter(d => d.date.toDateString() === day.toDateString())
             .reduce((acc, curr) => ({
               Alunos: acc.Alunos + curr.Alunos,
               Professores: acc.Professores + curr.Professores,
             }), { Alunos: 0, Professores: 0 });
-          return { name: format(day, 'EEE', { locale: ptBR }), ...dayUsers };
+          return { name: format(day, 'dd/MM'), ...dayUsers };
+        });
+      }
+      case 'week': {
+        const start = startOfYear(now);
+        const end = endOfYear(now);
+        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 });
+        return weeks.map(weekStart => {
+          const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+          const weekUsers = allData
+            .filter(d => d.date >= weekStart && d.date <= weekEnd)
+            .reduce((acc, curr) => ({
+              Alunos: acc.Alunos + curr.Alunos,
+              Professores: acc.Professores + curr.Professores,
+            }), { Alunos: 0, Professores: 0 });
+          return {
+            name: `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM')}`,
+            ...weekUsers
+          };
         });
       }
       case 'month': {
-        const interval = { start: startOfMonth(now), end: endOfMonth(now) };
-        const monthData = eachDayOfInterval(interval);
-         return monthData.map(day => {
-            const dayUsers = allData
-              .filter(d => d.date.toDateString() === day.toDateString())
-              .reduce((acc, curr) => ({
-                Alunos: acc.Alunos + curr.Alunos,
-                Professores: acc.Professores + curr.Professores,
-              }), { Alunos: 0, Professores: 0 });
-            return { name: format(day, 'd'), ...dayUsers };
-        });
-      }
-      case 'year': {
         const interval = { start: startOfYear(now), end: endOfYear(now) };
-        const yearData = eachMonthOfInterval(interval);
-        return yearData.map(month => {
+        const months = eachMonthOfInterval(interval);
+        return months.map(month => {
           const monthUsers = allData
             .filter(d => d.date.getMonth() === month.getMonth() && d.date.getFullYear() === month.getFullYear())
             .reduce((acc, curr) => ({
@@ -104,6 +101,21 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
               Professores: acc.Professores + curr.Professores,
             }), { Alunos: 0, Professores: 0 });
           return { name: format(month, 'MMM', { locale: ptBR }), ...monthUsers };
+        });
+      }
+      case 'year': {
+        const years = eachYearOfInterval({
+          start: new Date(2022, 0, 1),
+          end: now,
+        });
+        return years.map(year => {
+          const yearUsers = allData
+            .filter(d => d.date.getFullYear() === year.getFullYear())
+            .reduce((acc, curr) => ({
+              Alunos: acc.Alunos + curr.Alunos,
+              Professores: acc.Professores + curr.Professores,
+            }), { Alunos: 0, Professores: 0 });
+          return { name: format(year, 'yyyy'), ...yearUsers };
         });
       }
       default:
@@ -128,7 +140,6 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
-          tickFormatter={(value) => value.slice(0, 3)}
         />
         <YAxis
           tickLine={false}

@@ -12,23 +12,24 @@ import {
   CartesianGrid,
 } from 'recharts';
 import {
-  startOfDay,
+  startOfToday,
   startOfWeek,
   startOfMonth,
   startOfYear,
-  endOfDay,
   endOfWeek,
   endOfMonth,
   endOfYear,
   eachDayOfInterval,
+  eachWeekOfInterval,
   eachMonthOfInterval,
+  eachYearOfInterval,
   format,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
-const allData = Array.from({ length: 365 * 2 }).map((_, i) => {
-  const date = new Date(2023, 0, 1);
+const allData = Array.from({ length: 365 * 5 }).map((_, i) => {
+  const date = new Date(2022, 0, 1);
   date.setDate(date.getDate() + i);
   return {
     date: date,
@@ -45,49 +46,59 @@ interface RevenueChartProps {
 const chartConfig = {
   revenue: {
     label: 'Receita',
-    color: 'hsl(var(--chart-1))',
+    color: 'hsl(var(--sidebar-primary))',
   },
 } satisfies ChartConfig;
 
 export function RevenueChart({ filter }: RevenueChartProps) {
   const chartData = useMemo(() => {
-    const now = new Date();
+    const now = new Date(); // Use a stable "now" for the calculation
     switch (filter) {
       case 'day': {
-        const interval = { start: startOfDay(now), end: endOfDay(now) };
-        const dayData = allData.filter(d => d.date >= interval.start && d.date <= interval.end);
-        // This is not hourly, so we just show one point for simplicity.
-        const totalRevenue = dayData.reduce((acc, curr) => acc + curr.revenue, 0);
-        return [{ name: format(now, 'dd/MM'), revenue: totalRevenue }];
-      }
-      case 'week': {
-        const interval = { start: startOfWeek(now, { locale: ptBR }), end: endOfWeek(now, { locale: ptBR }) };
-        const weekData = eachDayOfInterval(interval);
-        return weekData.map(day => {
+        const interval = { start: new Date(2025, 0, 1), end: now };
+         const days = eachDayOfInterval(interval);
+        return days.map(day => {
           const dayRevenue = allData
             .filter(d => d.date.toDateString() === day.toDateString())
             .reduce((acc, curr) => acc + curr.revenue, 0);
-          return { name: format(day, 'EEE', { locale: ptBR }), revenue: dayRevenue };
+          return { name: format(day, 'dd/MM'), revenue: dayRevenue };
+        });
+      }
+      case 'week': {
+        const start = startOfYear(now);
+        const end = endOfYear(now);
+        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 /* Monday */ });
+        return weeks.map(weekStart => {
+          const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+          const weekRevenue = allData
+            .filter(d => d.date >= weekStart && d.date <= weekEnd)
+            .reduce((acc, curr) => acc + curr.revenue, 0);
+          return {
+            name: `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM')}`,
+            revenue: weekRevenue,
+          };
         });
       }
       case 'month': {
-        const interval = { start: startOfMonth(now), end: endOfMonth(now) };
-        const monthData = eachDayOfInterval(interval);
-        return monthData.map(day => {
-            const dayRevenue = allData
-              .filter(d => d.date.toDateString() === day.toDateString())
-              .reduce((acc, curr) => acc + curr.revenue, 0);
-            return { name: format(day, 'd'), revenue: dayRevenue };
-        });
-      }
-      case 'year': {
         const interval = { start: startOfYear(now), end: endOfYear(now) };
-        const yearData = eachMonthOfInterval(interval);
-        return yearData.map(month => {
+        const months = eachMonthOfInterval(interval);
+        return months.map(month => {
           const monthRevenue = allData
             .filter(d => d.date.getMonth() === month.getMonth() && d.date.getFullYear() === month.getFullYear())
             .reduce((acc, curr) => acc + curr.revenue, 0);
           return { name: format(month, 'MMM', { locale: ptBR }), revenue: monthRevenue };
+        });
+      }
+      case 'year': {
+         const years = eachYearOfInterval({
+          start: new Date(2022, 0, 1),
+          end: now,
+        });
+        return years.map(year => {
+          const yearRevenue = allData
+            .filter(d => d.date.getFullYear() === year.getFullYear())
+            .reduce((acc, curr) => acc + curr.revenue, 0);
+          return { name: format(year, 'yyyy'), revenue: yearRevenue };
         });
       }
       default:
@@ -104,7 +115,6 @@ export function RevenueChart({ filter }: RevenueChartProps) {
           tickLine={false}
           tickMargin={10}
           axisLine={false}
-          tickFormatter={(value) => value.slice(0, 3)}
         />
         <YAxis
           tickLine={false}
