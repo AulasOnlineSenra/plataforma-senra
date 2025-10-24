@@ -47,6 +47,128 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 
+const LoginForm = ({
+  role,
+  onBack,
+  onLogin,
+  email,
+  setEmail,
+  setPassword,
+}: {
+  role: UserRole;
+  onBack: () => void;
+  onLogin: (e: React.FormEvent) => void;
+  email: string;
+  setEmail: (email: string) => void;
+  setPassword: (password: string) => void;
+}) => {
+  const rolePortuguese = {
+    student: 'Aluno',
+    teacher: 'Professor',
+    admin: 'Administrador',
+  };
+
+  return (
+    <div className="w-full">
+      <button
+        onClick={onBack}
+        className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+      >
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Voltar para seleção
+      </button>
+      <h1 className="text-2xl font-bold font-headline text-center mb-1">
+        Login como {rolePortuguese[role]}
+      </h1>
+      <p className="text-muted-foreground text-center mb-6">
+        Insira seus dados para acessar a plataforma.
+      </p>
+      <form onSubmit={onLogin} className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="email" className="sr-only">
+            E-mail
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="E-mail"
+            required
+            className="h-11"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="password" className="sr-only">
+            Senha
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Senha"
+            required
+            className="h-11"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+          Entrar
+        </Button>
+      </form>
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">ou</span>
+        </div>
+      </div>
+      <div className="grid gap-4">
+        <Button variant="outline" className="h-11 w-full">
+          <GoogleIcon className="mr-2" />
+          Continuar com Google
+        </Button>
+      </div>
+      <div className="mt-6 text-center text-sm">
+        Não tem uma conta?{' '}
+        <Link href="/register" className="underline font-semibold">
+          Cadastrar-se
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.FormEvent) => void;}) => (
+  <div className="w-full">
+    <h1 className="text-2xl font-bold font-headline text-center mb-6">
+      Selecione seu perfil para entrar
+    </h1>
+    <div className="grid gap-4">
+      <Button onClick={() => onSelectRole('teacher')} variant="outline" className="h-12 text-base">
+        Sou Professor
+      </Button>
+      <Button onClick={() => onSelectRole('student')} variant="outline" className="h-12 text-base">
+        Sou Aluno
+      </Button>
+      <Button onClick={() => onSelectRole('admin')} variant="outline" className="h-12 text-base">
+        Sou Administrador
+      </Button>
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">ou</span>
+        </div>
+      </div>
+      <Button onClick={onLogin} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+        Acessar como Visitante
+      </Button>
+    </div>
+  </div>
+);
+
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const router = useRouter();
@@ -86,107 +208,6 @@ export default function LoginPage() {
     router.push('/dashboard');
   };
 
-  const LoginForm = ({ role }: { role: UserRole }) => {
-    const rolePortuguese = {
-        student: 'Aluno',
-        teacher: 'Professor',
-        admin: 'Administrador',
-    };
-
-    return (
-      <div className="w-full">
-        <button onClick={() => setRole(null)} className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Voltar para seleção
-        </button>
-        <h1 className="text-2xl font-bold font-headline text-center mb-1">
-          Login como {rolePortuguese[role]}
-        </h1>
-        <p className="text-muted-foreground text-center mb-6">
-            Insira seus dados para acessar a plataforma.
-        </p>
-        <form onSubmit={handleLogin} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email" className="sr-only">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="E-mail"
-              required
-              className="h-11"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password" className="sr-only">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Senha"
-              required
-              className="h-11"
-            />
-          </div>
-          <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
-            Entrar
-          </Button>
-        </form>
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
-          </div>
-        </div>
-        <div className="grid gap-4">
-          <Button variant="outline" className="h-11 w-full">
-            <GoogleIcon className="mr-2" />
-            Continuar com Google
-          </Button>
-        </div>
-        <div className="mt-6 text-center text-sm">
-          Não tem uma conta?{' '}
-          <Link href="/register" className="underline font-semibold">
-            Cadastrar-se
-          </Link>
-        </div>
-      </div>
-    );
-  };
-  
-   const RoleSelection = () => (
-    <div className="w-full">
-      <h1 className="text-2xl font-bold font-headline text-center mb-6">
-        Selecione seu perfil para entrar
-      </h1>
-      <div className="grid gap-4">
-        <Button onClick={() => setRole('teacher')} variant="outline" className="h-12 text-base">
-          Sou Professor
-        </Button>
-        <Button onClick={() => setRole('student')} variant="outline" className="h-12 text-base">
-          Sou Aluno
-        </Button>
-        <Button onClick={() => setRole('admin')} variant="outline" className="h-12 text-base">
-          Sou Administrador
-        </Button>
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
-          </div>
-        </div>
-        <Button onClick={() => handleLogin({ preventDefault: () => {} } as React.FormEvent)} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
-          Acessar como Visitante
-        </Button>
-      </div>
-    </div>
-  );
-
-
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-card">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
@@ -195,7 +216,18 @@ export default function LoginPage() {
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
             </div>
-            {role ? <LoginForm role={role} /> : <RoleSelection />}
+            {role ? (
+              <LoginForm
+                role={role}
+                onBack={() => setRole(null)}
+                onLogin={handleLogin}
+                email={email}
+                setEmail={setEmail}
+                setPassword={setPassword}
+              />
+            ) : (
+              <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
+            )}
           </div>
         </div>
         <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-primary to-accent p-12 text-center text-primary-foreground relative">
