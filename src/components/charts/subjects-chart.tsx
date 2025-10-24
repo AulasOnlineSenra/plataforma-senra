@@ -75,7 +75,7 @@ export function SubjectsChart() {
           dataKey="value"
           nameKey="name"
           innerRadius={80}
-          outerRadius={110}
+          outerRadius={120}
           strokeWidth={5}
           onMouseEnter={onPieEnter}
           onMouseLeave={onPieLeave}
@@ -85,7 +85,7 @@ export function SubjectsChart() {
           ))}
         </Pie>
          <ChartLegend
-          content={<ChartLegendContent nameKey="name" />}
+          content={<ChartLegendContent nameKey="name" className="text-base" />}
           className="-mt-4 flex-wrap items-center justify-center gap-2 sm:gap-4"
         />
       </PieChart>
