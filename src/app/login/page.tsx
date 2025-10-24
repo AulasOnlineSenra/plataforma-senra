@@ -72,14 +72,16 @@ const LoginForm = ({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="w-full">
-      <button
+    <div className="w-full relative">
+      <Button
         onClick={onBack}
-        className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+        variant="ghost"
+        size="icon"
+        className="absolute top-0 right-0"
       >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Voltar para seleção
-      </button>
+        <ArrowLeft className="h-4 w-4" />
+        <span className="sr-only">Voltar para seleção</span>
+      </Button>
       <h1 className="text-2xl font-bold font-headline text-center mb-1">
         Login como {rolePortuguese[role]}
       </h1>
@@ -204,11 +206,16 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!role) {
-        toast({
-            variant: "destructive",
-            title: "Seleção de Perfil Necessária",
-            description: "Por favor, selecione um perfil para continuar.",
+        // Default to student for "Acessar como Visitante"
+        const visitorRole = 'student';
+        localStorage.setItem('userRole', visitorRole);
+        const user = getMockUser(visitorRole);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+         toast({
+            title: "Acesso de Visitante",
+            description: `Você está acessando como ${user.name.split(' ')[0]}.`,
         });
+        router.push('/dashboard');
         return;
     }
     
@@ -228,10 +235,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-card">
+    <div className="flex min-h-screen w-full items-center justify-center bg-background">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
             </div>
