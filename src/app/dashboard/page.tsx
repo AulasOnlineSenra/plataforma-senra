@@ -30,6 +30,7 @@ import {
   TrendingUp,
   Activity,
   CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents, users, teachers } from '@/lib/data';
 import { format } from 'date-fns';
@@ -93,7 +94,7 @@ export default function DashboardPage() {
 
   const renderAdminDashboard = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
         <Link href="/dashboard/financial">
           <Card className="hover:bg-accent/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -118,6 +119,16 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
+            <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
+          </CardContent>
+        </Card>
         <Link href="/dashboard/teachers">
           <Card className="hover:bg-accent/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -275,7 +286,7 @@ export default function DashboardPage() {
 
   const renderStudentTeacherDashboard = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
@@ -294,6 +305,16 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">28</div>
             <p className="text-xs text-muted-foreground">Total de aulas concluídas</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
+            <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
           </CardContent>
         </Card>
         <Card>
@@ -408,3 +429,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
