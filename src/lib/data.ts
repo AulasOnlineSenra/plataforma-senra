@@ -1,4 +1,5 @@
 
+
 import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -66,7 +67,7 @@ export const users: User[] = [
   }
 ];
 
-export const teachers: Teacher[] = [
+export let teachers: Teacher[] = [
   {
     id: 'teacher-1',
     name: 'Ana Silva',
@@ -84,6 +85,7 @@ export const teachers: Teacher[] = [
       friday: ['10:30', '12:00'],
     },
     timezone: 'America/Sao_Paulo',
+    status: 'active',
   },
   {
     id: 'teacher-2',
@@ -99,6 +101,7 @@ export const teachers: Teacher[] = [
       thursday: ['10:30', '12:00', '13:30'],
     },
     timezone: 'America/Sao_Paulo',
+    status: 'active',
   },
   {
     id: 'teacher-3',
@@ -117,6 +120,7 @@ export const teachers: Teacher[] = [
       friday: ['18:00', '19:30'],
     },
     timezone: 'America/Noronha',
+    status: 'active',
   },
 ];
 

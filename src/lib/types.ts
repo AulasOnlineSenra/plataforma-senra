@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'admin' | 'student' | 'teacher';
 
 export interface User {
@@ -17,13 +18,14 @@ export interface User {
 
 export interface Subject {
   id: string;
-  name: string;
+  name:string;
 }
 
 export interface Teacher extends User {
   role: 'teacher';
   subjects: string[]; // array of subject IDs
   availability: Record<string, string[]>; // e.g. { "monday": ["09:00", "10:00"] }
+  status: 'active' | 'hidden';
 }
 
 export interface ClassPackage {

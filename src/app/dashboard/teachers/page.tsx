@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,13 +11,24 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import { teachers, subjects, getMockUser } from '@/lib/data';
+import { teachers as initialTeachers, subjects, getMockUser } from '@/lib/data';
 import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -29,19 +41,33 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
-function TeacherCard({ teacher, currentUser }: { teacher: Teacher, currentUser: User | null }) {
+function TeacherCard({
+  teacher,
+  currentUser,
+  onDelete,
+  onToggleVisibility,
+}: {
+  teacher: Teacher;
+  currentUser: User | null;
+  onDelete: (teacherId: string) => void;
+  onToggleVisibility: (teacherId: string) => void;
+}) {
   const teacherSubjects = teacher.subjects
     .map((subjectId) => subjects.find((s) => s.id === subjectId)?.name)
     .filter(Boolean);
 
   // Mock rating for demonstration
   const rating = 4.5 + (parseInt(teacher.id.slice(-1), 16) % 5) / 10;
-  
+
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <Card className="flex flex-col">
+    <Card className={cn(
+        "flex flex-col transition-opacity",
+        teacher.status === 'hidden' && 'opacity-60 bg-muted/50'
+    )}>
       <CardHeader className="items-center text-center">
         <Avatar className="h-24 w-24 mb-4">
           <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
@@ -80,16 +106,43 @@ function TeacherCard({ teacher, currentUser }: { teacher: Teacher, currentUser: 
       <CardFooter className="flex-col gap-2">
         {isAdmin ? (
           <>
-            <Button asChild className="w-full">
-              <Link href={`/dashboard/profile`}>
-                <Edit /> Ver/Editar Perfil
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/dashboard/schedule">
-                <Calendar /> Ver Agenda
-              </Link>
-            </Button>
+            <div className="flex w-full gap-2">
+                <Button asChild className="w-full">
+                <Link href={`/dashboard/profile`}>
+                    <Edit /> Ver
+                </Link>
+                </Button>
+                <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => onToggleVisibility(teacher.id)}
+                >
+                {teacher.status === 'active' ? <EyeOff /> : <Eye />}{' '}
+                {teacher.status === 'active' ? 'Ocultar' : 'Mostrar'}
+                </Button>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                  <Trash2 /> Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil do professor
+                    <span className="font-bold"> {teacher.name} </span> e removerá seus dados de nossos servidores.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(teacher.id)}>
+                    Continuar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </>
         ) : (
           <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
@@ -103,6 +156,7 @@ function TeacherCard({ teacher, currentUser }: { teacher: Teacher, currentUser: 
 
 export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [teacherList, setTeacherList] = useState<Teacher[]>(initialTeachers);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const { toast } = useToast();
@@ -132,6 +186,29 @@ export default function TeachersPage() {
     setInviteEmail('');
     setIsInviteDialogOpen(false);
   };
+  
+  const handleDeleteTeacher = (teacherId: string) => {
+    setTeacherList(prev => prev.filter(t => t.id !== teacherId));
+    toast({
+      title: 'Professor Excluído',
+      description: 'O perfil do professor foi removido da plataforma.',
+    });
+  };
+
+  const handleToggleVisibility = (teacherId: string) => {
+    setTeacherList(prev =>
+      prev.map(t =>
+        t.id === teacherId
+          ? { ...t, status: t.status === 'active' ? 'hidden' : 'active' }
+          : t
+      )
+    );
+  };
+  
+  const visibleTeachers =
+    currentUser?.role === 'admin'
+      ? teacherList
+      : teacherList.filter(t => t.status === 'active');
 
   return (
     <>
@@ -151,8 +228,14 @@ export default function TeachersPage() {
           )}
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {teachers.map((teacher) => (
-            <TeacherCard key={teacher.id} teacher={teacher} currentUser={currentUser} />
+          {visibleTeachers.map((teacher) => (
+            <TeacherCard
+              key={teacher.id}
+              teacher={teacher}
+              currentUser={currentUser}
+              onDelete={handleDeleteTeacher}
+              onToggleVisibility={handleToggleVisibility}
+            />
           ))}
         </div>
       </div>
