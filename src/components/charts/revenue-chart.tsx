@@ -50,7 +50,7 @@ const chartConfig = {
 
 export function RevenueChart({ filter }: RevenueChartProps) {
   const chartData = useMemo(() => {
-    const now = new Date(); // Use a stable "now" for the calculation
+    const now = new Date();
     switch (filter) {
       case 'day': {
         const interval = { start: new Date(2025, 0, 1), end: now };
@@ -65,7 +65,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
       case 'week': {
         const start = startOfYear(now);
         const end = endOfYear(now);
-        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 /* Sunday */ });
+        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 });
         return weeks.map(weekStart => {
           const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
           const weekRevenue = allData
@@ -105,7 +105,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
   }, [filter]);
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+    <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
       <BarChart 
         accessibilityLayer 
         data={chartData}
@@ -142,3 +142,5 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     </ChartContainer>
   );
 }
+
+    
