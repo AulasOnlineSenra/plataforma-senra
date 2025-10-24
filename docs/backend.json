@@ -1,0 +1,394 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Aulas Online Senra platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL of the user's profile photo.",
+          "format": "uri"
+        },
+        "isTeacher": {
+          "type": "boolean",
+          "description": "Indicates whether the user is a teacher."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "Subject": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Subject",
+      "type": "object",
+      "description": "Represents a subject that can be taught on the platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subject."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the subject."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the subject."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "TeacherProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TeacherProfile",
+      "type": "object",
+      "description": "Represents the profile of a teacher, including their availability and subject expertise.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the teacher profile."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 TeacherProfile)"
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "Reference to Subject. (Relationship: Subject 1:N TeacherProfile)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the teacher's background and expertise."
+        },
+        "formation": {
+          "type": "string",
+          "description": "Teacher's educational background."
+        },
+        "age": {
+          "type": "number",
+          "description": "Teacher's age."
+        },
+        "availability": {
+          "type": "string",
+          "description": "Teacher's availability schedule (e.g., JSON representation of available times)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "subjectId"
+      ]
+    },
+    "Lesson": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Lesson",
+      "type": "object",
+      "description": "Represents a scheduled lesson between a student and a teacher.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the lesson."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to User (student). (Relationship: User 1:N Lesson)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to User (teacher). (Relationship: User 1:N Lesson)"
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "Reference to Subject. (Relationship: Subject 1:N Lesson)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Date and time the lesson starts.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Date and time the lesson ends.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the lesson (e.g., scheduled, completed, cancelled)."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "teacherId",
+        "subjectId",
+        "startTime",
+        "endTime",
+        "status"
+      ]
+    },
+    "PaymentPackage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PaymentPackage",
+      "type": "object",
+      "description": "Represents a package of lessons a student can purchase.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payment package."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the payment package (e.g., 4 lessons, 8 lessons)."
+        },
+        "numberOfLessons": {
+          "type": "number",
+          "description": "Number of lessons included in the package."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the package."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "numberOfLessons",
+        "price"
+      ]
+    },
+    "StudentPurchase": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudentPurchase",
+      "type": "object",
+      "description": "Represents a student's purchase of a payment package.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the student purchase."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to User (student). (Relationship: User 1:N StudentPurchase)"
+        },
+        "paymentPackageId": {
+          "type": "string",
+          "description": "Reference to PaymentPackage. (Relationship: PaymentPackage 1:N StudentPurchase)"
+        },
+        "purchaseDate": {
+          "type": "string",
+          "description": "Date the package was purchased.",
+          "format": "date-time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method used (e.g., PayPal, Mercado Pago)."
+        },
+        "lessonsRemaining": {
+          "type": "number",
+          "description": "The amount of lessons remaining on the purchased package."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "paymentPackageId",
+        "purchaseDate",
+        "paymentMethod",
+        "lessonsRemaining"
+      ]
+    },
+    "SessionFeedback": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SessionFeedback",
+      "type": "object",
+      "description": "Represents feedback given by a student after a lesson session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the session feedback."
+        },
+        "lessonId": {
+          "type": "string",
+          "description": "Reference to Lesson. (Relationship: Lesson 1:1 SessionFeedback)"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating given by the student (e.g., 1-5 stars)."
+        },
+        "comments": {
+          "type": "string",
+          "description": "Additional comments provided by the student."
+        }
+      },
+      "required": [
+        "id",
+        "lessonId",
+        "rating"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. This path ensures that user data is isolated and only accessible to the authenticated user with the matching userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/teacherProfiles/{teacherProfileId}",
+        "definition": {
+          "entityName": "TeacherProfile",
+          "schema": {
+            "$ref": "#/backend/entities/TeacherProfile"
+          },
+          "description": "Stores teacher profile information associated with a specific user. This path allows teachers to manage their profiles and availability. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (teacher)."
+            },
+            {
+              "name": "teacherProfileId",
+              "description": "The unique identifier for the teacher profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/subjects/{subjectId}",
+        "definition": {
+          "entityName": "Subject",
+          "schema": {
+            "$ref": "#/backend/entities/Subject"
+          },
+          "description": "Stores subject information. This collection is globally accessible for reading to allow users to select subjects. No write access for standard users.",
+          "params": [
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/lessons/{lessonId}",
+        "definition": {
+          "entityName": "Lesson",
+          "schema": {
+            "$ref": "#/backend/entities/Lesson"
+          },
+          "description": "Stores lesson information associated with a specific user (either student or teacher). Includes denormalized 'studentId' and 'teacherId' for authorization independence.  This allows easy filtering of lessons for a specific student or teacher.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (student or teacher)."
+            },
+            {
+              "name": "lessonId",
+              "description": "The unique identifier for the lesson."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/paymentPackages/{paymentPackageId}",
+        "definition": {
+          "entityName": "PaymentPackage",
+          "schema": {
+            "$ref": "#/backend/entities/PaymentPackage"
+          },
+          "description": "Stores payment package information. This collection is globally accessible for reading to allow users to purchase packages. No write access for standard users.",
+          "params": [
+            {
+              "name": "paymentPackageId",
+              "description": "The unique identifier for the payment package."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/studentPurchases/{studentPurchaseId}",
+        "definition": {
+          "entityName": "StudentPurchase",
+          "schema": {
+            "$ref": "#/backend/entities/StudentPurchase"
+          },
+          "description": "Stores student purchase information associated with a specific user. This path ensures that only the student who made the purchase can access the purchase data.  Includes denormalized 'studentId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (student)."
+            },
+            {
+              "name": "studentPurchaseId",
+              "description": "The unique identifier for the student purchase."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId}",
+        "definition": {
+          "entityName": "SessionFeedback",
+          "schema": {
+            "$ref": "#/backend/entities/SessionFeedback"
+          },
+          "description": "Stores session feedback provided by a student for a specific lesson. This path ensures that only the student who participated in the lesson can provide feedback. Includes denormalized 'studentId', 'teacherId', and 'lessonId' from the lesson document for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (student)."
+            },
+            {
+              "name": "lessonId",
+              "description": "The unique identifier for the lesson."
+            },
+            {
+              "name": "sessionFeedbackId",
+              "description": "The unique identifier for the session feedback."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure prioritizes authorization independence and data isolation for each user, aligning with the application's requirement to display only the logged-in user's information. By nesting all user-specific data under the `/users/{userId}` path, we ensure that data access is inherently restricted to the user with the matching `userId`. This eliminates the need for complex `get()` calls in security rules, enabling atomic operations and easier debugging.\n\nThe structure supports the required QAPs by:\n\n1.  **Private Data**: Using path-based ownership (`/users/{userId}/...`) ensures that each user's data is private by default and accessible only to them (and administrators).\n2.  **Segregation**: Each collection is structured to store data with a homogeneous security posture. For instance, user profiles and lessons are neatly organized within the user's document, enforcing clear boundaries. Teacher profiles are distinct, facilitating separate management.\n3.  **Admin Overrides:** The structure does not include any mechanism for admin overrides. If admin access is required, the structure must be modified to use global collections."
+  }
+}

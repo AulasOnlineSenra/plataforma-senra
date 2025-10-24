@@ -1,0 +1,203 @@
+/**
+ * @file Firebase Security Rules for Aulas Online Senra
+ *
+ * @corePhilosophy This ruleset enforces a strict user-ownership model, ensuring that each user can only access their own data. All user-specific data is nested under the `/users/{userId}` path.
+ * @dataStructure The database is structured with user-specific data under `/users/{userId}`, teacher profiles under `/users/{userId}/teacherProfiles/{teacherProfileId}`, lessons under `/users/{userId}/lessons/{lessonId}`, student purchases under `/users/{userId}/studentPurchases/{studentPurchaseId}`, and session feedback under `/users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId}`. Subjects and PaymentPackages are stored in top-level collections (`/subjects/{subjectId}` and `/paymentPackages/{paymentPackageId}`) and are publicly readable.
+ * @keySecurityDecisions
+ *   - User listing is disallowed.
+ *   - Only authenticated users can access data.
+ *   - Data validation is relaxed to allow for rapid prototyping, with critical authorization fields still validated.
+ * @denormalization To simplify security rules, key authorization data (e.g., `studentId`, `teacherId`) is denormalized directly onto the documents. This avoids costly `get()` calls.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Secures the user profile. Only the authenticated user can read or write their own profile.
+     * @path /users/{userId}
+     * @allow (create) - User with ID 'user123' can create their own profile if request.auth.uid == 'user123'.
+     * @allow (get) - User with ID 'user123' can read their own profile if request.auth.uid == 'user123'.
+     * @allow (update) - User with ID 'user123' can update their own profile if request.auth.uid == 'user123'.
+     * @allow (delete) - User with ID 'user123' can delete their own profile if request.auth.uid == 'user123'.
+     * @deny (create) - User with ID 'user456' cannot create a profile with ID 'user123'.
+     * @deny (get) - User with ID 'user456' cannot read the profile of user with ID 'user123'.
+     * @deny (update) - User with ID 'user456' cannot update the profile of user with ID 'user123'.
+     * @deny (delete) - User with ID 'user456' cannot delete the profile of user with ID 'user123'.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures teacher profiles. Only the teacher (owner) can read, create, update, or delete their own profile.
+     * @path /users/{userId}/teacherProfiles/{teacherProfileId}
+     * @allow (create) - User with ID 'teacher123' can create their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
+     * @allow (get) - User with ID 'teacher123' can read their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
+     * @allow (update) - User with ID 'teacher123' can update their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
+     * @allow (delete) - User with ID 'teacher123' can delete their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
+     * @deny (create) - User with ID 'student456' cannot create a teacher profile under /users/teacher123/teacherProfiles/profile1.
+     * @deny (get) - User with ID 'student456' cannot read the teacher profile under /users/teacher123/teacherProfiles/profile1.
+     * @deny (update) - User with ID 'student456' cannot update the teacher profile under /users/teacher123/teacherProfiles/profile1.
+     * @deny (delete) - User with ID 'student456' cannot delete the teacher profile under /users/teacher123/teacherProfiles/profile1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/teacherProfiles/{teacherProfileId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows public read access to subjects. No write access for standard users.
+     * @path /subjects/{subjectId}
+     * @allow (get) - Any user can read any subject.
+     * @allow (list) - Any user can list all subjects.
+     * @deny (create) - No user can create a subject. // TODO: Add admin role check if needed.
+     * @deny (update) - No user can update a subject. // TODO: Add admin role check if needed.
+     * @deny (delete) - No user can delete a subject. // TODO: Add admin role check if needed.
+     */
+    match /subjects/{subjectId} {
+      allow get, list: if true;
+      allow create: if false; // TODO: Add admin role check if needed.
+      allow update: if false; // TODO: Add admin role check if needed.
+      allow delete: if false; // TODO: Add admin role check if needed.
+    }
+
+    /**
+     * @description Secures lessons. Only the student or teacher associated with the lesson can access it.
+     * @path /users/{userId}/lessons/{lessonId}
+     * @allow (create) - User with ID 'user123' can create a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
+     * @allow (get) - User with ID 'user123' can read a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
+     * @allow (update) - User with ID 'user123' can update a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
+     * @allow (delete) - User with ID 'user123' can delete a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
+     * @deny (create) - User with ID 'user456' cannot create a lesson under /users/user123/lessons/lesson1.
+     * @deny (get) - User with ID 'user456' cannot read a lesson under /users/user123/lessons/lesson1.
+     * @deny (update) - User with ID 'user456' cannot update a lesson under /users/user123/lessons/lesson1.
+     * @deny (delete) - User with ID 'user456' cannot delete a lesson under /users/user123/lessons/lesson1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/lessons/{lessonId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && (request.resource.data.studentId == userId || request.resource.data.teacherId == userId);
+      allow update: if isExistingOwner(userId) && (request.resource.data.studentId == resource.data.studentId) && (request.resource.data.teacherId == resource.data.teacherId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows public read access to payment packages. No write access for standard users.
+     * @path /paymentPackages/{paymentPackageId}
+     * @allow (get) - Any user can read any payment package.
+     * @allow (list) - Any user can list all payment packages.
+     * @deny (create) - No user can create a payment package. // TODO: Add admin role check if needed.
+     * @deny (update) - No user can update a payment package. // TODO: Add admin role check if needed.
+     * @deny (delete) - No user can delete a payment package. // TODO: Add admin role check if needed.
+     */
+    match /paymentPackages/{paymentPackageId} {
+      allow get, list: if true;
+      allow create: if false; // TODO: Add admin role check if needed.
+      allow update: if false; // TODO: Add admin role check if needed.
+      allow delete: if false; // TODO: Add admin role check if needed.
+    }
+
+    /**
+     * @description Secures student purchases. Only the student (owner) can read, create, update, or delete their own purchases.
+     * @path /users/{userId}/studentPurchases/{studentPurchaseId}
+     * @allow (create) - User with ID 'student123' can create their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
+     * @allow (get) - User with ID 'student123' can read their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
+     * @allow (update) - User with ID 'student123' can update their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
+     * @allow (delete) - User with ID 'student123' can delete their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
+     * @deny (create) - User with ID 'teacher456' cannot create a student purchase under /users/student123/studentPurchases/purchase1.
+     * @deny (get) - User with ID 'teacher456' cannot read the student purchase under /users/student123/studentPurchases/purchase1.
+     * @deny (update) - User with ID 'teacher456' cannot update the student purchase under /users/student123/studentPurchases/purchase1.
+     * @deny (delete) - User with ID 'teacher456' cannot delete the student purchase under /users/student123/studentPurchases/purchase1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/studentPurchases/{studentPurchaseId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures session feedback. Only the student who participated in the lesson can provide feedback.
+     * @path /users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId}
+     * @allow (create) - User with ID 'student123' can create session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
+     * @allow (get) - User with ID 'student123' can read session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
+     * @allow (update) - User with ID 'student123' can update session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
+     * @allow (delete) - User with ID 'student123' can delete session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
+     * @deny (create) - User with ID 'teacher456' cannot create session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
+     * @deny (get) - User with ID 'teacher456' cannot read session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
+     * @deny (update) - User with ID 'teacher456' cannot update session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
+     * @deny (delete) - User with ID 'teacher456' cannot delete session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
