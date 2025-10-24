@@ -169,7 +169,7 @@ export default function DashboardPage() {
                       </Tabs>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[400px]">
                   <RevenueChart filter={filter} />
                 </CardContent>
               </Card>
@@ -203,7 +203,7 @@ export default function DashboardPage() {
                       </Tabs>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[400px]">
                   <NewUsersChart filter={filter} />
                 </CardContent>
               </Card>
@@ -417,6 +417,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
