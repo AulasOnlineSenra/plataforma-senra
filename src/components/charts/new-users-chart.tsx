@@ -129,9 +129,9 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
         accessibilityLayer
         data={chartData}
         margin={{
-          top: 5,
+          top: 20,
           right: 20,
-          left: 10,
+          left: 20,
           bottom: 5,
         }}
       >
@@ -141,7 +141,7 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
-          interval={'preserveStartEnd'}
+          interval="auto"
         />
         <YAxis
           tickLine={false}
