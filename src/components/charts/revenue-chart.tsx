@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 import {
   startOfDay,
@@ -20,12 +21,11 @@ import {
   endOfMonth,
   endOfYear,
   eachDayOfInterval,
-  eachWeekOfInterval,
   eachMonthOfInterval,
-  getYear,
   format,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const allData = Array.from({ length: 365 * 2 }).map((_, i) => {
   const date = new Date(2023, 0, 1);
@@ -89,30 +89,29 @@ export function RevenueChart({ filter }: RevenueChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis
           dataKey="name"
-          stroke="#888888"
+          stroke="hsl(var(--muted-foreground))"
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          stroke="#888888"
+          stroke="hsl(var(--muted-foreground))"
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(value) => `R$${value / 1000}k`}
+          tickFormatter={(value) => `R$${Number(value) / 1000}k`}
         />
-        <Tooltip
-          formatter={(value: number) =>
-            new Intl.NumberFormat('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            }).format(value)
-          }
-          cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}
+        <ChartTooltip
+          cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}
+          content={<ChartTooltipContent
+            formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))}
+            labelClassName="font-bold"
+           />}
         />
-        <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="revenue" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

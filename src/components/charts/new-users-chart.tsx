@@ -26,6 +26,7 @@ import {
   format,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const allData = Array.from({ length: 365 * 2 }).map((_, i) => {
   const date = new Date(2023, 0, 1);
@@ -106,18 +107,49 @@ export function NewUsersChart({ filter }: NewUsersChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" stroke="#888888" fontSize={12} />
-        <YAxis stroke="#888888" fontSize={12} allowDecimals={false} />
-        <Tooltip />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          dataKey="name"
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          allowDecimals={false}
+        />
+        <ChartTooltip
+          cursor={{
+            stroke: 'hsl(var(--border))',
+            strokeWidth: 2,
+            strokeDasharray: '3 3',
+          }}
+          content={<ChartTooltipContent
+              formatter={(value, name) => [`${value} ${name === 'Alunos' ? 'novos alunos' : 'novos professores'}`, '']}
+              labelClassName="font-bold"
+            />}
+        />
         <Legend />
         <Line
           type="monotone"
           dataKey="Alunos"
           stroke="hsl(var(--chart-1))"
-          activeDot={{ r: 8 }}
+          strokeWidth={2}
+          activeDot={{ r: 8, fill: 'hsl(var(--chart-1))' }}
+          dot={{r: 4, fill: 'hsl(var(--chart-1))'}}
         />
-        <Line type="monotone" dataKey="Professores" stroke="hsl(var(--chart-2))" />
+        <Line 
+          type="monotone" 
+          dataKey="Professores" 
+          stroke="hsl(var(--chart-2))" 
+          strokeWidth={2}
+          activeDot={{ r: 8, fill: 'hsl(var(--chart-2))' }}
+          dot={{r: 4, fill: 'hsl(var(--chart-2))'}}
+        />
       </LineChart>
     </ResponsiveContainer>
   );
