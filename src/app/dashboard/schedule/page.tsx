@@ -10,15 +10,23 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { scheduleEvents, ScheduleEvent, users } from '@/lib/data';
+import { scheduleEvents, ScheduleEvent, users, teachers } from '@/lib/data';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
-import { XCircle, Pencil } from 'lucide-react';
+import { XCircle, Pencil, BookOpen } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -80,6 +88,13 @@ export default function SchedulePage() {
         .sort((a,b) => a.start.getTime() - b.start.getTime());
 
   }, [date, filterType, events]);
+  
+  const completedEvents = useMemo(() => {
+    return events
+      .filter(e => e.status === 'completed')
+      .sort((a, b) => b.start.getTime() - a.start.getTime());
+  }, [events]);
+
 
   const handleConfirmCancel = (eventId: string) => {
     setEvents(currentEvents => 
@@ -111,6 +126,10 @@ export default function SchedulePage() {
   const getStudentById = (studentId: string): User | undefined => {
     const allUsers = [...users];
     return allUsers.find(u => u.id === studentId);
+  }
+  
+  const getTeacherById = (teacherId: string): User | undefined => {
+    return teachers.find(t => t.id === teacherId);
   }
 
   const getCardDescription = () => {
@@ -215,7 +234,7 @@ export default function SchedulePage() {
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div className="grid gap-1">
                   <CardTitle>
-                    Resumo de Aulas
+                    Aulas Agendadas
                   </CardTitle>
                   <CardDescription>
                     {getCardDescription()}
@@ -274,6 +293,54 @@ export default function SchedulePage() {
             </Tabs>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-6 w-6" />
+              Histórico de Aulas
+            </CardTitle>
+            <CardDescription>
+              Todas as aulas que já foram concluídas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Disciplina</TableHead>
+                  <TableHead>Professor(a)</TableHead>
+                  <TableHead>Aluno(a)</TableHead>
+                  <TableHead className="text-right">Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {completedEvents.length > 0 ? (
+                  completedEvents.map((event) => {
+                    const student = getStudentById(event.studentId);
+                    const teacher = getTeacherById(event.teacherId);
+                    return (
+                      <TableRow key={event.id}>
+                        <TableCell className="font-medium">{event.subject}</TableCell>
+                        <TableCell>{teacher?.name || 'N/A'}</TableCell>
+                        <TableCell>{student?.name || 'N/A'}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      Nenhuma aula concluída ainda.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
       {editingEvent && (
         <Dialog open={!!editingEvent} onOpenChange={() => setEditingEvent(null)}>
