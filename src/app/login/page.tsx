@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { getMockUser } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -46,78 +48,154 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 
 export default function LoginPage() {
-  const [role, setRole] = useState<UserRole>('student'); // Default to student
+  const [role, setRole] = useState<UserRole | null>(null);
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!role) {
+        toast({
+            variant: "destructive",
+            title: "Seleção de Perfil Necessária",
+            description: "Por favor, selecione um perfil para continuar.",
+        });
+        return;
+    }
+    
+    // Simulate login and role assignment
     localStorage.setItem('userRole', role);
     const user = getMockUser(role);
     localStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem('savedEmail', email);
+    
+    toast({
+        title: "Login bem-sucedido!",
+        description: `Bem-vindo(a) de volta, ${user.name.split(' ')[0]}!`,
+    });
+    
     router.push('/dashboard');
   };
+
+  const LoginForm = ({ role }: { role: UserRole }) => {
+    const rolePortuguese = {
+        student: 'Aluno',
+        teacher: 'Professor',
+        admin: 'Administrador',
+    };
+
+    return (
+      <div className="w-full">
+        <button onClick={() => setRole(null)} className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Voltar para seleção
+        </button>
+        <h1 className="text-2xl font-bold font-headline text-center mb-1">
+          Login como {rolePortuguese[role]}
+        </h1>
+        <p className="text-muted-foreground text-center mb-6">
+            Insira seus dados para acessar a plataforma.
+        </p>
+        <form onSubmit={handleLogin} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="email" className="sr-only">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="E-mail"
+              required
+              className="h-11"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password" className="sr-only">Senha</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Senha"
+              required
+              className="h-11"
+            />
+          </div>
+          <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+            Entrar
+          </Button>
+        </form>
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">ou</span>
+          </div>
+        </div>
+        <div className="grid gap-4">
+          <Button variant="outline" className="h-11 w-full">
+            <GoogleIcon className="mr-2" />
+            Continuar com Google
+          </Button>
+        </div>
+        <div className="mt-6 text-center text-sm">
+          Não tem uma conta?{' '}
+          <Link href="/register" className="underline font-semibold">
+            Cadastrar-se
+          </Link>
+        </div>
+      </div>
+    );
+  };
+  
+   const RoleSelection = () => (
+    <div className="w-full">
+      <h1 className="text-2xl font-bold font-headline text-center mb-6">
+        Selecione seu perfil para entrar
+      </h1>
+      <div className="grid gap-4">
+        <Button onClick={() => setRole('teacher')} variant="outline" className="h-12 text-base">
+          Sou Professor
+        </Button>
+        <Button onClick={() => setRole('student')} variant="outline" className="h-12 text-base">
+          Sou Aluno
+        </Button>
+        <Button onClick={() => setRole('admin')} variant="outline" className="h-12 text-base">
+          Sou Administrador
+        </Button>
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">ou</span>
+          </div>
+        </div>
+        <Button onClick={() => handleLogin({ preventDefault: () => {} } as React.FormEvent)} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+          Acessar como Visitante
+        </Button>
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-card">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
-          <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
-            <Link href="/home" aria-label="Voltar para a página inicial">
-                <ArrowLeft />
-            </Link>
-          </Button>
           <div className="w-full max-w-sm">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
             </div>
-            <h1 className="text-2xl font-bold font-headline text-center mb-4">
-              Entrar no Aulas Online Senra
-            </h1>
-            <form onSubmit={handleLogin} className="grid gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu.email@exemplo.com"
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Sua senha"
-                  required
-                  className="h-11"
-                />
-              </div>
-              <Button type="submit" className="h-11 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
-                Continuar
-              </Button>
-            </form>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou</span>
-              </div>
-            </div>
-            <div className="grid gap-4">
-              <Button variant="outline" className="h-11">
-                <GoogleIcon className="mr-2" />
-                Continuar com Google
-              </Button>
-            </div>
-            <div className="mt-6 text-center text-sm">
-              Não tem uma conta?{' '}
-              <Link href="/register" className="underline font-semibold">
-                Cadastrar-se
-              </Link>
-            </div>
+            {role ? <LoginForm role={role} /> : <RoleSelection />}
           </div>
         </div>
         <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-primary to-accent p-12 text-center text-primary-foreground relative">

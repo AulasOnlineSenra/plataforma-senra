@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,9 @@ import { SenraLogo } from '@/components/senra-logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft } from 'lucide-react';
+import { UserRole } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -44,13 +48,106 @@ const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [role, setRole] = useState<UserRole | null>(null);
+  const { toast } = useToast();
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would handle user creation here
-    // For this prototype, we'll just redirect to the login page
+    // In a real app, you would handle user creation here,
+    // including the selected `role`.
+    toast({
+        title: "Cadastro realizado!",
+        description: "Você será redirecionado para a página de login.",
+    });
     router.push('/login');
   };
+
+  const renderRoleSelection = () => (
+    <>
+      <h1 className="text-2xl font-bold font-headline text-center mb-6">
+        Como você usará a plataforma?
+      </h1>
+      <div className="grid gap-4">
+        <Button onClick={() => setRole('teacher')} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+          Sou Professor
+        </Button>
+        <Button onClick={() => setRole('student')} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+          Sou Aluno
+        </Button>
+         <Button onClick={() => setRole('admin')} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+          Sou Administrador
+        </Button>
+      </div>
+      <div className="mt-8 text-center text-sm">
+        Já tem uma conta?{' '}
+        <Link href="/login" className="underline font-semibold">
+          Faça login
+        </Link>
+      </div>
+    </>
+  );
+
+  const renderRegistrationForm = () => (
+     <>
+        <h1 className="text-2xl font-bold font-headline text-center mb-4">
+            Crie sua Conta de {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor' : 'Administrador'}
+        </h1>
+        <form onSubmit={handleRegister} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Nome Completo</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Seu nome completo"
+              required
+              className="h-11"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="seu.email@exemplo.com"
+              required
+              className="h-11"
+            />
+          </div>
+            <div className="grid gap-2">
+            <Label htmlFor="password">Senha</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Sua senha"
+              required
+              className="h-11"
+            />
+          </div>
+          <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+            Criar Conta
+          </Button>
+        </form>
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">ou</span>
+          </div>
+        </div>
+        <div className="grid gap-4">
+          <Button variant="outline" className="h-11">
+            <GoogleIcon className="mr-2" />
+            Cadastrar com Google
+          </Button>
+        </div>
+        <div className="mt-6 text-center text-sm">
+          <button onClick={() => setRole(null)} className="underline font-semibold">
+            Voltar para seleção de perfil
+          </button>
+        </div>
+     </>
+  );
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-card">
@@ -65,64 +162,7 @@ export default function RegisterPage() {
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
             </div>
-            <h1 className="text-2xl font-bold font-headline text-center mb-4">
-              Crie sua Conta
-            </h1>
-            <form onSubmit={handleRegister} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu.email@exemplo.com"
-                  required
-                  className="h-11"
-                />
-              </div>
-                <div className="grid gap-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Sua senha"
-                  required
-                  className="h-11"
-                />
-              </div>
-              <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
-                Criar Conta
-              </Button>
-            </form>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou</span>
-              </div>
-            </div>
-            <div className="grid gap-4">
-              <Button variant="outline" className="h-11">
-                <GoogleIcon className="mr-2" />
-                Cadastrar com Google
-              </Button>
-            </div>
-            <div className="mt-6 text-center text-sm">
-              Já tem uma conta?{' '}
-              <Link href="/login" className="underline font-semibold">
-                Faça login
-              </Link>
-            </div>
+            {role ? renderRegistrationForm() : renderRoleSelection()}
           </div>
         </div>
         <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-primary to-accent p-12 text-center text-primary-foreground relative">
@@ -149,4 +189,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
