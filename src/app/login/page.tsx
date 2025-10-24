@@ -84,6 +84,16 @@ export default function LoginPage() {
                   className="h-11"
                 />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Sua senha"
+                  required
+                  className="h-11"
+                />
+              </div>
               <Button type="submit" className="h-11 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
                 Continuar
               </Button>
