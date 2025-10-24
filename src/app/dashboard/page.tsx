@@ -94,20 +94,8 @@ export default function DashboardPage() {
 
   const renderAdminDashboard = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
-        <Link href="/dashboard/financial">
-          <Card className="hover:bg-accent/50 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receitas do Mês</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R$ 45.231,89</div>
-              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-            </CardContent>
-          </Card>
-        </Link>
-         <Link href="/dashboard/schedule">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <Link href="/dashboard/schedule">
           <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
@@ -429,5 +417,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
