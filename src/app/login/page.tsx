@@ -161,13 +161,13 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
       Selecione seu perfil para entrar
     </h1>
     <div className="grid gap-4">
-      <Button onClick={() => onSelectRole('teacher')} variant="outline" className="h-12 text-base">
+      <Button onClick={() => onSelectRole('teacher')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
         Sou Professor
       </Button>
-      <Button onClick={() => onSelectRole('student')} variant="outline" className="h-12 text-base">
+      <Button onClick={() => onSelectRole('student')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
         Sou Aluno
       </Button>
-      <Button onClick={() => onSelectRole('admin')} variant="outline" className="h-12 text-base">
+      <Button onClick={() => onSelectRole('admin')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
         Sou Administrador
       </Button>
       <div className="relative my-4">
