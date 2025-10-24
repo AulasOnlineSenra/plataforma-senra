@@ -12,7 +12,7 @@ import { UserRole } from '@/lib/types';
 import { getMockUser } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -53,6 +53,7 @@ const LoginForm = ({
   onLogin,
   email,
   setEmail,
+  password,
   setPassword,
 }: {
   role: UserRole;
@@ -60,6 +61,7 @@ const LoginForm = ({
   onLogin: (e: React.FormEvent) => void;
   email: string;
   setEmail: (email: string) => void;
+  password: string;
   setPassword: (password: string) => void;
 }) => {
   const rolePortuguese = {
@@ -67,6 +69,7 @@ const LoginForm = ({
     teacher: 'Professor',
     admin: 'Administrador',
   };
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="w-full">
@@ -98,18 +101,29 @@ const LoginForm = ({
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        <div className="grid gap-2">
+        <div className="grid gap-2 relative">
           <Label htmlFor="password" className="sr-only">
             Senha
           </Label>
           <Input
             id="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="Senha"
             required
-            className="h-11"
+            className="h-11 pr-10"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+            <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
+          </Button>
         </div>
         <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
           Entrar
@@ -181,6 +195,10 @@ export default function LoginPage() {
     if (savedEmail) {
       setEmail(savedEmail);
     }
+    const savedPassword = localStorage.getItem('savedPassword');
+    if (savedPassword) {
+      setPassword(savedPassword);
+    }
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -199,6 +217,7 @@ export default function LoginPage() {
     const user = getMockUser(role);
     localStorage.setItem('currentUser', JSON.stringify(user));
     localStorage.setItem('savedEmail', email);
+    localStorage.setItem('savedPassword', password);
     
     toast({
         title: "Login bem-sucedido!",
@@ -223,6 +242,7 @@ export default function LoginPage() {
                 onLogin={handleLogin}
                 email={email}
                 setEmail={setEmail}
+                password={password}
                 setPassword={setPassword}
               />
             ) : (
