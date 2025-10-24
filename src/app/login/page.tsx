@@ -238,6 +238,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-background">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
+          {!role && (
+            <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
+              <Link href="/home">
+                <ArrowLeft />
+              </Link>
+            </Button>
+          )}
           <div className="w-full max-w-sm rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
@@ -281,3 +288,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
