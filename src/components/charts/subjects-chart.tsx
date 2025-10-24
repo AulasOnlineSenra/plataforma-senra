@@ -49,7 +49,7 @@ export function SubjectsChart() {
         </Pie>
          <ChartLegend
           content={<ChartLegendContent nameKey="name" />}
-          className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
+          className="flex items-center justify-center gap-4"
         />
       </PieChart>
     </ChartContainer>
