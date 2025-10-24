@@ -55,7 +55,7 @@ export default function DashboardPage() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
-  const [filter, setFilter] = useState('week');
+  const [filter, setFilter] = useState('day');
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                       <CardTitle>Visão Geral da Receita</CardTitle>
                       <CardDescription>Receita por período.</CardDescription>
                     </div>
-                     <Tabs defaultValue="week" value={filter} onValueChange={setFilter} className="hidden sm:block">
+                     <Tabs defaultValue="day" value={filter} onValueChange={setFilter} className="hidden sm:block">
                         <TabsList>
                           <TabsTrigger value="day">Dia</TabsTrigger>
                           <TabsTrigger value="week">Semana</TabsTrigger>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                   <CardTitle>Aulas por Disciplina</CardTitle>
                   <CardDescription>Distribuição das aulas agendadas.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[400px]">
                   <SubjectsChart />
                 </CardContent>
               </Card>
@@ -193,7 +193,7 @@ export default function DashboardPage() {
                         <CardTitle>Aquisição de Novos Usuários</CardTitle>
                         <CardDescription>Novos usuários por período.</CardDescription>
                       </div>
-                      <Tabs defaultValue="week" value={filter} onValueChange={setFilter} className="hidden sm:block">
+                      <Tabs defaultValue="day" value={filter} onValueChange={setFilter} className="hidden sm:block">
                         <TabsList>
                           <TabsTrigger value="day">Dia</TabsTrigger>
                           <TabsTrigger value="week">Semana</TabsTrigger>
@@ -417,6 +417,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
