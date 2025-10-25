@@ -17,7 +17,7 @@ import { chatContacts, chatMessages, getMockUser, teachers, users } from '@/lib/
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { User, UserRole } from '@/lib/types';
+import { User, UserRole, ChatMessage } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -49,6 +49,8 @@ export default function ChatPage() {
     const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
+    const [messageContent, setMessageContent] = useState('');
+    const [allMessages, setAllMessages] = useState<ChatMessage[]>(chatMessages);
 
 
     const allUsers: User[] = [...users, ...teachers];
@@ -64,14 +66,14 @@ export default function ChatPage() {
         }
     }
 
-    const groupedMessages = chatMessages.reduce((acc, message) => {
+    const groupedMessages = allMessages.reduce((acc, message) => {
         const date = format(message.timestamp, 'yyyy-MM-dd');
         if (!acc[date]) {
             acc[date] = [];
         }
         acc[date].push(message);
         return acc;
-    }, {} as Record<string, typeof chatMessages>);
+    }, {} as Record<string, typeof allMessages>);
 
     const formatDateSeparator = (dateStr: string) => {
       const date = new Date(dateStr);
@@ -100,6 +102,31 @@ export default function ChatPage() {
         const minutes = (i % 2) * 30;
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     });
+
+    const handleSendMessage = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!messageContent.trim() || !activeChatPartner) return;
+    
+        const newMessage: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          senderId: currentUser.id,
+          receiverId: activeChatPartner.id,
+          content: messageContent,
+          timestamp: new Date(),
+        };
+    
+        // In a real app, you'd send this to a backend.
+        // For this prototype, we just update the local state.
+        setAllMessages(prev => [...prev, newMessage]);
+        setMessageContent('');
+      };
+    
+      const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      };
 
 
     return (
@@ -217,8 +244,14 @@ export default function ChatPage() {
                                     </Button>
                                 </div>
                             )}
-                            <div className="relative">
-                                <Input placeholder="Digite uma mensagem..." className="pr-24" />
+                            <form onSubmit={handleSendMessage} className="relative">
+                                <Input 
+                                    placeholder="Digite uma mensagem..." 
+                                    className="pr-24"
+                                    value={messageContent}
+                                    onChange={(e) => setMessageContent(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
                                 <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
                                     <Button type="button" size="icon" variant="ghost">
                                         <Paperclip className="h-5 w-5 text-muted-foreground" />
@@ -233,7 +266,7 @@ export default function ChatPage() {
                                         <span className="sr-only">Enviar</span>
                                     </Button>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     </Card>
                 ) : (
