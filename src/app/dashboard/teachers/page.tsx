@@ -112,8 +112,8 @@ function TeacherCard({
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(teacher.id)}>
+                            <AlertDialogCancel className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">Cancelar</AlertDialogCancel>
+                            <AlertDialogAction className="bg-brand-yellow text-black hover:bg-brand-yellow/90" onClick={() => onDelete(teacher.id)}>
                                 Mover para Excluídos
                             </AlertDialogAction>
                             </AlertDialogFooter>
@@ -435,3 +435,5 @@ export default function TeachersPage() {
     </>
   );
 }
+
+    
