@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -35,6 +35,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+
+const USERS_STORAGE_KEY = 'userList';
 
 function StudentList({
   title,
@@ -120,7 +122,17 @@ function StudentList({
 }
 
 export default function StudentsPage() {
-  const [allUsers, setAllUsers] = useState(initialUsers);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+    if (storedUsers) {
+      setAllUsers(JSON.parse(storedUsers));
+    } else {
+      setAllUsers(initialUsers);
+    }
+  }, []);
 
   const activeStudents = allUsers.filter(
     (u) => u.role === 'student' && u.status === 'active'
@@ -132,7 +144,7 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { toast } = useToast();
+  
 
   const handleStudentSelect = (student: User) => {
     setSelectedStudent(student);
@@ -145,9 +157,11 @@ export default function StudentsPage() {
 
   const handleDeleteStudent = () => {
     if (!studentToDelete) return;
-    setAllUsers((prevUsers) =>
-      prevUsers.filter((user) => user.id !== studentToDelete.id)
-    );
+    const updatedUsers = allUsers.filter((user) => user.id !== studentToDelete.id);
+    setAllUsers(updatedUsers);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    window.dispatchEvent(new Event('storage'));
+
     toast({
       title: 'Aluno Excluído',
       description: `O perfil de ${studentToDelete.name} foi removido.`,
