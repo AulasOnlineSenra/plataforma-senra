@@ -180,7 +180,6 @@ const AdminSuggestionsView = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Enviado por</TableHead>
-                  <TableHead>Tipo</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -191,11 +190,6 @@ const AdminSuggestionsView = () => {
                 {incomingSuggestions.map(suggestion => (
                   <TableRow key={suggestion.id}>
                     <TableCell className="font-medium">{suggestion.submittedBy} ({suggestion.userRole})</TableCell>
-                    <TableCell>
-                      <Badge variant={suggestion.type === 'bug' ? 'destructive' : 'outline'}>
-                        {suggestion.type === 'bug' ? 'Erro' : 'Sugestão'}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
                      <TableCell className="text-muted-foreground">
                       {format(suggestion.timestamp, 'dd/MM/yyyy')}
@@ -217,7 +211,7 @@ const AdminSuggestionsView = () => {
                 ))}
                  {incomingSuggestions.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                             Nenhuma sugestão nova na caixa de entrada.
                         </TableCell>
                     </TableRow>
