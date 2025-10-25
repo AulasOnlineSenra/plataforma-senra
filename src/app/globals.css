@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 240 5% 96%; /* #F5F4F4 */
+    --background: 240 5% 98%; /* A more neutral background */
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
@@ -114,3 +114,5 @@
     @apply bg-sidebar-accent/50;
   }
 }
+
+    
