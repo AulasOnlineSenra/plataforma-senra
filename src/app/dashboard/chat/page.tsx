@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -42,8 +42,9 @@ const roleLabels: Record<UserRole, string> = {
 
 export default function ChatPage() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [activeChatPartner, setActiveChatPartner] = useState<User | null>(null);
+    const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const { toast } = useToast();
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
@@ -55,38 +56,50 @@ export default function ChatPage() {
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
 
 
+    const updateData = useCallback(() => {
+        const loggedInUserStr = localStorage.getItem('currentUser');
+        if(loggedInUserStr) {
+            setCurrentUser(JSON.parse(loggedInUserStr));
+        } else {
+            setCurrentUser(getMockUser('student'));
+        }
+
+        const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
+        const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
+        setAllUsers([...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)]);
+
+        const storedMessages = localStorage.getItem('chatMessages');
+        if (storedMessages) {
+            setAllMessages(JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
+        } else {
+            setAllMessages(initialChatMessages);
+        }
+        
+        const storedContacts = localStorage.getItem('chatContacts');
+        if (storedContacts) {
+            const parsedContacts = JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }));
+            setChatContacts(parsedContacts.sort((a: ChatContact, b: ChatContact) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+        } else {
+            setChatContacts(initialChatContacts.sort((a: ChatContact, b: ChatContact) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+        }
+    }, []);
+
     useEffect(() => {
-        const updateData = () => {
-            const loggedInUserStr = localStorage.getItem('currentUser');
-            if(loggedInUserStr) {
-                setCurrentUser(JSON.parse(loggedInUserStr));
-            } else {
-                setCurrentUser(getMockUser('student'));
-            }
-
-            const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
-            const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
-            setAllUsers([...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)]);
-
-            const storedMessages = localStorage.getItem('chatMessages');
-            if (storedMessages) {
-                setAllMessages(JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
-            } else {
-                setAllMessages(initialChatMessages);
-            }
-            
-            const storedContacts = localStorage.getItem('chatContacts');
-            if (storedContacts) {
-                setChatContacts(JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })));
-            } else {
-                setChatContacts(initialChatContacts);
-            }
-        };
-
         updateData();
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, []);
+    }, [updateData]);
+
+
+    useEffect(() => {
+        if (scrollAreaRef.current) {
+          const scrollableNode = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+          if (scrollableNode) {
+            scrollableNode.scrollTop = scrollableNode.scrollHeight;
+          }
+        }
+    }, [activeChatPartner]);
+
 
     const getContactDetails = (contactId: string) => {
         return allUsers.find(u => u.id === contactId);
@@ -96,14 +109,22 @@ export default function ChatPage() {
         const contact = getContactDetails(contactId);
         if (contact) {
             setActiveChatPartner(contact);
+             // Mark messages as read
+            const updatedContacts = chatContacts.map(c => 
+                c.id === contactId ? { ...c, unreadCount: 0 } : c
+            );
+            setChatContacts(updatedContacts);
+            localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
         }
     }
 
     const groupedMessages = useMemo(() => {
+        if (!currentUser || !activeChatPartner) return {};
+        
         return allMessages
             .filter(m => 
-                (m.senderId === currentUser?.id && m.receiverId === activeChatPartner?.id) ||
-                (m.senderId === activeChatPartner?.id && m.receiverId === currentUser?.id)
+                (m.senderId === currentUser.id && m.receiverId === activeChatPartner.id) ||
+                (m.senderId === activeChatPartner.id && m.receiverId === currentUser.id)
             )
             .reduce((acc, message) => {
                 const date = format(message.timestamp, 'yyyy-MM-dd');
@@ -112,7 +133,7 @@ export default function ChatPage() {
                 }
                 acc[date].push(message);
                 return acc;
-            }, {} as Record<string, typeof allMessages>);
+            }, {} as Record<string, ChatMessage[]>);
     }, [allMessages, currentUser, activeChatPartner]);
 
     const formatDateSeparator = (dateStr: string) => {
@@ -159,56 +180,53 @@ export default function ChatPage() {
         setAllMessages(updatedMessages);
         localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
         
-        const updateContact = (
-            contacts: ChatContact[], 
-            userId: string, 
-            message: string, 
-            timestamp: Date,
-            isReceiver: boolean,
-            otherUserId: string,
-            otherUserName: string,
-            otherUserAvatar: string,
+        // Helper to update or create a contact in the list
+        const updateContactList = (
+            contacts: ChatContact[],
+            userId: string, // The user whose contact list we are updating
+            partnerId: string, // The other user in the conversation
+            message: ChatMessage
         ) => {
-            let contactFound = false;
-            const updated = contacts.map(c => {
-                if (c.id === userId) {
-                    contactFound = true;
-                    return {
-                        ...c,
-                        lastMessage: message,
-                        lastMessageTimestamp: timestamp,
-                        unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : c.unreadCount
-                    };
-                }
-                return c;
-            });
-    
-            if (!contactFound) {
-                const userDetails = getContactDetails(userId);
-                if (userDetails) {
-                     updated.push({
-                        id: userDetails.id,
-                        name: userDetails.name,
-                        avatarUrl: userDetails.avatarUrl,
-                        lastMessage: message,
-                        lastMessageTimestamp: timestamp,
-                        unreadCount: isReceiver ? 1 : 0,
-                    });
-                }
-            }
-            return updated;
-        };
+            const partnerDetails = getContactDetails(partnerId);
+            if (!partnerDetails) return contacts;
 
-        let updatedContacts = [...chatContacts];
-        // Update receiver's contact view (for the current user)
-        updatedContacts = updateContact(updatedContacts, activeChatPartner.id, messageContent, newMessage.timestamp, true, currentUser.id, currentUser.name, currentUser.avatarUrl);
-        // Update current user's contact view (for the receiver)
-        updatedContacts = updateContact(updatedContacts, currentUser.id, messageContent, newMessage.timestamp, false, activeChatPartner.id, activeChatPartner.name, activeChatPartner.avatarUrl);
+            const existingContactIndex = contacts.findIndex(c => c.id === partnerId);
+            let updatedContacts = [...contacts];
+
+            if (existingContactIndex > -1) {
+                // Update existing contact
+                updatedContacts[existingContactIndex] = {
+                    ...updatedContacts[existingContactIndex],
+                    lastMessage: message.content,
+                    lastMessageTimestamp: message.timestamp,
+                    unreadCount: message.receiverId === userId ? (updatedContacts[existingContactIndex].unreadCount || 0) + 1 : 0
+                };
+            } else {
+                 // Add new contact
+                 updatedContacts.push({
+                    id: partnerDetails.id,
+                    name: partnerDetails.name,
+                    avatarUrl: partnerDetails.avatarUrl,
+                    lastMessage: message.content,
+                    lastMessageTimestamp: message.timestamp,
+                    unreadCount: message.receiverId === userId ? 1 : 0,
+                 });
+            }
+             // Sort by most recent message
+            return updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        }
         
-        updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        // This is complex because we need to update the contact list for BOTH users.
+        // In a real app, this would happen on the backend. Here we simulate it.
+        let allCurrentContacts = JSON.parse(localStorage.getItem('chatContacts') || '[]');
         
-        setChatContacts(updatedContacts);
-        localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+        // Update contact list for the current user
+        let myContacts = updateContactList(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
+        // Update contact list for the partner
+        let partnerContacts = updateContactList(myContacts, activeChatPartner.id, currentUser.id, newMessage);
+
+        setChatContacts(partnerContacts);
+        localStorage.setItem('chatContacts', JSON.stringify(partnerContacts));
 
         window.dispatchEvent(new Event('storage'));
         setMessageContent('');
@@ -290,7 +308,7 @@ export default function ChatPage() {
                                 <p className="text-sm text-muted-foreground">Online</p>
                             </div>
                         </div>
-                        <ScrollArea className="flex-1 p-4">
+                        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                             <div className="flex flex-col gap-2">
                             {Object.keys(groupedMessages).sort().map(date => (
                                 <div key={date}>
@@ -302,7 +320,7 @@ export default function ChatPage() {
                                     <div className="flex flex-col gap-4">
                                     {groupedMessages[date].map(message => (
                                         <div key={message.id} className={cn(
-                                            "flex items-end gap-2",
+                                            "flex w-full items-end gap-2",
                                             message.senderId === currentUser.id ? "justify-end" : "justify-start"
                                         )}>
                                             {message.senderId !== currentUser.id && activeChatPartner && (
@@ -426,5 +444,7 @@ export default function ChatPage() {
 
         </div>
     )
+
+}
 
     
