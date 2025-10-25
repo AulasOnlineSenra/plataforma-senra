@@ -227,19 +227,19 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
     return adminUser as Teacher;
   }
   if (role === 'teacher') {
-    const defaultTeacher = teachers[0];
+    const defaultTeacher = teachers[0]; // Base template
     const newTeacher: Teacher = {
-        ...defaultTeacher,
-        id: newUser?.id || defaultTeacher.id, // Ensure new user ID is prioritized
+        ...defaultTeacher, // Start with default template
+        id: newUser?.id || defaultTeacher.id,
         name: newUser?.name || defaultTeacher.name,
         email: newUser?.email || defaultTeacher.email,
         avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
-        ...newUser,
         subjects: (newUser as Teacher)?.subjects || [],
         bio: (newUser as Teacher)?.bio || '',
         education: (newUser as Teacher)?.education || '',
         availability: {},
-        status: 'active'
+        status: 'active',
+        role: 'teacher' // Ensure role is always teacher
     };
     return newTeacher;
   }
