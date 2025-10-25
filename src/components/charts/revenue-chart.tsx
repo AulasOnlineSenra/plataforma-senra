@@ -106,7 +106,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
-      <div className="w-full overflow-x-hidden">
+      <div className="w-full max-w-full overflow-x-hidden">
         <ResponsiveContainer width="100%" height="100%">
             <BarChart
             accessibilityLayer
