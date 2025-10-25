@@ -103,7 +103,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
-  const barChartWidth = chartData.length * 40;
+  const barChartWidth = chartData.length * 30;
 
   return (
     <div className="w-full overflow-x-auto">
