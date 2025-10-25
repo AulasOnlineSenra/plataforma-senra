@@ -77,7 +77,7 @@ const LoginForm = ({
         onClick={onBack}
         variant="ghost"
         size="icon"
-        className="absolute -top-4 left-0"
+        className="absolute -top-8 left-0"
       >
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">Voltar para seleção</span>
