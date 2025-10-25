@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getMockUser, teachers, subjects } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, subjects } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserRole, Teacher, User } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,6 +46,8 @@ type AvailabilitySlot = {
   start: string;
   end: string;
 };
+
+const TEACHERS_STORAGE_KEY = 'teacherList';
 
 const CollapsibleCard = ({
     title,
@@ -95,7 +97,7 @@ const NotionIcon = () => (
   </svg>
 );
 
-const TeacherProfileForm = ({ onSave, user, onUserChange }: { onSave: (data: Teacher | User) => void; user: Teacher | User, onUserChange: (user: Teacher | User) => void }) => {
+const TeacherProfileForm = ({ user, onUserChange }: { user: Teacher | User, onUserChange: (user: Teacher | User) => void }) => {
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -508,40 +510,36 @@ export default function ProfilePage() {
   }, []);
 
  const handleSaveChanges = () => {
-    if (!currentUser || !authUser || !firestore) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível salvar. Usuário ou conexão não encontrados.",
-      });
-      return;
-    }
-
-    // Create a new object with only the fields that should be updated.
-    const updateData: Partial<User | Teacher> = {
-      name: currentUser.name,
-      email: currentUser.email,
-      avatarUrl: currentUser.avatarUrl,
-      timezone: currentUser.timezone,
-      nickname: currentUser.nickname,
-      phone: currentUser.phone,
-      bio: currentUser.bio,
-      education: currentUser.education,
-    };
+    if (!currentUser) return;
     
-    // Conditionally add teacher-specific fields.
-    if (currentUser.role === 'teacher' && 'subjects' in currentUser) {
-      (updateData as Partial<Teacher>).subjects = currentUser.subjects;
-      // You would also handle availability here if it were being saved to Firestore
-      // (updateData as Partial<Teacher>).availability = availability;
+    // Save to Firebase
+    if (authUser && firestore) {
+      const docRef = doc(firestore, 'users', authUser.uid);
+      setDocumentNonBlocking(docRef, currentUser, { merge: true });
     }
 
-    const docRef = doc(firestore, 'users', authUser.uid);
-    setDocumentNonBlocking(docRef, updateData, { merge: true });
-
-    // Also update local state and storage for immediate UI feedback.
-    setCurrentUser(currentUser);
+    // Update localStorage for current user
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+    // If the user is a teacher, update the master teacher list as well
+    if (currentUser.role === 'teacher') {
+      const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+      let teacherList: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : [];
+      
+      const teacherIndex = teacherList.findIndex(t => t.id === currentUser.id);
+
+      if (teacherIndex > -1) {
+        // Update existing teacher
+        teacherList[teacherIndex] = currentUser as Teacher;
+      } else {
+        // This case should ideally not happen if login flow is correct, but as a fallback:
+        teacherList.push(currentUser as Teacher);
+      }
+      
+      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(teacherList));
+    }
+
+    // Notify other tabs/components of the change
     window.dispatchEvent(new Event('storage'));
 
     toast({
@@ -567,10 +565,8 @@ export default function ProfilePage() {
           </Button>
       </div>
       <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-        <TeacherProfileForm onSave={handleSaveChanges} user={currentUser} onUserChange={setCurrentUser} />
+        <TeacherProfileForm user={currentUser} onUserChange={setCurrentUser} />
       </div>
     </div>
   );
 }
-
-    

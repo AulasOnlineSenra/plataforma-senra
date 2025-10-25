@@ -384,6 +384,7 @@ export default function LoginPage() {
             if (!teacherExists) {
                 const updatedTeacherList = [...currentTeacherList, userToLogin as Teacher];
                 localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
+                window.dispatchEvent(new Event('storage'));
             }
         }
 
