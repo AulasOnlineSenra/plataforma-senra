@@ -217,13 +217,13 @@ export const chatMessages: ChatMessage[] = [
     { id: 'msg-4', senderId: 'teacher-1', receiverId: 'user-1', content: 'Claro, podemos revisar o último tópico na próxima aula.', timestamp: new Date(now.getTime() - 10 * 60000)},
 ];
 
-export const getMockUser = (role: UserRole, newUser?: Partial<User>): User | Teacher => {
+export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): User | Teacher => {
   if (role === 'admin') {
     const adminUser = { ...users.find(u => u.role === 'admin')!, ...newUser };
     // Add teacher properties for profile editing
-    (adminUser as Teacher).subjects = [];
-    (adminUser as Teacher).bio = 'Administrador da plataforma Aulas Online Senra.';
-    (adminUser as Teacher).education = 'Gerenciamento de Sistemas';
+    (adminUser as Teacher).subjects = (newUser as Teacher)?.subjects || [];
+    (adminUser as Teacher).bio = (newUser as Teacher)?.bio ||'Administrador da plataforma Aulas Online Senra.';
+    (adminUser as Teacher).education = (newUser as Teacher)?.education || 'Gerenciamento de Sistemas';
     return adminUser as Teacher;
   }
   if (role === 'teacher') {
@@ -235,7 +235,9 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User>): User | Tea
         email: newUser?.email || defaultTeacher.email,
         avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
         ...newUser,
-        subjects: [],
+        subjects: (newUser as Teacher)?.subjects || [],
+        bio: (newUser as Teacher)?.bio || '',
+        education: (newUser as Teacher)?.education || '',
         availability: {},
         status: 'active'
     };
@@ -375,3 +377,4 @@ export const adminNavItems: NavItem[] = [
   },
 ];
 
+    

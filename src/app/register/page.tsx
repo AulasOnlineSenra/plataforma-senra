@@ -11,7 +11,7 @@ import { SenraLogo } from '@/components/senra-logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft } from 'lucide-react';
-import { User, UserRole } from '@/lib/types';
+import { User, UserRole, Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,15 +66,30 @@ export default function RegisterPage() {
     }
     
     // Create a new user object based on the form data
-    const newUser: User = {
+    let newUser: User | Teacher;
+    const baseUser = {
         id: `user-${Date.now()}`,
         name: name,
         email: email,
         avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`,
         role: role,
-        status: 'active',
+        status: 'active' as 'active',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     };
+
+    if (role === 'teacher') {
+        newUser = {
+            ...baseUser,
+            role: 'teacher',
+            subjects: [],
+            availability: {},
+            status: 'active',
+            bio: '',
+            education: '',
+        } as Teacher;
+    } else {
+        newUser = baseUser as User;
+    }
     
     // Store the new user object in localStorage to be picked up by the login page.
     localStorage.setItem('newlyRegisteredUser', JSON.stringify(newUser));
@@ -219,3 +234,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
