@@ -14,6 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 import { User, UserRole, Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { teachers as initialTeachers, allUsers as initialUsers } from '@/lib/data';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -45,6 +46,8 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
+const USERS_STORAGE_KEY = 'userList';
+const TEACHERS_STORAGE_KEY = 'teacherList';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -83,13 +86,24 @@ export default function RegisterPage() {
             role: 'teacher',
             subjects: [],
             availability: {},
-            status: 'active',
-            bio: '',
-            education: '',
+            bio: 'Novo professor na plataforma! Perfil em breve.',
+            education: 'Formação a ser preenchida.',
         } as Teacher;
+
+        const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+        const currentTeachers = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+        const updatedTeachers = [...currentTeachers, newUser];
+        localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
+
     } else {
         newUser = baseUser as User;
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+        const updatedUsers = [...currentUsers, newUser];
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
     }
+
+    window.dispatchEvent(new Event('storage'));
     
     // Store the new user object in localStorage to be picked up by the login page.
     localStorage.setItem('newlyRegisteredUser', JSON.stringify(newUser));
@@ -234,5 +248,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    

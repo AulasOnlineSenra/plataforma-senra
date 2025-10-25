@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import { User, UserRole, Teacher } from '@/lib/types';
-import { getMockUser, teachers as initialTeachers, users as initialUsers } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, allUsers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -47,6 +47,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 const TEACHERS_STORAGE_KEY = 'teacherList';
+const USERS_STORAGE_KEY = 'userList';
 
 const LoginForm = ({
   role,
@@ -367,12 +368,11 @@ export default function LoginPage() {
     
     // Case 2: Handle existing user
     if (!userToLogin) {
-        // "Database" of all users
-        const allUsers: (User | Teacher)[] = [
-            ...initialUsers,
-            ...(JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers)))
-        ];
-        const foundUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+        const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(allUsers));
+        const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
+        const combinedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
+        
+        const foundUser = combinedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
         if (foundUser) {
             if (foundUser.role === role) {
@@ -404,23 +404,6 @@ export default function LoginPage() {
     
     // Proceed with login if a user was found and validated
     if (userToLogin) {
-        if (isNewRegistration && userToLogin.role === 'teacher') {
-            const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-            let currentTeacherList: Teacher[] = [];
-            try {
-                currentTeacherList = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
-            } catch {
-                currentTeacherList = initialTeachers;
-            }
-            
-            const teacherExists = currentTeacherList.some(t => t.id === userToLogin!.id);
-            if (!teacherExists) {
-                const updatedTeacherList = [...currentTeacherList, userToLogin as Teacher];
-                localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
-                window.dispatchEvent(new Event('storage'));
-            }
-        }
-
         localStorage.setItem('userRole', userToLogin.role);
         localStorage.setItem('currentUser', JSON.stringify(userToLogin));
         localStorage.setItem('savedEmail', email);

@@ -124,6 +124,9 @@ export let teachers: Teacher[] = [
   },
 ];
 
+export const allUsers: (User | Teacher)[] = [...users, ...teachers];
+
+
 export const subjects: Subject[] = [
   { id: 'subj-1', name: 'Matemática' },
   { id: 'subj-2', name: 'Português' },
