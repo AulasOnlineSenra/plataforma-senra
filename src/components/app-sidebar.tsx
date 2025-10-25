@@ -29,11 +29,14 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole, User, NavItem } from '@/lib/types';
-import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems } from '@/lib/data';
+import { UserRole, User, NavItem, Teacher } from '@/lib/types';
+import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
+
+const USERS_STORAGE_KEY = 'userList';
+const TEACHERS_STORAGE_KEY = 'teacherList';
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
@@ -45,15 +48,26 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   const updateUser = useCallback(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
-    if (role) {
+    const userId = localStorage.getItem('userId');
+
+    if (role && userId) {
       setUserRole(role);
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      
+      // Attempt to load the full, updated user object from the persisted lists
+      const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialUsers));
+      const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
+      const allPersistedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
+
+      const foundUser = allPersistedUsers.find(u => u.id === userId);
+
+      if (foundUser) {
+        setUser(foundUser);
+        localStorage.setItem('currentUser', JSON.stringify(foundUser)); // Keep currentUser in sync
       } else {
-        const newUser = getMockUser(role);
-        setUser(newUser);
-        localStorage.setItem('currentUser', JSON.stringify(newUser));
+        // Fallback for safety, though this shouldn't happen in a normal flow
+        const mockUser = getMockUser(role);
+        setUser(mockUser);
+        localStorage.setItem('currentUser', JSON.stringify(mockUser));
       }
     } else {
       router.push('/login');
@@ -66,7 +80,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     const handleStorageChange = (e: StorageEvent) => {
         // We check for 'currentUser' key specifically to update the user avatar
         // and other user details displayed on the sidebar.
-        if (e.key === 'currentUser') {
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY) {
             updateUser();
         }
     };
@@ -173,6 +187,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('navOrder');
     localStorage.removeItem('adminNavOrder');
+    localStorage.removeItem('userId');
     router.push('/login');
   };
 

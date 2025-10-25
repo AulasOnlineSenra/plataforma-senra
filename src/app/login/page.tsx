@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import { User, UserRole, Teacher } from '@/lib/types';
-import { getMockUser, teachers as initialTeachers, allUsers } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, allUsers as initialAllUsers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -346,12 +346,18 @@ export default function LoginPage() {
     let isNewRegistration = false;
     const newUserDataString = localStorage.getItem('newlyRegisteredUser');
 
+    // Combine all user data sources
+    const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialAllUsers));
+    const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
+    const combinedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
+
     // Case 1: Handle newly registered user
     if (newUserDataString) {
         try {
             const newUser = JSON.parse(newUserDataString);
             if (newUser.email === email && newUser.role === role) {
-                userToLogin = getMockUser(newUser.role, newUser);
+                // Find the full user object from our combined list
+                userToLogin = combinedUsers.find(u => u.id === newUser.id) || null;
                 isNewRegistration = true;
             } else if (newUser.email === email && newUser.role !== role) {
                  toast({
@@ -368,10 +374,6 @@ export default function LoginPage() {
     
     // Case 2: Handle existing user
     if (!userToLogin) {
-        const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(allUsers));
-        const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
-        const combinedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
-        
         const foundUser = combinedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
         if (foundUser) {
@@ -405,9 +407,11 @@ export default function LoginPage() {
     // Proceed with login if a user was found and validated
     if (userToLogin) {
         localStorage.setItem('userRole', userToLogin.role);
+        // Store the full, up-to-date user object
         localStorage.setItem('currentUser', JSON.stringify(userToLogin));
         localStorage.setItem('savedEmail', email);
         localStorage.setItem('savedPassword', password);
+        localStorage.setItem('userId', userToLogin.id); // Store userId for re-hydration
 
         if (isNewRegistration) {
             localStorage.removeItem('newlyRegisteredUser');
