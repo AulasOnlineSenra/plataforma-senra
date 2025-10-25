@@ -35,6 +35,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 
@@ -231,7 +232,7 @@ const AdminSuggestionsView = () => {
                   <TableHead className="w-[200px]">Enviado por</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="w-[120px]">Data de Envio</TableHead>
-                  <TableHead className="w-[200px] text-right">Ações</TableHead>
+                  <TableHead className="w-[100px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -297,7 +298,7 @@ const AdminSuggestionsView = () => {
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-[120px]">Data de Envio</TableHead>
                 <TableHead className="w-[150px]">Data da Avaliação</TableHead>
-                <TableHead className="w-[200px] text-right">Status</TableHead>
+                <TableHead className="w-[150px] text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
