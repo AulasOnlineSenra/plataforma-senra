@@ -390,39 +390,39 @@ function ProfilePageComponent() {
 
         {profileUser.role === 'teacher' && (
             <>
-                <CollapsibleCard title="Perfil de Professor" description="Detalhes sobre sua formação, disciplinas e disponibilidade.">
-                    <CardContent className="grid gap-6">
-                         <div className="grid gap-2">
-                            <Label className="flex items-center gap-2"><Briefcase className="h-5 w-5"/> Formação Acadêmica</Label>
-                            {education.map((edu, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                        value={edu}
-                                        onChange={(e) => handleEducationChange(index, e.target.value)}
-                                        disabled={!isEditing}
-                                        placeholder="Ex: Mestrado em Física Aplicada - USP"
-                                    />
-                                    {isEditing && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveEducation(index)}
-                                            className="text-destructive hover:text-destructive"
-                                            disabled={education.length <= 1 && edu === ''}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
-                             {isEditing && (
-                                <Button variant="outline" size="sm" onClick={handleAddEducation} className="mt-2 w-fit">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Adicionar Formação
-                                </Button>
-                            )}
-                        </div>
+              <CollapsibleCard title="Formação Acadêmica" description="Liste suas qualificações e diplomas.">
+                    <CardContent className="grid gap-4">
+                        {education.map((edu, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <Input
+                                    value={edu}
+                                    onChange={(e) => handleEducationChange(index, e.target.value)}
+                                    disabled={!isEditing}
+                                    placeholder="Ex: Mestrado em Física Aplicada - USP"
+                                />
+                                {isEditing && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleRemoveEducation(index)}
+                                        className="text-destructive hover:text-destructive"
+                                        disabled={education.length <= 1 && edu === ''}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        {isEditing && (
+                            <Button variant="outline" size="sm" onClick={handleAddEducation} className="mt-2 w-fit">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Adicionar Formação
+                            </Button>
+                        )}
                     </CardContent>
+              </CollapsibleCard>
+
+              <CollapsibleCard title="Perfil de Professor" description="Detalhes sobre suas disciplinas e disponibilidade.">
                     <CardContent>
                         <div className="grid gap-4">
                             <Label className="flex items-center gap-2"><Layers className="h-5 w-5"/> Disciplinas que Leciona</Label>
@@ -511,5 +511,3 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
-
-    
