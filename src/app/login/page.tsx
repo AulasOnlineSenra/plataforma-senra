@@ -243,6 +243,13 @@ export default function LoginPage() {
                   <ArrowLeft />
               </Link>
             </Button>
+            {!role && (
+                <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6 hidden md:inline-flex">
+                    <Link href="/home">
+                        <ArrowLeft />
+                    </Link>
+                </Button>
+            )}
           <div className="w-full max-w-md rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
@@ -261,11 +268,6 @@ export default function LoginPage() {
               </div>
             ) : (
                 <div className="relative">
-                    <Button asChild variant="ghost" size="icon" className="absolute -top-20 left-0 hidden md:inline-flex">
-                        <Link href="/home">
-                            <ArrowLeft />
-                        </Link>
-                    </Button>
                     <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
                 </div>
             )}
@@ -295,3 +297,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
