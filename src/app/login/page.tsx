@@ -284,29 +284,25 @@ export default function LoginPage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Attempt to load a newly registered user first.
-    const newUserData = localStorage.getItem('newlyRegisteredUser');
-    if (newUserData) {
-      try {
-        const newUser: User = JSON.parse(newUserData);
-        // Pre-fill email and select role based on the new user's data.
-        setEmail(newUser.email);
-        setRole(newUser.role);
-        // Important: Remove the temporary data after using it.
-        localStorage.removeItem('newlyRegisteredUser');
-      } catch (e) {
-        console.error("Failed to parse newly registered user data", e);
-      }
+    const newUserDataString = localStorage.getItem('newlyRegisteredUser');
+    if (newUserDataString) {
+        try {
+            const newUser: User = JSON.parse(newUserDataString);
+            setEmail(newUser.email);
+            setRole(newUser.role);
+            // Do NOT remove the item here. It will be removed after successful login.
+        } catch (e) {
+            console.error("Failed to parse newly registered user data", e);
+        }
     } else {
-      // If no new user, load saved credentials as before.
-      const savedEmail = localStorage.getItem('savedEmail');
-      if (savedEmail) {
-        setEmail(savedEmail);
-      }
-      const savedPassword = localStorage.getItem('savedPassword');
-      if (savedPassword) {
-        setPassword(savedPassword);
-      }
+        const savedEmail = localStorage.getItem('savedEmail');
+        if (savedEmail) {
+            setEmail(savedEmail);
+        }
+        const savedPassword = localStorage.getItem('savedPassword');
+        if (savedPassword) {
+            setPassword(savedPassword);
+        }
     }
 
      const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
@@ -344,46 +340,69 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Determine which user object to create or load.
-    const newUserData = localStorage.getItem('newlyRegisteredUser');
-    let userToLogin: User;
+    let userToLogin: User | null = null;
+    const newUserDataString = localStorage.getItem('newlyRegisteredUser');
 
-    if (newUserData) {
-      userToLogin = JSON.parse(newUserData);
-       // Clear the temp user data after retrieving it
-      localStorage.removeItem('newlyRegisteredUser');
-    } else if (role) {
-      userToLogin = getMockUser(role);
-      // Update email if it was changed in the form
-      userToLogin.email = email;
-    } else {
-        // "Acessar como Visitante" case
-        const visitorRole = 'student';
-        localStorage.setItem('userRole', visitorRole);
-        const user = getMockUser(visitorRole);
-        localStorage.setItem('currentUser', JSON.stringify(user));
-         toast({
-            title: "Acesso de Visitante",
-            description: `Você está acessando como ${user.name.split(' ')[0]}.`,
-        });
-        router.push('/dashboard');
-        return;
+    if (newUserDataString) {
+        try {
+            const newUser = JSON.parse(newUserDataString);
+            // Ensure the role from registration matches the selected login role
+            if (newUser.role === role) {
+                userToLogin = getMockUser(newUser.role, newUser);
+            }
+        } catch (error) {
+            console.error("Error parsing new user data during login:", error);
+        }
+    } 
+    
+    if (!userToLogin) {
+        if (role) {
+            // Standard login for an existing user
+            const mockUser = getMockUser(role);
+            // In a real app, you'd validate password. Here we just use the mock user.
+            userToLogin = { ...mockUser, email }; // Use the email from the form
+        } else {
+            // "Acessar como Visitante" case
+            const visitorRole = 'student';
+            localStorage.setItem('userRole', visitorRole);
+            const user = getMockUser(visitorRole);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            toast({
+                title: "Acesso de Visitante",
+                description: `Você está acessando como ${user.name.split(' ')[0]}.`,
+            });
+            router.push('/dashboard');
+            return;
+        }
     }
     
-    // Simulate login and role assignment
-    localStorage.setItem('userRole', userToLogin.role);
-    localStorage.setItem('currentUser', JSON.stringify(userToLogin));
+    if (userToLogin) {
+        // Simulate login and role assignment
+        localStorage.setItem('userRole', userToLogin.role);
+        localStorage.setItem('currentUser', JSON.stringify(userToLogin));
 
-    // Save credentials for next time
-    localStorage.setItem('savedEmail', email);
-    localStorage.setItem('savedPassword', password);
-    
-    toast({
-        title: "Login bem-sucedido!",
-        description: `Bem-vindo(a) de volta, ${userToLogin.name.split(' ')[0]}!`,
-    });
-    
-    router.push('/dashboard');
+        // Save credentials for next time
+        localStorage.setItem('savedEmail', email);
+        localStorage.setItem('savedPassword', password);
+
+        // Clear temp user data only after successful login
+        if (newUserDataString) {
+            localStorage.removeItem('newlyRegisteredUser');
+        }
+        
+        toast({
+            title: "Login bem-sucedido!",
+            description: `Bem-vindo(a) de volta, ${userToLogin.name.split(' ')[0]}!`,
+        });
+        
+        router.push('/dashboard');
+    } else {
+         toast({
+            variant: "destructive",
+            title: "Erro de Login",
+            description: "Não foi possível encontrar um usuário correspondente.",
+        });
+    }
   };
 
   return (

@@ -217,21 +217,24 @@ export const chatMessages: ChatMessage[] = [
     { id: 'msg-4', senderId: 'teacher-1', receiverId: 'user-1', content: 'Claro, podemos revisar o último tópico na próxima aula.', timestamp: new Date(now.getTime() - 10 * 60000)},
 ];
 
-export const getMockUser = (role: UserRole): User | Teacher => {
+export const getMockUser = (role: UserRole, newUser?: User): User | Teacher => {
   if (role === 'admin') {
-    const adminUser = users.find(u => u.role === 'admin')! as Teacher;
+    const adminUser = { ...users.find(u => u.role === 'admin')!, ...newUser };
     // Add teacher properties for profile editing
-    adminUser.subjects = [];
-    adminUser.bio = 'Administrador da plataforma Aulas Online Senra.';
-    adminUser.education = 'Gerenciamento de Sistemas';
-    return adminUser;
+    (adminUser as Teacher).subjects = [];
+    (adminUser as Teacher).bio = 'Administrador da plataforma Aulas Online Senra.';
+    (adminUser as Teacher).education = 'Gerenciamento de Sistemas';
+    return adminUser as Teacher;
   }
   if (role === 'teacher') {
     // In a real app, you'd get the currently logged-in teacher
-    return teachers[0];
+    // Merge new user data with a default teacher profile
+    const defaultTeacher = teachers[0];
+    return { ...defaultTeacher, ...newUser };
   }
   // In a real app, you'd get the currently logged-in student
-  const student = users.find(u => u.role === 'student' && u.id === 'user-1')!;
+  const defaultStudent = users.find(u => u.role === 'student' && u.id === 'user-1')!;
+  const student = { ...defaultStudent, ...newUser };
   return student as Teacher;
 };
 
