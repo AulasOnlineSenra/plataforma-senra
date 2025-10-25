@@ -21,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { getMockUser, suggestions, users } from '@/lib/data';
+import { getMockUser, suggestions as initialSuggestions, users } from '@/lib/data';
 import { User, UserRole, Suggestion } from '@/lib/types';
 import { Bug, Lightbulb, Send, Check, X, Archive, Filter } from 'lucide-react';
 import {
@@ -36,7 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const SuggestionForm = ({ user }: { user: User }) => {
+const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion: (newSuggestion: Suggestion) => void }) => {
   const [type, setType] = useState<'bug' | 'suggestion'>('suggestion');
   const [content, setContent] = useState('');
   const { toast } = useToast();
@@ -51,15 +51,19 @@ const SuggestionForm = ({ user }: { user: User }) => {
       });
       return;
     }
-    // In a real app, this would be sent to a backend
-    console.log({
+    
+    const newSuggestion: Suggestion = {
+      id: `sug-${Date.now()}`,
       submittedBy: user.name,
       userRole: user.role,
       type,
       content,
       status: 'received',
       timestamp: new Date(),
-    });
+    };
+    
+    onNewSuggestion(newSuggestion);
+    
     toast({
       title: 'Feedback Enviado!',
       description: 'Obrigado por sua contribuição para melhorarmos a plataforma.',
@@ -126,21 +130,33 @@ const SuggestionForm = ({ user }: { user: User }) => {
 };
 
 const AdminSuggestionsView = () => {
+  const [allSuggestions, setAllSuggestions] = useState<Suggestion[]>(initialSuggestions);
   const [filter, setFilter] = useState<Suggestion['status'] | 'all'>('all');
+  const { toast } = useToast();
+
+  const handleUpdateStatus = (id: Suggestion['id'], newStatus: 'implemented' | 'rejected') => {
+    setAllSuggestions(prev => 
+        prev.map(s => s.id === id ? { ...s, status: newStatus, evaluationDate: new Date() } : s)
+    );
+    toast({
+        title: `Sugestão ${newStatus === 'implemented' ? 'Implementada' : 'Rejeitada'}`,
+        description: "O status da sugestão foi atualizado.",
+    });
+  };
 
   const incomingSuggestions = useMemo(() => {
-    return suggestions.filter(s => s.status === 'received');
-  }, []);
+    return allSuggestions.filter(s => s.status === 'received');
+  }, [allSuggestions]);
 
   const processedSuggestions = useMemo(() => {
-    const filtered = suggestions.filter(
+    const filtered = allSuggestions.filter(
       (s) => s.status === 'implemented' || s.status === 'rejected'
     );
     if (filter === 'all' || filter === 'received') {
       return filtered;
     }
     return filtered.filter((s) => s.status === filter);
-  }, [filter]);
+  }, [filter, allSuggestions]);
 
 
   const statusLabels: Record<Suggestion['status'], string> = {
@@ -179,11 +195,11 @@ const AdminSuggestionsView = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Enviado por</TableHead>
+                  <TableHead className="w-[200px]">Enviado por</TableHead>
                   <TableHead>Descrição</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="w-[120px]">Data de Envio</TableHead>
+                  <TableHead className="w-[120px] text-center">Status</TableHead>
+                  <TableHead className="w-[100px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,10 +216,10 @@ const AdminSuggestionsView = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Marcar como Implementada">
+                        <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
                           <Check className="h-4 w-4 text-green-600"/>
                         </Button>
-                        <Button variant="ghost" size="icon" title="Marcar como Rejeitada">
+                        <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
                           <X className="h-4 w-4 text-red-600"/>
                         </Button>
                     </TableCell>
@@ -248,11 +264,11 @@ const AdminSuggestionsView = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome (Função)</TableHead>
+                <TableHead className="w-[200px]">Enviado por</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead>Data de Envio</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Data da Avaliação</TableHead>
+                <TableHead className="w-[120px]">Data de Envio</TableHead>
+                <TableHead className="w-[120px] text-center">Status</TableHead>
+                <TableHead className="w-[120px] text-right">Data da Avaliação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -267,7 +283,7 @@ const AdminSuggestionsView = () => {
                   <TableCell className="text-muted-foreground">
                     {format(suggestion.timestamp, 'dd/MM/yyyy')}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <Badge
                       variant={statusVariants[suggestion.status]}
                       className={statusColors[suggestion.status]}
@@ -300,6 +316,7 @@ const AdminSuggestionsView = () => {
 
 export default function SuggestionsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -307,6 +324,10 @@ export default function SuggestionsPage() {
       setCurrentUser(getMockUser(role));
     }
   }, []);
+
+  const handleNewSuggestion = (newSuggestion: Suggestion) => {
+    setSuggestions(prev => [newSuggestion, ...prev]);
+  };
 
   if (!currentUser) {
     return null; // or a loading spinner
@@ -322,7 +343,7 @@ export default function SuggestionsPage() {
       {currentUser.role === 'admin' ? (
         <AdminSuggestionsView />
       ) : (
-        <SuggestionForm user={currentUser} />
+        <SuggestionForm user={currentUser} onNewSuggestion={handleNewSuggestion} />
       )}
     </div>
   );
