@@ -216,12 +216,14 @@ const AdminSuggestionsView = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
-                          <Check className="h-4 w-4 text-green-600"/>
-                        </Button>
-                        <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
-                          <X className="h-4 w-4 text-red-600"/>
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
+                              <Check className="h-4 w-4 text-green-600"/>
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
+                              <X className="h-4 w-4 text-red-600"/>
+                            </Button>
+                        </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -348,3 +350,5 @@ export default function SuggestionsPage() {
     </div>
   );
 }
+
+    
