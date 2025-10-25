@@ -85,9 +85,10 @@ export default function RegisterPage() {
             ...baseUser,
             role: 'teacher',
             subjects: [],
-            availability: {},
             bio: 'Novo professor na plataforma! Perfil em breve.',
-            education: 'Formação a ser preenchida.',
+            education: [],
+            availability: {},
+            status: 'active',
         } as Teacher;
 
         const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
@@ -121,13 +122,13 @@ export default function RegisterPage() {
         Como você usará a plataforma?
       </h1>
       <div className="grid gap-4">
-        <Button onClick={() => setRole('teacher')} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+        <Button onClick={() => setRole('teacher')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
           Sou Professor
         </Button>
-        <Button onClick={() => setRole('student')} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+        <Button onClick={() => setRole('student')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
           Sou Aluno
         </Button>
-         <Button onClick={() => setRole('admin')} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+         <Button onClick={() => setRole('admin')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
           Sou Administrador
         </Button>
       </div>
@@ -248,3 +249,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
