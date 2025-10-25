@@ -46,11 +46,12 @@ function BookingPageComponent() {
   const searchParams = useSearchParams();
   const studentId = searchParams.get('studentId');
   const studentName = searchParams.get('studentName');
+  const teacherIdParam = searchParams.get('teacherId');
   const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
-  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>();
+  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(teacherIdParam || undefined);
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
