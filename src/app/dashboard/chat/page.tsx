@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -99,19 +99,21 @@ export default function ChatPage() {
         }
     }
 
-    const groupedMessages = allMessages
-        .filter(m => 
-            (m.senderId === currentUser?.id && m.receiverId === activeChatPartner?.id) ||
-            (m.senderId === activeChatPartner?.id && m.receiverId === currentUser?.id)
-        )
-        .reduce((acc, message) => {
-            const date = format(message.timestamp, 'yyyy-MM-dd');
-            if (!acc[date]) {
-                acc[date] = [];
-            }
-            acc[date].push(message);
-            return acc;
-        }, {} as Record<string, typeof allMessages>);
+    const groupedMessages = useMemo(() => {
+        return allMessages
+            .filter(m => 
+                (m.senderId === currentUser?.id && m.receiverId === activeChatPartner?.id) ||
+                (m.senderId === activeChatPartner?.id && m.receiverId === currentUser?.id)
+            )
+            .reduce((acc, message) => {
+                const date = format(message.timestamp, 'yyyy-MM-dd');
+                if (!acc[date]) {
+                    acc[date] = [];
+                }
+                acc[date].push(message);
+                return acc;
+            }, {} as Record<string, typeof allMessages>);
+    }, [allMessages, currentUser, activeChatPartner]);
 
     const formatDateSeparator = (dateStr: string) => {
       const date = new Date(dateStr);
@@ -162,7 +164,10 @@ export default function ChatPage() {
             userId: string, 
             message: string, 
             timestamp: Date,
-            isReceiver: boolean
+            isReceiver: boolean,
+            otherUserId: string,
+            otherUserName: string,
+            otherUserAvatar: string,
         ) => {
             let contactFound = false;
             const updated = contacts.map(c => {
@@ -181,8 +186,8 @@ export default function ChatPage() {
             if (!contactFound) {
                 const userDetails = getContactDetails(userId);
                 if (userDetails) {
-                    updated.push({
-                        id: userId,
+                     updated.push({
+                        id: userDetails.id,
                         name: userDetails.name,
                         avatarUrl: userDetails.avatarUrl,
                         lastMessage: message,
@@ -196,10 +201,10 @@ export default function ChatPage() {
 
         let updatedContacts = [...chatContacts];
         // Update receiver's contact view (for the current user)
-        updatedContacts = updateContact(updatedContacts, activeChatPartner.id, messageContent, newMessage.timestamp, false);
+        updatedContacts = updateContact(updatedContacts, activeChatPartner.id, messageContent, newMessage.timestamp, true, currentUser.id, currentUser.name, currentUser.avatarUrl);
         // Update current user's contact view (for the receiver)
-        updatedContacts = updateContact(updatedContacts, currentUser.id, messageContent, newMessage.timestamp, true);
-
+        updatedContacts = updateContact(updatedContacts, currentUser.id, messageContent, newMessage.timestamp, false, activeChatPartner.id, activeChatPartner.name, activeChatPartner.avatarUrl);
+        
         updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
         
         setChatContacts(updatedContacts);
@@ -421,8 +426,5 @@ export default function ChatPage() {
 
         </div>
     )
-}
-
-    
 
     
