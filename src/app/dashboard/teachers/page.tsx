@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -175,20 +174,35 @@ export default function TeachersPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const { toast } = useToast();
 
+  const updateTeacherList = useCallback(() => {
+    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+    if (storedTeachers) {
+      try {
+        setTeacherList(JSON.parse(storedTeachers));
+      } catch (e) {
+        console.error("Failed to parse teachers from localStorage", e);
+        setTeacherList(initialTeachers);
+      }
+    } else {
+      setTeacherList(initialTeachers);
+    }
+  }, []);
+
+
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setCurrentUser(getMockUser(role));
     }
     
-    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-    if (storedTeachers) {
-      setTeacherList(JSON.parse(storedTeachers));
-    } else {
-      setTeacherList(initialTeachers);
-      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(initialTeachers));
-    }
-  }, []);
+    updateTeacherList();
+
+    window.addEventListener('storage', updateTeacherList);
+
+    return () => {
+      window.removeEventListener('storage', updateTeacherList);
+    };
+  }, [updateTeacherList]);
 
   const handleSendInvite = () => {
     if (!inviteEmail) {
@@ -213,6 +227,7 @@ export default function TeachersPage() {
     const updatedList = teacherList.filter(t => t.id !== teacherId);
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
     toast({
       title: 'Professor Excluído',
       description: 'O perfil do professor foi removido da plataforma.',
@@ -227,6 +242,7 @@ export default function TeachersPage() {
       );
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
   };
   
   const visibleTeachers =
