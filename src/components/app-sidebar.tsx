@@ -232,7 +232,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   };
 
   return (
-    <aside className={cn("flex h-full max-h-screen flex-col gap-2", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
+    <aside className={cn("flex h-full max-h-screen flex-col gap-2 w-full", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
         <Link href="/dashboard/profile" className="block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors">
           <div className="flex h-auto items-center p-4 lg:h-auto">
               <div className="flex items-center gap-3">
