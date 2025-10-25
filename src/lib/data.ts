@@ -35,8 +35,8 @@ export const users: User[] = [
     timezone: 'America/Sao_Paulo',
     nickname: 'João',
     phone: '(11) 91234-5678',
-    bio: 'Estudante de engenharia buscando aprofundar meus conhecimentos em cálculo e física.',
     education: ['Cursando Engenharia Civil - Mackenzie'],
+    bio: 'Estudante de engenharia buscando aprofundar meus conhecimentos em cálculo e física.',
   },
   {
     id: 'admin-1',
@@ -45,6 +45,8 @@ export const users: User[] = [
     avatarUrl: findImage('user-avatar-2'),
     role: 'admin',
     timezone: 'America/Sao_Paulo',
+    education: ['Gerenciamento de Sistemas'],
+    bio: 'Administrador da plataforma Aulas Online Senra.',
   },
   {
     id: 'user-2',
@@ -360,12 +362,6 @@ export const adminNavItems: NavItem[] = [
     href: '/dashboard/admin/feedback-analysis',
     icon: FileText,
     label: 'Análise de Feedback',
-    roles: ['admin'],
-  },
-  {
-    href: '/dashboard/admin/settings',
-    icon: KeyRound,
-    label: 'Credenciais',
     roles: ['admin'],
   },
   {
