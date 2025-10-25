@@ -105,18 +105,15 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
-  const barWidth = 30;
-  const chartWidth = chartData.length * barWidth < 600 ? 600 : chartData.length * barWidth;
-
+  const barWidth = filter === 'day' ? 80 : 120;
+  const chartWidth = chartData.length * barWidth;
 
   return (
-    <ScrollArea className="w-full whitespace-nowrap">
-      <ChartContainer config={chartConfig} style={{ width: chartWidth, height: '300px' }}>
-        <BarChart 
-          accessibilityLayer 
+    <ScrollArea className="w-full whitespace-nowrap h-[350px]">
+      <ChartContainer config={chartConfig} className="h-full" style={{ width: chartWidth, minWidth: '100%' }}>
+        <BarChart
+          accessibilityLayer
           data={chartData}
-          width={chartWidth}
-          height={300}
           margin={{
             top: 20,
             right: 20,
@@ -140,7 +137,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
           />
           <ChartTooltip
             cursor={false}
-            content={<ChartTooltipContent 
+            content={<ChartTooltipContent
               formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))}
               indicator="dot"
             />}
