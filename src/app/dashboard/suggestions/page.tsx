@@ -156,16 +156,23 @@ const AdminSuggestionsView = () => {
     return () => window.removeEventListener('storage', updateSuggestions);
   }, []);
 
-  const handleUpdateStatus = (id: Suggestion['id'], newStatus: 'implemented' | 'rejected') => {
+  const handleUpdateStatus = (id: Suggestion['id'], newStatus: Suggestion['status']) => {
+    const isReverting = newStatus === 'received';
     const updatedSuggestions = allSuggestions.map(s => 
-        s.id === id ? { ...s, status: newStatus, evaluationDate: new Date() } : s
+        s.id === id ? { ...s, status: newStatus, evaluationDate: isReverting ? undefined : new Date() } : s
     );
     setAllSuggestions(updatedSuggestions);
     localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(updatedSuggestions));
     window.dispatchEvent(new Event('storage'));
 
+    const statusText = {
+        implemented: "Implementada",
+        rejected: "Rejeitada",
+        received: "Movida para Caixa de Entrada"
+    }
+
     toast({
-        title: `Sugestão ${newStatus === 'implemented' ? 'Implementada' : 'Rejeitada'}`,
+        title: `Sugestão ${statusText[newStatus]}`,
         description: "O status da sugestão foi atualizado.",
     });
   };
@@ -295,8 +302,9 @@ const AdminSuggestionsView = () => {
                 <TableHead className="w-[200px]">Enviado por</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-[120px]">Data de Envio</TableHead>
-                <TableHead className="w-[120px] text-center">Status</TableHead>
                 <TableHead className="w-[150px] text-right">Data da Avaliação</TableHead>
+                <TableHead className="w-[120px] text-center">Status</TableHead>
+                <TableHead className="w-[100px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -311,6 +319,11 @@ const AdminSuggestionsView = () => {
                   <TableCell className="text-muted-foreground">
                     {format(suggestion.timestamp, 'dd/MM/yyyy')}
                   </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {suggestion.evaluationDate
+                      ? format(suggestion.evaluationDate, 'dd/MM/yyyy')
+                      : '-'}
+                  </TableCell>
                   <TableCell className="text-center">
                     <Badge
                       variant={statusVariants[suggestion.status]}
@@ -319,16 +332,21 @@ const AdminSuggestionsView = () => {
                       {statusLabels[suggestion.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {suggestion.evaluationDate
-                      ? format(suggestion.evaluationDate, 'dd/MM/yyyy')
-                      : '-'}
-                  </TableCell>
+                   <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
+                              <Check className="h-4 w-4 text-green-600"/>
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
+                              <X className="h-4 w-4 text-red-600"/>
+                            </Button>
+                        </div>
+                    </TableCell>
                 </TableRow>
               ))}
               {processedSuggestions.length === 0 && (
                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                         Nenhuma sugestão no histórico com o filtro selecionado.
                     </TableCell>
                 </TableRow>
@@ -392,5 +410,3 @@ export default function SuggestionsPage() {
     </div>
   );
 }
-
-    
