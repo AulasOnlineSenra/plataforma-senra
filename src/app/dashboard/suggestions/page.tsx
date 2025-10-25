@@ -270,7 +270,7 @@ const AdminSuggestionsView = () => {
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-[120px]">Data de Envio</TableHead>
                 <TableHead className="w-[120px] text-center">Status</TableHead>
-                <TableHead className="w-[120px] text-right">Data da Avaliação</TableHead>
+                <TableHead className="w-[150px] text-right">Data da Avaliação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -350,5 +350,3 @@ export default function SuggestionsPage() {
     </div>
   );
 }
-
-    
