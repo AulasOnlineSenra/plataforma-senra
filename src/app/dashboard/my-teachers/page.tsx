@@ -15,13 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { teachers, scheduleEvents, getMockUser } from '@/lib/data';
-import { Teacher, User } from '@/lib/types';
+import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
+import { Teacher, User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }) {
   return (
@@ -72,23 +72,52 @@ function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }
 
 export default function MyTeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialSchedule);
+  const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
 
   useEffect(() => {
-    // In a real app, this would be from your auth context
-    setCurrentUser(getMockUser('student'));
+    const updateData = () => {
+        const loggedInUserStr = localStorage.getItem('currentUser');
+        if (loggedInUserStr) {
+            setCurrentUser(JSON.parse(loggedInUserStr));
+        } else {
+            setCurrentUser(getMockUser('student'));
+        }
+
+        const storedSchedule = localStorage.getItem('scheduleEvents');
+        if (storedSchedule) {
+            setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
+        } else {
+            setScheduleEvents(initialSchedule);
+        }
+        
+        const storedTeachers = localStorage.getItem('teacherList');
+        if (storedTeachers) {
+            setTeachers(JSON.parse(storedTeachers));
+        } else {
+            setTeachers(initialTeachers);
+        }
+    };
+    
+    updateData();
+    window.addEventListener('storage', updateData);
+    return () => window.removeEventListener('storage', updateData);
   }, []);
 
-  const myTeacherIds = [
-    ...new Set(
-      scheduleEvents
-        .filter((event) => event.studentId === currentUser?.id)
-        .map((event) => event.teacherId)
-    ),
-  ];
+  const myTeachers = useMemo(() => {
+    if (!currentUser) return [];
 
-  const myTeachers = teachers.filter((teacher) =>
-    myTeacherIds.includes(teacher.id)
-  );
+    const myTeacherIds = [
+      ...new Set(
+        scheduleEvents
+          .filter((event) => event.studentId === currentUser?.id)
+          .map((event) => event.teacherId)
+      ),
+    ];
+  
+    return teachers.filter((teacher) => myTeacherIds.includes(teacher.id) && teacher.status === 'active');
+  }, [currentUser, scheduleEvents, teachers]);
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -112,3 +141,5 @@ export default function MyTeachersPage() {
     </div>
   );
 }
+
+    

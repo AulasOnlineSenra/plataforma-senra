@@ -21,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers, getMockUser, scheduleEvents as existingSchedule, users } from '@/lib/data';
+import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -57,18 +57,52 @@ function BookingPageComponent() {
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timezoneDifference, setTimezoneDifference] = useState<string | null>(null);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialSchedule);
+  const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
+  const [users, setUsers] = useState<User[]>(initialUsers);
+
 
   const { toast } = useToast();
   
   useEffect(() => {
-    if (studentId) {
-        const studentUser = users.find(u => u.id === studentId);
-        setCurrentUser(studentUser || getMockUser('student'));
-    } else {
-        // In a real app, this would come from an auth context
-        const user = getMockUser('student');
-        setCurrentUser(user);
-    }
+    const updateData = () => {
+        const storedSchedule = localStorage.getItem('scheduleEvents');
+        if (storedSchedule) {
+            setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
+        } else {
+            setScheduleEvents(initialSchedule);
+        }
+
+        const storedTeachers = localStorage.getItem('teacherList');
+        if (storedTeachers) {
+            setTeachers(JSON.parse(storedTeachers));
+        } else {
+            setTeachers(initialTeachers);
+        }
+
+        const storedUsers = localStorage.getItem('userList');
+        if (storedUsers) {
+            setUsers(JSON.parse(storedUsers));
+        } else {
+            setUsers(initialUsers);
+        }
+        
+        if (studentId) {
+            const studentUser = (JSON.parse(localStorage.getItem('userList') || '[]') as User[]).find(u => u.id === studentId);
+            setCurrentUser(studentUser || getMockUser('student'));
+        } else {
+            const loggedInUserStr = localStorage.getItem('currentUser');
+            if (loggedInUserStr) {
+                setCurrentUser(JSON.parse(loggedInUserStr));
+            } else {
+                setCurrentUser(getMockUser('student'));
+            }
+        }
+    };
+
+    updateData();
+    window.addEventListener('storage', updateData);
+    return () => window.removeEventListener('storage', updateData);
   }, [studentId]);
 
   const handleClearSelections = () => {
@@ -80,7 +114,7 @@ function BookingPageComponent() {
   };
 
   const isConflict = (newBooking: Booking, studentId: string): boolean => {
-    const allExistingEvents: (Booking | ScheduleEvent)[] = [...existingSchedule, ...bookings];
+    const allExistingEvents: (Booking | ScheduleEvent)[] = [...scheduleEvents, ...bookings];
 
     return allExistingEvents.some(existingBooking => {
       // Check if the event is relevant (involves the same teacher or student)
@@ -93,8 +127,8 @@ function BookingPageComponent() {
 
       const newStarts = newBooking.start.getTime();
       const newEnds = newBooking.end.getTime();
-      const existingStarts = existingBooking.start.getTime();
-      const existingEnds = existingBooking.end.getTime();
+      const existingStarts = new Date((existingBooking as any).start).getTime();
+      const existingEnds = new Date((existingBooking as any).end).getTime();
 
       // Check for overlap: (StartA < EndB) and (EndA > StartB)
       return (newStarts < existingEnds && newEnds > existingStarts);
@@ -258,15 +292,25 @@ function BookingPageComponent() {
       });
       return;
     }
-    // Here you would typically call an API to save the bookings.
-    // This would also update the `existingSchedule` source.
-    console.log('Confirming bookings:', bookings);
+    const newScheduleEvents = bookings.map(b => ({
+      id: b.id,
+      title: `Aula de ${subjects.find(s => s.id === b.subjectId)?.name}`,
+      start: b.start,
+      end: b.end,
+      studentId: currentUser!.id,
+      teacherId: b.teacherId,
+      subject: subjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
+      status: 'scheduled' as 'scheduled',
+    }));
+    
+    const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
+    localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
+    window.dispatchEvent(new Event('storage'));
+
     toast({
       title: 'Agendamentos Confirmados!',
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
-    // In a real app, you'd probably refetch the `existingSchedule`
-    // For this prototype, we'll just clear the temporary list.
     setBookings([]);
   };
 
@@ -298,7 +342,7 @@ function BookingPageComponent() {
     }
     
     return times;
-  }, [selectedTeacher, selectedDates]);
+  }, [selectedTeacher, selectedDates, teachers]);
   
   useEffect(() => {
     if (!selectedTeacher || !currentUser) {
@@ -319,7 +363,7 @@ function BookingPageComponent() {
     } else {
       setTimezoneDifference(null);
     }
-  }, [selectedTeacher, currentUser]);
+  }, [selectedTeacher, currentUser, teachers]);
 
 
   return (
@@ -585,3 +629,5 @@ export default function BookingPage() {
         </Suspense>
     )
 }
+
+    

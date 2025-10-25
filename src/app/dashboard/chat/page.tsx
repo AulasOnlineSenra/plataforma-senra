@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -13,11 +13,11 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock, X, MessageSquare } from 'lucide-react';
-import { chatContacts, chatMessages, getMockUser, teachers, users } from '@/lib/data';
+import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { User, UserRole, ChatMessage } from '@/lib/types';
+import { User, UserRole, ChatMessage, ChatContact, Teacher } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -41,7 +41,7 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 export default function ChatPage() {
-    const currentUser = getMockUser('student');
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [activeChatPartner, setActiveChatPartner] = useState<User | null>(null);
     const { toast } = useToast();
 
@@ -50,10 +50,43 @@ export default function ChatPage() {
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
     const [messageContent, setMessageContent] = useState('');
-    const [allMessages, setAllMessages] = useState<ChatMessage[]>(chatMessages);
+    const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
+    const [chatContacts, setChatContacts] = useState<ChatContact[]>(initialChatContacts);
+    const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
 
 
-    const allUsers: User[] = [...users, ...teachers];
+    useEffect(() => {
+        const updateData = () => {
+            const loggedInUserStr = localStorage.getItem('currentUser');
+            if(loggedInUserStr) {
+                setCurrentUser(JSON.parse(loggedInUserStr));
+            } else {
+                setCurrentUser(getMockUser('student'));
+            }
+
+            const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
+            const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
+            setAllUsers([...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)]);
+
+            const storedMessages = localStorage.getItem('chatMessages');
+            if (storedMessages) {
+                setAllMessages(JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
+            } else {
+                setAllMessages(initialChatMessages);
+            }
+            
+            const storedContacts = localStorage.getItem('chatContacts');
+            if (storedContacts) {
+                setChatContacts(JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })));
+            } else {
+                setChatContacts(initialChatContacts);
+            }
+        };
+
+        updateData();
+        window.addEventListener('storage', updateData);
+        return () => window.removeEventListener('storage', updateData);
+    }, []);
 
     const getContactDetails = (contactId: string) => {
         return allUsers.find(u => u.id === contactId);
@@ -66,14 +99,19 @@ export default function ChatPage() {
         }
     }
 
-    const groupedMessages = allMessages.reduce((acc, message) => {
-        const date = format(message.timestamp, 'yyyy-MM-dd');
-        if (!acc[date]) {
-            acc[date] = [];
-        }
-        acc[date].push(message);
-        return acc;
-    }, {} as Record<string, typeof allMessages>);
+    const groupedMessages = allMessages
+        .filter(m => 
+            (m.senderId === currentUser?.id && m.receiverId === activeChatPartner?.id) ||
+            (m.senderId === activeChatPartner?.id && m.receiverId === currentUser?.id)
+        )
+        .reduce((acc, message) => {
+            const date = format(message.timestamp, 'yyyy-MM-dd');
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            acc[date].push(message);
+            return acc;
+        }, {} as Record<string, typeof allMessages>);
 
     const formatDateSeparator = (dateStr: string) => {
       const date = new Date(dateStr);
@@ -105,7 +143,7 @@ export default function ChatPage() {
 
     const handleSendMessage = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!messageContent.trim() || !activeChatPartner) return;
+        if (!messageContent.trim() || !activeChatPartner || !currentUser) return;
     
         const newMessage: ChatMessage = {
           id: `msg-${Date.now()}`,
@@ -115,9 +153,27 @@ export default function ChatPage() {
           timestamp: new Date(),
         };
     
-        // In a real app, you'd send this to a backend.
-        // For this prototype, we just update the local state.
-        setAllMessages(prev => [...prev, newMessage]);
+        const updatedMessages = [...allMessages, newMessage];
+        setAllMessages(updatedMessages);
+        localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+        
+        // Update contact list for both sender and receiver
+        const updatedContacts = chatContacts.map(c => {
+            if (c.id === activeChatPartner.id || c.id === currentUser.id) {
+                return {
+                    ...c,
+                    lastMessage: messageContent,
+                    lastMessageTimestamp: newMessage.timestamp,
+                    ...(c.id === activeChatPartner.id && { unreadCount: (c.unreadCount || 0) + 1 })
+                };
+            }
+            return c;
+        }).sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        
+        setChatContacts(updatedContacts);
+        localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+
+        window.dispatchEvent(new Event('storage'));
         setMessageContent('');
       };
     
@@ -127,6 +183,11 @@ export default function ChatPage() {
           handleSendMessage();
         }
       };
+
+
+    if (!currentUser) {
+        return null; // Or a loading spinner
+    }
 
 
     return (
@@ -144,7 +205,7 @@ export default function ChatPage() {
                         <div className="p-2">
                             {chatContacts.map(contact => {
                                 const contactDetails = getContactDetails(contact.id);
-                                if (!contactDetails) return null;
+                                if (!contactDetails || contact.id === currentUser.id) return null;
                                 
                                 return (
                                 <button key={contact.id} onClick={() => handleContactSelect(contact.id)} className={cn(
@@ -329,3 +390,5 @@ export default function ChatPage() {
         </div>
     )
 }
+
+    

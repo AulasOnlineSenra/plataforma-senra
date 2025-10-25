@@ -32,7 +32,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
-import { getMockUser, scheduleEvents as initialScheduleEvents, users, teachers as initialTeachers } from '@/lib/data';
+import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState('day');
   const [teacherCount, setTeacherCount] = useState(initialTeachers.length);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialScheduleEvents);
+  const [users, setUsers] = useState<User[]>(initialUsers);
 
 
   useEffect(() => {
@@ -85,6 +86,13 @@ export default function DashboardPage() {
         }
       } else {
         setTeacherCount(initialTeachers.filter(t => t.status !== 'deleted').length);
+      }
+      
+      const storedUsers = localStorage.getItem('userList');
+      if(storedUsers) {
+        setUsers(JSON.parse(storedUsers));
+      } else {
+        setUsers(initialUsers);
       }
 
       // Update schedule
@@ -476,6 +484,8 @@ export default function DashboardPage() {
     
 
   
+
+    
 
     
 
