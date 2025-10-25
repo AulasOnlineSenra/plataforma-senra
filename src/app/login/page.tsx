@@ -240,7 +240,7 @@ export default function LoginPage() {
         <div className="relative flex flex-col items-center justify-center p-8">
             <div className="w-full max-w-md relative">
                 {!role && (
-                    <Button asChild variant="ghost" size="icon" className="absolute -top-12 left-0">
+                    <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
                         <Link href="/home">
                             <ArrowLeft />
                         </Link>
