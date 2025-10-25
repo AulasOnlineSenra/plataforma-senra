@@ -7,7 +7,6 @@ import {
   Bar,
   XAxis,
   YAxis,
-  ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
 import {
