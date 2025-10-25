@@ -231,8 +231,7 @@ const AdminSuggestionsView = () => {
                   <TableHead className="w-[200px]">Enviado por</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="w-[120px]">Data de Envio</TableHead>
-                  <TableHead className="w-[120px] text-center">Status</TableHead>
-                  <TableHead className="w-[100px] text-right">Ações</TableHead>
+                  <TableHead className="w-[200px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -242,11 +241,6 @@ const AdminSuggestionsView = () => {
                     <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
                      <TableCell className="text-muted-foreground">
                       {format(suggestion.timestamp, 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell className="text-center">
-                       <Badge variant={statusVariants[suggestion.status]} className={statusColors[suggestion.status]}>
-                        {statusLabels[suggestion.status]}
-                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -302,9 +296,8 @@ const AdminSuggestionsView = () => {
                 <TableHead className="w-[200px]">Enviado por</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-[120px]">Data de Envio</TableHead>
-                <TableHead className="w-[150px] text-right">Data da Avaliação</TableHead>
-                <TableHead className="w-[120px] text-center">Status</TableHead>
-                <TableHead className="w-[100px] text-right">Ações</TableHead>
+                <TableHead className="w-[150px]">Data da Avaliação</TableHead>
+                <TableHead className="w-[200px] text-right">Status / Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -319,20 +312,19 @@ const AdminSuggestionsView = () => {
                   <TableCell className="text-muted-foreground">
                     {format(suggestion.timestamp, 'dd/MM/yyyy')}
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
+                  <TableCell className="text-muted-foreground">
                     {suggestion.evaluationDate
                       ? format(suggestion.evaluationDate, 'dd/MM/yyyy')
                       : '-'}
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Badge
-                      variant={statusVariants[suggestion.status]}
-                      className={statusColors[suggestion.status]}
-                    >
-                      {statusLabels[suggestion.status]}
-                    </Badge>
-                  </TableCell>
-                   <TableCell className="text-right">
+                  <TableCell className="text-right">
+                    <div className="flex justify-end items-center gap-2">
+                        <Badge
+                        variant={statusVariants[suggestion.status]}
+                        className={statusColors[suggestion.status]}
+                        >
+                        {statusLabels[suggestion.status]}
+                        </Badge>
                         <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
                               <Check className="h-4 w-4 text-green-600"/>
@@ -341,7 +333,8 @@ const AdminSuggestionsView = () => {
                               <X className="h-4 w-4 text-red-600"/>
                             </Button>
                         </div>
-                    </TableCell>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {processedSuggestions.length === 0 && (
