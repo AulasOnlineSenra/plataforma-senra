@@ -63,8 +63,12 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   useEffect(() => {
     updateUser();
 
-    const handleStorageChange = () => {
-      updateUser();
+    const handleStorageChange = (e: StorageEvent) => {
+        // We check for 'currentUser' key specifically to update the user avatar
+        // and other user details displayed on the sidebar.
+        if (e.key === 'currentUser') {
+            updateUser();
+        }
     };
 
     window.addEventListener('storage', handleStorageChange);
