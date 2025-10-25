@@ -13,7 +13,7 @@ export interface User {
   nickname?: string;
   phone?: string;
   bio?: string;
-  education?: string;
+  education?: string[];
   referredByCode?: string; // New field
 }
 
@@ -88,7 +88,4 @@ export interface Referral {
 
 export interface NavItem {
     href: string;
-    icon: React.ElementType;
-    label: string;
-    roles: UserRole[];
-}
+    

@@ -38,9 +38,7 @@ import {
   Webhook,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useFirebase, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type AvailabilitySlot = {
   start: string;
@@ -92,481 +90,296 @@ const TrelloIcon = () => (
 );
 
 const NotionIcon = () => (
-  <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
-    <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375A.375.375 0 0 0 19.125 3h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zM12 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H12a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375z" />
-  </svg>
+    <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+      <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375A.375.375 0 0 0 19.125 3h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm1.125 7.687a.375.375 0 0 1-.09.245L4.56 15.68a.375.375 0 0 1-.51-.03l-3-3.374a.375.375 0 1 1 .54-.48l2.715 3.045 4.125-4.5a.375.375 0 0 1 .45-.06zm3-4.312h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm1.125 7.5a.375.375 0 0 1-.15.3l-4.5 3a.375.375 0 0 1-.45-.09l-3-4.125a.375.375 0 0 1 .48-.54l2.745 3.75 4.2-2.8a.375.375 0 0 1 .375.255h.3z"/>
+    </svg>
 );
 
-const TeacherProfileForm = ({ user, onUserChange }: { user: Teacher | User, onUserChange: (user: Teacher | User) => void }) => {
-  const { toast } = useToast();
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    onUserChange({ ...user, [id]: value });
-  };
-
-  const handleSubjectChange = (subjectId: string, checked: boolean) => {
-    if ('subjects' in user) {
-        const currentSubjects = (user as Teacher).subjects || [];
-        const newSubjects = checked
-        ? [...currentSubjects, subjectId]
-        : currentSubjects.filter(id => id !== subjectId);
-        onUserChange({ ...user, subjects: newSubjects });
-    }
-  };
-
-  const days = [
-    { id: 'monday', label: 'Segunda-feira' },
-    { id: 'tuesday', label: 'Terça-feira' },
-    { id: 'wednesday', label: 'Quarta-feira' },
-    { id: 'thursday', label: 'Quinta-feira' },
-    { id: 'friday', label: 'Sexta-feira' },
-    { id: 'saturday', label: 'Sábado' },
-    { id: 'sunday', label: 'Domingo' },
-  ];
-
-  const initialAvailability = days.reduce((acc, day) => {
-    acc[day.id] = [{ start: '13:00', end: '21:00' }];
-    return acc;
-  }, {} as Record<string, AvailabilitySlot[]>);
-
-  const [availability, setAvailability] = useState(initialAvailability);
-  const [editingSlot, setEditingSlot] = useState<{ dayId: string; index: number } | null>(null);
-
-  const handleAddSlot = (dayId: string) => {
-    const newSlot = { start: '09:00', end: '12:00' };
-    setAvailability((prev) => ({
-      ...prev,
-      [dayId]: [...(prev[dayId] || []), newSlot],
-    }));
-  };
-
-  const handleEditSlot = (dayId: string, index: number) => {
-    setEditingSlot({ dayId, index });
-  }
-
-  const handleCancelEdit = () => {
-    setEditingSlot(null);
-  };
-
-  const handleSaveSlot = (dayId: string, index: number) => {
-    const newStart = (document.getElementById(`start-${dayId}-${index}`) as HTMLInputElement).value;
-    const newEnd = (document.getElementById(`end-${dayId}-${index}`) as HTMLInputElement).value;
-    if (!newStart || !newEnd || newStart >= newEnd) {
-        toast({
-            variant: "destructive",
-            title: "Horário Inválido",
-            description: "O horário de início deve ser anterior ao horário de término."
-        });
-        return;
-    }
-    setAvailability(prev => {
-        const newAvailability = { ...prev };
-        newAvailability[dayId][index] = { start: newStart, end: newEnd };
-        return newAvailability;
-    });
-    setEditingSlot(null);
-  }
-
-  const handleRemoveSlot = (dayId: string, index: number) => {
-    setAvailability((prev) => ({
-      ...prev,
-      [dayId]: prev[dayId].filter((_, i) => i !== index),
-    }));
-  };
-
-  return (
-    <>
-      <div className="grid gap-6">
-        <CollapsibleCard 
-            title="Informações Pessoais" 
-            description="Atualize seus dados, foto de perfil e informações de contato."
-            defaultOpen={true}
-        >
-          <CardContent className="grid md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center gap-4 md:col-span-1">
-              <Avatar className="h-32 w-32">
-                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-              </Avatar>
-              <Button variant="outline">Alterar Foto</Button>
-            </div>
-            <div className="grid gap-4 md:col-span-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    value={user.name.split(' ')[0]}
-                    onChange={(e) => {
-                      const lastName = user.name.split(' ').slice(1).join(' ');
-                      onUserChange({ ...user, name: `${e.target.value} ${lastName}`});
-                    }}
-                  />
-                </div>
-                 <div className="grid gap-2">
-                  <Label htmlFor="lastName">Sobrenome</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Não aplicável"
-                    value={user.name.split(' ').slice(1).join(' ')}
-                     onChange={(e) => {
-                      const firstName = user.name.split(' ')[0];
-                      onUserChange({ ...user, name: `${firstName} ${e.target.value}`});
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="nickname">Apelido (opcional)</Label>
-                <Input id="nickname" value={user.nickname || ''} onChange={handleInputChange} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={user.email}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={user.phone || ''}
-                    onChange={handleInputChange}
-                    placeholder="(DDD) 99999-9999"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardContent>
-            <div className="grid gap-2">
-              <Label htmlFor="bio">Descrição (Bio)</Label>
-              <Textarea
-                id="bio"
-                value={user.bio || ''}
-                onChange={handleInputChange}
-                rows={4}
-                placeholder="Fale um pouco sobre sua experiência, metodologia e paixão por ensinar."
-              />
-            </div>
-          </CardContent>
-          <CardContent>
-            <div className="grid gap-2">
-              <Label htmlFor="education">Formação</Label>
-              <Input
-                id="education"
-                value={user.education || ''}
-                onChange={handleInputChange}
-                placeholder="Ex: Mestrado em Física Aplicada - USP"
-              />
-            </div>
-          </CardContent>
-        </CollapsibleCard>
-
-        { user.role === 'teacher' && 'subjects' in user && (
-        <>
-          <CollapsibleCard 
-            title="Serviços" 
-            description="Selecione as disciplinas que você leciona."
-          >
-            <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {subjects.map((subject) => (
-                <div key={subject.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`subject-${subject.id}`}
-                    checked={(user as Teacher).subjects.includes(subject.id)}
-                    onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
-                  />
-                  <label
-                    htmlFor={`subject-${subject.id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {subject.name}
-                  </label>
-                </div>
-              ))}
-            </CardContent>
-          </CollapsibleCard>
-
-          <CollapsibleCard
-            title="Disponibilidade"
-            description="Defina os horários em que você pode dar aulas."
-          >
-            <CardContent className="grid gap-4">
-              <TooltipProvider>
-              {days.map((day) => (
-                <div
-                  key={day.id}
-                  className="grid grid-cols-[120px_1fr] items-start gap-4 border-b pb-4 last:border-b-0"
-                >
-                  <h4 className="font-semibold pt-2">{day.label}</h4>
-                  <div className="flex flex-col gap-2">
-                    {(availability[day.id] || []).map((slot, index) => {
-                      const isEditing = editingSlot?.dayId === day.id && editingSlot?.index === index;
-                      
-                      return (
-                      <div key={index} className="flex items-center gap-2">
-                        {isEditing ? (
-                            <>
-                                <Input type="time" id={`start-${day.id}-${index}`} defaultValue={slot.start} className="w-24"/>
-                                <span className="mx-2">-</span>
-                                <Input type="time" id={`end-${day.id}-${index}`} defaultValue={slot.end} className="w-24"/>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => handleSaveSlot(day.id, index)}>
-                                        <Save className="h-4 w-4 text-green-600" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Salvar horário</p></TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                                        <X className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Cancelar edição</p></TooltipContent>
-                                </Tooltip>
-                            </>
-                        ) : (
-                            <>
-                              <div className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm">
-                                <span>{slot.start}</span> - <span>{slot.end}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => handleEditSlot(day.id, index)}>
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Editar horário</p></TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => handleAddSlot(day.id)}>
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Adicionar novo horário</p></TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(day.id, index)}>
-                                      <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Remover horário</p></TooltipContent>
-                                </Tooltip>
-                              </div>
-                            </>
-                        )}
-                      </div>
-                    )})}
-                    {(availability[day.id] || []).length === 0 && (
-                      <Button
-                          variant="outline"
-                          className="mt-2 w-full sm:w-auto"
-                          onClick={() => handleAddSlot(day.id)}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Adicionar Horário
-                        </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              </TooltipProvider>
-            </CardContent>
-          </CollapsibleCard>
-        
-        </>
-        )}
-
-
-        <CollapsibleCard
-            title="Integrações"
-            description="Conecte suas contas para automatizar agendamentos e comunicações."
-        >
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Calendar className="h-6 w-6 text-red-500" />
-                <div>
-                  <h4 className="font-semibold">Google Calendar</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Sincronize sua disponibilidade e agendamentos.
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline">Conectar</Button>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Mail className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h4 className="font-semibold">Gmail</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Envie confirmações e lembretes de aula.
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline">Conectar</Button>
-            </div>
-            { user.role === 'admin' && (
-                <>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                            <TrelloIcon />
-                            <div>
-                            <h4 className="font-semibold">Trello</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Crie cartões para novos alunos e agendamentos.
-                            </p>
-                            </div>
-                        </div>
-                        <Button variant="outline">Conectar</Button>
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                            <Briefcase className="h-6 w-6" style={{color: '#E65100'}} />
-                            <div>
-                            <h4 className="font-semibold">Rub.App</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Automatize a gestão de contatos e funis de venda.
-                            </p>
-                            </div>
-                        </div>
-                        <Button variant="outline">Conectar</Button>
-                    </div>
-                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                            <NotionIcon />
-                            <div>
-                            <h4 className="font-semibold">Notion</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Crie páginas para alunos e registre o progresso.
-                            </p>
-                            </div>
-                        </div>
-                        <Button variant="outline">Conectar</Button>
-                    </div>
-                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                            <Layers className="h-6 w-6 text-black dark:text-white" />
-                            <div>
-                            <h4 className="font-semibold">Make</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Crie cenários complexos de automação.
-                            </p>
-                            </div>
-                        </div>
-                        <Button variant="outline">Conectar</Button>
-                    </div>
-                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                            <Webhook className="h-6 w-6" style={{color: '#FF4F43'}} />
-                            <div>
-                            <h4 className="font-semibold">n8n</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Integre com centenas de outros aplicativos.
-                            </p>
-                            </div>
-                        </div>
-                        <Button variant="outline">Conectar</Button>
-                    </div>
-                </>
-            )}
-          </CardContent>
-        </CollapsibleCard>
-      </div>
-    </>
-  );
-};
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { firestore, user: authUser } = useFirebase();
   const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // State for form fields
+  const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [bio, setBio] = useState('');
+  const [education, setEducation] = useState<string[]>(['']);
+  
+  // Teacher-specific state
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [availability, setAvailability] = useState<Record<string, AvailabilitySlot[]>>({});
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            setCurrentUser(JSON.parse(storedUser));
-        } else {
-            const newUser = getMockUser(role);
-            setCurrentUser(newUser);
-            localStorage.setItem('currentUser', JSON.stringify(newUser));
-        }
+      const user = getMockUser(role);
+      setCurrentUser(user);
+      setName(user.name);
+      setNickname(user.nickname || '');
+      setBio(user.bio || '');
+      setEducation(user.education || ['']);
+      if (user.role === 'teacher') {
+        setSelectedSubjects((user as Teacher).subjects || []);
+      }
     }
   }, []);
 
- const handleSaveChanges = () => {
+  const handleSaveChanges = () => {
     if (!currentUser) return;
     
-    // Save to Firebase
-    if (authUser && firestore) {
-      const docRef = doc(firestore, 'users', authUser.uid);
-      setDocumentNonBlocking(docRef, currentUser, { merge: true });
-    }
+    let updatedUser: User | Teacher;
 
-    // Update localStorage for current user
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-    // If the user is a teacher, update the master teacher list as well
     if (currentUser.role === 'teacher') {
-      const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-      let teacherList: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : [];
-      
-      const teacherIndex = teacherList.findIndex(t => t.id === currentUser.id);
+      const updatedTeacher: Teacher = {
+        ...currentUser as Teacher,
+        name,
+        nickname,
+        bio,
+        education,
+        subjects: selectedSubjects
+      };
+      updatedUser = updatedTeacher;
 
-      if (teacherIndex > -1) {
-        // Update existing teacher
-        teacherList[teacherIndex] = currentUser as Teacher;
-      } else {
-        // This case should ideally not happen if login flow is correct, but as a fallback:
-        teacherList.push(currentUser as Teacher);
-      }
+      const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+      const allTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+      const updatedTeacherList = allTeachers.map(t => t.id === updatedUser.id ? updatedUser : t);
       
-      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(teacherList));
+      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
+
+    } else {
+        updatedUser = {
+            ...currentUser,
+            name,
+            nickname,
+            bio,
+            education
+        }
     }
 
-    // Notify other tabs/components of the change
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    setCurrentUser(updatedUser);
     window.dispatchEvent(new Event('storage'));
 
     toast({
-      title: "Alterações Salvas!",
-      description: "Suas informações de perfil foram atualizadas com sucesso.",
+      title: "Perfil Atualizado!",
+      description: "Suas informações foram salvas com sucesso.",
     });
+    setIsEditing(false);
   };
+  
+  const handleCancel = () => {
+    if(!currentUser) return;
+    setName(currentUser.name);
+    setNickname(currentUser.nickname || '');
+    setBio(currentUser.bio || '');
+    setEducation(currentUser.education || ['']);
+    if (currentUser.role === 'teacher') {
+        setSelectedSubjects((currentUser as Teacher).subjects || []);
+    }
+    setIsEditing(false);
+  }
+  
+  const handleSubjectChange = (subjectId: string, checked: boolean) => {
+    setSelectedSubjects(prev => 
+        checked ? [...prev, subjectId] : prev.filter(id => id !== subjectId)
+    )
+  }
+  
+  const handleEducationChange = (index: number, value: string) => {
+    const newEducation = [...education];
+    newEducation[index] = value;
+    setEducation(newEducation);
+  }
+  
+  const handleAddEducation = () => {
+    setEducation([...education, '']);
+  }
+  
+  const handleRemoveEducation = (index: number) => {
+    const newEducation = education.filter((_, i) => i !== index);
+    setEducation(newEducation);
+  }
 
-  if (!currentUser) return null; // or a loading spinner
+  if (!currentUser) {
+    return null; // or loading spinner
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Configurações de Perfil
+          Meu Perfil
         </h1>
-        <Button
-            size="lg"
-            onClick={handleSaveChanges}
-            className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            Salvar Alterações
-          </Button>
+        <div className="ml-auto flex items-center gap-2">
+            {isEditing ? (
+                <>
+                   <Button variant="ghost" onClick={handleCancel}>
+                        <X className="mr-2" />
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSaveChanges}>
+                        <Save className="mr-2" />
+                        Salvar Alterações
+                    </Button>
+                </>
+            ) : (
+                <Button onClick={() => setIsEditing(true)}>
+                    <Pencil className="mr-2" />
+                    Editar Perfil
+                </Button>
+            )}
+        </div>
       </div>
-      <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-        <TeacherProfileForm user={currentUser} onUserChange={setCurrentUser} />
+      
+      <div className="grid gap-6">
+        <CollapsibleCard title="Informações Pessoais" description="Edite seus dados pessoais e de contato." defaultOpen={true}>
+            <CardContent className="grid sm:grid-cols-2 gap-6">
+                <div className="flex items-center gap-4 sm:col-span-2">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                      <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid gap-2 flex-1">
+                        <Label htmlFor="name">Nome Completo</Label>
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} disabled={!isEditing} placeholder="Seu nome completo"/>
+                    </div>
+                     <div className="grid gap-2 flex-1">
+                        <Label htmlFor="nickname">Apelido (opcional)</Label>
+                        <Input id="nickname" value={nickname} onChange={e => setNickname(e.target.value)} disabled={!isEditing} placeholder="Como você gosta de ser chamado(a)"/>
+                    </div>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input id="email" type="email" value={currentUser.email} disabled className="pl-10" />
+                    </div>
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="joined">Membro Desde</Label>
+                     <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input id="joined" value="Janeiro de 2024" disabled className="pl-10"/>
+                    </div>
+                </div>
+            </CardContent>
+             <CardContent>
+                 <div className="grid gap-2">
+                    <Label htmlFor="bio">Sua Bio</Label>
+                    <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} disabled={!isEditing} placeholder="Fale um pouco sobre você, seus objetivos e interesses..." rows={4}/>
+                 </div>
+             </CardContent>
+        </CollapsibleCard>
+
+        {currentUser.role === 'teacher' && (
+            <>
+                <CollapsibleCard title="Perfil de Professor" description="Detalhes sobre sua formação, disciplinas e disponibilidade.">
+                    <CardContent className="grid gap-6">
+                         <div className="grid gap-2">
+                            <Label>Formação Acadêmica</Label>
+                            {education.map((edu, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                    <Input
+                                        value={edu}
+                                        onChange={(e) => handleEducationChange(index, e.target.value)}
+                                        disabled={!isEditing}
+                                        placeholder="Ex: Mestrado em Física Aplicada - USP"
+                                    />
+                                    {isEditing && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleRemoveEducation(index)}
+                                            className="text-destructive hover:text-destructive"
+                                            disabled={education.length <= 1}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            ))}
+                             {isEditing && (
+                                <Button variant="outline" size="sm" onClick={handleAddEducation} className="mt-2 w-fit">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Adicionar Formação
+                                </Button>
+                            )}
+                        </div>
+                        <div className="grid gap-4">
+                            <Label className="flex items-center gap-2"><Layers className="h-5 w-5"/> Disciplinas que Leciona</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 rounded-md border p-4">
+                                {subjects.map(subject => (
+                                    <div key={subject.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`subject-${subject.id}`}
+                                            checked={selectedSubjects.includes(subject.id)}
+                                            onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
+                                            disabled={!isEditing}
+                                        />
+                                        <label
+                                            htmlFor={`subject-${subject.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            {subject.name}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                </CollapsibleCard>
+
+                <CollapsibleCard title="Integrações" description="Conecte suas ferramentas de produtividade.">
+                     <CardContent className="grid gap-4">
+                        <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center gap-4">
+                                <NotionIcon />
+                                <div>
+                                    <p className="font-semibold">Notion</p>
+                                    <p className="text-sm text-muted-foreground">Sincronize suas anotações de aula.</p>
+                                </div>
+                            </div>
+                            <Button variant="outline">Conectar</Button>
+                        </div>
+                         <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center gap-4">
+                                <TrelloIcon />
+                                <div>
+                                    <p className="font-semibold">Trello</p>
+                                    <p className="text-sm text-muted-foreground">Gerencie o plano de estudos dos alunos.</p>
+                                </div>
+                            </div>
+                            <Button variant="outline">Conectar</Button>
+                        </div>
+                          <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center gap-4">
+                                <Webhook className="h-6 w-6"/>
+                                <div>
+                                    <p className="font-semibold">Webhooks</p>
+                                    <p className="text-sm text-muted-foreground">Crie automações personalizadas.</p>
+                                </div>
+                            </div>
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span tabIndex={0}>
+                                            <Button variant="outline" disabled>Em Breve</Button>
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                    <p>A integração com webhooks estará disponível em breve.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                     </CardContent>
+                </CollapsibleCard>
+            </>
+        )}
       </div>
     </div>
   );
 }
+    

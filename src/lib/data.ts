@@ -1,5 +1,3 @@
-
-
 import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -37,7 +35,7 @@ export const users: User[] = [
     nickname: 'João',
     phone: '(11) 91234-5678',
     bio: 'Estudante de engenharia buscando aprofundar meus conhecimentos em cálculo e física.',
-    education: 'Cursando Engenharia Civil - Mackenzie',
+    education: ['Cursando Engenharia Civil - Mackenzie'],
   },
   {
     id: 'admin-1',
@@ -89,7 +87,7 @@ export let teachers: Teacher[] = [
     role: 'teacher',
     subjects: ['subj-1', 'subj-3'],
     bio: 'Professora apaixonada por matemática e física, com 5 anos de experiência em aulas particulares.',
-    education: 'Mestrado em Física Aplicada - USP',
+    education: ['Mestrado em Física Aplicada - USP'],
     availability: {
       monday: ['09:00', '10:30', '15:00'],
       wednesday: ['09:00', '10:30', '15:00', '16:30'],
@@ -106,7 +104,7 @@ export let teachers: Teacher[] = [
     role: 'teacher',
     subjects: ['subj-2', 'subj-4'],
     bio: 'Especialista em literatura e redação, focado em preparar alunos para vestibulares e concursos.',
-    education: 'Doutorado em Letras - UFRJ',
+    education: ['Doutorado em Letras - UFRJ'],
     availability: {
       tuesday: ['10:30', '12:00', '13:30'],
       thursday: ['10:30', '12:00', '13:30'],
@@ -122,7 +120,7 @@ export let teachers: Teacher[] = [
     role: 'teacher',
     subjects: ['subj-5'],
     bio: 'Historiadora e geógrafa, adora contar histórias sobre o mundo e suas transformações.',
-    education: 'Graduação em História - UNICAMP',
+    education: ['Graduação em História - UNICAMP'],
     availability: {
       monday: ['18:00', '19:30'],
       tuesday: ['18:00', '19:30'],
@@ -236,7 +234,7 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
     const adminUser = { ...users.find(u => u.role === 'admin')!, ...newUser };
     (adminUser as Teacher).subjects = (newUser as Teacher)?.subjects || [];
     (adminUser as Teacher).bio = (newUser as Teacher)?.bio ||'Administrador da plataforma Aulas Online Senra.';
-    (adminUser as Teacher).education = (newUser as Teacher)?.education || 'Gerenciamento de Sistemas';
+    adminUser.education = (newUser as User)?.education || ['Gerenciamento de Sistemas'];
     return adminUser as Teacher;
   }
   if (role === 'teacher') {
@@ -249,7 +247,7 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
         avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
         subjects: (newUser as Teacher)?.subjects || [],
         bio: (newUser as Teacher)?.bio || 'Novo professor na plataforma! Perfil em breve.',
-        education: (newUser as Teacher)?.education || 'Formação a ser preenchida.',
+        education: (newUser as User)?.education || ['Formação a ser preenchida.'],
         availability: {},
         status: 'active',
         role: 'teacher'
