@@ -309,6 +309,7 @@ export default function SchedulePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Professor(a)</TableHead>
+                  <TableHead>Aluno(a)</TableHead>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Título da Aula</TableHead>
                   <TableHead className="text-right">Data</TableHead>
@@ -322,6 +323,7 @@ export default function SchedulePage() {
                     return (
                       <TableRow key={event.id}>
                         <TableCell>{teacher?.name || 'N/A'}</TableCell>
+                        <TableCell>{student?.name || 'N/A'}</TableCell>
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell>{event.title}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
@@ -332,7 +334,7 @@ export default function SchedulePage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       Nenhuma aula concluída ainda.
                     </TableCell>
                   </TableRow>
