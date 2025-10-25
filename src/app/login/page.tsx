@@ -77,7 +77,7 @@ const LoginForm = ({
         onClick={onBack}
         variant="ghost"
         size="icon"
-        className="absolute -top-24 left-0"
+        className="absolute -top-32 left-0"
       >
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">Voltar para seleção</span>
@@ -238,35 +238,35 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-background">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
-            {!role && (
-                <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
-                    <Link href="/home">
-                        <ArrowLeft />
-                    </Link>
-                </Button>
-            )}
-          <div className="w-full max-w-md rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
-            <div className="mb-8">
-                <SenraLogo className="mx-auto" />
-            </div>
-            {role ? (
-              <div className="relative">
-                <LoginForm
-                  role={role}
-                  onBack={() => setRole(null)}
-                  onLogin={handleLogin}
-                  email={email}
-                  setEmail={setEmail}
-                  password={password}
-                  setPassword={setPassword}
-                />
-              </div>
-            ) : (
+            <div className="w-full max-w-md">
                 <div className="relative">
-                    <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
+                    {!role && (
+                        <Button asChild variant="ghost" size="icon" className="absolute -top-12 left-0">
+                            <Link href="/home">
+                                <ArrowLeft />
+                            </Link>
+                        </Button>
+                    )}
+                    <div className="rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
+                        <div className="mb-8">
+                            <SenraLogo className="mx-auto" />
+                        </div>
+                        {role ? (
+                            <LoginForm
+                                role={role}
+                                onBack={() => setRole(null)}
+                                onLogin={handleLogin}
+                                email={email}
+                                setEmail={setEmail}
+                                password={password}
+                                setPassword={setPassword}
+                            />
+                        ) : (
+                           <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
+                        )}
+                    </div>
                 </div>
-            )}
-          </div>
+            </div>
         </div>
         <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-primary to-accent p-12 text-center text-primary-foreground relative">
           {loginImage && (
@@ -292,5 +292,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
