@@ -107,12 +107,10 @@
   }
   
   .dragging {
-    @apply opacity-75 transform rotate-2 cursor-grabbing;
+    @apply opacity-50 transform rotate-1 cursor-grabbing;
   }
   
   .drag-over {
-    @apply bg-sidebar-accent/50;
+    @apply bg-accent/20 ring-2 ring-accent;
   }
 }
-
-    

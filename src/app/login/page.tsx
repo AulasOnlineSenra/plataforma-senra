@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, DragEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { UserRole } from '@/lib/types';
 import { getMockUser } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -155,35 +155,119 @@ const LoginForm = ({
   );
 };
 
-const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.FormEvent) => void;}) => (
+const defaultRoleButtons = [
+  { id: 'teacher', label: 'Sou Professor', role: 'teacher' as UserRole },
+  { id: 'student', label: 'Sou Aluno', role: 'student' as UserRole },
+  { id: 'admin', label: 'Sou Administrador', role: 'admin' as UserRole },
+  { id: 'visitor', label: 'Acessar como Visitante' },
+];
+
+const STORAGE_KEY = 'loginRoleOrder';
+
+const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.FormEvent) => void;}) => {
+  const [roleButtons, setRoleButtons] = useState(defaultRoleButtons);
+  
+  useEffect(() => {
+    const savedOrder = localStorage.getItem(STORAGE_KEY);
+    if (savedOrder) {
+      try {
+        const orderedIds = JSON.parse(savedOrder);
+        const reorderedButtons = orderedIds
+            .map((id: string) => defaultRoleButtons.find(btn => btn.id === id))
+            .filter(Boolean);
+        const remainingButtons = defaultRoleButtons.filter(btn => !orderedIds.includes(btn.id));
+        setRoleButtons([...reorderedButtons, ...remainingButtons]);
+      } catch (e) {
+        console.error("Failed to parse role order from localStorage", e);
+      }
+    }
+  }, []);
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+    (e.currentTarget as HTMLDivElement).classList.add('dragging');
+  };
+
+  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLDivElement).classList.remove('dragging');
+  };
+  
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).classList.add('drag-over');
+  };
+  
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLDivElement).classList.remove('drag-over');
+  };
+  
+  const handleDrop = (e: DragEvent<HTMLDivElement>, dropId: string) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).classList.remove('drag-over');
+
+    const draggedId = e.dataTransfer.getData('text/plain');
+    if (draggedId === dropId) return;
+
+    const draggedItem = roleButtons.find(btn => btn.id === draggedId);
+    if (!draggedItem) return;
+
+    const itemsWithoutDragged = roleButtons.filter(btn => btn.id !== draggedId);
+    const dropIndex = itemsWithoutDragged.findIndex(btn => btn.id === dropId);
+    
+    const newItems = [
+      ...itemsWithoutDragged.slice(0, dropIndex),
+      draggedItem,
+      ...itemsWithoutDragged.slice(dropIndex),
+    ];
+    
+    setRoleButtons(newItems);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems.map(btn => btn.id)));
+  };
+
+  return (
   <div className="w-full">
     <h1 className="text-2xl font-bold font-headline text-center mb-6">
       Selecione seu perfil para entrar
     </h1>
     <div className="grid gap-4">
-      <Button onClick={() => onSelectRole('teacher')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
-        Sou Professor
-      </Button>
-      <Button onClick={() => onSelectRole('student')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
-        Sou Aluno
-      </Button>
-      <Button onClick={() => onSelectRole('admin')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
-        Sou Administrador
-      </Button>
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+      {roleButtons.map((item) => (
+        <div 
+          key={item.id}
+          className="relative group"
+          draggable
+          onDragStart={(e) => handleDragStart(e, item.id)}
+          onDragEnd={handleDragEnd}
+          onDrop={(e) => handleDrop(e, item.id)}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          <GripVertical className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+          {item.role ? (
+            <Button onClick={() => onSelectRole(item.role)} className="h-12 text-base w-full bg-brand-yellow text-black hover:bg-brand-yellow/90 pl-10">
+              {item.label}
+            </Button>
+          ) : (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">ou</span>
+                </div>
+              </div>
+              <Button onClick={onLogin} className="h-12 text-base w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent pl-10">
+                {item.label}
+              </Button>
+            </>
+          )}
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">ou</span>
-        </div>
-      </div>
-      <Button onClick={onLogin} className="h-12 text-base bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
-        Acessar como Visitante
-      </Button>
+      ))}
     </div>
   </div>
 );
+}
 
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
