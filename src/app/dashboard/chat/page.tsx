@@ -157,18 +157,50 @@ export default function ChatPage() {
         setAllMessages(updatedMessages);
         localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
         
-        // Update contact list for both sender and receiver
-        const updatedContacts = chatContacts.map(c => {
-            if (c.id === activeChatPartner.id || c.id === currentUser.id) {
-                return {
-                    ...c,
-                    lastMessage: messageContent,
-                    lastMessageTimestamp: newMessage.timestamp,
-                    ...(c.id === activeChatPartner.id && { unreadCount: (c.unreadCount || 0) + 1 })
-                };
+        const updateContact = (
+            contacts: ChatContact[], 
+            userId: string, 
+            message: string, 
+            timestamp: Date,
+            isReceiver: boolean
+        ) => {
+            let contactFound = false;
+            const updated = contacts.map(c => {
+                if (c.id === userId) {
+                    contactFound = true;
+                    return {
+                        ...c,
+                        lastMessage: message,
+                        lastMessageTimestamp: timestamp,
+                        unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : c.unreadCount
+                    };
+                }
+                return c;
+            });
+    
+            if (!contactFound) {
+                const userDetails = getContactDetails(userId);
+                if (userDetails) {
+                    updated.push({
+                        id: userId,
+                        name: userDetails.name,
+                        avatarUrl: userDetails.avatarUrl,
+                        lastMessage: message,
+                        lastMessageTimestamp: timestamp,
+                        unreadCount: isReceiver ? 1 : 0,
+                    });
+                }
             }
-            return c;
-        }).sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+            return updated;
+        };
+
+        let updatedContacts = [...chatContacts];
+        // Update receiver's contact view (for the current user)
+        updatedContacts = updateContact(updatedContacts, activeChatPartner.id, messageContent, newMessage.timestamp, false);
+        // Update current user's contact view (for the receiver)
+        updatedContacts = updateContact(updatedContacts, currentUser.id, messageContent, newMessage.timestamp, true);
+
+        updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
         
         setChatContacts(updatedContacts);
         localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
@@ -390,5 +422,7 @@ export default function ChatPage() {
         </div>
     )
 }
+
+    
 
     
