@@ -111,7 +111,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
 
   return (
     <ScrollArea className="w-full whitespace-nowrap">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full min-w-[600px]">
+      <ChartContainer config={chartConfig} style={{ width: chartWidth, height: '300px' }}>
         <BarChart 
           accessibilityLayer 
           data={chartData}
