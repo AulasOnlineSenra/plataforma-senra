@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -17,35 +16,26 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { getMockUser, teachers as initialTeachers, subjects, allUsers as initialAllUsers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserRole, Teacher, User } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Calendar,
-  Mail,
-  Pencil,
-  Trash2,
   Plus,
-  Save,
-  X,
+  Trash2,
   ChevronUp,
   ChevronDown,
-  Briefcase,
   Layers,
   Webhook,
-  User as UserIcon,
+  Briefcase
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { EditableInput } from '@/components/editable-input';
+import { EditableTextarea } from '@/components/editable-textarea';
 
-type AvailabilitySlot = {
-  start: string;
-  end: string;
-};
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const USERS_STORAGE_KEY = 'userList';
@@ -54,23 +44,29 @@ const USERS_STORAGE_KEY = 'userList';
 const CollapsibleCard = ({
     title,
     description,
+    icon,
     children,
     defaultOpen = false,
 } : {
     title: string,
     description: string,
+    icon: React.ElementType,
     children: React.ReactNode,
     defaultOpen?: boolean
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
+    const Icon = icon;
     
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <Card>
                 <CardHeader className="flex flex-row items-start justify-between">
-                    <div>
-                        <CardTitle>{title}</CardTitle>
-                        <CardDescription>{description}</CardDescription>
+                    <div className="flex items-center gap-4">
+                        <Icon className="h-6 w-6 text-muted-foreground" />
+                        <div className="grid gap-1">
+                            <CardTitle>{title}</CardTitle>
+                            <CardDescription>{description}</CardDescription>
+                        </div>
                     </div>
                     <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -106,29 +102,13 @@ function ProfilePageComponent() {
   const { toast } = useToast();
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [profileUser, setProfileUser] = useState<User | Teacher | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  
-  // State for form fields
-  const [name, setName] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [bio, setBio] = useState('');
   const [education, setEducation] = useState<string[]>(['']);
-  const [phone, setPhone] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [state, setState] = useState('');
-  const [neighborhood, setNeighborhood] = useState('');
-  
-  // Teacher-specific state
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [availability, setAvailability] = useState<Record<string, AvailabilitySlot[]>>({});
 
   useEffect(() => {
     // Determine the logged-in user
     const role = localStorage.getItem('userRole') as UserRole | null;
-    const storedUser = localStorage.getItem('currentUser');
     let currentUser: User | Teacher | null = null;
+    const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
     } else if (role) {
@@ -149,124 +129,74 @@ function ProfilePageComponent() {
     setProfileUser(userToDisplay);
 
     if (userToDisplay) {
-      setName(userToDisplay.name);
-      setNickname(userToDisplay.nickname || '');
-      setBio(userToDisplay.bio || '');
-      setPhone(userToDisplay.phone || '');
-      setCpf(userToDisplay.cpf || '');
-      setBirthDate(userToDisplay.birthDate || '');
-      setZipCode(userToDisplay.address?.zipCode || '');
-      setState(userToDisplay.address?.state || '');
-      setNeighborhood(userToDisplay.address?.neighborhood || '');
-
-      // Ensure education is always an array
       if (Array.isArray(userToDisplay.education)) {
         setEducation(userToDisplay.education.length > 0 ? userToDisplay.education : ['']);
-      } else if (typeof userToDisplay.education === 'string') {
+      } else if (typeof userToDisplay.education === 'string' && userToDisplay.education) {
         setEducation([userToDisplay.education]);
       } else {
         setEducation(['']);
       }
-      
-      if (userToDisplay.role === 'teacher') {
-        setSelectedSubjects((userToDisplay as Teacher).subjects || []);
-      }
     }
   }, [userId]);
 
-  const handleSaveChanges = () => {
+  const handleSaveField = (field: string, value: any) => {
     if (!profileUser) return;
     
-    let updatedUser: User | Teacher;
+    // This function handles saving a single field.
+    // It creates a nested object if the field name contains a dot.
+    const keys = field.split('.');
+    let updatedValue: Record<string, any> = { [keys.pop()!]: value };
+    for (let i = keys.length - 1; i >= 0; i--) {
+        updatedValue = { [keys[i]]: updatedValue };
+    }
 
-    const baseUpdate = {
-        name,
-        nickname,
-        bio,
-        education: education.filter(edu => edu.trim() !== ''), // Clean empty entries
-        phone,
-        cpf,
-        birthDate,
-        address: {
-            ...profileUser.address,
-            zipCode,
-            state,
-            neighborhood,
-        }
+    // Merge the updated field into the user object
+    const updatedUser = {
+        ...profileUser,
+        ...updatedValue,
+        address: { ...profileUser.address, ...(updatedValue.address || {}) },
     };
 
-    if (profileUser.role === 'teacher') {
-      const updatedTeacher: Teacher = {
-        ...(profileUser as Teacher),
-        ...baseUpdate,
-        subjects: selectedSubjects,
-      };
-      updatedUser = updatedTeacher;
+    updateUserInStorage(updatedUser);
+  };
+  
+  const updateUserInStorage = (updatedUser: User | Teacher) => {
+    setProfileUser(updatedUser);
 
+    if (updatedUser.role === 'teacher') {
       const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
       const allTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
       const updatedTeacherList = allTeachers.map(t => t.id === updatedUser.id ? updatedUser : t);
-      
       localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
-
     } else {
-        updatedUser = {
-            ...profileUser,
-            ...baseUpdate,
-            role: profileUser.role, // ensure role is not lost
-        }
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        const allUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialAllUsers;
-        const updatedUserList = allUsers.map(u => u.id === updatedUser.id ? updatedUser : u);
+        const allUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+        const updatedUserList = allUsers.map(u => u.id === updatedUser.id ? updatedUser as User : u);
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUserList));
     }
-
-    // If the admin is editing another user, we don't update the logged-in user's info.
+    
     if(loggedInUser?.id === updatedUser.id) {
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     }
     
-    setProfileUser(updatedUser);
     window.dispatchEvent(new Event('storage'));
 
     toast({
       title: "Perfil Atualizado!",
-      description: "As informações foram salvas com sucesso.",
+      description: "Sua alteração foi salva.",
     });
-    setIsEditing(false);
-  };
-  
-  const handleCancel = () => {
-    if(!profileUser) return;
-    setName(profileUser.name);
-    setNickname(profileUser.nickname || '');
-    setBio(profileUser.bio || '');
-    setPhone(profileUser.phone || '');
-    setCpf(profileUser.cpf || '');
-    setBirthDate(profileUser.birthDate || '');
-    setZipCode(profileUser.address?.zipCode || '');
-    setState(profileUser.address?.state || '');
-    setNeighborhood(profileUser.address?.neighborhood || '');
-
-
-    if (Array.isArray(profileUser.education)) {
-        setEducation(profileUser.education.length > 0 ? profileUser.education : ['']);
-    } else if (typeof profileUser.education === 'string') {
-        setEducation([profileUser.education]);
-    } else {
-        setEducation(['']);
-    }
-
-    if (profileUser.role === 'teacher') {
-        setSelectedSubjects((profileUser as Teacher).subjects || []);
-    }
-    setIsEditing(false);
   }
-  
+
   const handleSubjectChange = (subjectId: string, checked: boolean) => {
-    setSelectedSubjects(prev => 
-        checked ? [...prev, subjectId] : prev.filter(id => id !== subjectId)
-    )
+    if (!profileUser || profileUser.role !== 'teacher') return;
+
+    const currentSubjects = (profileUser as Teacher).subjects || [];
+    const newSubjects = checked 
+        ? [...currentSubjects, subjectId] 
+        : currentSubjects.filter(id => id !== subjectId);
+    
+    const updatedTeacher = { ...profileUser, subjects: newSubjects };
+    updateUserInStorage(updatedTeacher as Teacher);
   }
   
   const handleEducationChange = (index: number, value: string) => {
@@ -275,145 +205,107 @@ function ProfilePageComponent() {
     setEducation(newEducation);
   }
   
+  const handleSaveEducation = (index: number, value: string) => {
+    if (!profileUser) return;
+    const newEducation = [...education];
+    newEducation[index] = value;
+    const finalEducation = newEducation.filter(edu => edu.trim() !== '');
+    const updatedUser = { ...profileUser, education: finalEducation.length > 0 ? finalEducation : [''] };
+    updateUserInStorage(updatedUser);
+  }
+  
   const handleAddEducation = () => {
     setEducation([...education, '']);
   }
   
   const handleRemoveEducation = (index: number) => {
+    if (!profileUser) return;
+    let newEducation: string[];
     if (education.length > 1) {
-        const newEducation = education.filter((_, i) => i !== index);
-        setEducation(newEducation);
-    } else if (education.length === 1 && education[0] !== '') {
-        setEducation(['']); // Clear the only field instead of removing it
+        newEducation = education.filter((_, i) => i !== index);
+    } else {
+        newEducation = ['']; // Clear the field but don't remove it
     }
+    setEducation(newEducation);
+    const updatedUser = { ...profileUser, education: newEducation };
+    updateUserInStorage(updatedUser);
   }
+
 
   if (!profileUser) {
     return null; // or loading spinner
   }
 
   const canEdit = loggedInUser?.role === 'admin' || loggedInUser?.id === profileUser.id;
-
+  const isTeacher = profileUser.role === 'teacher';
+  
+  const UserIcon = ({className}: {className?: string}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Perfil de {name.split(' ')[0]}
+          Perfil de {profileUser.name.split(' ')[0]}
         </h1>
-        {canEdit && (
-            <div className="ml-auto flex items-center gap-2">
-                {isEditing ? (
-                    <>
-                       <Button variant="ghost" onClick={handleCancel}>
-                            <X className="mr-2" />
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSaveChanges}>
-                            <Save className="mr-2" />
-                            Salvar Alterações
-                        </Button>
-                    </>
-                ) : (
-                    <Button onClick={() => setIsEditing(true)}>
-                        <Pencil className="mr-2" />
-                        Editar Perfil
-                    </Button>
-                )}
-            </div>
-        )}
       </div>
       
       <div className="grid gap-6">
-        <CollapsibleCard title="Informações Pessoais" description="Edite seus dados pessoais e de contato." defaultOpen={true}>
-            <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="flex items-center gap-4 sm:col-span-2 lg:col-span-3">
-                    <Avatar className="h-20 w-20">
+        <CollapsibleCard title="Informações Pessoais" description="Clique em um campo para editar seus dados pessoais e de contato." icon={UserIcon} defaultOpen={true}>
+            <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
+                <div className="flex flex-col items-center gap-4 sm:col-span-full">
+                    <Avatar className="h-24 w-24">
                       <AvatarImage src={profileUser.avatarUrl} alt={profileUser.name} />
                       <AvatarFallback>{profileUser.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="grid gap-2 flex-1">
-                        <Label htmlFor="name">Nome Completo</Label>
-                        <Input id="name" value={name} onChange={e => setName(e.target.value)} disabled={!isEditing} placeholder="Seu nome completo"/>
-                    </div>
-                     <div className="grid gap-2 flex-1">
-                        <Label htmlFor="nickname">Apelido (opcional)</Label>
-                        <Input id="nickname" value={nickname} onChange={e => setNickname(e.target.value)} disabled={!isEditing} placeholder="Como você gosta de ser chamado(a)"/>
-                    </div>
+                     <EditableTextarea
+                        label="Sua Bio"
+                        value={profileUser.bio || ''}
+                        onSave={(value) => handleSaveField('bio', value)}
+                        placeholder="Fale um pouco sobre você..."
+                        canEdit={canEdit}
+                        className="text-center"
+                      />
                 </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="email" type="email" value={profileUser.email} disabled className="pl-10" />
-                    </div>
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} disabled={!isEditing} placeholder="(XX) XXXXX-XXXX" />
-                </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="joined">Membro Desde</Label>
-                     <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="joined" value="Janeiro de 2024" disabled className="pl-10"/>
-                    </div>
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input id="cpf" value={cpf} onChange={e => setCpf(e.target.value)} disabled={!isEditing} placeholder="000.000.000-00" />
-                </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="birthDate">Data de Nascimento</Label>
-                    <Input id="birthDate" type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} disabled={!isEditing} />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="zipCode">CEP</Label>
-                    <Input id="zipCode" value={zipCode} onChange={e => setZipCode(e.target.value)} disabled={!isEditing} placeholder="00000-000" />
-                </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="state">Estado</Label>
-                    <Input id="state" value={state} onChange={e => setState(e.target.value)} disabled={!isEditing} placeholder="Ex: SP" />
-                </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="neighborhood">Bairro</Label>
-                    <Input id="neighborhood" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} disabled={!isEditing} placeholder="Ex: Centro" />
-                </div>
+                 
+                <EditableInput label="Nome Completo" value={profileUser.name} onSave={(value) => handleSaveField('name', value)} placeholder="Seu nome completo" canEdit={canEdit} />
+                <EditableInput label="Apelido" value={profileUser.nickname || ''} onSave={(value) => handleSaveField('nickname', value)} placeholder="Como gosta de ser chamado(a)" canEdit={canEdit} />
+                <EditableInput label="Email" value={profileUser.email} onSave={() => {}} placeholder="seu.email@exemplo.com" canEdit={false} type="email" />
+                <EditableInput label="Telefone" value={profileUser.phone || ''} onSave={(value) => handleSaveField('phone', value)} placeholder="(XX) XXXXX-XXXX" canEdit={canEdit} />
+                <EditableInput label="CPF" value={profileUser.cpf || ''} onSave={(value) => handleSaveField('cpf', value)} placeholder="000.000.000-00" canEdit={canEdit} />
+                <EditableInput label="Data de Nascimento" value={profileUser.birthDate || ''} onSave={(value) => handleSaveField('birthDate', value)} canEdit={canEdit} type="date" />
+                <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} onSave={(value) => handleSaveField('address.zipCode', value)} placeholder="00000-000" canEdit={canEdit} />
+                <EditableInput label="Estado" value={profileUser.address?.state || ''} onSave={(value) => handleSaveField('address.state', value)} placeholder="Ex: SP" canEdit={canEdit} />
+                <EditableInput label="Bairro" value={profileUser.address?.neighborhood || ''} onSave={(value) => handleSaveField('address.neighborhood', value)} placeholder="Ex: Centro" canEdit={canEdit} />
             </CardContent>
-             <CardContent>
-                 <div className="grid gap-2">
-                    <Label htmlFor="bio">Sua Bio</Label>
-                    <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} disabled={!isEditing} placeholder="Fale um pouco sobre você, seus objetivos e interesses..." rows={4}/>
-                 </div>
-             </CardContent>
         </CollapsibleCard>
 
-        {profileUser.role === 'teacher' && (
+        {isTeacher && (
             <>
-              <CollapsibleCard title="Formação Acadêmica" description="Liste suas qualificações e diplomas.">
-                    <CardContent className="grid gap-4">
+              <CollapsibleCard title="Formação Acadêmica" description="Liste suas qualificações e diplomas." icon={Briefcase}>
+                    <CardContent className="grid gap-4 pt-6">
                         {education.map((edu, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <Input
                                     value={edu}
                                     onChange={(e) => handleEducationChange(index, e.target.value)}
-                                    disabled={!isEditing}
+                                    onBlur={(e) => handleSaveEducation(index, e.target.value)}
                                     placeholder="Ex: Mestrado em Física Aplicada - USP"
+                                    disabled={!canEdit}
                                 />
-                                {isEditing && (
+                                {canEdit && (
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleRemoveEducation(index)}
                                         className="text-destructive hover:text-destructive"
-                                        disabled={education.length <= 1 && edu === ''}
+                                        disabled={education.length === 1 && edu === ''}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
                         ))}
-                        {isEditing && (
+                        {canEdit && (
                             <Button variant="outline" size="sm" onClick={handleAddEducation} className="mt-2 w-fit">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Adicionar Formação
@@ -422,18 +314,18 @@ function ProfilePageComponent() {
                     </CardContent>
               </CollapsibleCard>
 
-              <CollapsibleCard title="Perfil de Professor" description="Detalhes sobre suas disciplinas e disponibilidade.">
-                    <CardContent>
+              <CollapsibleCard title="Perfil de Professor" description="Detalhes sobre suas disciplinas e disponibilidade." icon={Layers}>
+                    <CardContent className="pt-6">
                         <div className="grid gap-4">
-                            <Label className="flex items-center gap-2"><Layers className="h-5 w-5"/> Disciplinas que Leciona</Label>
+                            <Label>Disciplinas que Leciona</Label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 rounded-md border p-4">
                                 {subjects.map(subject => (
                                     <div key={subject.id} className="flex items-center space-x-2">
                                         <Checkbox
                                             id={`subject-${subject.id}`}
-                                            checked={selectedSubjects.includes(subject.id)}
+                                            checked={(profileUser as Teacher).subjects?.includes(subject.id)}
                                             onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
-                                            disabled={!isEditing}
+                                            disabled={!canEdit}
                                         />
                                         <label
                                             htmlFor={`subject-${subject.id}`}
@@ -448,8 +340,8 @@ function ProfilePageComponent() {
                     </CardContent>
                 </CollapsibleCard>
 
-                <CollapsibleCard title="Integrações" description="Conecte suas ferramentas de produtividade.">
-                     <CardContent className="grid gap-4">
+                <CollapsibleCard title="Integrações" description="Conecte suas ferramentas de produtividade." icon={Webhook}>
+                     <CardContent className="grid gap-4 pt-6">
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex items-center gap-4">
                                 <NotionIcon />
@@ -499,10 +391,6 @@ function ProfilePageComponent() {
     </div>
   );
 }
-
-// Wrap the component in a Suspense boundary if you are using server-side rendering
-// and need to wait for the search params.
-import { Suspense } from 'react';
 
 export default function ProfilePage() {
     return (
