@@ -47,8 +47,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 
-const DRAGGABLE_BUTTON_STORAGE_KEY = 'loginDraggableButtonPos';
-
 const LoginForm = ({
   role,
   onBack,
@@ -72,56 +70,14 @@ const LoginForm = ({
     admin: 'Administrador',
   };
   const [showPassword, setShowPassword] = useState(false);
-  const [position, setPosition] = useState({ top: -96, left: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
-    if (savedPos) {
-        try {
-            setPosition(JSON.parse(savedPos));
-        } catch (e) {
-            console.error("Failed to parse button position from localStorage", e);
-        }
-    }
-  }, []);
-
-  const handleMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.left, y: e.clientY - position.top });
-    e.currentTarget.style.cursor = 'grabbing';
-  };
-
-  const handleMouseUp = (e: MouseEvent<HTMLButtonElement>) => {
-    setIsDragging(false);
-    e.currentTarget.style.cursor = 'pointer';
-    localStorage.setItem(DRAGGABLE_BUTTON_STORAGE_KEY, JSON.stringify(position));
-  };
-  
-  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
-    if (!isDragging) return;
-    setPosition({
-      top: e.clientY - dragStart.y,
-      left: e.clientX - dragStart.x,
-    });
-  };
 
   return (
-    <div
-      className="w-full relative"
-      onMouseMove={isDragging ? handleMouseMove : undefined}
-      onMouseUp={isDragging ? (e: MouseEvent<HTMLElement>) => handleMouseUp(e as any) : undefined}
-      onMouseLeave={isDragging ? (e: MouseEvent<HTMLElement>) => handleMouseUp(e as any) : undefined}
-    >
+    <div className="w-full relative">
       <Button
         onClick={onBack}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
         variant="ghost"
         size="icon"
-        className="absolute cursor-grab"
-        style={{ top: `${position.top}px`, left: `${position.left}px` }}
+        className="absolute -top-24 left-0"
       >
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">Voltar para seleção</span>
@@ -206,13 +162,14 @@ const defaultRoleButtons = [
   { id: 'visitor', label: 'Acessar como Visitante' },
 ];
 
-const STORAGE_KEY = 'loginRoleOrder';
+const ROLE_BUTTON_ORDER_STORAGE_KEY = 'loginRoleOrder';
+
 
 const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.FormEvent) => void;}) => {
   const [roleButtons, setRoleButtons] = useState(defaultRoleButtons);
   
   useEffect(() => {
-    const savedOrder = localStorage.getItem(STORAGE_KEY);
+    const savedOrder = localStorage.getItem(ROLE_BUTTON_ORDER_STORAGE_KEY);
     if (savedOrder) {
       try {
         const orderedIds = JSON.parse(savedOrder);
@@ -266,7 +223,7 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
     ];
     
     setRoleButtons(newItems);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems.map(btn => btn.id)));
+    localStorage.setItem(ROLE_BUTTON_ORDER_STORAGE_KEY, JSON.stringify(newItems.map(btn => btn.id)));
   };
 
   return (
@@ -313,12 +270,18 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
 );
 }
 
+const DRAGGABLE_BUTTON_STORAGE_KEY = 'loginDraggableButtonPos';
+
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
+
+  const [position, setPosition] = useState({ top: 24, left: 24 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('savedEmail');
@@ -329,7 +292,38 @@ export default function LoginPage() {
     if (savedPassword) {
       setPassword(savedPassword);
     }
+     const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
+    if (savedPos) {
+        try {
+            setPosition(JSON.parse(savedPos));
+        } catch (e) {
+            console.error("Failed to parse button position from localStorage", e);
+            // Reset to default if parsing fails
+            setPosition({ top: 24, left: 24 });
+        }
+    }
   }, []);
+
+  const handleMouseDown = (e: MouseEvent<HTMLAnchorElement>) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.left, y: e.clientY - position.top });
+    e.currentTarget.style.cursor = 'grabbing';
+  };
+
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    (e.currentTarget as HTMLElement).style.cursor = '';
+    localStorage.setItem(DRAGGABLE_BUTTON_STORAGE_KEY, JSON.stringify(position));
+  };
+  
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    setPosition({
+      top: e.clientY - dragStart.y,
+      left: e.clientX - dragStart.x,
+    });
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,13 +357,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background">
+    <div 
+        className="flex min-h-screen w-full items-center justify-center bg-background"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+    >
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
             <div className="w-full max-w-md relative">
                 {!role && (
-                    <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
-                        <Link href="/home">
+                    <Button asChild variant="ghost" size="icon" className="absolute cursor-grab" style={{ top: `${position.top}px`, left: `${position.left}px`, zIndex: 10 }}>
+                        <Link href="/home" onMouseDown={handleMouseDown}>
                             <ArrowLeft />
                         </Link>
                     </Button>
@@ -418,5 +417,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
