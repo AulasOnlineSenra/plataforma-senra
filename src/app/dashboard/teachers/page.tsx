@@ -76,7 +76,7 @@ function TeacherCard({
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/profile`}>
+                                <Link href={`/dashboard/profile?userId=${teacher.id}`}>
                                     <Edit className="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -148,7 +148,7 @@ function TeacherCard({
             ({rating.toFixed(1)})
           </span>
         </div>
-        <CardDescription className="pt-1">{teacher.education}</CardDescription>
+        <CardDescription className="pt-1">{teacher.education && Array.isArray(teacher.education) ? teacher.education[0] : teacher.education}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 text-center pt-0">
         <p className="text-sm text-muted-foreground line-clamp-3">

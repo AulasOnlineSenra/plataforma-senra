@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import {
   Collapsible,
@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getMockUser, teachers as initialTeachers, subjects } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, subjects, allUsers as initialAllUsers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserRole, Teacher, User } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,6 +46,8 @@ type AvailabilitySlot = {
 };
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
+const USERS_STORAGE_KEY = 'userList';
+
 
 const CollapsibleCard = ({
     title,
@@ -95,10 +97,13 @@ const NotionIcon = () => (
   </svg>
 );
 
-
-export default function ProfilePage() {
+function ProfilePageComponent() {
+  const searchParams = useSearchParams();
+  const userId = searchParams.get('userId');
+  
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+  const [profileUser, setProfileUser] = useState<User | Teacher | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   
   // State for form fields
@@ -112,28 +117,48 @@ export default function ProfilePage() {
   const [availability, setAvailability] = useState<Record<string, AvailabilitySlot[]>>({});
 
   useEffect(() => {
+    // Determine the logged-in user
     const role = localStorage.getItem('userRole') as UserRole | null;
-    if (role) {
-      const user = getMockUser(role);
-      setCurrentUser(user);
-      setName(user.name);
-      setNickname(user.nickname || '');
-      setBio(user.bio || '');
-      setEducation(user.education || ['']);
-      if (user.role === 'teacher') {
-        setSelectedSubjects((user as Teacher).subjects || []);
+    const storedUser = localStorage.getItem('currentUser');
+    let currentUser: User | Teacher | null = null;
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+    } else if (role) {
+        currentUser = getMockUser(role);
+    }
+    setLoggedInUser(currentUser);
+
+    // Determine which user's profile to display
+    let userToDisplay: User | Teacher | null = null;
+    if (userId && currentUser?.role === 'admin') {
+      const allTeachers: Teacher[] = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
+      const allUsers: User[] = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialAllUsers));
+      userToDisplay = [...allTeachers, ...allUsers].find(u => u.id === userId) || null;
+    } else {
+      userToDisplay = currentUser;
+    }
+    
+    setProfileUser(userToDisplay);
+
+    if (userToDisplay) {
+      setName(userToDisplay.name);
+      setNickname(userToDisplay.nickname || '');
+      setBio(userToDisplay.bio || '');
+      setEducation(userToDisplay.education || ['']);
+      if (userToDisplay.role === 'teacher') {
+        setSelectedSubjects((userToDisplay as Teacher).subjects || []);
       }
     }
-  }, []);
+  }, [userId]);
 
   const handleSaveChanges = () => {
-    if (!currentUser) return;
+    if (!profileUser) return;
     
     let updatedUser: User | Teacher;
 
-    if (currentUser.role === 'teacher') {
+    if (profileUser.role === 'teacher') {
       const updatedTeacher: Teacher = {
-        ...currentUser as Teacher,
+        ...(profileUser as Teacher),
         name,
         nickname,
         bio,
@@ -150,33 +175,42 @@ export default function ProfilePage() {
 
     } else {
         updatedUser = {
-            ...currentUser,
+            ...profileUser,
             name,
             nickname,
             bio,
-            education
+            education,
+            role: profileUser.role, // ensure role is not lost
         }
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        const allUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialAllUsers;
+        const updatedUserList = allUsers.map(u => u.id === updatedUser.id ? updatedUser : u);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUserList));
     }
 
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    setCurrentUser(updatedUser);
+    // If the admin is editing another user, we don't update the logged-in user's info.
+    if(loggedInUser?.id === updatedUser.id) {
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+    
+    setProfileUser(updatedUser);
     window.dispatchEvent(new Event('storage'));
 
     toast({
       title: "Perfil Atualizado!",
-      description: "Suas informações foram salvas com sucesso.",
+      description: "As informações foram salvas com sucesso.",
     });
     setIsEditing(false);
   };
   
   const handleCancel = () => {
-    if(!currentUser) return;
-    setName(currentUser.name);
-    setNickname(currentUser.nickname || '');
-    setBio(currentUser.bio || '');
-    setEducation(currentUser.education || ['']);
-    if (currentUser.role === 'teacher') {
-        setSelectedSubjects((currentUser as Teacher).subjects || []);
+    if(!profileUser) return;
+    setName(profileUser.name);
+    setNickname(profileUser.nickname || '');
+    setBio(profileUser.bio || '');
+    setEducation(profileUser.education || ['']);
+    if (profileUser.role === 'teacher') {
+        setSelectedSubjects((profileUser as Teacher).subjects || []);
     }
     setIsEditing(false);
   }
@@ -198,39 +232,46 @@ export default function ProfilePage() {
   }
   
   const handleRemoveEducation = (index: number) => {
-    const newEducation = education.filter((_, i) => i !== index);
-    setEducation(newEducation);
+    if (education.length > 1) {
+        const newEducation = education.filter((_, i) => i !== index);
+        setEducation(newEducation);
+    }
   }
 
-  if (!currentUser) {
+  if (!profileUser) {
     return null; // or loading spinner
   }
+
+  const canEdit = loggedInUser?.role === 'admin' || loggedInUser?.id === profileUser.id;
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Meu Perfil
+          Perfil de {name.split(' ')[0]}
         </h1>
-        <div className="ml-auto flex items-center gap-2">
-            {isEditing ? (
-                <>
-                   <Button variant="ghost" onClick={handleCancel}>
-                        <X className="mr-2" />
-                        Cancelar
+        {canEdit && (
+            <div className="ml-auto flex items-center gap-2">
+                {isEditing ? (
+                    <>
+                       <Button variant="ghost" onClick={handleCancel}>
+                            <X className="mr-2" />
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleSaveChanges}>
+                            <Save className="mr-2" />
+                            Salvar Alterações
+                        </Button>
+                    </>
+                ) : (
+                    <Button onClick={() => setIsEditing(true)}>
+                        <Pencil className="mr-2" />
+                        Editar Perfil
                     </Button>
-                    <Button onClick={handleSaveChanges}>
-                        <Save className="mr-2" />
-                        Salvar Alterações
-                    </Button>
-                </>
-            ) : (
-                <Button onClick={() => setIsEditing(true)}>
-                    <Pencil className="mr-2" />
-                    Editar Perfil
-                </Button>
-            )}
-        </div>
+                )}
+            </div>
+        )}
       </div>
       
       <div className="grid gap-6">
@@ -238,8 +279,8 @@ export default function ProfilePage() {
             <CardContent className="grid sm:grid-cols-2 gap-6">
                 <div className="flex items-center gap-4 sm:col-span-2">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                      <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={profileUser.avatarUrl} alt={profileUser.name} />
+                      <AvatarFallback>{profileUser.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="grid gap-2 flex-1">
                         <Label htmlFor="name">Nome Completo</Label>
@@ -254,7 +295,7 @@ export default function ProfilePage() {
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="email" type="email" value={currentUser.email} disabled className="pl-10" />
+                        <Input id="email" type="email" value={profileUser.email} disabled className="pl-10" />
                     </div>
                 </div>
                  <div className="grid gap-2">
@@ -273,12 +314,12 @@ export default function ProfilePage() {
              </CardContent>
         </CollapsibleCard>
 
-        {currentUser.role === 'teacher' && (
+        {profileUser.role === 'teacher' && (
             <>
                 <CollapsibleCard title="Perfil de Professor" description="Detalhes sobre sua formação, disciplinas e disponibilidade.">
                     <CardContent className="grid gap-6">
                          <div className="grid gap-2">
-                            <Label>Formação Acadêmica</Label>
+                            <Label className="flex items-center gap-2"><Briefcase className="h-5 w-5"/> Formação Acadêmica</Label>
                             {education.map((edu, index) => (
                                 <div key={index} className="flex items-center gap-2">
                                     <Input
@@ -293,7 +334,7 @@ export default function ProfilePage() {
                                             size="icon"
                                             onClick={() => handleRemoveEducation(index)}
                                             className="text-destructive hover:text-destructive"
-                                            disabled={education.length <= 1}
+                                            disabled={education.length <= 1 && edu === ''}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -381,6 +422,18 @@ export default function ProfilePage() {
       </div>
     </div>
   );
+}
+
+// Wrap the component in a Suspense boundary if you are using server-side rendering
+// and need to wait for the search params.
+import { Suspense } from 'react';
+
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <ProfilePageComponent />
+        </Suspense>
+    )
 }
 
     
