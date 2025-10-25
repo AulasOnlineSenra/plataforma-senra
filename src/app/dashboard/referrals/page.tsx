@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getMockUser, referralData, users, teachers } from '@/lib/data';
 import { User, UserRole, Referral } from '@/lib/types';
-import { Copy, Gift, Users as UsersIcon, DollarSign, BookOpen, Save } from 'lucide-react';
+import { Copy, Gift, Users as UsersIcon, DollarSign, BookOpen, Save, Mail } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -28,6 +28,14 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const UserReferralView = ({ user }: { user: User }) => {
   const { toast } = useToast();
@@ -52,6 +60,7 @@ const UserReferralView = ({ user }: { user: User }) => {
       timesUsed: 0,
       totalBonus: 0,
       bonusType: 'money', // Default bonus type
+      referredUsers: [],
     };
     setReferralInfo(newReferral);
     // In a real app, you'd save this to your database
@@ -151,6 +160,8 @@ const AdminReferralView = () => {
     const { toast } = useToast();
     const [bonusType, setBonusType] = useState<'money' | 'classes'>('money');
     const [bonusValue, setBonusValue] = useState(50);
+    const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const getUserById = (userId: string) => {
         return allUsers.find(u => u.id === userId);
@@ -165,94 +176,147 @@ const AdminReferralView = () => {
         })
     }
 
-  return (
-    <div className="grid gap-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Configurações de Bônus de Indicação</CardTitle>
-                <CardDescription>Defina o tipo e o valor do bônus que os usuários recebem por cada indicação bem-sucedida.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 items-end">
-                <div className="grid gap-2">
-                    <Label htmlFor="bonus-type">Tipo de Bônus</Label>
-                    <Select value={bonusType} onValueChange={(value) => setBonusType(value as 'money' | 'classes')}>
-                        <SelectTrigger id="bonus-type">
-                            <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="money">Dinheiro (R$)</SelectItem>
-                            <SelectItem value="classes">Aulas Grátis</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="bonus-value">
-                        {bonusType === 'money' ? 'Valor do Bônus (R$)' : 'Número de Aulas'}
-                    </Label>
-                    <Input
-                        id="bonus-value"
-                        type="number"
-                        value={bonusValue}
-                        onChange={(e) => setBonusValue(Number(e.target.value))}
-                        min="1"
-                        step={bonusType === 'money' ? '0.01' : '1'}
-                    />
-                </div>
-                 <Button onClick={handleSaveBonusConfig} className="w-full sm:w-auto">
-                    <Save className="mr-2 h-4 w-4" />
-                    Salvar Configuração
-                </Button>
-            </CardContent>
-        </Card>
-        <Card>
-        <CardHeader>
-            <CardTitle>Gerenciamento de Indicações</CardTitle>
-            <CardDescription>
-            Visualize todos os cupons de indicação gerados pelos usuários.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Usuário</TableHead>
-                <TableHead>Código do Cupom</TableHead>
-                <TableHead className="text-center">Vezes Usado</TableHead>
-                <TableHead className="text-right">Bônus Total</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {referralData.map(referral => {
-                const user = getUserById(referral.userId);
-                if (!user) return null;
+    const handleRowClick = (referral: Referral) => {
+        setSelectedReferral(referral);
+        setIsSheetOpen(true);
+    }
 
-                return (
-                    <TableRow key={referral.userId}>
-                    <TableCell>
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="font-medium">{user.name}</div>
-                        </div>
-                    </TableCell>
-                    <TableCell className="font-mono">{referral.code}</TableCell>
-                    <TableCell className="text-center font-medium">{referral.timesUsed}</TableCell>
-                    <TableCell className="text-right font-semibold">
-                         {referral.bonusType === 'money'
-                            ? <span className="text-green-600">R$ {referral.totalBonus.toFixed(2).replace('.',',')}</span>
-                            : <span className="text-blue-600">{referral.totalBonus} {referral.totalBonus > 1 ? 'aulas' : 'aula'}</span>
-                        }
-                    </TableCell>
+  return (
+    <>
+        <div className="grid gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Configurações de Bônus de Indicação</CardTitle>
+                    <CardDescription>Defina o tipo e o valor do bônus que os usuários recebem por cada indicação bem-sucedida.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 items-end">
+                    <div className="grid gap-2">
+                        <Label htmlFor="bonus-type">Tipo de Bônus</Label>
+                        <Select value={bonusType} onValueChange={(value) => setBonusType(value as 'money' | 'classes')}>
+                            <SelectTrigger id="bonus-type">
+                                <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="money">Dinheiro (R$)</SelectItem>
+                                <SelectItem value="classes">Aulas Grátis</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="bonus-value">
+                            {bonusType === 'money' ? 'Valor do Bônus (R$)' : 'Número de Aulas'}
+                        </Label>
+                        <Input
+                            id="bonus-value"
+                            type="number"
+                            value={bonusValue}
+                            onChange={(e) => setBonusValue(Number(e.target.value))}
+                            min="1"
+                            step={bonusType === 'money' ? '0.01' : '1'}
+                        />
+                    </div>
+                    <Button onClick={handleSaveBonusConfig} className="w-full sm:w-auto">
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvar Configuração
+                    </Button>
+                </CardContent>
+            </Card>
+            <Card>
+            <CardHeader>
+                <CardTitle>Gerenciamento de Indicações</CardTitle>
+                <CardDescription>
+                Visualize todos os cupons de indicação gerados pelos usuários. Clique para ver detalhes.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Código do Cupom</TableHead>
+                    <TableHead className="text-center">Vezes Usado</TableHead>
+                    <TableHead className="text-right">Bônus Total</TableHead>
                     </TableRow>
-                )
-                })}
-            </TableBody>
-            </Table>
-        </CardContent>
-        </Card>
-    </div>
+                </TableHeader>
+                <TableBody>
+                    {referralData.map(referral => {
+                    const user = getUserById(referral.userId);
+                    if (!user) return null;
+
+                    return (
+                        <TableRow key={referral.userId} onClick={() => handleRowClick(referral)} className="cursor-pointer">
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="font-medium">{user.name}</div>
+                            </div>
+                        </TableCell>
+                        <TableCell className="font-mono">{referral.code}</TableCell>
+                        <TableCell className="text-center font-medium">{referral.timesUsed}</TableCell>
+                        <TableCell className="text-right font-semibold">
+                            {referral.bonusType === 'money'
+                                ? <span className="text-green-600">R$ {referral.totalBonus.toFixed(2).replace('.',',')}</span>
+                                : <span className="text-blue-600">{referral.totalBonus} {referral.totalBonus > 1 ? 'aulas' : 'aula'}</span>
+                            }
+                        </TableCell>
+                        </TableRow>
+                    )
+                    })}
+                </TableBody>
+                </Table>
+            </CardContent>
+            </Card>
+        </div>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetContent className="sm:max-w-lg w-[90vw] p-0">
+                {selectedReferral && (
+                    <ScrollArea className="h-full">
+                        <div className="p-6">
+                            <SheetHeader className="text-left mb-6">
+                                <SheetTitle className="text-xl">
+                                    Indicados por {getUserById(selectedReferral.userId)?.name}
+                                </SheetTitle>
+                                <SheetDescription>
+                                    Usuários que se cadastraram com o código <span className="font-mono font-semibold">{selectedReferral.code}</span>.
+                                </SheetDescription>
+                            </SheetHeader>
+                            <div className="grid gap-4">
+                                {selectedReferral.referredUsers.length > 0 ? (
+                                    selectedReferral.referredUsers.map(userId => {
+                                        const referredUser = getUserById(userId);
+                                        if (!referredUser) return null;
+                                        return (
+                                            <div key={userId} className="flex items-center gap-4 rounded-lg border p-3">
+                                                <Avatar className="h-12 w-12">
+                                                    <AvatarImage src={referredUser.avatarUrl} alt={referredUser.name} />
+                                                    <AvatarFallback>{referredUser.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-semibold">{referredUser.name}</p>
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                        <Mail className="h-4 w-4" />
+                                                        <span>{referredUser.email}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        <UsersIcon className="h-10 w-10 mx-auto mb-2" />
+                                        <p>Nenhum usuário se cadastrou com este código ainda.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </ScrollArea>
+                )}
+            </SheetContent>
+        </Sheet>
+    </>
   );
 };
 

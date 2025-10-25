@@ -55,6 +55,7 @@ export const users: User[] = [
     role: 'student',
     status: 'active',
     timezone: 'America/Manaus',
+    referredByCode: 'ANA-5281',
   },
   {
     id: 'user-3',
@@ -64,7 +65,17 @@ export const users: User[] = [
     role: 'student',
     status: 'inactive',
     timezone: 'America/Recife',
-  }
+  },
+  {
+    id: 'user-4',
+    name: 'Luisa Costa',
+    email: 'luisa.costa@example.com',
+    avatarUrl: 'https://picsum.photos/seed/student4/200/200',
+    role: 'student',
+    status: 'active',
+    timezone: 'America/Fortaleza',
+    referredByCode: 'ANA-5281',
+  },
 ];
 
 export let teachers: Teacher[] = [
@@ -258,9 +269,9 @@ export const suggestions: Suggestion[] = [
 ];
 
 export let referralData: Referral[] = [
-    { userId: 'teacher-1', code: 'ANA-5281', timesUsed: 5, totalBonus: 250.00, bonusType: 'money' },
-    { userId: 'user-1', code: 'JOAO-9872', timesUsed: 2, totalBonus: 100.00, bonusType: 'money' },
-    { userId: 'teacher-2', code: 'CARLOS-3456', timesUsed: 8, totalBonus: 400.00, bonusType: 'money' },
+    { userId: 'teacher-1', code: 'ANA-5281', timesUsed: 2, totalBonus: 100.00, bonusType: 'money', referredUsers: ['user-2', 'user-4'] },
+    { userId: 'user-1', code: 'JOAO-9872', timesUsed: 1, totalBonus: 1, bonusType: 'classes', referredUsers: ['user-3'] },
+    { userId: 'teacher-2', code: 'CARLOS-3456', timesUsed: 0, totalBonus: 0, bonusType: 'money', referredUsers: [] },
 ];
 
 

@@ -14,6 +14,7 @@ export interface User {
   phone?: string;
   bio?: string;
   education?: string;
+  referredByCode?: string; // New field
 }
 
 export interface Subject {
@@ -82,6 +83,7 @@ export interface Referral {
   timesUsed: number;
   totalBonus: number;
   bonusType: 'money' | 'classes';
+  referredUsers: string[]; // New field: Array of user IDs
 }
 
 export interface NavItem {
@@ -90,4 +92,3 @@ export interface NavItem {
     label: string;
     roles: UserRole[];
 }
-
