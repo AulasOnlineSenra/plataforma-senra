@@ -26,6 +26,7 @@ import {
   Lightbulb,
   Gift,
   GripVertical,
+  User as UserIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User, NavItem } from '@/lib/types';
@@ -185,6 +186,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       ? adminNavItems.filter(item => item.roles.includes(userRole))
       : [];
 
+  const settingsLink: NavItem =
+    userRole === 'admin'
+      ? { href: '/dashboard/admin/settings', icon: Settings, label: 'Configurações', roles: ['admin'] }
+      : { href: '/dashboard/profile', icon: UserIcon, label: 'Meu Perfil', roles: ['student', 'teacher'] };
+
   const renderLink = (item: NavItem, isLogout = false, itemType?: 'main' | 'admin') => {
     const isActive = pathname === item.href;
     const isDraggable = userRole === 'admin' && itemType && !isMobile;
@@ -260,7 +266,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </div>
         <div className="mt-auto p-4 border-t border-sidebar-border">
                 <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
-                    {renderLink({ href: '#', icon: Settings, label: 'Configurações', roles: []})}
+                    {renderLink(settingsLink)}
                     {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: []}, true)}
                 </nav>
         </div>
