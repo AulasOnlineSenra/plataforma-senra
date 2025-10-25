@@ -227,10 +227,15 @@ export const getMockUser = (role: UserRole, newUser?: User): User | Teacher => {
     return adminUser as Teacher;
   }
   if (role === 'teacher') {
-    // In a real app, you'd get the currently logged-in teacher
-    // Merge new user data with a default teacher profile
     const defaultTeacher = teachers[0];
-    return { ...defaultTeacher, ...newUser };
+    const newTeacher: Teacher = { 
+        ...defaultTeacher, 
+        ...newUser, 
+        subjects: [], 
+        availability: {}, 
+        status: 'active' 
+    };
+    return newTeacher;
   }
   // In a real app, you'd get the currently logged-in student
   const defaultStudent = users.find(u => u.role === 'student' && u.id === 'user-1')!;

@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
-import { User, UserRole } from '@/lib/types';
-import { getMockUser } from '@/lib/data';
+import { User, UserRole, Teacher } from '@/lib/types';
+import { getMockUser, teachers as initialTeachers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -46,6 +46,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
+const TEACHERS_STORAGE_KEY = 'teacherList';
 
 const LoginForm = ({
   role,
@@ -340,15 +341,16 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    let userToLogin: User | null = null;
+    let userToLogin: User | Teacher | null = null;
     const newUserDataString = localStorage.getItem('newlyRegisteredUser');
+    let isNewRegistration = false;
 
     if (newUserDataString) {
         try {
             const newUser = JSON.parse(newUserDataString);
-            // Ensure the role from registration matches the selected login role
             if (newUser.role === role) {
                 userToLogin = getMockUser(newUser.role, newUser);
+                isNewRegistration = true;
             }
         } catch (error) {
             console.error("Error parsing new user data during login:", error);
@@ -357,12 +359,9 @@ export default function LoginPage() {
     
     if (!userToLogin) {
         if (role) {
-            // Standard login for an existing user
             const mockUser = getMockUser(role);
-            // In a real app, you'd validate password. Here we just use the mock user.
-            userToLogin = { ...mockUser, email }; // Use the email from the form
+            userToLogin = { ...mockUser, email };
         } else {
-            // "Acessar como Visitante" case
             const visitorRole = 'student';
             localStorage.setItem('userRole', visitorRole);
             const user = getMockUser(visitorRole);
@@ -377,16 +376,23 @@ export default function LoginPage() {
     }
     
     if (userToLogin) {
-        // Simulate login and role assignment
+        if (isNewRegistration && userToLogin.role === 'teacher') {
+            const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+            const currentTeacherList: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+            
+            const teacherExists = currentTeacherList.some(t => t.id === userToLogin!.id);
+            if (!teacherExists) {
+                const updatedTeacherList = [...currentTeacherList, userToLogin as Teacher];
+                localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
+            }
+        }
+
         localStorage.setItem('userRole', userToLogin.role);
         localStorage.setItem('currentUser', JSON.stringify(userToLogin));
-
-        // Save credentials for next time
         localStorage.setItem('savedEmail', email);
         localStorage.setItem('savedPassword', password);
 
-        // Clear temp user data only after successful login
-        if (newUserDataString) {
+        if (isNewRegistration) {
             localStorage.removeItem('newlyRegisteredUser');
         }
         
