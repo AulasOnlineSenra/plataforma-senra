@@ -104,46 +104,48 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
+  // Calculate a dynamic width for the chart.
+  // The multiplier (e.g., 40) can be adjusted to change the width of each bar.
   const barChartWidth = chartData.length * 40;
 
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
       <div className="w-full overflow-x-auto">
-        <ResponsiveContainer width={Math.max(barChartWidth, 300)} height={350}>
-            <BarChart
-            accessibilityLayer
-            data={chartData}
-            margin={{
-                top: 20,
-                right: 20,
-                left: 20,
-                bottom: 5,
-            }}
-            >
-            <CartesianGrid vertical={false} />
-            <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                interval="auto"
-            />
-            <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value) => `R$${Number(value) / 1000}k`}
-            />
-            <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent
-                formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))}
-                indicator="dot"
-                />}
-            />
-            <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-            </BarChart>
-        </ResponsiveContainer>
+        <BarChart
+          accessibilityLayer
+          data={chartData}
+          width={barChartWidth}
+          height={350}
+          margin={{
+            top: 20,
+            right: 20,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            interval={0} // Show all labels
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tickFormatter={(value) => `R$${Number(value) / 1000}k`}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent
+              formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))}
+              indicator="dot"
+            />}
+          />
+          <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
+        </BarChart>
       </div>
     </ChartContainer>
   );
