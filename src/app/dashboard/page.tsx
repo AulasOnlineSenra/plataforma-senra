@@ -76,7 +76,9 @@ export default function DashboardPage() {
       if (storedTeachers) {
         try {
           const teacherList: Teacher[] = JSON.parse(storedTeachers);
-          setTeacherCount(teacherList.length);
+          // Filter out deleted teachers before counting
+          const activeTeachers = teacherList.filter(t => t.status !== 'deleted');
+          setTeacherCount(activeTeachers.length);
         } catch (e) {
           console.error("Failed to parse teachers from localStorage", e);
           setTeacherCount(initialTeachers.length);
@@ -474,3 +476,5 @@ export default function DashboardPage() {
     
 
   
+
+    
