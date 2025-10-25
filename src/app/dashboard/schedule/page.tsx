@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { scheduleEvents, ScheduleEvent, users, teachers } from '@/lib/data';
+import { scheduleEvents as initialScheduleEvents, ScheduleEvent, users, teachers } from '@/lib/data';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
@@ -39,15 +39,31 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date | undefined>();
-  const [events, setEvents] = useState<ScheduleEvent[]>(scheduleEvents);
+  const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
   const [newDate, setNewDate] = useState<Date | undefined>();
   const [newTime, setNewTime] = useState<string | undefined>();
+
+  useEffect(() => {
+    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    if (storedSchedule) {
+      // Dates are stored as strings in JSON, so we need to convert them back to Date objects
+      const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end),
+      }));
+      setEvents(parsedSchedule);
+    } else {
+      setEvents(initialScheduleEvents);
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -97,11 +113,13 @@ export default function SchedulePage() {
 
 
   const handleConfirmCancel = (eventId: string) => {
-    setEvents(currentEvents => 
-        currentEvents.map(e => 
-            e.id === eventId ? { ...e, status: 'cancelled' } : e
-        )
+    const updatedEvents = events.map(e => 
+      e.id === eventId ? { ...e, status: 'cancelled' } : e
     );
+    setEvents(updatedEvents);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
+    window.dispatchEvent(new Event('storage'));
+
     const event = events.find(e => e.id === eventId);
     toast({
         title: "Aula Cancelada",
@@ -163,13 +181,15 @@ export default function SchedulePage() {
 
     const updatedEndDate = addMinutes(updatedStartDate, 90); // Assuming 90-minute classes
 
-    setEvents(currentEvents =>
-      currentEvents.map(e =>
-        e.id === editingEvent.id
-          ? { ...e, start: updatedStartDate, end: updatedEndDate }
-          : e
-      )
+    const updatedEvents = events.map(e =>
+      e.id === editingEvent.id
+        ? { ...e, start: updatedStartDate, end: updatedEndDate }
+        : e
     );
+    setEvents(updatedEvents);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
+    window.dispatchEvent(new Event('storage'));
+
 
     toast({
       title: 'Aula Remarcada!',
