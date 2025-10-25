@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -93,7 +94,7 @@ const TrelloIcon = () => (
 
 const NotionIcon = () => (
   <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
-    <path d="M20.25 2.25H3.75C2.925 2.25 2.25 2.925 2.25 3.75v16.5c0 .825.675 1.5 1.5 1.5h16.5c.825 0 1.5-.675 1.5-1.5V3.75c0-.825-.675-1.5-1.5-1.5zM8.062 17.438l-3-3.375a.375.375 0 11.54-.48l2.715 3.045 4.125-4.5a.375.375 0 01.45-.06.375.375 0 01.09.245V17.25h-4.875zm-.75-9.375h3.375v2.625H7.312V8.062zm8.25 9.375h-3.375V14.25h3.375v3.188zm-3-8.25a.375.375 0 01-.15.3l-4.5 3a.375.375 0 01-.45-.09l-3-4.125a.375.375 0 11.48-.54l2.745 3.75 4.2-2.8a.375.375 0 01.375.255h.3z" />
+    <path d="M2.25 3.75C2.25 2.925 2.925 2.25 3.75 2.25h16.5c.825 0 1.5.675 1.5-1.5V3.75c0-.825-.675-1.5-1.5-1.5zM8.062 17.438l-3-3.375a.375.375 0 11.54-.48l2.715 3.045 4.125-4.5a.375.375 0 01.45-.06.375.375 0 01.09.245V17.25h-4.875zm-.75-9.375h3.375v2.625H7.312V8.062zm8.25 9.375h-3.375V14.25h3.375v3.188zM12 5.25a.375.375 0 01-.15.3l-4.5 3a.375.375 0 01-.45-.09l-3-4.125a.375.375 0 11.48-.54l2.745 3.75 4.2-2.8a.375.375 0 01.375.255V5.25z" />
   </svg>
 );
 
@@ -144,7 +145,16 @@ function ProfilePageComponent() {
       setName(userToDisplay.name);
       setNickname(userToDisplay.nickname || '');
       setBio(userToDisplay.bio || '');
-      setEducation(userToDisplay.education || ['']);
+
+      // Ensure education is always an array
+      if (Array.isArray(userToDisplay.education)) {
+        setEducation(userToDisplay.education);
+      } else if (typeof userToDisplay.education === 'string') {
+        setEducation([userToDisplay.education]);
+      } else {
+        setEducation(['']);
+      }
+      
       if (userToDisplay.role === 'teacher') {
         setSelectedSubjects((userToDisplay as Teacher).subjects || []);
       }
@@ -208,7 +218,15 @@ function ProfilePageComponent() {
     setName(profileUser.name);
     setNickname(profileUser.nickname || '');
     setBio(profileUser.bio || '');
-    setEducation(profileUser.education || ['']);
+
+    if (Array.isArray(profileUser.education)) {
+        setEducation(profileUser.education);
+    } else if (typeof profileUser.education === 'string') {
+        setEducation([profileUser.education]);
+    } else {
+        setEducation(['']);
+    }
+
     if (profileUser.role === 'teacher') {
         setSelectedSubjects((profileUser as Teacher).subjects || []);
     }

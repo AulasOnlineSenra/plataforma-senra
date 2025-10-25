@@ -1,3 +1,4 @@
+
 import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -247,7 +248,7 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
         avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
         subjects: (newUser as Teacher)?.subjects || [],
         bio: (newUser as Teacher)?.bio || 'Novo professor na plataforma! Perfil em breve.',
-        education: (newUser as User)?.education || ['Formação a ser preenchida.'],
+        education: (newUser as Teacher)?.education || ['Formação a ser preenchida.'],
         availability: {},
         status: 'active',
         role: 'teacher'
@@ -386,3 +387,5 @@ export const adminNavItems: NavItem[] = [
     roles: ['admin'],
   },
 ];
+
+    
