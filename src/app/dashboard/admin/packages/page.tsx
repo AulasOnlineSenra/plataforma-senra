@@ -25,13 +25,19 @@ export default function AdminPackagesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
-    if (storedPackages) {
-      setPackages(JSON.parse(storedPackages));
-    } else {
-      // Deep copy to avoid mutating the original data from lib/data
-      setPackages(JSON.parse(JSON.stringify(defaultClassPackages)));
-    }
+    const updatePackages = () => {
+      const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
+      if (storedPackages) {
+        setPackages(JSON.parse(storedPackages));
+      } else {
+        // Deep copy to avoid mutating the original data from lib/data
+        setPackages(JSON.parse(JSON.stringify(defaultClassPackages)));
+      }
+    };
+    
+    updatePackages();
+    window.addEventListener('storage', updatePackages);
+    return () => window.removeEventListener('storage', updatePackages);
   }, []);
 
   const handleInputChange = (

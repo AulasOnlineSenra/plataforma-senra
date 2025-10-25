@@ -149,7 +149,6 @@ const AdminSuggestionsView = () => {
           setAllSuggestions(parsedSuggestions);
         } else {
           setAllSuggestions(initialSuggestions);
-          localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(initialSuggestions));
         }
     };
     updateSuggestions();
@@ -179,7 +178,7 @@ const AdminSuggestionsView = () => {
   };
 
   const incomingSuggestions = useMemo(() => {
-    return allSuggestions.filter(s => s.status === 'received');
+    return allSuggestions.filter(s => s.status === 'received').sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [allSuggestions]);
 
   const processedSuggestions = useMemo(() => {
@@ -187,9 +186,9 @@ const AdminSuggestionsView = () => {
       (s) => s.status === 'implemented' || s.status === 'rejected'
     );
     if (filter === 'all' || filter === 'received') {
-      return filtered;
+      return filtered.sort((a,b) => (b.evaluationDate || 0).valueOf() - (a.evaluationDate || 0).valueOf());
     }
-    return filtered.filter((s) => s.status === filter);
+    return filtered.filter((s) => s.status === filter).sort((a,b) => (b.evaluationDate || 0).valueOf() - (a.evaluationDate || 0).valueOf());
   }, [filter, allSuggestions]);
 
 
@@ -357,7 +356,7 @@ export default function SuggestionsPage() {
     const updateSuggestions = () => {
         const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
         if (storedSuggestions) {
-            setSuggestions(JSON.parse(storedSuggestions).map((s: Suggestion) => ({ ...s, timestamp: new Date(s.timestamp) })));
+            setSuggestions(JSON.parse(storedSuggestions).map((s: any) => ({ ...s, timestamp: new Date(s.timestamp) })));
         } else {
             setSuggestions(initialSuggestions);
         }
