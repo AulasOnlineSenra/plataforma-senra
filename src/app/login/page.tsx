@@ -245,7 +245,7 @@ export default function LoginPage() {
               </Link>
             </Button>
           )}
-          <div className="w-full max-w-sm rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
+          <div className="w-full max-w-md rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
             </div>
@@ -288,5 +288,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
