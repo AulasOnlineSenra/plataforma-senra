@@ -296,18 +296,33 @@ export default function LoginPage() {
         } catch (e) {
             console.error("Failed to parse newly registered user data", e);
         }
-    } else {
-        const savedEmail = localStorage.getItem('savedEmail');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (role) {
+        const savedEmail = localStorage.getItem(`savedEmail-${role}`);
         if (savedEmail) {
             setEmail(savedEmail);
+        } else {
+            setEmail(''); // Clear email if no saved email for this role
         }
-        const savedPassword = localStorage.getItem('savedPassword');
+        const savedPassword = localStorage.getItem(`savedPassword-${role}`);
         if (savedPassword) {
             setPassword(savedPassword);
+        } else {
+            setPassword('');
         }
+    } else {
+        // When returning to role selection, clear fields
+        setEmail('');
+        setPassword('');
     }
+  }, [role]);
 
-     const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
+
+  useEffect(() => {
+    const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
     if (savedPos) {
         try {
             setPosition(JSON.parse(savedPos));
@@ -409,8 +424,8 @@ export default function LoginPage() {
         localStorage.setItem('userRole', userToLogin.role);
         // Store the full, up-to-date user object
         localStorage.setItem('currentUser', JSON.stringify(userToLogin));
-        localStorage.setItem('savedEmail', email);
-        localStorage.setItem('savedPassword', password);
+        localStorage.setItem(`savedEmail-${userToLogin.role}`, email);
+        localStorage.setItem(`savedPassword-${userToLogin.role}`, password);
         localStorage.setItem('userId', userToLogin.id); // Store userId for re-hydration
 
         if (isNewRegistration) {
@@ -493,3 +508,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
