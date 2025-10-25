@@ -159,7 +159,7 @@ const AdminSuggestionsView = () => {
         <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                    <CardTitle>Histórico de Sugestões</CardTitle>
+                    <CardTitle>Sugestões - Caixa de Entrada</CardTitle>
                     <CardDescription>
                     Veja e gerencie as sugestões e reports dos usuários.
                     </CardDescription>
