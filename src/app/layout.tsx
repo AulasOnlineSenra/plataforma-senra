@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { ResizablePanelProvider } from '@/components/resizable-panel-provider';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Aulas Online Senra',
@@ -28,9 +29,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <ResizablePanelProvider>
-          {children}
-        </ResizablePanelProvider>
+        <FirebaseClientProvider>
+          <ResizablePanelProvider>
+            {children}
+          </ResizablePanelProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
