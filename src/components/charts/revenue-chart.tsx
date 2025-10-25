@@ -105,12 +105,18 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
+  const barWidth = 30;
+  const chartWidth = chartData.length * barWidth < 600 ? 600 : chartData.length * barWidth;
+
+
   return (
     <ScrollArea className="w-full whitespace-nowrap">
       <ChartContainer config={chartConfig} className="h-[300px] w-full min-w-[600px]">
         <BarChart 
           accessibilityLayer 
           data={chartData}
+          width={chartWidth}
+          height={300}
           margin={{
             top: 20,
             right: 20,
@@ -124,7 +130,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
             tickLine={false}
             tickMargin={10}
             axisLine={false}
-            interval="auto"
+            interval={0}
           />
           <YAxis
             tickLine={false}
