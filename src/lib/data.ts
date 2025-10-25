@@ -217,7 +217,7 @@ export const chatMessages: ChatMessage[] = [
     { id: 'msg-4', senderId: 'teacher-1', receiverId: 'user-1', content: 'Claro, podemos revisar o último tópico na próxima aula.', timestamp: new Date(now.getTime() - 10 * 60000)},
 ];
 
-export const getMockUser = (role: UserRole, newUser?: User): User | Teacher => {
+export const getMockUser = (role: UserRole, newUser?: Partial<User>): User | Teacher => {
   if (role === 'admin') {
     const adminUser = { ...users.find(u => u.role === 'admin')!, ...newUser };
     // Add teacher properties for profile editing
@@ -228,12 +228,16 @@ export const getMockUser = (role: UserRole, newUser?: User): User | Teacher => {
   }
   if (role === 'teacher') {
     const defaultTeacher = teachers[0];
-    const newTeacher: Teacher = { 
-        ...defaultTeacher, 
-        ...newUser, 
-        subjects: [], 
-        availability: {}, 
-        status: 'active' 
+    const newTeacher: Teacher = {
+        ...defaultTeacher,
+        id: newUser?.id || defaultTeacher.id, // Ensure new user ID is prioritized
+        name: newUser?.name || defaultTeacher.name,
+        email: newUser?.email || defaultTeacher.email,
+        avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
+        ...newUser,
+        subjects: [],
+        availability: {},
+        status: 'active'
     };
     return newTeacher;
   }
@@ -370,3 +374,4 @@ export const adminNavItems: NavItem[] = [
     roles: ['admin'],
   },
 ];
+
