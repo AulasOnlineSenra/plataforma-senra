@@ -25,7 +25,6 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const allData = Array.from({ length: 365 * 5 }).map((_, i) => {
   const date = new Date(2022, 0, 1);
@@ -105,47 +104,43 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
-  const barWidth = filter === 'day' ? 80 : 120;
-  const chartWidth = chartData.length * barWidth;
-
   return (
-    <ScrollArea className="w-full whitespace-nowrap h-[350px]">
-      <ChartContainer config={chartConfig} className="h-full" style={{ width: chartWidth, minWidth: '100%' }}>
-        <BarChart
-          accessibilityLayer
-          data={chartData}
-          margin={{
-            top: 20,
-            right: 20,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="name"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            tickFormatter={(value) => `R$${Number(value) / 1000}k`}
-          />
-          <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent
-              formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))}
-              indicator="dot"
-            />}
-          />
-          <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-        </BarChart>
-      </ChartContainer>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <ChartContainer config={chartConfig} className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+            accessibilityLayer
+            data={chartData}
+            margin={{
+                top: 20,
+                right: 20,
+                left: 20,
+                bottom: 5,
+            }}
+            >
+            <CartesianGrid vertical={false} />
+            <XAxis
+                dataKey="name"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                interval="auto"
+            />
+            <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => `R$${Number(value) / 1000}k`}
+            />
+            <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent
+                formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))}
+                indicator="dot"
+                />}
+            />
+            <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
+            </BarChart>
+        </ResponsiveContainer>
+    </ChartContainer>
   );
 }
