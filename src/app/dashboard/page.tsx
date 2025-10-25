@@ -32,11 +32,11 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
-import { getMockUser, scheduleEvents, users, teachers } from '@/lib/data';
+import { getMockUser, scheduleEvents, users, teachers as initialTeachers } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
-import { UserRole, User } from '@/lib/types';
+import { UserRole, User, Teacher } from '@/lib/types';
 import {
   Carousel,
   CarouselApi,
@@ -50,18 +50,45 @@ import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
 import { NewUsersChart } from '@/components/charts/new-users-chart';
 
+const TEACHERS_STORAGE_KEY = 'teacherList';
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
   const [filter, setFilter] = useState('day');
+  const [teacherCount, setTeacherCount] = useState(initialTeachers.length);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setUser(getMockUser(role));
     }
+    
+    const updateTeacherCount = () => {
+      const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+      if (storedTeachers) {
+        try {
+          const teacherList: Teacher[] = JSON.parse(storedTeachers);
+          setTeacherCount(teacherList.length);
+        } catch (e) {
+          console.error("Failed to parse teachers from localStorage", e);
+          setTeacherCount(initialTeachers.length);
+        }
+      } else {
+        setTeacherCount(initialTeachers.length);
+      }
+    };
+    
+    updateTeacherCount(); // Initial count
+    
+    window.addEventListener('storage', updateTeacherCount); // Listen for changes
+    
+    return () => {
+        window.removeEventListener('storage', updateTeacherCount);
+    }
+
   }, []);
   
   useEffect(() => {
@@ -124,7 +151,7 @@ export default function DashboardPage() {
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{teachers.length}</div>
+              <div className="text-2xl font-bold">{teacherCount}</div>
               <p className="text-xs text-muted-foreground">Total de professores cadastrados</p>
             </CardContent>
           </Card>
@@ -254,7 +281,7 @@ export default function DashboardPage() {
                 {upcomingEvents.map((event) => (
                   <TableRow key={event.id}>
                      <TableCell>
-                      {teachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
+                      {initialTeachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
                       {users.find(u => u.id === event.studentId)?.name || 'N/A'}
@@ -361,7 +388,7 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {user.role === 'student' ? 
-                        (teachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
+                        (initialTeachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
                         (users.find(u => u.id === event.studentId)?.name || 'N/A')
                       }
                     </TableCell>
@@ -427,3 +454,5 @@ export default function DashboardPage() {
     
 
     
+
+  
