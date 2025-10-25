@@ -73,6 +73,7 @@ export interface Suggestion {
   content: string;
   status: 'received' | 'rejected' | 'implemented';
   timestamp: Date;
+  evaluationDate?: Date;
 }
 
 export interface Referral {

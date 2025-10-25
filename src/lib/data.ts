@@ -223,30 +223,28 @@ export const chatMessages: ChatMessage[] = [
 export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): User | Teacher => {
   if (role === 'admin') {
     const adminUser = { ...users.find(u => u.role === 'admin')!, ...newUser };
-    // Add teacher properties for profile editing
     (adminUser as Teacher).subjects = (newUser as Teacher)?.subjects || [];
     (adminUser as Teacher).bio = (newUser as Teacher)?.bio ||'Administrador da plataforma Aulas Online Senra.';
     (adminUser as Teacher).education = (newUser as Teacher)?.education || 'Gerenciamento de Sistemas';
     return adminUser as Teacher;
   }
   if (role === 'teacher') {
-    const defaultTeacher = teachers[0]; // Base template
+    const defaultTeacher = teachers[0];
     const newTeacher: Teacher = {
-        ...defaultTeacher, // Start with default template
+        ...defaultTeacher,
         id: newUser?.id || defaultTeacher.id,
         name: newUser?.name || defaultTeacher.name,
         email: newUser?.email || defaultTeacher.email,
         avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
         subjects: (newUser as Teacher)?.subjects || [],
-        bio: (newUser as Teacher)?.bio || '',
-        education: (newUser as Teacher)?.education || '',
+        bio: (newUser as Teacher)?.bio || 'Novo professor na plataforma! Perfil em breve.',
+        education: (newUser as Teacher)?.education || 'Formação a ser preenchida.',
         availability: {},
         status: 'active',
-        role: 'teacher' // Ensure role is always teacher
+        role: 'teacher'
     };
     return newTeacher;
   }
-  // In a real app, you'd get the currently logged-in student
   const defaultStudent = users.find(u => u.role === 'student' && u.id === 'user-1')!;
   const student = { ...defaultStudent, ...newUser };
   return student as Teacher;
@@ -255,8 +253,8 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
 export const suggestions: Suggestion[] = [
     { id: 'sug-1', submittedBy: 'João Aluno', userRole: 'student', type: 'suggestion', content: 'Seria ótimo ter um modo escuro no aplicativo!', status: 'received', timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000) },
     { id: 'sug-2', submittedBy: 'Ana Silva', userRole: 'teacher', type: 'bug', content: 'O calendário de agendamento às vezes não carrega nos fins de semana.', status: 'received', timestamp: new Date(now.getTime() - 28 * 60 * 60 * 1000) },
-    { id: 'sug-3', submittedBy: 'Mariana Santos', userRole: 'student', type: 'suggestion', content: 'Adicionar uma seção de "materiais de aula" para download seria muito útil.', status: 'implemented', timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) },
-    { id: 'sug-4', submittedBy: 'Carlos Lima', userRole: 'teacher', type: 'suggestion', content: 'Poderíamos ter um sistema de gamificação com medalhas para os alunos.', status: 'rejected', timestamp: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000) },
+    { id: 'sug-3', submittedBy: 'Mariana Santos', userRole: 'student', type: 'suggestion', content: 'Adicionar uma seção de "materiais de aula" para download seria muito útil.', status: 'implemented', timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000), evaluationDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
+    { id: 'sug-4', submittedBy: 'Carlos Lima', userRole: 'teacher', type: 'suggestion', content: 'Poderíamos ter um sistema de gamificação com medalhas para os alunos.', status: 'rejected', timestamp: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), evaluationDate: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000) },
 ];
 
 export let referralData: Referral[] = [
@@ -379,5 +377,3 @@ export const adminNavItems: NavItem[] = [
     roles: ['admin'],
   },
 ];
-
-    

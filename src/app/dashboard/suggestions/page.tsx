@@ -127,13 +127,21 @@ const SuggestionForm = ({ user }: { user: User }) => {
 
 const AdminSuggestionsView = () => {
   const [filter, setFilter] = useState<Suggestion['status'] | 'all'>('all');
-  
-  const filteredSuggestions = useMemo(() => {
-    if (filter === 'all') {
-      return suggestions;
+
+  const incomingSuggestions = useMemo(() => {
+    return suggestions.filter(s => s.status === 'received');
+  }, []);
+
+  const processedSuggestions = useMemo(() => {
+    const filtered = suggestions.filter(
+      (s) => s.status === 'implemented' || s.status === 'rejected'
+    );
+    if (filter === 'all' || filter === 'received') {
+      return filtered;
     }
-    return suggestions.filter(s => s.status === filter);
+    return filtered.filter((s) => s.status === filter);
   }, [filter]);
+
 
   const statusLabels: Record<Suggestion['status'], string> = {
     received: 'Recebida',
@@ -155,75 +163,143 @@ const AdminSuggestionsView = () => {
 
 
   return (
-     <Card>
+    <div className="grid gap-6">
+       <Card>
+          <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                  <div>
+                      <CardTitle>Sugestões - Caixa de Entrada</CardTitle>
+                      <CardDescription>
+                      Novas sugestões e reports de usuários aguardando avaliação.
+                      </CardDescription>
+                  </div>
+              </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Enviado por</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {incomingSuggestions.map(suggestion => (
+                  <TableRow key={suggestion.id}>
+                    <TableCell className="font-medium">{suggestion.submittedBy} ({suggestion.userRole})</TableCell>
+                    <TableCell>
+                      <Badge variant={suggestion.type === 'bug' ? 'destructive' : 'outline'}>
+                        {suggestion.type === 'bug' ? 'Erro' : 'Sugestão'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
+                     <TableCell className="text-muted-foreground">
+                      {format(suggestion.timestamp, 'dd/MM/yyyy')}
+                    </TableCell>
+                    <TableCell className="text-center">
+                       <Badge variant={statusVariants[suggestion.status]} className={statusColors[suggestion.status]}>
+                        {statusLabels[suggestion.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" title="Marcar como Implementada">
+                          <Check className="h-4 w-4 text-green-600"/>
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Marcar como Rejeitada">
+                          <X className="h-4 w-4 text-red-600"/>
+                        </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                 {incomingSuggestions.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                            Nenhuma sugestão nova na caixa de entrada.
+                        </TableCell>
+                    </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      <Card>
         <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
-                    <CardTitle>Sugestões - Caixa de Entrada</CardTitle>
-                    <CardDescription>
-                    Veja e gerencie as sugestões e reports dos usuários.
-                    </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filtrar por status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos</SelectItem>
-                            <SelectItem value="received">Recebidas</SelectItem>
-                            <SelectItem value="rejected">Rejeitadas</SelectItem>
-                            <SelectItem value="implemented">Implementadas</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+              <CardTitle>Histórico de Sugestões</CardTitle>
+              <CardDescription>
+                Sugestões que já foram implementadas ou rejeitadas.
+              </CardDescription>
             </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="implemented">Implementadas</SelectItem>
+                  <SelectItem value="rejected">Rejeitadas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Enviado por</TableHead>
-                <TableHead>Tipo</TableHead>
+                <TableHead>Nome (Função)</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>Data de Envio</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Data da Avaliação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSuggestions.map(suggestion => (
+              {processedSuggestions.map((suggestion) => (
                 <TableRow key={suggestion.id}>
-                  <TableCell className="font-medium">{suggestion.submittedBy} ({suggestion.userRole})</TableCell>
-                  <TableCell>
-                    <Badge variant={suggestion.type === 'bug' ? 'destructive' : 'outline'}>
-                      {suggestion.type === 'bug' ? 'Erro' : 'Sugestão'}
-                    </Badge>
+                  <TableCell className="font-medium">
+                    {suggestion.submittedBy} ({suggestion.userRole})
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
-                   <TableCell className="text-muted-foreground">
+                  <TableCell className="max-w-xs truncate">
+                    {suggestion.content}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
                     {format(suggestion.timestamp, 'dd/MM/yyyy')}
                   </TableCell>
-                  <TableCell className="text-center">
-                     <Badge variant={statusVariants[suggestion.status]} className={statusColors[suggestion.status]}>
+                  <TableCell>
+                    <Badge
+                      variant={statusVariants[suggestion.status]}
+                      className={statusColors[suggestion.status]}
+                    >
                       {statusLabels[suggestion.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" title="Marcar como Implementada">
-                        <Check className="h-4 w-4 text-green-600"/>
-                      </Button>
-                      <Button variant="ghost" size="icon" title="Marcar como Rejeitada">
-                        <X className="h-4 w-4 text-red-600"/>
-                      </Button>
+                  <TableCell className="text-right text-muted-foreground">
+                    {suggestion.evaluationDate
+                      ? format(suggestion.evaluationDate, 'dd/MM/yyyy')
+                      : '-'}
                   </TableCell>
                 </TableRow>
               ))}
+              {processedSuggestions.length === 0 && (
+                 <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                        Nenhuma sugestão no histórico com o filtro selecionado.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+    </div>
   );
 };
 
