@@ -83,6 +83,7 @@ export default function RegisterPage() {
     if (role === 'teacher') {
         newUser = {
             ...baseUser,
+            id: `teacher-${Date.now()}`,
             role: 'teacher',
             subjects: [],
             bio: 'Novo professor na plataforma! Perfil em breve.',
@@ -97,7 +98,7 @@ export default function RegisterPage() {
         localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
 
     } else {
-        newUser = baseUser as User;
+        newUser = { ...baseUser, role: role } as User;
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
         const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
         const updatedUsers = [...currentUsers, newUser];
@@ -249,5 +250,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    

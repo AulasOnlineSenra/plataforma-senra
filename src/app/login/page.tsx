@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import { User, UserRole, Teacher } from '@/lib/types';
-import { getMockUser, teachers as initialTeachers, allUsers as initialAllUsers } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, allUsers as initialUsers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -347,7 +347,7 @@ export default function LoginPage() {
     const newUserDataString = localStorage.getItem('newlyRegisteredUser');
 
     // Combine all user data sources
-    const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialAllUsers));
+    const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialUsers));
     const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
     const combinedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
 
@@ -356,7 +356,7 @@ export default function LoginPage() {
         try {
             const newUser = JSON.parse(newUserDataString);
             if (newUser.email === email && newUser.role === role) {
-                // Find the full user object from our combined list
+                // Find the full user object from our combined list to ensure it's up-to-date
                 userToLogin = combinedUsers.find(u => u.id === newUser.id) || null;
                 isNewRegistration = true;
             } else if (newUser.email === email && newUser.role !== role) {
