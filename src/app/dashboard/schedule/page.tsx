@@ -298,10 +298,10 @@ export default function SchedulePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-6 w-6" />
-              Histórico de Aulas
+              Histórico de Aulas Realizadas
             </CardTitle>
             <CardDescription>
-              Todas as aulas que já foram concluídas.
+              Um espelho de todas as aulas realizadas entre alunos e professores.
             </CardDescription>
           </CardHeader>
           <CardContent>
