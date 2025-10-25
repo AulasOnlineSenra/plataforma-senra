@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -18,26 +19,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { getMockUser, teachers as initialTeachers, subjects, allUsers as initialAllUsers } from '@/lib/data';
-import { UserRole, Teacher, User } from '@/lib/types';
+import { UserRole, Teacher, User, EducationEntry, EducationType } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Plus,
   Trash2,
   ChevronUp,
   ChevronDown,
-  Layers,
   Webhook,
   Briefcase,
   User as UserIcon,
   BookUser,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { EditableInput } from '@/components/editable-input';
 import { EditableTextarea } from '@/components/editable-textarea';
 import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -93,10 +93,12 @@ const TrelloIcon = () => (
 );
 
 const NotionIcon = () => (
-  <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+  <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375A.375.375 0 0 0 19.125 3h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-3.75a.375.375 0 0 0-.375-.375v16.875a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75a.375.375 0 0 0-.375.375z" />
   </svg>
 );
+
+const educationTypes: EducationType[] = ['Licenciatura', 'Bacharelado', 'Mestrado', 'Doutorado', 'Pós-graduação'];
 
 
 function ProfilePageComponent() {
@@ -148,11 +150,20 @@ function ProfilePageComponent() {
     }
 
     if (targetUser) {
-        // Ensure education is an array
-        if (typeof targetUser.education === 'string') {
-            targetUser.education = [targetUser.education];
-        } else if (!targetUser.education) {
-            targetUser.education = [];
+        // Ensure education is an array of objects
+        if (Array.isArray(targetUser.education)) {
+             if (targetUser.education.length > 0 && typeof targetUser.education[0] === 'string') {
+                // Heuristic to convert old string format to new object format
+                targetUser.education = [{ 
+                    id: 'edu-migrated-1', 
+                    course: (targetUser.education[0] as string).split(' - ')[0] || 'Não especificado',
+                    university: (targetUser.education[0] as string).split(' - ')[1] || 'Não especificado',
+                    type: 'Bacharelado',
+                    conclusionYear: '' 
+                }];
+            }
+        } else {
+             targetUser.education = [];
         }
         setUserToDisplay(targetUser);
     }
@@ -168,7 +179,7 @@ function ProfilePageComponent() {
     if (userToDisplay) {
         const updatedUser = { ...userToDisplay, [field]: value };
         updateUserState(userToDisplay.id, updatedUser);
-        toast({ title: "Perfil Atualizado", description: `Seu ${field} foi salvo.` });
+        toast({ title: "Perfil Atualizado", description: `Seu campo foi salvo.` });
     }
   };
 
@@ -179,24 +190,32 @@ function ProfilePageComponent() {
     }
   };
 
-  const handleEducationChange = (index: number, value: string) => {
+  const handleEducationChange = (id: string, field: keyof EducationEntry, value: string) => {
     if (userToDisplay?.education) {
-      const newEducation = [...userToDisplay.education];
-      newEducation[index] = value;
+      const newEducation = userToDisplay.education.map(edu => 
+        edu.id === id ? { ...edu, [field]: value } : edu
+      );
       handleFieldSave('education', newEducation);
     }
   };
   
   const handleAddEducation = () => {
     if (userToDisplay?.education) {
-      const newEducation = [...userToDisplay.education, ''];
+      const newEducationEntry: EducationEntry = {
+        id: `edu-${Date.now()}`,
+        course: '',
+        university: '',
+        type: 'Licenciatura',
+        conclusionYear: '',
+      };
+      const newEducation = [...userToDisplay.education, newEducationEntry];
       handleFieldSave('education', newEducation);
     }
   };
   
-  const handleRemoveEducation = (index: number) => {
+  const handleRemoveEducation = (id: string) => {
     if (userToDisplay?.education) {
-      const newEducation = userToDisplay.education.filter((_, i) => i !== index);
+      const newEducation = userToDisplay.education.filter((edu) => edu.id !== id);
       handleFieldSave('education', newEducation);
     }
   };
@@ -213,7 +232,7 @@ function ProfilePageComponent() {
   };
 
 
-  const memberSince = userToDisplay.id.includes('user-')
+  const memberSince = userToDisplay.id.includes('user-') || userToDisplay.id.includes('teacher-')
     ? new Date(parseInt(userToDisplay.id.split('-')[1])).toLocaleDateString('pt-BR')
     : 'Data não disponível';
 
@@ -252,27 +271,39 @@ function ProfilePageComponent() {
           <>
             <CollapsibleCard title="Formação Acadêmica" description="Liste suas qualificações e diplomas." icon={BookUser}>
               <CardContent className="grid gap-4">
-                  {(userToDisplay.education || []).map((edu, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                          <Input
-                              value={edu}
-                              onChange={(e) => handleEducationChange(index, e.target.value)}
-                              placeholder="Ex: Mestrado em Física Aplicada - USP"
-                              disabled={!canEdit}
-                          />
-                           {canEdit && (
-                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveEducation(index)}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                      </div>
-                  ))}
-                  {canEdit && (
-                      <Button variant="outline" onClick={handleAddEducation}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Adicionar Formação
+                {(userToDisplay.education || []).map((edu) => (
+                  <div key={edu.id} className="p-4 border rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                     <EditableInput label="Curso" value={edu.course} onSave={(value) => handleEducationChange(edu.id, 'course', value)} placeholder="Ex: Engenharia" canEdit={canEdit} />
+                     <EditableInput label="Universidade" value={edu.university} onSave={(value) => handleEducationChange(edu.id, 'university', value)} placeholder="Ex: USP" canEdit={canEdit} />
+                     <div className="grid gap-2">
+                        <Label>Tipo</Label>
+                         <Select value={edu.type} onValueChange={(value) => handleEducationChange(edu.id, 'type', value)} disabled={!canEdit}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {educationTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                     </div>
+                     <EditableInput label="Ano de Conclusão" value={edu.conclusionYear} onSave={(value) => handleEducationChange(edu.id, 'conclusionYear', value)} placeholder="Ex: 2020" canEdit={canEdit} />
+                    {canEdit && (
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveEducation(edu.id)}>
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                  )}
+                    )}
+                  </div>
+                ))}
+                {canEdit && (
+                  <div className="flex justify-start mt-4">
+                    <Button variant="outline" onClick={handleAddEducation}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Formação
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </CollapsibleCard>
 
@@ -341,5 +372,3 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
-
-    

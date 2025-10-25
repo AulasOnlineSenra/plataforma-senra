@@ -2,6 +2,17 @@
 
 export type UserRole = 'admin' | 'student' | 'teacher';
 
+export type EducationType = 'Licenciatura' | 'Bacharelado' | 'Mestrado' | 'Doutorado' | 'Pós-graduação';
+
+export interface EducationEntry {
+  id: string;
+  course: string;
+  university: string;
+  type: EducationType;
+  conclusionYear: string;
+}
+
+
 export interface User {
   id: string;
   name: string;
@@ -13,7 +24,7 @@ export interface User {
   nickname?: string;
   phone?: string;
   bio?: string;
-  education?: string[];
+  education?: EducationEntry[];
   referredByCode?: string; // New field
   cpf?: string;
   birthDate?: string;

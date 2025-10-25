@@ -1,5 +1,6 @@
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem } from '@/lib/types';
+
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -35,7 +36,7 @@ export const users: User[] = [
     timezone: 'America/Sao_Paulo',
     nickname: 'João',
     phone: '(11) 91234-5678',
-    education: ['Cursando Engenharia Civil - Mackenzie'],
+    education: [{ id: 'edu-1', course: 'Engenharia Civil', university: 'Mackenzie', type: 'Bacharelado', conclusionYear: '2025' }],
     bio: 'Estudante de engenharia buscando aprofundar meus conhecimentos em cálculo e física.',
     cpf: '123.456.789-00',
     birthDate: '1998-05-10',
@@ -54,7 +55,7 @@ export const users: User[] = [
     avatarUrl: findImage('user-avatar-2'),
     role: 'admin',
     timezone: 'America/Sao_Paulo',
-    education: ['Gerenciamento de Sistemas'],
+    education: [{ id: 'edu-admin', course: 'Gerenciamento de Sistemas', university: 'Internet University', type: 'Bacharelado', conclusionYear: '2015' }],
     bio: 'Administrador da plataforma Aulas Online Senra.',
   },
   {
@@ -99,7 +100,7 @@ export let teachers: Teacher[] = [
     role: 'teacher',
     subjects: ['subj-1', 'subj-3'],
     bio: 'Professora apaixonada por matemática e física, com 5 anos de experiência em aulas particulares.',
-    education: ['Mestrado em Física Aplicada - USP'],
+    education: [{ id: 'edu-t1', course: 'Física Aplicada', university: 'USP', type: 'Mestrado', conclusionYear: '2018' }],
     availability: {
       monday: ['09:00', '10:30', '15:00'],
       wednesday: ['09:00', '10:30', '15:00', '16:30'],
@@ -125,7 +126,7 @@ export let teachers: Teacher[] = [
     role: 'teacher',
     subjects: ['subj-2', 'subj-4'],
     bio: 'Especialista em literatura e redação, focado em preparar alunos para vestibulares e concursos.',
-    education: ['Doutorado em Letras - UFRJ'],
+    education: [{ id: 'edu-t2', course: 'Letras', university: 'UFRJ', type: 'Doutorado', conclusionYear: '2015' }],
     availability: {
       tuesday: ['10:30', '12:00', '13:30'],
       thursday: ['10:30', '12:00', '13:30'],
@@ -141,7 +142,7 @@ export let teachers: Teacher[] = [
     role: 'teacher',
     subjects: ['subj-5'],
     bio: 'Historiadora e geógrafa, adora contar histórias sobre o mundo e suas transformações.',
-    education: ['Graduação em História - UNICAMP'],
+    education: [{ id: 'edu-t3', course: 'História', university: 'UNICAMP', type: 'Licenciatura', conclusionYear: '2020' }],
     availability: {
       monday: ['18:00', '19:30'],
       tuesday: ['18:00', '19:30'],
@@ -255,7 +256,7 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
     const adminUser = { ...users.find(u => u.role === 'admin')!, ...newUser };
     (adminUser as Teacher).subjects = (newUser as Teacher)?.subjects || [];
     (adminUser as Teacher).bio = (newUser as Teacher)?.bio ||'Administrador da plataforma Aulas Online Senra.';
-    adminUser.education = (newUser as User)?.education || ['Gerenciamento de Sistemas'];
+    adminUser.education = (newUser as User)?.education || [{ id: 'edu-admin', course: 'Gerenciamento de Sistemas', university: 'Internet University', type: 'Bacharelado', conclusionYear: '2015' }];
     return adminUser as Teacher;
   }
   if (role === 'teacher') {
@@ -268,7 +269,7 @@ export const getMockUser = (role: UserRole, newUser?: Partial<User | Teacher>): 
         avatarUrl: newUser?.avatarUrl || defaultTeacher.avatarUrl,
         subjects: (newUser as Teacher)?.subjects || [],
         bio: (newUser as Teacher)?.bio || 'Novo professor na plataforma! Perfil em breve.',
-        education: (newUser as Teacher)?.education || ['Formação a ser preenchida.'],
+        education: (newUser as Teacher)?.education || [{ id: 'edu-new', course: 'A ser preenchido', university: 'A ser preenchido', type: 'Licenciatura', conclusionYear: '2024' }],
         availability: {},
         status: 'active',
         role: 'teacher'
