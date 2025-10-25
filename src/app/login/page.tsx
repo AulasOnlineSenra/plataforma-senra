@@ -77,7 +77,7 @@ const LoginForm = ({
         onClick={onBack}
         variant="ghost"
         size="icon"
-        className="absolute top-0 left-0"
+        className="absolute -top-4 left-0"
       >
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">Voltar para seleção</span>
@@ -248,15 +248,17 @@ export default function LoginPage() {
                 <SenraLogo className="mx-auto" />
             </div>
             {role ? (
-              <LoginForm
-                role={role}
-                onBack={() => setRole(null)}
-                onLogin={handleLogin}
-                email={email}
-                setEmail={setEmail}
-                password={password}
-                setPassword={setPassword}
-              />
+              <div className="relative">
+                <LoginForm
+                  role={role}
+                  onBack={() => setRole(null)}
+                  onLogin={handleLogin}
+                  email={email}
+                  setEmail={setEmail}
+                  password={password}
+                  setPassword={setPassword}
+                />
+              </div>
             ) : (
                 <div className="relative">
                     <Button asChild variant="ghost" size="icon" className="absolute -top-20 left-0 hidden md:inline-flex">
@@ -293,5 +295,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
