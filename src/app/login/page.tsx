@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
-import { UserRole } from '@/lib/types';
+import { User, UserRole } from '@/lib/types';
 import { getMockUser } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -284,21 +284,37 @@ export default function LoginPage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('savedEmail');
-    if (savedEmail) {
-      setEmail(savedEmail);
+    // Attempt to load a newly registered user first.
+    const newUserData = localStorage.getItem('newlyRegisteredUser');
+    if (newUserData) {
+      try {
+        const newUser: User = JSON.parse(newUserData);
+        // Pre-fill email and select role based on the new user's data.
+        setEmail(newUser.email);
+        setRole(newUser.role);
+        // Important: Remove the temporary data after using it.
+        localStorage.removeItem('newlyRegisteredUser');
+      } catch (e) {
+        console.error("Failed to parse newly registered user data", e);
+      }
+    } else {
+      // If no new user, load saved credentials as before.
+      const savedEmail = localStorage.getItem('savedEmail');
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+      const savedPassword = localStorage.getItem('savedPassword');
+      if (savedPassword) {
+        setPassword(savedPassword);
+      }
     }
-    const savedPassword = localStorage.getItem('savedPassword');
-    if (savedPassword) {
-      setPassword(savedPassword);
-    }
+
      const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
     if (savedPos) {
         try {
             setPosition(JSON.parse(savedPos));
         } catch (e) {
             console.error("Failed to parse button position from localStorage", e);
-            // Reset to default if parsing fails
             setPosition({ top: 24, left: 24 });
         }
     }
@@ -327,8 +343,21 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!role) {
-        // Default to student for "Acessar como Visitante"
+    
+    // Determine which user object to create or load.
+    const newUserData = localStorage.getItem('newlyRegisteredUser');
+    let userToLogin: User;
+
+    if (newUserData) {
+      userToLogin = JSON.parse(newUserData);
+       // Clear the temp user data after retrieving it
+      localStorage.removeItem('newlyRegisteredUser');
+    } else if (role) {
+      userToLogin = getMockUser(role);
+      // Update email if it was changed in the form
+      userToLogin.email = email;
+    } else {
+        // "Acessar como Visitante" case
         const visitorRole = 'student';
         localStorage.setItem('userRole', visitorRole);
         const user = getMockUser(visitorRole);
@@ -342,15 +371,16 @@ export default function LoginPage() {
     }
     
     // Simulate login and role assignment
-    localStorage.setItem('userRole', role);
-    const user = getMockUser(role);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem('userRole', userToLogin.role);
+    localStorage.setItem('currentUser', JSON.stringify(userToLogin));
+
+    // Save credentials for next time
     localStorage.setItem('savedEmail', email);
     localStorage.setItem('savedPassword', password);
     
     toast({
         title: "Login bem-sucedido!",
-        description: `Bem-vindo(a) de volta, ${user.name.split(' ')[0]}!`,
+        description: `Bem-vindo(a) de volta, ${userToLogin.name.split(' ')[0]}!`,
     });
     
     router.push('/dashboard');

@@ -11,7 +11,7 @@ import { SenraLogo } from '@/components/senra-logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft } from 'lucide-react';
-import { UserRole } from '@/lib/types';
+import { User, UserRole } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,12 +49,36 @@ const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 export default function RegisterPage() {
   const router = useRouter();
   const [role, setRole] = useState<UserRole | null>(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { toast } = useToast();
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would handle user creation here,
-    // including the selected `role`.
+    if (!role) {
+        toast({
+            variant: "destructive",
+            title: "Erro de Cadastro",
+            description: "Um perfil deve ser selecionado.",
+        });
+        return;
+    }
+    
+    // Create a new user object based on the form data
+    const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: name,
+        email: email,
+        avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`,
+        role: role,
+        status: 'active',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+    
+    // Store the new user object in localStorage to be picked up by the login page.
+    localStorage.setItem('newlyRegisteredUser', JSON.stringify(newUser));
+    
     toast({
         title: "Cadastro realizado!",
         description: "Você será redirecionado para a página de login.",
@@ -101,6 +125,8 @@ export default function RegisterPage() {
               placeholder="Seu nome completo"
               required
               className="h-11"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
@@ -111,6 +137,8 @@ export default function RegisterPage() {
               placeholder="seu.email@exemplo.com"
               required
               className="h-11"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
             <div className="grid gap-2">
@@ -121,6 +149,8 @@ export default function RegisterPage() {
               placeholder="Sua senha"
               required
               className="h-11"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
