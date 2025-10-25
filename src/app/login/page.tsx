@@ -77,7 +77,7 @@ const LoginForm = ({
         onClick={onBack}
         variant="ghost"
         size="icon"
-        className="absolute -top-8 left-0"
+        className="absolute -top-16 left-0"
       >
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">Voltar para seleção</span>
@@ -238,13 +238,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-background">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
-            <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6 md:hidden">
-              <Link href="/home">
-                  <ArrowLeft />
-              </Link>
-            </Button>
             {!role && (
-                <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6 hidden md:inline-flex">
+                <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
                     <Link href="/home">
                         <ArrowLeft />
                     </Link>
@@ -297,5 +292,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
