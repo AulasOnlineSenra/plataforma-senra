@@ -297,7 +297,7 @@ const AdminSuggestionsView = () => {
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-[120px]">Data de Envio</TableHead>
                 <TableHead className="w-[150px]">Data da Avaliação</TableHead>
-                <TableHead className="w-[200px] text-right">Status / Ações</TableHead>
+                <TableHead className="w-[200px] text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -318,22 +318,12 @@ const AdminSuggestionsView = () => {
                       : '-'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end items-center gap-2">
-                        <Badge
-                        variant={statusVariants[suggestion.status]}
-                        className={statusColors[suggestion.status]}
-                        >
-                        {statusLabels[suggestion.status]}
-                        </Badge>
-                        <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
-                              <Check className="h-4 w-4 text-green-600"/>
-                            </Button>
-                            <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
-                              <X className="h-4 w-4 text-red-600"/>
-                            </Button>
-                        </div>
-                    </div>
+                    <Badge
+                      variant={statusVariants[suggestion.status]}
+                      className={cn('justify-end', statusColors[suggestion.status])}
+                    >
+                      {statusLabels[suggestion.status]}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}
