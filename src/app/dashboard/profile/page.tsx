@@ -183,7 +183,7 @@ function ProfilePageComponent() {
         name,
         nickname,
         bio,
-        education,
+        education: education.filter(edu => edu.trim() !== ''), // Clean empty entries
         phone,
         cpf,
         birthDate,
