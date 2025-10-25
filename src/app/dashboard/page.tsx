@@ -81,10 +81,10 @@ export default function DashboardPage() {
           setTeacherCount(activeTeachers.length);
         } catch (e) {
           console.error("Failed to parse teachers from localStorage", e);
-          setTeacherCount(initialTeachers.length);
+          setTeacherCount(initialTeachers.filter(t => t.status !== 'deleted').length);
         }
       } else {
-        setTeacherCount(initialTeachers.length);
+        setTeacherCount(initialTeachers.filter(t => t.status !== 'deleted').length);
       }
 
       // Update schedule
@@ -146,7 +146,7 @@ export default function DashboardPage() {
           <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
-              <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+              <CalendarCheck className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'scheduled').length}</div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
-            <XCircle className="h-4 w-4 text-muted-foreground" />
+            <XCircle className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
           <Card className="hover:bg-accent/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Professores</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              <Briefcase className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{teacherCount}</div>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
           <Card className="hover:bg-accent/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Alunos Ativos</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{users.filter(u => u.role === 'student' && u.status === 'active').length}</div>
@@ -325,7 +325,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
-            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+            <CalendarCheck className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
@@ -335,7 +335,7 @@ export default function DashboardPage() {
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aulas Realizadas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">28</div>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
-            <XCircle className="h-4 w-4 text-muted-foreground" />
+            <XCircle className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
@@ -355,7 +355,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Créditos de Aulas</CardTitle>
-            <BookCopy className="h-4 w-4 text-muted-foreground" />
+            <BookCopy className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">8</div>
@@ -365,7 +365,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Feedback Médio</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+            <Star className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">4.8/5.0</div>
@@ -476,5 +476,7 @@ export default function DashboardPage() {
     
 
   
+
+    
 
     
