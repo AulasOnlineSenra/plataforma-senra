@@ -258,9 +258,9 @@ export const suggestions: Suggestion[] = [
 ];
 
 export let referralData: Referral[] = [
-    { userId: 'teacher-1', code: 'ANA-5281', timesUsed: 5, totalBonus: 250.00 },
-    { userId: 'user-1', code: 'JOAO-9872', timesUsed: 2, totalBonus: 100.00 },
-    { userId: 'teacher-2', code: 'CARLOS-3456', timesUsed: 8, totalBonus: 400.00 },
+    { userId: 'teacher-1', code: 'ANA-5281', timesUsed: 5, totalBonus: 250.00, bonusType: 'money' },
+    { userId: 'user-1', code: 'JOAO-9872', timesUsed: 2, totalBonus: 100.00, bonusType: 'money' },
+    { userId: 'teacher-2', code: 'CARLOS-3456', timesUsed: 8, totalBonus: 400.00, bonusType: 'money' },
 ];
 
 

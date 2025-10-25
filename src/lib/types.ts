@@ -81,6 +81,7 @@ export interface Referral {
   code: string;
   timesUsed: number;
   totalBonus: number;
+  bonusType: 'money' | 'classes';
 }
 
 export interface NavItem {
@@ -89,3 +90,4 @@ export interface NavItem {
     label: string;
     roles: UserRole[];
 }
+
