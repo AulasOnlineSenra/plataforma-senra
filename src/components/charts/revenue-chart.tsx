@@ -104,14 +104,15 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
+  const barChartWidth = chartData.length * 40;
+
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
       <div className="w-full overflow-x-auto">
-        <ResponsiveContainer width="100%" height={350}>
+        <ResponsiveContainer width={Math.max(barChartWidth, 300)} height={350}>
             <BarChart
             accessibilityLayer
             data={chartData}
-            width={chartData.length * 40}
             margin={{
                 top: 20,
                 right: 20,
