@@ -46,7 +46,7 @@ export interface Teacher extends User {
   role: 'teacher';
   subjects: string[]; // array of subject IDs
   availability: Record<string, string[]>; // e.g. { "monday": ["09:00", "10:00"] }
-  status: 'active' | 'hidden';
+  status: 'active' | 'hidden' | 'deleted';
 }
 
 export interface ClassPackage {

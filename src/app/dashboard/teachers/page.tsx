@@ -14,7 +14,7 @@ import { teachers as initialTeachers, subjects, getMockUser } from '@/lib/data';
 import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2 } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -43,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function TeacherCard({
   teacher,
@@ -106,14 +107,14 @@ function TeacherCard({
                             <AlertDialogHeader>
                             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil do professor
-                                <span className="font-bold"> {teacher.name} </span> e removerá seus dados de nossos servidores.
+                                Esta ação moverá o professor para a lista de excluídos. Ele poderá ser restaurado ou excluído permanentemente mais tarde.
+                                O professor <span className="font-bold">{teacher.name}</span> não será mais visível para os alunos.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction onClick={() => onDelete(teacher.id)}>
-                                Continuar
+                                Mover para Excluídos
                             </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -148,7 +149,7 @@ function TeacherCard({
             ({rating.toFixed(1)})
           </span>
         </div>
-        <CardDescription className="pt-1">{teacher.education && Array.isArray(teacher.education) ? teacher.education[0] : teacher.education}</CardDescription>
+        <CardDescription className="pt-1">{teacher.education && Array.isArray(teacher.education) ? teacher.education[0]?.course : ''}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 text-center pt-0">
         <p className="text-sm text-muted-foreground line-clamp-3">
@@ -225,13 +226,15 @@ export default function TeachersPage() {
   };
   
   const handleDeleteTeacher = (teacherId: string) => {
-    const updatedList = teacherList.filter(t => t.id !== teacherId);
+    const updatedList = teacherList.map(t =>
+        t.id === teacherId ? { ...t, status: 'deleted' as const } : t
+    );
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
     window.dispatchEvent(new Event('storage'));
     toast({
-      title: 'Professor Excluído',
-      description: 'O perfil do professor foi removido da plataforma.',
+      title: 'Professor Movido para Excluídos',
+      description: 'O perfil do professor foi movido para a lista de excluídos.',
     });
   };
 
@@ -245,11 +248,41 @@ export default function TeachersPage() {
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
     window.dispatchEvent(new Event('storage'));
   };
+
+  const handleRestoreTeacher = (teacherId: string) => {
+    const updatedList = teacherList.map(t =>
+        t.id === teacherId ? { ...t, status: 'active' as const } : t
+    );
+    setTeacherList(updatedList);
+    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
+    toast({
+      title: 'Professor Restaurado',
+      description: 'O perfil do professor está ativo novamente.',
+    });
+  };
+  
+  const handlePermanentDeleteTeacher = (teacherId: string) => {
+    const updatedList = teacherList.filter(t => t.id !== teacherId);
+    setTeacherList(updatedList);
+    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
+    toast({
+      variant: 'destructive',
+      title: 'Professor Excluído Permanentemente',
+      description: 'O perfil do professor foi removido para sempre.',
+    });
+  };
   
   const visibleTeachers =
     currentUser?.role === 'admin'
-      ? teacherList
+      ? teacherList.filter(t => t.status !== 'deleted')
       : teacherList.filter(t => t.status === 'active');
+  
+  const deletedTeachers =
+    currentUser?.role === 'admin'
+      ? teacherList.filter(t => t.status === 'deleted')
+      : [];
 
   return (
     <>
@@ -280,6 +313,85 @@ export default function TeachersPage() {
                 />
             ))}
             </div>
+            {currentUser?.role === 'admin' && deletedTeachers.length > 0 && (
+                <div className="px-4 mt-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Professores Excluídos</CardTitle>
+                            <CardDescription>
+                                Professores que foram removidos da plataforma. Você pode restaurá-los ou excluí-los permanentemente.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Professor</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Email</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {deletedTeachers.map(teacher => (
+                                        <TableRow key={teacher.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="font-medium">{teacher.name}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="hidden sm:table-cell">{teacher.email}</TableCell>
+                                            <TableCell className="text-right">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                             <Button variant="ghost" size="icon" onClick={() => handleRestoreTeacher(teacher.id)}>
+                                                                <RotateCcw className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Restaurar Professor</p></TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                                <AlertDialog>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Excluir Permanentemente</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handlePermanentDeleteTeacher(teacher.id)}>
+                                                                Excluir Permanentemente
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </ScrollArea>
       </div>
 
@@ -323,5 +435,3 @@ export default function TeachersPage() {
     </>
   );
 }
-
-    
