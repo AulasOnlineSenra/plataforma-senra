@@ -36,6 +36,8 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
+
 const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion: (newSuggestion: Suggestion) => void }) => {
   const [type, setType] = useState<'bug' | 'suggestion'>('suggestion');
   const [content, setContent] = useState('');
@@ -130,14 +132,38 @@ const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion
 };
 
 const AdminSuggestionsView = () => {
-  const [allSuggestions, setAllSuggestions] = useState<Suggestion[]>(initialSuggestions);
+  const [allSuggestions, setAllSuggestions] = useState<Suggestion[]>([]);
   const [filter, setFilter] = useState<Suggestion['status'] | 'all'>('all');
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const updateSuggestions = () => {
+        const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
+        if (storedSuggestions) {
+          const parsedSuggestions = JSON.parse(storedSuggestions).map((s: any) => ({
+            ...s,
+            timestamp: new Date(s.timestamp),
+            evaluationDate: s.evaluationDate ? new Date(s.evaluationDate) : undefined,
+          }));
+          setAllSuggestions(parsedSuggestions);
+        } else {
+          setAllSuggestions(initialSuggestions);
+          localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(initialSuggestions));
+        }
+    };
+    updateSuggestions();
+    window.addEventListener('storage', updateSuggestions);
+    return () => window.removeEventListener('storage', updateSuggestions);
+  }, []);
 
   const handleUpdateStatus = (id: Suggestion['id'], newStatus: 'implemented' | 'rejected') => {
-    setAllSuggestions(prev => 
-        prev.map(s => s.id === id ? { ...s, status: newStatus, evaluationDate: new Date() } : s)
+    const updatedSuggestions = allSuggestions.map(s => 
+        s.id === id ? { ...s, status: newStatus, evaluationDate: new Date() } : s
     );
+    setAllSuggestions(updatedSuggestions);
+    localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(updatedSuggestions));
+    window.dispatchEvent(new Event('storage'));
+
     toast({
         title: `Sugestão ${newStatus === 'implemented' ? 'Implementada' : 'Rejeitada'}`,
         description: "O status da sugestão foi atualizado.",
@@ -318,17 +344,33 @@ const AdminSuggestionsView = () => {
 
 export default function SuggestionsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setCurrentUser(getMockUser(role));
     }
+    
+    const updateSuggestions = () => {
+        const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
+        if (storedSuggestions) {
+            setSuggestions(JSON.parse(storedSuggestions).map((s: Suggestion) => ({ ...s, timestamp: new Date(s.timestamp) })));
+        } else {
+            setSuggestions(initialSuggestions);
+        }
+    }
+    updateSuggestions();
+    window.addEventListener('storage', updateSuggestions);
+    return () => window.removeEventListener('storage', updateSuggestions);
+
   }, []);
 
   const handleNewSuggestion = (newSuggestion: Suggestion) => {
-    setSuggestions(prev => [newSuggestion, ...prev]);
+    const updatedSuggestions = [newSuggestion, ...suggestions];
+    setSuggestions(updatedSuggestions);
+    localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(updatedSuggestions));
+    window.dispatchEvent(new Event('storage'));
   };
 
   if (!currentUser) {
@@ -350,3 +392,5 @@ export default function SuggestionsPage() {
     </div>
   );
 }
+
+    
