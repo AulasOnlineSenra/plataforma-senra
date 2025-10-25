@@ -166,9 +166,11 @@ function TeacherCard({
   );
 }
 
+const TEACHERS_STORAGE_KEY = 'teacherList';
+
 export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [teacherList, setTeacherList] = useState<Teacher[]>(initialTeachers);
+  const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const { toast } = useToast();
@@ -177,6 +179,14 @@ export default function TeachersPage() {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setCurrentUser(getMockUser(role));
+    }
+    
+    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+    if (storedTeachers) {
+      setTeacherList(JSON.parse(storedTeachers));
+    } else {
+      setTeacherList(initialTeachers);
+      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(initialTeachers));
     }
   }, []);
 
@@ -200,7 +210,9 @@ export default function TeachersPage() {
   };
   
   const handleDeleteTeacher = (teacherId: string) => {
-    setTeacherList(prev => prev.filter(t => t.id !== teacherId));
+    const updatedList = teacherList.filter(t => t.id !== teacherId);
+    setTeacherList(updatedList);
+    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
     toast({
       title: 'Professor Excluído',
       description: 'O perfil do professor foi removido da plataforma.',
@@ -208,13 +220,13 @@ export default function TeachersPage() {
   };
 
   const handleToggleVisibility = (teacherId: string) => {
-    setTeacherList(prev =>
-      prev.map(t =>
+    const updatedList = teacherList.map(t =>
         t.id === teacherId
           ? { ...t, status: t.status === 'active' ? 'hidden' : 'active' }
           : t
-      )
-    );
+      );
+    setTeacherList(updatedList);
+    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
   };
   
   const visibleTeachers =
