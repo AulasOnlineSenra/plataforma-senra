@@ -37,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { EditableInput } from '@/components/editable-input';
 import { EditableTextarea } from '@/components/editable-textarea';
 import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
+import { Switch } from '@/components/ui/switch';
 
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
