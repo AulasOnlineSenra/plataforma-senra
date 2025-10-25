@@ -15,6 +15,15 @@ export interface User {
   bio?: string;
   education?: string[];
   referredByCode?: string; // New field
+  cpf?: string;
+  birthDate?: string;
+  address?: {
+    zipCode?: string;
+    state?: string;
+    neighborhood?: string;
+    street?: string;
+    number?: string;
+  }
 }
 
 export interface Subject {
@@ -88,4 +97,7 @@ export interface Referral {
 
 export interface NavItem {
     href: string;
-    
+    icon: React.ElementType;
+    label: string;
+    roles: UserRole[];
+}

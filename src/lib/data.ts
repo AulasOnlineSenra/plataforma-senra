@@ -37,6 +37,15 @@ export const users: User[] = [
     phone: '(11) 91234-5678',
     education: ['Cursando Engenharia Civil - Mackenzie'],
     bio: 'Estudante de engenharia buscando aprofundar meus conhecimentos em cálculo e física.',
+    cpf: '123.456.789-00',
+    birthDate: '1998-05-10',
+    address: {
+        zipCode: '01234-567',
+        state: 'SP',
+        neighborhood: 'Consolação',
+        street: 'Rua da Consolação',
+        number: '123'
+    }
   },
   {
     id: 'admin-1',
@@ -98,6 +107,15 @@ export let teachers: Teacher[] = [
     },
     timezone: 'America/Sao_Paulo',
     status: 'active',
+    cpf: '987.654.321-11',
+    birthDate: '1990-02-15',
+     address: {
+        zipCode: '22345-678',
+        state: 'RJ',
+        neighborhood: 'Copacabana',
+        street: 'Avenida Atlântica',
+        number: '456'
+    }
   },
   {
     id: 'teacher-2',
@@ -383,5 +401,3 @@ export const adminNavItems: NavItem[] = [
     roles: ['admin'],
   },
 ];
-
-    

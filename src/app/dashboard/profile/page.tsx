@@ -37,6 +37,7 @@ import {
   Briefcase,
   Layers,
   Webhook,
+  User as UserIcon,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -93,7 +94,7 @@ const TrelloIcon = () => (
 );
 
 const NotionIcon = () => (
-  <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+    <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
     <path d="M2.25 3.75C2.25 2.925 2.925 2.25 3.75 2.25h16.5c.825 0 1.5.675 1.5-1.5V3.75c0-.825-.675-1.5-1.5-1.5zM8.062 17.438l-3-3.375a.375.375 0 11.54-.48l2.715 3.045 4.125-4.5a.375.375 0 01.45-.06.375.375 0 01.09.245V17.25h-4.875zm-.75-9.375h3.375v2.625H7.312V8.062zm8.25 9.375h-3.375V14.25h3.375v3.188zM12 5.25a.375.375 0 01-.15.3l-4.5 3a.375.375 0 01-.45-.09l-3-4.125a.375.375 0 11.48-.54l2.745 3.75 4.2-2.8a.375.375 0 01.375.255V5.25z" />
   </svg>
 );
@@ -112,6 +113,12 @@ function ProfilePageComponent() {
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [education, setEducation] = useState<string[]>(['']);
+  const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [state, setState] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
   
   // Teacher-specific state
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
@@ -145,10 +152,16 @@ function ProfilePageComponent() {
       setName(userToDisplay.name);
       setNickname(userToDisplay.nickname || '');
       setBio(userToDisplay.bio || '');
+      setPhone(userToDisplay.phone || '');
+      setCpf(userToDisplay.cpf || '');
+      setBirthDate(userToDisplay.birthDate || '');
+      setZipCode(userToDisplay.address?.zipCode || '');
+      setState(userToDisplay.address?.state || '');
+      setNeighborhood(userToDisplay.address?.neighborhood || '');
 
       // Ensure education is always an array
       if (Array.isArray(userToDisplay.education)) {
-        setEducation(userToDisplay.education);
+        setEducation(userToDisplay.education.length > 0 ? userToDisplay.education : ['']);
       } else if (typeof userToDisplay.education === 'string') {
         setEducation([userToDisplay.education]);
       } else {
@@ -166,14 +179,27 @@ function ProfilePageComponent() {
     
     let updatedUser: User | Teacher;
 
-    if (profileUser.role === 'teacher') {
-      const updatedTeacher: Teacher = {
-        ...(profileUser as Teacher),
+    const baseUpdate = {
         name,
         nickname,
         bio,
         education,
-        subjects: selectedSubjects
+        phone,
+        cpf,
+        birthDate,
+        address: {
+            ...profileUser.address,
+            zipCode,
+            state,
+            neighborhood,
+        }
+    };
+
+    if (profileUser.role === 'teacher') {
+      const updatedTeacher: Teacher = {
+        ...(profileUser as Teacher),
+        ...baseUpdate,
+        subjects: selectedSubjects,
       };
       updatedUser = updatedTeacher;
 
@@ -186,10 +212,7 @@ function ProfilePageComponent() {
     } else {
         updatedUser = {
             ...profileUser,
-            name,
-            nickname,
-            bio,
-            education,
+            ...baseUpdate,
             role: profileUser.role, // ensure role is not lost
         }
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -218,9 +241,16 @@ function ProfilePageComponent() {
     setName(profileUser.name);
     setNickname(profileUser.nickname || '');
     setBio(profileUser.bio || '');
+    setPhone(profileUser.phone || '');
+    setCpf(profileUser.cpf || '');
+    setBirthDate(profileUser.birthDate || '');
+    setZipCode(profileUser.address?.zipCode || '');
+    setState(profileUser.address?.state || '');
+    setNeighborhood(profileUser.address?.neighborhood || '');
+
 
     if (Array.isArray(profileUser.education)) {
-        setEducation(profileUser.education);
+        setEducation(profileUser.education.length > 0 ? profileUser.education : ['']);
     } else if (typeof profileUser.education === 'string') {
         setEducation([profileUser.education]);
     } else {
@@ -253,6 +283,8 @@ function ProfilePageComponent() {
     if (education.length > 1) {
         const newEducation = education.filter((_, i) => i !== index);
         setEducation(newEducation);
+    } else if (education.length === 1 && education[0] !== '') {
+        setEducation(['']); // Clear the only field instead of removing it
     }
   }
 
@@ -294,8 +326,8 @@ function ProfilePageComponent() {
       
       <div className="grid gap-6">
         <CollapsibleCard title="Informações Pessoais" description="Edite seus dados pessoais e de contato." defaultOpen={true}>
-            <CardContent className="grid sm:grid-cols-2 gap-6">
-                <div className="flex items-center gap-4 sm:col-span-2">
+            <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex items-center gap-4 sm:col-span-2 lg:col-span-3">
                     <Avatar className="h-20 w-20">
                       <AvatarImage src={profileUser.avatarUrl} alt={profileUser.name} />
                       <AvatarFallback>{profileUser.name.charAt(0)}</AvatarFallback>
@@ -316,12 +348,36 @@ function ProfilePageComponent() {
                         <Input id="email" type="email" value={profileUser.email} disabled className="pl-10" />
                     </div>
                 </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} disabled={!isEditing} placeholder="(XX) XXXXX-XXXX" />
+                </div>
                  <div className="grid gap-2">
                     <Label htmlFor="joined">Membro Desde</Label>
                      <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input id="joined" value="Janeiro de 2024" disabled className="pl-10"/>
                     </div>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input id="cpf" value={cpf} onChange={e => setCpf(e.target.value)} disabled={!isEditing} placeholder="000.000.000-00" />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <Input id="birthDate" type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} disabled={!isEditing} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="zipCode">CEP</Label>
+                    <Input id="zipCode" value={zipCode} onChange={e => setZipCode(e.target.value)} disabled={!isEditing} placeholder="00000-000" />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="state">Estado</Label>
+                    <Input id="state" value={state} onChange={e => setState(e.target.value)} disabled={!isEditing} placeholder="Ex: SP" />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="neighborhood">Bairro</Label>
+                    <Input id="neighborhood" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} disabled={!isEditing} placeholder="Ex: Centro" />
                 </div>
             </CardContent>
              <CardContent>
@@ -453,5 +509,3 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
-
-    
