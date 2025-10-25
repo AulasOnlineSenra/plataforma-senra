@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, DragEvent } from 'react';
+import { useState, useEffect, DragEvent, MouseEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,8 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
 
+const DRAGGABLE_BUTTON_STORAGE_KEY = 'loginDraggableButtonPos';
+
 const LoginForm = ({
   role,
   onBack,
@@ -70,14 +72,56 @@ const LoginForm = ({
     admin: 'Administrador',
   };
   const [showPassword, setShowPassword] = useState(false);
+  const [position, setPosition] = useState({ top: -96, left: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
+    if (savedPos) {
+        try {
+            setPosition(JSON.parse(savedPos));
+        } catch (e) {
+            console.error("Failed to parse button position from localStorage", e);
+        }
+    }
+  }, []);
+
+  const handleMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.left, y: e.clientY - position.top });
+    e.currentTarget.style.cursor = 'grabbing';
+  };
+
+  const handleMouseUp = (e: MouseEvent<HTMLButtonElement>) => {
+    setIsDragging(false);
+    e.currentTarget.style.cursor = 'pointer';
+    localStorage.setItem(DRAGGABLE_BUTTON_STORAGE_KEY, JSON.stringify(position));
+  };
+  
+  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
+    if (!isDragging) return;
+    setPosition({
+      top: e.clientY - dragStart.y,
+      left: e.clientX - dragStart.x,
+    });
+  };
 
   return (
-    <div className="w-full relative">
+    <div
+      className="w-full relative"
+      onMouseMove={isDragging ? handleMouseMove : undefined}
+      onMouseUp={isDragging ? (e: MouseEvent<HTMLElement>) => handleMouseUp(e as any) : undefined}
+      onMouseLeave={isDragging ? (e: MouseEvent<HTMLElement>) => handleMouseUp(e as any) : undefined}
+    >
       <Button
         onClick={onBack}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         variant="ghost"
         size="icon"
-        className="absolute -top-24 left-0"
+        className="absolute cursor-grab"
+        style={{ top: `${position.top}px`, left: `${position.left}px` }}
       >
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">Voltar para seleção</span>
@@ -374,3 +418,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
