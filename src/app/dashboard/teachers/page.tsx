@@ -42,6 +42,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function TeacherCard({
   teacher,
@@ -252,7 +253,7 @@ export default function TeachersPage() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 md:gap-8">
+      <div className="flex flex-1 flex-col gap-4 md:gap-8 overflow-hidden">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-2xl md:text-3xl font-bold">
             Nossos Professores
@@ -267,17 +268,19 @@ export default function TeachersPage() {
             </Button>
           )}
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {visibleTeachers.map((teacher) => (
-            <TeacherCard
-              key={teacher.id}
-              teacher={teacher}
-              currentUser={currentUser}
-              onDelete={handleDeleteTeacher}
-              onToggleVisibility={handleToggleVisibility}
-            />
-          ))}
-        </div>
+        <ScrollArea className="flex-1 -mx-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 px-4">
+            {visibleTeachers.map((teacher) => (
+                <TeacherCard
+                key={teacher.id}
+                teacher={teacher}
+                currentUser={currentUser}
+                onDelete={handleDeleteTeacher}
+                onToggleVisibility={handleToggleVisibility}
+                />
+            ))}
+            </div>
+        </ScrollArea>
       </div>
 
       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
@@ -320,3 +323,5 @@ export default function TeachersPage() {
     </>
   );
 }
+
+    
