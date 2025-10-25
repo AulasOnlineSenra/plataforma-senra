@@ -103,13 +103,11 @@ export function RevenueChart({ filter }: RevenueChartProps) {
     }
   }, [filter]);
 
-  // Calculate a dynamic width for the chart.
-  // The multiplier (e.g., 40) can be adjusted to change the width of each bar.
   const barChartWidth = chartData.length * 40;
 
   return (
-    <ChartContainer config={chartConfig} className="h-full w-full">
-      <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto">
+      <ChartContainer config={chartConfig}>
         <BarChart
           accessibilityLayer
           data={chartData}
@@ -145,7 +143,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
           />
           <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
         </BarChart>
-      </div>
-    </ChartContainer>
+      </ChartContainer>
+    </div>
   );
 }
