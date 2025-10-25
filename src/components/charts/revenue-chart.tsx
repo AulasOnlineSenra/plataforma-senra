@@ -115,7 +115,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
           accessibilityLayer
           data={chartData}
           width={barChartWidth}
-          height={350}
+          height={300}
           margin={{
             top: 20,
             right: 20,
