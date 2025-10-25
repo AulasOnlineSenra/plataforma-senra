@@ -1,203 +1,252 @@
 /**
- * @file Firebase Security Rules for Aulas Online Senra
+ * @fileoverview Firestore Security Rules for Aulas Online Senra platform.
  *
- * @corePhilosophy This ruleset enforces a strict user-ownership model, ensuring that each user can only access their own data. All user-specific data is nested under the `/users/{userId}` path.
- * @dataStructure The database is structured with user-specific data under `/users/{userId}`, teacher profiles under `/users/{userId}/teacherProfiles/{teacherProfileId}`, lessons under `/users/{userId}/lessons/{lessonId}`, student purchases under `/users/{userId}/studentPurchases/{studentPurchaseId}`, and session feedback under `/users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId}`. Subjects and PaymentPackages are stored in top-level collections (`/subjects/{subjectId}` and `/paymentPackages/{paymentPackageId}`) and are publicly readable.
- * @keySecurityDecisions
- *   - User listing is disallowed.
- *   - Only authenticated users can access data.
- *   - Data validation is relaxed to allow for rapid prototyping, with critical authorization fields still validated.
- * @denormalization To simplify security rules, key authorization data (e.g., `studentId`, `teacherId`) is denormalized directly onto the documents. This avoids costly `get()` calls.
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for personal data and uses
+ * an admin role for elevated privileges. All write operations are guarded by
+ * authorization checks. Data validation is relaxed for rapid prototyping but
+ * includes checks for critical relationships.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles. Accessible by the user and administrators.
+ * - /roles_admin/{userId}: Presence of a document grants admin privileges.
+ * - /subjects/{subjectId}: Stores information about subjects. Publicly readable.
+ * - /teacher_profiles/{teacherProfileId}: Stores teacher profiles.
+ * - /users/{studentId}/lessons/{lessonId}: Stores lessons associated with a student.
+ * - /payment_packages/{paymentPackageId}: Stores payment packages. Publicly readable.
+ * - /users/{userId}/payment_transactions/{paymentTransactionId}: Stores payment transactions.
+ * - /lessons/{lessonId}/session_feedback/{sessionFeedbackId}: Stores session feedback.
+ *
+ * Key Security Decisions:
+ * - User listing is disabled to protect privacy.
+ * - Public read access is granted to the "subjects" and "payment_packages" collections.
+ * - The default security posture for ambiguous relationships is owner-only access.
+ *
+ * Denormalization for Authorization:
+ * - User-specific data is nested under /users/{userId} to avoid `get()` calls for ownership checks.
+ * - The `roles_admin` collection is used to efficiently grant admin privileges without needing to query user roles stored in the user document.
+ *
+ * Structural Segregation:
+ * - User-specific data is stored under the /users/{userId} path, while public data (subjects, payment packages) is stored in top-level collections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secures the user profile. Only the authenticated user can read or write their own profile.
+     * @description Controls access to user profile information.
      * @path /users/{userId}
-     * @allow (create) - User with ID 'user123' can create their own profile if request.auth.uid == 'user123'.
-     * @allow (get) - User with ID 'user123' can read their own profile if request.auth.uid == 'user123'.
-     * @allow (update) - User with ID 'user123' can update their own profile if request.auth.uid == 'user123'.
-     * @allow (delete) - User with ID 'user123' can delete their own profile if request.auth.uid == 'user123'.
-     * @deny (create) - User with ID 'user456' cannot create a profile with ID 'user123'.
-     * @deny (get) - User with ID 'user456' cannot read the profile of user with ID 'user123'.
-     * @deny (update) - User with ID 'user456' cannot update the profile of user with ID 'user123'.
-     * @deny (delete) - User with ID 'user456' cannot delete the profile of user with ID 'user123'.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) - Authenticated user can create their own profile if the userId matches their auth.uid.
+     * @allow (get, update, delete) - Authenticated user can access and modify their own profile if the userId matches their auth.uid. Admins can read, update, and delete any user profile.
+     * @deny (create, update, delete) - Any user attempting to create/update/delete another user's profile.
+     * @deny (list) - Listing all users is prohibited.
+     * @principle Enforces document ownership for writes and restricts listing for privacy.
      */
     match /users/{userId} {
       function isSignedIn() {
         return request.auth != null;
       }
+
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
+
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+          return isSignedIn() && isOwner(userId);
       }
 
-      allow get: if isOwner(userId);
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+     /**
+      * @description Grants admin privileges to users listed in this collection.
+      * @path /roles_admin/{userId}
+      * @allow (create) - Only existing admins can grant other users admin privileges.
+      * @allow (get) - Any authenticated user can check if they have admin privileges.
+      * @allow (update, delete) - Only the admin themselves or another admin can modify/remove their admin privileges.
+      * @deny (list) - Listing all admins is prohibited.
+      * @principle Uses a dedicated collection to manage admin roles.
+      */
+    match /roles_admin/{userId} {
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        function isAdmin() {
+            return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+        }
+
+        allow get: if isSignedIn();
+        allow list: if false;
+        allow create: if isSignedIn() && isAdmin();
+        allow update: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
+        allow delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Secures teacher profiles. Only the teacher (owner) can read, create, update, or delete their own profile.
-     * @path /users/{userId}/teacherProfiles/{teacherProfileId}
-     * @allow (create) - User with ID 'teacher123' can create their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
-     * @allow (get) - User with ID 'teacher123' can read their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
-     * @allow (update) - User with ID 'teacher123' can update their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
-     * @allow (delete) - User with ID 'teacher123' can delete their own teacher profile under /users/teacher123/teacherProfiles/profile1 if request.auth.uid == 'teacher123'.
-     * @deny (create) - User with ID 'student456' cannot create a teacher profile under /users/teacher123/teacherProfiles/profile1.
-     * @deny (get) - User with ID 'student456' cannot read the teacher profile under /users/teacher123/teacherProfiles/profile1.
-     * @deny (update) - User with ID 'student456' cannot update the teacher profile under /users/teacher123/teacherProfiles/profile1.
-     * @deny (delete) - User with ID 'student456' cannot delete the teacher profile under /users/teacher123/teacherProfiles/profile1.
-     * @principle Enforces document ownership for writes.
-     */
-    match /users/{userId}/teacherProfiles/{teacherProfileId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Allows public read access to subjects. No write access for standard users.
+     * @description Controls access to subject information.
      * @path /subjects/{subjectId}
-     * @allow (get) - Any user can read any subject.
-     * @allow (list) - Any user can list all subjects.
-     * @deny (create) - No user can create a subject. // TODO: Add admin role check if needed.
-     * @deny (update) - No user can update a subject. // TODO: Add admin role check if needed.
-     * @deny (delete) - No user can delete a subject. // TODO: Add admin role check if needed.
+     * @allow (get, list) - All users can view subjects.
+     * @deny (create, update, delete) - Only admins can manage subjects.
+     * @principle Public read access with admin-only writes.
      */
     match /subjects/{subjectId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
       allow get, list: if true;
-      allow create: if false; // TODO: Add admin role check if needed.
-      allow update: if false; // TODO: Add admin role check if needed.
-      allow delete: if false; // TODO: Add admin role check if needed.
+      allow create: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Secures lessons. Only the student or teacher associated with the lesson can access it.
-     * @path /users/{userId}/lessons/{lessonId}
-     * @allow (create) - User with ID 'user123' can create a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
-     * @allow (get) - User with ID 'user123' can read a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
-     * @allow (update) - User with ID 'user123' can update a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
-     * @allow (delete) - User with ID 'user123' can delete a lesson under /users/user123/lessons/lesson1 if request.auth.uid == 'user123'.
-     * @deny (create) - User with ID 'user456' cannot create a lesson under /users/user123/lessons/lesson1.
-     * @deny (get) - User with ID 'user456' cannot read a lesson under /users/user123/lessons/lesson1.
-     * @deny (update) - User with ID 'user456' cannot update a lesson under /users/user123/lessons/lesson1.
-     * @deny (delete) - User with ID 'user456' cannot delete a lesson under /users/user123/lessons/lesson1.
-     * @principle Enforces document ownership for writes.
+     * @description Controls access to teacher profiles.
+     * @path /teacher_profiles/{teacherProfileId}
+     * @allow (create) - Any signed in user can create a teacher profile.
+     * @allow (get, update, delete) - Only the teacher who owns the profile or an admin can access and modify it.
+     * @deny (list) - Listing all teacher profiles is prohibited.
+     * @principle Enforces document ownership and restricts listing.
      */
-    match /users/{userId}/lessons/{lessonId} {
+    match /teacher_profiles/{teacherProfileId} {
       function isSignedIn() {
         return request.auth != null;
       }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isOwner(teacherProfileId) {
+        return request.auth.uid == resource.data.userId;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && (request.resource.data.studentId == userId || request.resource.data.teacherId == userId);
-      allow update: if isExistingOwner(userId) && (request.resource.data.studentId == resource.data.studentId) && (request.resource.data.teacherId == resource.data.teacherId);
-      allow delete: if isExistingOwner(userId);
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
+      function isExistingOwner(teacherProfileId) {
+          return isSignedIn() && isOwner(teacherProfileId);
+      }
+
+      allow get: if isSignedIn() && (isOwner(teacherProfileId) || isAdmin());
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isOwner(teacherProfileId) || isAdmin());
+      allow delete: if isSignedIn() && (isOwner(teacherProfileId) || isAdmin());
     }
 
     /**
-     * @description Allows public read access to payment packages. No write access for standard users.
-     * @path /paymentPackages/{paymentPackageId}
-     * @allow (get) - Any user can read any payment package.
-     * @allow (list) - Any user can list all payment packages.
-     * @deny (create) - No user can create a payment package. // TODO: Add admin role check if needed.
-     * @deny (update) - No user can update a payment package. // TODO: Add admin role check if needed.
-     * @deny (delete) - No user can delete a payment package. // TODO: Add admin role check if needed.
+     * @description Controls access to lessons associated with a specific student.
+     * @path /users/{studentId}/lessons/{lessonId}
+     * @allow (create, get, list, update, delete) - Only the student or an admin can manage their lessons.
+     * @principle Enforces document ownership via path and restricts access to the student and admins.
      */
-    match /paymentPackages/{paymentPackageId} {
+    match /users/{studentId}/lessons/{lessonId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+     function isOwner(studentId) {
+          return request.auth.uid == studentId;
+      }
+
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
+      function isExistingOwner(studentId) {
+          return isSignedIn() && isOwner(studentId);
+      }
+
+      allow get: if isSignedIn() && (isOwner(studentId) || isAdmin());
+      allow list: if isSignedIn() && (isOwner(studentId) || isAdmin());
+      allow create: if isSignedIn() && (isOwner(studentId) || isAdmin());
+      allow update: if isSignedIn() && (isOwner(studentId) || isAdmin());
+      allow delete: if isSignedIn() && (isOwner(studentId) || isAdmin());
+    }
+
+    /**
+     * @description Controls access to payment packages.
+     * @path /payment_packages/{paymentPackageId}
+     * @allow (get, list) - All users can view payment packages.
+     * @deny (create, update, delete) - Only admins can manage payment packages.
+     * @principle Public read access with admin-only writes.
+     */
+    match /payment_packages/{paymentPackageId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
       allow get, list: if true;
-      allow create: if false; // TODO: Add admin role check if needed.
-      allow update: if false; // TODO: Add admin role check if needed.
-      allow delete: if false; // TODO: Add admin role check if needed.
+      allow create: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Secures student purchases. Only the student (owner) can read, create, update, or delete their own purchases.
-     * @path /users/{userId}/studentPurchases/{studentPurchaseId}
-     * @allow (create) - User with ID 'student123' can create their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
-     * @allow (get) - User with ID 'student123' can read their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
-     * @allow (update) - User with ID 'student123' can update their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
-     * @allow (delete) - User with ID 'student123' can delete their own student purchase under /users/student123/studentPurchases/purchase1 if request.auth.uid == 'student123'.
-     * @deny (create) - User with ID 'teacher456' cannot create a student purchase under /users/student123/studentPurchases/purchase1.
-     * @deny (get) - User with ID 'teacher456' cannot read the student purchase under /users/student123/studentPurchases/purchase1.
-     * @deny (update) - User with ID 'teacher456' cannot update the student purchase under /users/student123/studentPurchases/purchase1.
-     * @deny (delete) - User with ID 'teacher456' cannot delete the student purchase under /users/student123/studentPurchases/purchase1.
-     * @principle Enforces document ownership for writes.
+     * @description Controls access to payment transactions made by a user.
+     * @path /users/{userId}/payment_transactions/{paymentTransactionId}
+     * @allow (create, get, list, update, delete) - Only the user or an admin can manage their payment transactions.
+     * @principle Enforces document ownership via path and restricts access to the user and admins.
      */
-    match /users/{userId}/studentPurchases/{studentPurchaseId} {
+    match /users/{userId}/payment_transactions/{paymentTransactionId} {
       function isSignedIn() {
         return request.auth != null;
       }
+
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isExistingOwner(userId);
+      function isExistingOwner(userId) {
+          return isSignedIn() && isOwner(userId);
+      }
+
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow update: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow delete: if isSignedIn() && (isOwner(userId) || isAdmin());
     }
 
     /**
-     * @description Secures session feedback. Only the student who participated in the lesson can provide feedback.
-     * @path /users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId}
-     * @allow (create) - User with ID 'student123' can create session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
-     * @allow (get) - User with ID 'student123' can read session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
-     * @allow (update) - User with ID 'student123' can update session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
-     * @allow (delete) - User with ID 'student123' can delete session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1 if request.auth.uid == 'student123'.
-     * @deny (create) - User with ID 'teacher456' cannot create session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
-     * @deny (get) - User with ID 'teacher456' cannot read session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
-     * @deny (update) - User with ID 'teacher456' cannot update session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
-     * @deny (delete) - User with ID 'teacher456' cannot delete session feedback under /users/student123/lessons/lesson1/sessionFeedback/feedback1.
-     * @principle Enforces document ownership for writes.
+     * @description Controls access to session feedback for a specific lesson.
+     * @path /lessons/{lessonId}/session_feedback/{sessionFeedbackId}
+     * @allow (create) - Any authenticated user can create session feedback.
+     * @allow (get, list) - Any authenticated user can read session feedback.
+     * @allow (update, delete) - Only admins can update or delete session feedback.
      */
-    match /users/{userId}/lessons/{lessonId}/sessionFeedback/{sessionFeedbackId} {
+    match /lessons/{lessonId}/session_feedback/{sessionFeedbackId} {
       function isSignedIn() {
         return request.auth != null;
       }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
   }
 }
