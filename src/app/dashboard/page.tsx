@@ -32,11 +32,11 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
-import { getMockUser, scheduleEvents, users, teachers as initialTeachers } from '@/lib/data';
+import { getMockUser, scheduleEvents as initialScheduleEvents, users, teachers as initialTeachers } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
-import { UserRole, User, Teacher } from '@/lib/types';
+import { UserRole, User, Teacher, ScheduleEvent } from '@/lib/types';
 import {
   Carousel,
   CarouselApi,
@@ -51,6 +51,8 @@ import { SubjectsChart } from '@/components/charts/subjects-chart';
 import { NewUsersChart } from '@/components/charts/new-users-chart';
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
+
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -59,14 +61,17 @@ export default function DashboardPage() {
   const [slideCount, setSlideCount] = useState(0);
   const [filter, setFilter] = useState('day');
   const [teacherCount, setTeacherCount] = useState(initialTeachers.length);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialScheduleEvents);
+
 
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setUser(getMockUser(role));
     }
-    
-    const updateTeacherCount = () => {
+
+    const updateData = () => {
+      // Update teacher count
       const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
       if (storedTeachers) {
         try {
@@ -79,14 +84,27 @@ export default function DashboardPage() {
       } else {
         setTeacherCount(initialTeachers.length);
       }
+
+      // Update schedule
+      const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      if (storedSchedule) {
+        const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
+          ...event,
+          start: new Date(event.start),
+          end: new Date(event.end),
+        }));
+        setScheduleEvents(parsedSchedule);
+      } else {
+        setScheduleEvents(initialScheduleEvents);
+      }
     };
     
-    updateTeacherCount(); // Initial count
+    updateData();
     
-    window.addEventListener('storage', updateTeacherCount); // Listen for changes
+    window.addEventListener('storage', updateData);
     
     return () => {
-        window.removeEventListener('storage', updateTeacherCount);
+        window.removeEventListener('storage', updateData);
     }
 
   }, []);
