@@ -29,8 +29,8 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole, User, NavItem, Teacher, ChatContact } from '@/lib/types';
-import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts } from '@/lib/data';
+import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion } from '@/lib/types';
+import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts, suggestions as initialSuggestions } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
@@ -38,6 +38,7 @@ import { Button } from './ui/button';
 const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const CHAT_CONTACTS_STORAGE_KEY = 'chatContacts';
+const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
@@ -48,6 +49,8 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems);
   const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
   const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [hasNewSuggestions, setHasNewSuggestions] = useState(false);
+
 
   const updateUserAndNotifications = useCallback(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -77,6 +80,16 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       const unread = contacts.some(c => c.unreadCount > 0);
       setHasNewMessages(unread);
 
+       // Check for new suggestions if user is admin
+      if (role === 'admin') {
+        const storedSuggestionsStr = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
+        const suggestions: Suggestion[] = storedSuggestionsStr ? JSON.parse(storedSuggestionsStr) : initialSuggestions;
+        const newSuggestions = suggestions.some(s => s.status === 'received');
+        setHasNewSuggestions(newSuggestions);
+      } else {
+        setHasNewSuggestions(false);
+      }
+
     } else {
       router.push('/login');
     }
@@ -86,7 +99,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === CHAT_CONTACTS_STORAGE_KEY) {
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === CHAT_CONTACTS_STORAGE_KEY || e.key === SUGGESTIONS_STORAGE_KEY) {
             updateUserAndNotifications();
         }
     };
@@ -218,10 +231,14 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     const isActive = pathname === item.href;
     const isDraggable = userRole === 'admin' && itemType && !isMobile;
     const isChat = item.href === '/dashboard/chat';
+    const isSuggestions = item.href === '/dashboard/suggestions';
 
     const handleLinkClick = () => {
       if (isChat) {
         setHasNewMessages(false);
+      }
+      if (isSuggestions) {
+        setHasNewSuggestions(false);
       }
     };
     
@@ -239,6 +256,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         <item.icon className="h-5 w-5" />
         <span className={'font-medium'}>{item.label}</span>
         {isChat && hasNewMessages && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
+        )}
+        {isSuggestions && hasNewSuggestions && userRole === 'admin' && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
         )}
       </div>
