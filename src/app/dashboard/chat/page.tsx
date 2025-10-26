@@ -242,13 +242,13 @@ export default function ChatPage() {
 
 
     return (
-        <div className="flex-1 flex flex-col p-0 -m-4 sm:-m-6" style={{
+        <div className="flex-1 flex flex-col h-[calc(100vh-12rem)]" style={{
             backgroundImage: "url('/chat-bg.png')",
             backgroundRepeat: 'repeat',
             backgroundSize: '300px',
           }}>
-            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[300px_1fr] gap-0 md:gap-px md:p-4 bg-transparent">
-                <Card className="flex flex-col rounded-none md:rounded-lg border-0 md:border">
+            <div className="grid h-full w-full grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[300px_1fr] gap-4">
+                <Card className="flex flex-col rounded-lg border h-full">
                     <div className="p-4 border-b">
                         <h2 className="font-headline text-xl font-bold">Conversas</h2>
                         <div className="relative mt-2">
@@ -297,7 +297,7 @@ export default function ChatPage() {
                 </Card>
 
                 { activeChatPartner ? (
-                    <Card className="flex flex-col h-full rounded-none md:rounded-lg border-0 md:border bg-transparent backdrop-blur-sm">
+                    <Card className="flex flex-col h-full rounded-lg border bg-transparent backdrop-blur-sm">
                         <div className="flex items-center gap-4 p-4 border-b bg-card">
                             <Avatar className="h-10 w-10">
                                 <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
@@ -386,7 +386,7 @@ export default function ChatPage() {
                         </div>
                     </Card>
                 ) : (
-                    <Card className="flex flex-col items-center justify-center h-full rounded-none md:rounded-lg border-0 md:border bg-card/80 backdrop-blur-sm">
+                    <Card className="flex flex-col items-center justify-center h-full rounded-lg border bg-card/80 backdrop-blur-sm">
                         <CardHeader className="text-center">
                             <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit">
                                 <MessageSquare className="h-10 w-10 text-primary" />
