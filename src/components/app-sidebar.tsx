@@ -34,6 +34,7 @@ import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdmin
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
+import { useResizablePanel } from './resizable-panel-provider';
 
 const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -51,6 +52,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [hasNewSuggestions, setHasNewSuggestions] = useState(false);
+  const { isCollapsed } = useResizablePanel();
 
 
   const updateUserAndNotifications = useCallback(() => {
@@ -234,7 +236,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   const renderLink = (item: NavItem, isLogout = false, itemType?: 'main' | 'admin') => {
     const isActive = pathname === item.href;
-    const isDraggable = userRole === 'admin' && itemType && !isMobile;
+    const isDraggable = userRole === 'admin' && itemType && !isMobile && !isCollapsed;
     const isChat = item.href === '/dashboard/chat';
     const isSuggestions = item.href === '/dashboard/suggestions';
 
@@ -256,11 +258,12 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
           isDraggable && 'cursor-grab',
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-            : 'text-sidebar-foreground/80 hover:text-primary-foreground hover:bg-sidebar-accent'
+            : 'text-sidebar-foreground/80 hover:text-primary-foreground hover:bg-sidebar-accent',
+          isCollapsed && 'justify-center'
         )}
       >
-        <item.icon className="h-5 w-5" />
-        <span className={'font-medium'}>{item.label}</span>
+        <item.icon className="h-5 w-5 shrink-0" />
+        <span className={cn('font-medium', isCollapsed && 'sr-only')}>{item.label}</span>
         {isChat && hasNewMessages && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
         )}
@@ -297,15 +300,19 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   };
 
   return (
-    <aside className={cn("flex h-full max-h-screen flex-col gap-2 w-full", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
-        <Link href="/dashboard/profile" className="block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors">
-          <div className="flex h-auto items-center p-4 lg:h-auto">
-              <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border-2 border-primary">
+    <aside className={cn(
+        "flex h-full max-h-screen flex-col gap-2 w-full group", 
+        isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground',
+        isCollapsed && 'is-collapsed'
+    )}>
+        <Link href="/dashboard/profile" className={cn("block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors", isCollapsed && "py-4")}>
+          <div className="flex h-auto items-center p-4 lg:h-auto justify-center">
+              <div className={cn("flex items-center gap-3", isCollapsed && 'flex-col')}>
+                  <Avatar className={cn("h-12 w-12 border-2 border-primary", isCollapsed && "h-10 w-10")}>
                       <AvatarImage src={user.avatarUrl} alt={user.name} />
                       <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <div className='flex flex-col'>
+                  <div className={cn('flex flex-col', isCollapsed && 'hidden')}>
                       <span className="font-semibold text-lg text-sidebar-foreground">{user.name}</span>
                       <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role]}</span>
                   </div>

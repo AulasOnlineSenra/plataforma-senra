@@ -12,6 +12,8 @@ interface ResizablePanelContextProps {
   sidebarWidth: number;
   setSidebarWidth: (width: number) => void;
   handleMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
+  isCollapsed: boolean;
+  toggleCollapse: () => void;
 }
 
 const ResizablePanelContext = createContext<ResizablePanelContextProps | undefined>(undefined);
@@ -19,10 +21,15 @@ const ResizablePanelContext = createContext<ResizablePanelContextProps | undefin
 export const ResizablePanelProvider = ({ children }: { children: ReactNode }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
+  }, []);
+
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
   }, []);
 
   const value = useMemo(() => ({
@@ -32,8 +39,10 @@ export const ResizablePanelProvider = ({ children }: { children: ReactNode }) =>
     setSidebarWidth: (width: number) => {
         setSidebarWidth(Math.max(SIDEBAR_MIN_WIDTH, Math.min(width, SIDEBAR_MAX_WIDTH)));
     },
-    handleMouseDown
-  }), [isDragging, sidebarWidth, handleMouseDown]);
+    handleMouseDown,
+    isCollapsed,
+    toggleCollapse
+  }), [isDragging, sidebarWidth, handleMouseDown, isCollapsed, toggleCollapse]);
 
   return (
     <ResizablePanelContext.Provider value={value}>
