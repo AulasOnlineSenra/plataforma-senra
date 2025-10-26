@@ -94,10 +94,11 @@ const TrelloIcon = () => (
 );
 
 const NotionIcon = () => (
-  <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375A.375.375 0 0 0 19.125 3h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h3.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375-.375h-3.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375z"/>
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+        <path d="M1.75,2.75H13a.75.75,0,0,1,.75.75V15.19l-3.32-3.32a.75.75,0,0,0-1.06,1.06l4.5,4.5a.75.75,0,0,0,1.06,0l4.5-4.5a.75.75,0,0,0-1.06-1.06L14.5,15.19V3.5a2.25,2.25,0,0,0-2.25-2.25H1.75a.75.75,0,0,0-.75.75v18.5a.75.75,0,0,0,.75.75h11.5a.75.75,0,0,0,0-1.5H2.5v-17Z" />
+    </svg>
 );
+
 
 
 function ProfilePageComponent() {
@@ -185,19 +186,21 @@ function ProfilePageComponent() {
      const handleSaveAddress = (field: string, value: string) => {
         if (!profileUser) return;
         const currentAddress = profileUser.address || {};
-        // Correctly merge the new field into the existing address object
         const updatedAddress = { ...currentAddress, [field]: value };
         handleSave('address', updatedAddress);
     };
 
     const handleCepSave = async (cep: string) => {
-        handleSaveAddress('zipCode', cep);
-
+        if (!profileUser) return;
+    
         const cepOnlyNumbers = cep.replace(/\D/g, '');
+        let updatedAddress = { ...(profileUser.address || {}), zipCode: cep };
+    
         if (cepOnlyNumbers.length !== 8) {
-            return; // Not a valid CEP, do nothing
+            handleSave('address', updatedAddress);
+            return;
         }
-
+    
         try {
             const response = await fetch(`https://viacep.com.br/ws/${cepOnlyNumbers}/json/`);
             if (!response.ok) throw new Error('Network response was not ok.');
@@ -209,29 +212,31 @@ function ProfilePageComponent() {
                     title: "CEP não encontrado",
                     description: "Por favor, verifique o CEP e tente novamente.",
                 });
+                handleSave('address', updatedAddress); // Save the zip code anyway
                 return;
             }
-
-            if (data.uf) {
-                handleSaveAddress('state', data.uf);
-            }
-            if (data.bairro) {
-                handleSaveAddress('neighborhood', data.bairro);
-            }
-            if (data.logradouro) {
-                handleSaveAddress('street', data.logradouro);
-            }
-             toast({
+    
+            updatedAddress = {
+                ...updatedAddress,
+                state: data.uf || '',
+                neighborhood: data.bairro || '',
+                street: data.logradouro || '',
+            };
+    
+            handleSave('address', updatedAddress);
+    
+            toast({
                 title: 'Endereço Preenchido!',
                 description: 'Os dados do endereço foram preenchidos automaticamente.',
             });
-
+    
         } catch (error) {
-             toast({
+            toast({
                 variant: "destructive",
                 title: "Erro ao buscar CEP",
                 description: "Não foi possível buscar as informações do endereço. Tente novamente mais tarde.",
             });
+            handleSave('address', updatedAddress); // Save the zip code anyway
             console.error("Failed to fetch CEP:", error);
         }
     };
@@ -526,5 +531,7 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
+
+    
 
     
