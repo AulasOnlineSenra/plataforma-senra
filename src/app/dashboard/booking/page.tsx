@@ -51,7 +51,7 @@ function BookingPageComponent() {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
-  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(teacherIdParam || undefined);
+  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(teacherIdParam ?? undefined);
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
@@ -109,22 +109,15 @@ function BookingPageComponent() {
     if (!selectedSubject) {
       return teachers;
     }
-    const teacherIdsForSubject = teachers
-        .filter(t => t.subjects.includes(selectedSubject))
-        .map(t => t.id);
-
-    return teachers.filter(t => teacherIdsForSubject.includes(t.id));
+    return teachers.filter(t => t.subjects.includes(selectedSubject));
   }, [selectedSubject, teachers]);
-
+  
   const availableSubjects = useMemo(() => {
     if (!selectedTeacher) {
       return subjects;
     }
     const teacher = teachers.find(t => t.id === selectedTeacher);
-    if (!teacher) {
-      return subjects;
-    }
-    return subjects.filter(s => teacher.subjects.includes(s.id));
+    return teacher ? subjects.filter(s => teacher.subjects.includes(s.id)) : [];
   }, [selectedTeacher, teachers]);
 
   useEffect(() => {
@@ -138,12 +131,12 @@ function BookingPageComponent() {
 
   useEffect(() => {
     if (selectedSubject) {
-        const teacherIds = teachers.filter(t => t.subjects.includes(selectedSubject)).map(t => t.id);
-        if (selectedTeacher && !teacherIds.includes(selectedTeacher)) {
+        if (selectedTeacher && !availableTeachers.some(t => t.id === selectedTeacher)) {
             setSelectedTeacher(undefined);
         }
     }
-  }, [selectedSubject, selectedTeacher, teachers]);
+  }, [selectedSubject, selectedTeacher, availableTeachers]);
+
 
   const handleSubjectChange = (subjectId: string) => {
     if (selectedSubject === subjectId) {
