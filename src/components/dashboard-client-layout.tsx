@@ -9,14 +9,10 @@ import {
 } from '@/components/ui/resizable';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Header } from '@/components/header';
-import { useResizablePanel } from '@/components/resizable-panel-provider';
+import { useResizablePanel, ResizablePanelProvider } from '@/components/resizable-panel-provider';
 import { cn } from '@/lib/utils';
 
-export function DashboardClientLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, toggleCollapse } = useResizablePanel();
 
   return (
@@ -54,5 +50,17 @@ export function DashboardClientLayout({
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>
+  );
+}
+
+export function DashboardClientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ResizablePanelProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </ResizablePanelProvider>
   );
 }
