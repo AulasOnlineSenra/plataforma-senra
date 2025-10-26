@@ -39,6 +39,7 @@ const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const CHAT_CONTACTS_STORAGE_KEY = 'chatContacts';
 const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
+const LAST_SUGGESTIONS_VIEW_KEY = 'lastSuggestionsViewTimestamp';
 
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
@@ -83,8 +84,12 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
        // Check for new suggestions if user is admin
       if (role === 'admin') {
         const storedSuggestionsStr = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
-        const suggestions: Suggestion[] = storedSuggestionsStr ? JSON.parse(storedSuggestionsStr) : initialSuggestions;
-        const newSuggestions = suggestions.some(s => s.status === 'received');
+        const suggestions: Suggestion[] = storedSuggestionsStr ? JSON.parse(storedSuggestionsStr).map((s: any) => ({...s, timestamp: new Date(s.timestamp)})) : initialSuggestions;
+        
+        const lastViewTimestamp = localStorage.getItem(LAST_SUGGESTIONS_VIEW_KEY);
+        const lastViewDate = lastViewTimestamp ? new Date(parseInt(lastViewTimestamp)) : new Date(0);
+
+        const newSuggestions = suggestions.some(s => s.status === 'received' && s.timestamp > lastViewDate);
         setHasNewSuggestions(newSuggestions);
       } else {
         setHasNewSuggestions(false);
@@ -99,7 +104,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === CHAT_CONTACTS_STORAGE_KEY || e.key === SUGGESTIONS_STORAGE_KEY) {
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === CHAT_CONTACTS_STORAGE_KEY || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY) {
             updateUserAndNotifications();
         }
     };
@@ -237,8 +242,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       if (isChat) {
         setHasNewMessages(false);
       }
-      if (isSuggestions) {
-        setHasNewSuggestions(false);
+      if (isSuggestions && userRole === 'admin') {
+        localStorage.setItem(LAST_SUGGESTIONS_VIEW_KEY, Date.now().toString());
+        setHasNewSuggestions(false); // Optimistically update UI
       }
     };
     
