@@ -107,52 +107,23 @@ function BookingPageComponent() {
 
   const availableTeachers = useMemo(() => {
     if (!selectedSubject) {
-      return teachers;
+      return [];
     }
     return teachers.filter(t => t.subjects.includes(selectedSubject));
   }, [selectedSubject, teachers]);
-  
-  const availableSubjects = useMemo(() => {
-    if (!selectedTeacher) {
-      return subjects;
-    }
-    const teacher = teachers.find(t => t.id === selectedTeacher);
-    return teacher ? subjects.filter(s => teacher.subjects.includes(s.id)) : [];
-  }, [selectedTeacher, teachers]);
-
-  useEffect(() => {
-    if (selectedTeacher) {
-        const teacher = teachers.find(t => t.id === selectedTeacher);
-        if (teacher && selectedSubject && !teacher.subjects.includes(selectedSubject)) {
-            setSelectedSubject(undefined);
-        }
-    }
-  }, [selectedTeacher, selectedSubject, teachers]);
-
-  useEffect(() => {
-    if (selectedSubject) {
-        if (selectedTeacher && !availableTeachers.some(t => t.id === selectedTeacher)) {
-            setSelectedTeacher(undefined);
-        }
-    }
-  }, [selectedSubject, selectedTeacher, availableTeachers]);
-
 
   const handleSubjectChange = (subjectId: string) => {
     if (selectedSubject === subjectId) {
       setSelectedSubject(undefined);
+      setSelectedTeacher(undefined);
     } else {
       setSelectedSubject(subjectId);
+      setSelectedTeacher(undefined); // Reset teacher when subject changes
     }
   };
 
   const handleTeacherChange = (teacherId: string) => {
-    if (selectedTeacher === teacherId) {
-      setSelectedTeacher(undefined);
-      setSelectedSubject(undefined); // Clear subject when teacher is deselected
-    } else {
-      setSelectedTeacher(teacherId);
-    }
+    setSelectedTeacher(teacherId);
   };
 
   const handleClearSelections = () => {
@@ -440,7 +411,7 @@ function BookingPageComponent() {
                   <SelectValue placeholder="Escolha uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableSubjects.map((subject) => (
+                  {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       {subject.name}
                     </SelectItem>
@@ -453,6 +424,7 @@ function BookingPageComponent() {
               <Select
                 value={selectedTeacher}
                 onValueChange={handleTeacherChange}
+                disabled={!selectedSubject}
               >
                 <SelectTrigger id="teacher">
                   <SelectValue placeholder="Escolha um(a) professor(a)" />
