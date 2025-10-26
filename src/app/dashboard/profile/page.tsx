@@ -38,6 +38,7 @@ import { EditableTextarea } from '@/components/editable-textarea';
 import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -94,7 +95,7 @@ const TrelloIcon = () => (
 
 const NotionIcon = () => (
     <svg role="img" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375A.375.375 0 0 0 19.125 3h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h3.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-3.75a.375.375 0 0 1-.375-.375V3.375A.375.375 0 0 1 11.625 3z" />
+        <path d="M22.5 3.375a.375.375 0 0 0-.375.375v16.5a.375.375 0 0 0 .375.375h.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375h-.75zM19.5 3.375a.375.375 0 0 0-0.375-.375h-3.75a.375.375 0 0 0-.375.375v16.875a.375.375 0 0 0 .375.375h3.75a.375.375 0 0 0 .375-.375V3.75a.375.375 0 0 0-.375-.375zM.375 3.375h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375H.375a.375.375 0 0 1-.375-.375V3.75A.375.375 0 0 1 .375 3.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375.375h-.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375zm3.75 0h3.75a.375.375 0 0 1 .375.375v16.875a.375.375 0 0 1-.375-.375h-3.75a.375.375 0 0 1-.375-.375V3.75a.375.375 0 0 1 .375-.375z"/>
     </svg>
 );
 
@@ -312,11 +313,13 @@ function ProfilePageComponent() {
                             </CardContent>
                              <CardContent className="grid gap-6 border-t pt-6">
                                 <h3 className="font-semibold">Disponibilidade Semanal</h3>
-                                <AvailabilityManager
-                                    availability={teacherProfile.availability || {}}
-                                    onSave={(day, time, checked) => handleAvailabilityChange(day, time, checked)}
-                                    canEdit={canEdit}
-                                 />
+                                { teacherProfile.availability &&
+                                    <AvailabilityManager
+                                        availability={teacherProfile.availability || {}}
+                                        onSave={(day, time, checked) => handleAvailabilityChange(day, time, checked)}
+                                        canEdit={canEdit}
+                                    />
+                                }
                             </CardContent>
                         </CollapsibleCard>
                     </>
