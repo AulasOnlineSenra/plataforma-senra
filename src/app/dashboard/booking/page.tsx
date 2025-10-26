@@ -156,6 +156,7 @@ function BookingPageComponent() {
   const handleTeacherChange = (teacherId: string) => {
     if (selectedTeacher === teacherId) {
       setSelectedTeacher(undefined);
+      setSelectedSubject(undefined); // Clear subject when teacher is deselected
     } else {
       setSelectedTeacher(teacherId);
     }
@@ -685,7 +686,3 @@ export default function BookingPage() {
         </Suspense>
     );
 }
-
-    
-
-    
