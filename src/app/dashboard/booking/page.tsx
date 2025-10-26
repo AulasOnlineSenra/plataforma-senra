@@ -153,6 +153,14 @@ function BookingPageComponent() {
     }
   };
 
+  const handleTeacherChange = (teacherId: string) => {
+    if (selectedTeacher === teacherId) {
+      setSelectedTeacher(undefined);
+    } else {
+      setSelectedTeacher(teacherId);
+    }
+  };
+
   const handleClearSelections = () => {
     setSelectedSubject(undefined);
     setSelectedTeacher(undefined);
@@ -450,7 +458,7 @@ function BookingPageComponent() {
               <Label htmlFor="teacher">Professor(a)</Label>
               <Select
                 value={selectedTeacher}
-                onValueChange={setSelectedTeacher}
+                onValueChange={handleTeacherChange}
               >
                 <SelectTrigger id="teacher">
                   <SelectValue placeholder="Escolha um(a) professor(a)" />
