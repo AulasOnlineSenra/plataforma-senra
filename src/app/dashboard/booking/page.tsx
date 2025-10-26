@@ -107,22 +107,24 @@ function BookingPageComponent() {
 
   const availableTeachers = useMemo(() => {
     if (!selectedSubject) {
-      return [];
+      return teachers;
     }
-    return teachers.filter(t => t.subjects.includes(selectedSubject));
+    return teachers.filter((t) => t.subjects.includes(selectedSubject));
   }, [selectedSubject, teachers]);
 
   const handleSubjectChange = (subjectId: string) => {
     if (selectedSubject === subjectId) {
       setSelectedSubject(undefined);
-      setSelectedTeacher(undefined);
     } else {
       setSelectedSubject(subjectId);
-      setSelectedTeacher(undefined); // Reset teacher when subject changes
     }
   };
 
   const handleTeacherChange = (teacherId: string) => {
+    if (selectedTeacher === teacherId) {
+        setSelectedTeacher(undefined);
+        return;
+    }
     setSelectedTeacher(teacherId);
   };
 
