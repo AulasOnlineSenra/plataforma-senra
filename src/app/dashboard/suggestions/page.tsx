@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getMockUser, suggestions as initialSuggestions, users } from '@/lib/data';
 import { User, UserRole, Suggestion } from '@/lib/types';
-import { Bug, Lightbulb, Send, Check, X, Archive, Filter } from 'lucide-react';
+import { Bug, Lightbulb, Send, Check, X, Archive, Filter, Trash2, RotateCcw } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -36,6 +36,17 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 
@@ -218,7 +229,14 @@ const UserSuggestionsView = ({ user, suggestions, onNewSuggestion }: { user: Use
 const AdminSuggestionsView = () => {
   const [allSuggestions, setAllSuggestions] = useState<Suggestion[]>([]);
   const [filter, setFilter] = useState<Suggestion['status'] | 'all'>('all');
+  const [suggestionToDelete, setSuggestionToDelete] = useState<Suggestion | null>(null);
   const { toast } = useToast();
+  
+  const roleLabels: Record<UserRole, string> = {
+    admin: 'Admin',
+    student: 'Aluno',
+    teacher: 'Professor',
+  };
   
   useEffect(() => {
     const updateSuggestions = () => {
@@ -260,6 +278,27 @@ const AdminSuggestionsView = () => {
     });
   };
 
+  const handleDeleteClick = (suggestion: Suggestion) => {
+    setSuggestionToDelete(suggestion);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (!suggestionToDelete) return;
+
+    const updatedSuggestions = allSuggestions.filter(s => s.id !== suggestionToDelete.id);
+    setAllSuggestions(updatedSuggestions);
+    localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(updatedSuggestions));
+    window.dispatchEvent(new Event('storage'));
+
+    toast({
+      variant: 'destructive',
+      title: 'Sugestão Excluída',
+      description: 'A sugestão foi removida permanentemente.',
+    });
+    setSuggestionToDelete(null);
+  };
+
+
   const incomingSuggestions = useMemo(() => {
     return allSuggestions.filter(s => s.status === 'received').sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [allSuggestions]);
@@ -276,6 +315,7 @@ const AdminSuggestionsView = () => {
 
 
   return (
+    <>
     <div className="grid gap-6">
        <Card>
           <CardHeader>
@@ -301,7 +341,7 @@ const AdminSuggestionsView = () => {
               <TableBody>
                 {incomingSuggestions.map(suggestion => (
                   <TableRow key={suggestion.id}>
-                    <TableCell className="font-medium">{suggestion.submittedBy} ({suggestion.userRole})</TableCell>
+                    <TableCell className="font-medium">{suggestion.submittedBy} ({roleLabels[suggestion.userRole] || suggestion.userRole})</TableCell>
                     <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
                      <TableCell className="text-muted-foreground">
                       {format(suggestion.timestamp, 'dd/MM/yyyy')}
@@ -359,18 +399,19 @@ const AdminSuggestionsView = () => {
               <TableRow>
                 <TableHead className="w-[200px]">Enviado por</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead className="w-[120px]">Data de Envio</TableHead>
-                <TableHead className="w-[150px]">Data da Avaliação</TableHead>
-                <TableHead className="w-[150px] text-right">Status</TableHead>
+                <TableHead className="w-[110px]">Data de Envio</TableHead>
+                <TableHead className="w-[120px]">Data da Avaliação</TableHead>
+                <TableHead className="w-[120px] text-center">Status</TableHead>
+                <TableHead className="w-[100px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {processedSuggestions.map((suggestion) => (
                 <TableRow key={suggestion.id}>
                   <TableCell className="font-medium">
-                    {suggestion.submittedBy} ({suggestion.userRole})
+                    {suggestion.submittedBy} ({roleLabels[suggestion.userRole] || suggestion.userRole})
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">
+                  <TableCell className="max-w-[300px] truncate">
                     {suggestion.content}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -381,13 +422,23 @@ const AdminSuggestionsView = () => {
                       ? format(suggestion.evaluationDate, 'dd/MM/yyyy')
                       : '-'}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     <Badge
                       variant={statusVariants[suggestion.status]}
-                      className={cn('justify-end', statusColors[suggestion.status])}
+                      className={cn(statusColors[suggestion.status])}
                     >
                       {statusLabels[suggestion.status]}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" title="Mover para Caixa de Entrada" onClick={() => handleUpdateStatus(suggestion.id, 'received')}>
+                            <RotateCcw className="h-4 w-4 text-blue-600"/>
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Excluir Permanentemente" onClick={() => handleDeleteClick(suggestion)}>
+                            <Trash2 className="h-4 w-4 text-red-600"/>
+                        </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -403,6 +454,23 @@ const AdminSuggestionsView = () => {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!suggestionToDelete} onOpenChange={() => setSuggestionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A sugestão será excluída permanentemente e não poderá ser recuperada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
