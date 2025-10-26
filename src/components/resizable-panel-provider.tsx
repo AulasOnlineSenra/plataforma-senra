@@ -21,7 +21,7 @@ interface ResizablePanelContextProps {
 
 const ResizablePanelContext = createContext<ResizablePanelContextProps | undefined>(undefined);
 
-const ResizablePanelProvider = ({ children }: { children: ReactNode }) => {
+export const ResizablePanelProvider = ({ children }: { children: ReactNode }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -67,16 +67,10 @@ const ResizablePanelProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-const useResizablePanel = () => {
+export const useResizablePanel = () => {
   const context = useContext(ResizablePanelContext);
   if (!context) {
     throw new Error('useResizablePanel must be used within a ResizablePanelProvider');
   }
   return context;
 };
-
-// Expose the provider component as a property of the hook
-useResizablePanel.Provider = ResizablePanelProvider;
-
-
-export { useResizablePanel };
