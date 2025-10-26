@@ -243,7 +243,7 @@ export default function ChatPage() {
 
     return (
       <div className="flex h-[calc(100vh-8rem)] flex-col">
-        <div className="grid h-full w-full grid-cols-1 md:grid-cols-[320px_1fr] gap-4">
+        <div className="grid h-full w-full grid-cols-1 md:grid-cols-[380px_1fr] gap-4">
             <Card className="flex flex-col rounded-lg border h-full">
                 <div className="p-4 border-b">
                     <h2 className="font-headline text-xl font-bold">Conversas</h2>
@@ -293,7 +293,7 @@ export default function ChatPage() {
             </Card>
 
             { activeChatPartner ? (
-                <Card className="flex flex-col h-full rounded-lg border bg-transparent backdrop-blur-sm" style={{
+                <Card className="flex flex-col h-full rounded-lg border bg-card" style={{
                     backgroundImage: "url('/chat-bg.png')",
                     backgroundRepeat: 'repeat',
                     backgroundSize: '300px',
@@ -445,4 +445,5 @@ export default function ChatPage() {
 
 }
 
+    
     
