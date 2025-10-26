@@ -142,6 +142,16 @@ export default function DashboardPage() {
     .filter((e) => e.status === 'scheduled' && e.start > new Date())
     .sort((a, b) => a.start.getTime() - b.start.getTime())
     .slice(0, 3);
+
+  const userScheduledClasses = useMemo(() => {
+    if (!user) return 0;
+    
+    const filterField = user.role === 'teacher' ? 'teacherId' : 'studentId';
+
+    return scheduleEvents.filter(
+      (e) => e[filterField] === user.id && e.status === 'scheduled'
+    ).length;
+  }, [user, scheduleEvents]);
     
   if (!user) {
     return null; // Or a loading spinner
@@ -327,17 +337,7 @@ export default function DashboardPage() {
     </>
   );
 
-  const renderStudentTeacherDashboard = () => {
-    const userScheduledClasses = useMemo(() => {
-      if (!user) return 0;
-      
-      const filterField = user.role === 'teacher' ? 'teacherId' : 'studentId';
-
-      return scheduleEvents.filter(
-        (e) => e[filterField] === user.id && e.status === 'scheduled'
-      ).length;
-    }, [user, scheduleEvents]);
-
+  const renderStudentTeacherDashboard = (scheduledClasses: number) => {
     return (
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
@@ -347,7 +347,7 @@ export default function DashboardPage() {
               <CalendarCheck className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{userScheduledClasses}</div>
+              <div className="text-2xl font-bold">{scheduledClasses}</div>
               <p className="text-xs text-muted-foreground">+2 na última semana</p>
             </CardContent>
           </Card>
@@ -480,9 +480,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
+      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard(userScheduledClasses)}
     </div>
   );
 }
-
-    
