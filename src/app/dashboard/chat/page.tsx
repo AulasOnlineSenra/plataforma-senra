@@ -180,59 +180,49 @@ export default function ChatPage() {
         setAllMessages(updatedMessages);
         localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
         
-        // Helper to update or create a contact in the list
-        const updateContactList = (
-            contacts: ChatContact[],
-            userId: string, // The user whose contact list we are updating
-            partnerId: string, // The other user in the conversation
+        // This is complex because we need to update the contact list for BOTH users.
+        // In a real app, this would happen on the backend. Here we simulate it.
+        const allCurrentContactsStr = localStorage.getItem('chatContacts');
+        const allCurrentContacts: ChatContact[] = allCurrentContactsStr 
+            ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+            : initialChatContacts;
+
+        const updateUserContacts = (
+            userIdToUpdate: string,
+            partnerId: string,
             message: ChatMessage
-        ) => {
+        ): ChatContact[] => {
+            let contacts = allCurrentContacts.filter(c => c.id !== partnerId); // Remove existing partner contact to re-insert at top
             const partnerDetails = getContactDetails(partnerId);
             if (!partnerDetails) return contacts;
 
-            let updatedContacts = [...contacts];
-            const existingContactIndex = updatedContacts.findIndex(c => c.id === partnerId);
+            const isReceiver = message.receiverId === userIdToUpdate;
+            const existingContact = allCurrentContacts.find(c => c.id === partnerId);
             
-            const isReceiver = message.receiverId === userId;
+            const newContactEntry: ChatContact = {
+                id: partnerDetails.id,
+                name: partnerDetails.name,
+                avatarUrl: partnerDetails.avatarUrl,
+                lastMessage: message.content,
+                lastMessageTimestamp: message.timestamp,
+                unreadCount: isReceiver ? (existingContact?.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
+            };
 
-            if (existingContactIndex > -1) {
-                // Update existing contact
-                const existingContact = updatedContacts[existingContactIndex];
-                updatedContacts[existingContactIndex] = {
-                    ...existingContact,
-                    lastMessage: message.content,
-                    lastMessageTimestamp: message.timestamp,
-                    unreadCount: isReceiver ? (existingContact.unreadCount || 0) + 1 : 0
-                };
-                 // Move the updated contact to the top
-                const [updatedItem] = updatedContacts.splice(existingContactIndex, 1);
-                updatedContacts.unshift(updatedItem);
+            return [newContactEntry, ...contacts];
+        };
 
-            } else {
-                 // Add new contact to the top
-                 updatedContacts.unshift({
-                    id: partnerDetails.id,
-                    name: partnerDetails.name,
-                    avatarUrl: partnerDetails.avatarUrl,
-                    lastMessage: message.content,
-                    lastMessageTimestamp: message.timestamp,
-                    unreadCount: isReceiver ? 1 : 0,
-                 });
-            }
-            return updatedContacts;
-        }
+        // Update my contact list
+        const myUpdatedContacts = updateUserContacts(currentUser.id, activeChatPartner.id, newMessage);
+
+        // Update partner's contact list
+        const partnerUpdatedContacts = updateUserContacts(activeChatPartner.id, currentUser.id, newMessage);
+
+        // This is still a simulation. In a real app, you wouldn't merge lists like this.
+        // For this prototype, we'll merge them, assuming the user's view is primary.
+        const finalContacts = Array.from(new Map([...myUpdatedContacts, ...partnerUpdatedContacts].map(item => [item.id, item])).values());
         
-        // This is complex because we need to update the contact list for BOTH users.
-        // In a real app, this would happen on the backend. Here we simulate it.
-        let allCurrentContacts = JSON.parse(localStorage.getItem('chatContacts') || JSON.stringify(initialChatContacts));
-        
-        // Update contact list for the current user
-        let myContacts = updateContactList(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
-        // Update contact list for the partner
-        let partnerContacts = updateContactList(myContacts, activeChatPartner.id, currentUser.id, newMessage);
-
-        setChatContacts(partnerContacts); // Update state to trigger re-render
-        localStorage.setItem('chatContacts', JSON.stringify(partnerContacts));
+        setChatContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+        localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
 
         window.dispatchEvent(new Event('storage'));
         setMessageContent('');
@@ -252,8 +242,12 @@ export default function ChatPage() {
 
 
     return (
-        <div className="flex-1 flex flex-col bg-gradient-to-br from-background to-accent/20 p-0 -m-4 sm:-m-6">
-            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-0 md:gap-px md:p-4">
+        <div className="flex-1 flex flex-col p-0 -m-4 sm:-m-6" style={{
+            backgroundImage: "url('/chat-bg.png')",
+            backgroundRepeat: 'repeat',
+            backgroundSize: '300px',
+          }}>
+            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-0 md:gap-px md:p-4 bg-transparent">
                 <Card className="flex flex-col rounded-none md:rounded-lg border-0 md:border">
                     <div className="p-4 border-b">
                         <h2 className="font-headline text-xl font-bold">Conversas</h2>
@@ -303,8 +297,8 @@ export default function ChatPage() {
                 </Card>
 
                 { activeChatPartner ? (
-                    <Card className="flex flex-col h-full rounded-none md:rounded-lg border-0 md:border">
-                        <div className="flex items-center gap-4 p-4 border-b">
+                    <Card className="flex flex-col h-full rounded-none md:rounded-lg border-0 md:border bg-transparent backdrop-blur-sm">
+                        <div className="flex items-center gap-4 p-4 border-b bg-card">
                             <Avatar className="h-10 w-10">
                                 <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
                                 <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
@@ -354,7 +348,7 @@ export default function ChatPage() {
                             ))}
                             </div>
                         </ScrollArea>
-                        <div className="p-4 border-t bg-card/50">
+                        <div className="p-4 border-t bg-card">
                             {scheduledDateTime && (
                                 <div className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md mb-2 text-sm">
                                     <div className="flex items-center gap-2">
@@ -392,7 +386,7 @@ export default function ChatPage() {
                         </div>
                     </Card>
                 ) : (
-                    <Card className="flex flex-col items-center justify-center h-full rounded-none md:rounded-lg border-0 md:border">
+                    <Card className="flex flex-col items-center justify-center h-full rounded-none md:rounded-lg border-0 md:border bg-card/80 backdrop-blur-sm">
                         <CardHeader className="text-center">
                             <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit">
                                 <MessageSquare className="h-10 w-10 text-primary" />
@@ -453,6 +447,4 @@ export default function ChatPage() {
 
 }
 
-    
-
-    
+  
