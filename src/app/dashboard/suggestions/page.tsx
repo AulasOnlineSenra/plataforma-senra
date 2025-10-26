@@ -41,7 +41,7 @@ const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 
 
 const statusLabels: Record<Suggestion['status'], string> = {
-  received: 'Recebida',
+  received: 'Enviada',
   rejected: 'Rejeitada',
   implemented: 'Implementada',
 };
