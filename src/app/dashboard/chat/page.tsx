@@ -98,7 +98,7 @@ export default function ChatPage() {
             scrollableNode.scrollTop = scrollableNode.scrollHeight;
           }
         }
-    }, [activeChatPartner]);
+    }, [activeChatPartner, allMessages]);
 
 
     const getContactDetails = (contactId: string) => {
@@ -190,42 +190,48 @@ export default function ChatPage() {
             const partnerDetails = getContactDetails(partnerId);
             if (!partnerDetails) return contacts;
 
-            const existingContactIndex = contacts.findIndex(c => c.id === partnerId);
             let updatedContacts = [...contacts];
+            const existingContactIndex = updatedContacts.findIndex(c => c.id === partnerId);
+            
+            const isReceiver = message.receiverId === userId;
 
             if (existingContactIndex > -1) {
                 // Update existing contact
+                const existingContact = updatedContacts[existingContactIndex];
                 updatedContacts[existingContactIndex] = {
-                    ...updatedContacts[existingContactIndex],
+                    ...existingContact,
                     lastMessage: message.content,
                     lastMessageTimestamp: message.timestamp,
-                    unreadCount: message.receiverId === userId ? (updatedContacts[existingContactIndex].unreadCount || 0) + 1 : 0
+                    unreadCount: isReceiver ? (existingContact.unreadCount || 0) + 1 : 0
                 };
+                 // Move the updated contact to the top
+                const [updatedItem] = updatedContacts.splice(existingContactIndex, 1);
+                updatedContacts.unshift(updatedItem);
+
             } else {
-                 // Add new contact
-                 updatedContacts.push({
+                 // Add new contact to the top
+                 updatedContacts.unshift({
                     id: partnerDetails.id,
                     name: partnerDetails.name,
                     avatarUrl: partnerDetails.avatarUrl,
                     lastMessage: message.content,
                     lastMessageTimestamp: message.timestamp,
-                    unreadCount: message.receiverId === userId ? 1 : 0,
+                    unreadCount: isReceiver ? 1 : 0,
                  });
             }
-             // Sort by most recent message
-            return updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+            return updatedContacts;
         }
         
         // This is complex because we need to update the contact list for BOTH users.
         // In a real app, this would happen on the backend. Here we simulate it.
-        let allCurrentContacts = JSON.parse(localStorage.getItem('chatContacts') || '[]');
+        let allCurrentContacts = JSON.parse(localStorage.getItem('chatContacts') || JSON.stringify(initialChatContacts));
         
         // Update contact list for the current user
         let myContacts = updateContactList(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
         // Update contact list for the partner
         let partnerContacts = updateContactList(myContacts, activeChatPartner.id, currentUser.id, newMessage);
 
-        setChatContacts(partnerContacts);
+        setChatContacts(partnerContacts); // Update state to trigger re-render
         localStorage.setItem('chatContacts', JSON.stringify(partnerContacts));
 
         window.dispatchEvent(new Event('storage'));
@@ -446,5 +452,7 @@ export default function ChatPage() {
     )
 
 }
+
+    
 
     
