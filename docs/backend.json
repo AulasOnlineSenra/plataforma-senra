@@ -4,29 +4,29 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the Aulas Online Senra platform.",
+      "description": "Representa um usuário da plataforma Aulas Online Senra.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user entity."
+          "description": "Identificador único para a entidade do usuário."
         },
         "email": {
           "type": "string",
-          "description": "Email address of the user.",
+          "description": "Endereço de e-mail do usuário.",
           "format": "email"
         },
         "name": {
           "type": "string",
-          "description": "Full name of the user."
+          "description": "Nome completo do usuário."
         },
         "photoUrl": {
           "type": "string",
-          "description": "URL of the user's profile photo.",
+          "description": "URL da foto de perfil do usuário.",
           "format": "uri"
         },
         "role": {
           "type": "string",
-          "description": "Role of the user (e.g., admin, student, teacher).",
+          "description": "Papel do usuário (ex: admin, aluno, professor).",
           "format": "string"
         }
       },
@@ -41,19 +41,19 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subject",
       "type": "object",
-      "description": "Represents a subject or discipline offered on the platform.",
+      "description": "Representa uma matéria ou disciplina oferecida na plataforma.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the subject entity."
+          "description": "Identificador único para a entidade da matéria."
         },
         "name": {
           "type": "string",
-          "description": "Name of the subject."
+          "description": "Nome da matéria."
         },
         "description": {
           "type": "string",
-          "description": "Description of the subject."
+          "description": "Descrição da matéria."
         }
       },
       "required": [
@@ -65,35 +65,35 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TeacherProfile",
       "type": "object",
-      "description": "Represents the profile information for a teacher.",
+      "description": "Representa as informações de perfil de um professor.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the teacher profile entity."
+          "description": "Identificador único para a entidade de perfil do professor."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 TeacherProfile)"
+          "description": "Referência ao Usuário. (Relação: Usuário 1:1 PerfilProfessor)"
         },
         "subjectId": {
           "type": "string",
-          "description": "Reference to Subject. (Relationship: Subject 1:N TeacherProfile)"
+          "description": "Referência à Matéria. (Relação: Matéria 1:N PerfilProfessor)"
         },
         "description": {
           "type": "string",
-          "description": "Description of the teacher's background and expertise."
+          "description": "Descrição da formação e especialização do professor."
         },
         "formation": {
           "type": "string",
-          "description": "Teacher's educational background."
+          "description": "Formação acadêmica do professor."
         },
         "age": {
           "type": "number",
-          "description": "Teacher's age."
+          "description": "Idade do professor."
         },
         "availability": {
           "type": "array",
-          "description": "Available time slots for the teacher.",
+          "description": "Horários disponíveis para o professor.",
           "items": {
             "type": "string"
           }
@@ -109,37 +109,37 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Lesson",
       "type": "object",
-      "description": "Represents a scheduled lesson.",
+      "description": "Representa uma aula agendada.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the lesson entity."
+          "description": "Identificador único para a entidade da aula."
         },
         "studentId": {
           "type": "string",
-          "description": "Reference to User (student). (Relationship: User 1:N Lesson)"
+          "description": "Referência ao Usuário (aluno). (Relação: Usuário 1:N Aula)"
         },
         "teacherId": {
           "type": "string",
-          "description": "Reference to TeacherProfile. (Relationship: TeacherProfile 1:N Lesson)"
+          "description": "Referência ao PerfilProfessor. (Relação: PerfilProfessor 1:N Aula)"
         },
         "subjectId": {
           "type": "string",
-          "description": "Reference to Subject. (Relationship: Subject 1:N Lesson)"
+          "description": "Referência à Matéria. (Relação: Matéria 1:N Aula)"
         },
         "startTime": {
           "type": "string",
-          "description": "Start time of the lesson.",
+          "description": "Horário de início da aula.",
           "format": "date-time"
         },
         "endTime": {
           "type": "string",
-          "description": "End time of the lesson.",
+          "description": "Horário de término da aula.",
           "format": "date-time"
         },
         "status": {
           "type": "string",
-          "description": "Status of the lesson (e.g., scheduled, completed, cancelled)."
+          "description": "Status da aula (ex: agendada, concluída, cancelada)."
         }
       },
       "required": [
@@ -156,23 +156,23 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "PaymentPackage",
       "type": "object",
-      "description": "Represents a package of lessons that can be purchased.",
+      "description": "Representa um pacote de aulas que pode ser comprado.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the payment package entity."
+          "description": "Identificador único para a entidade do pacote de pagamento."
         },
         "name": {
           "type": "string",
-          "description": "Name of the payment package (e.g., 4 lessons, 8 lessons)."
+          "description": "Nome do pacote de pagamento (ex: 4 aulas, 8 aulas)."
         },
         "numberOfLessons": {
           "type": "number",
-          "description": "Number of lessons included in the package."
+          "description": "Número de aulas incluídas no pacote."
         },
         "price": {
           "type": "number",
-          "description": "Price of the payment package."
+          "description": "Preço do pacote de pagamento."
         }
       },
       "required": [
@@ -186,36 +186,36 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "PaymentTransaction",
       "type": "object",
-      "description": "Represents a payment transaction made by a user.",
+      "description": "Representa uma transação de pagamento feita por um usuário.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the payment transaction entity."
+          "description": "Identificador único para a entidade da transação de pagamento."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N PaymentTransaction)"
+          "description": "Referência ao Usuário. (Relação: Usuário 1:N TransacaoPagamento)"
         },
         "packageId": {
           "type": "string",
-          "description": "Reference to PaymentPackage. (Relationship: PaymentPackage 1:N PaymentTransaction)"
+          "description": "Referência ao PacotePagamento. (Relação: PacotePagamento 1:N TransacaoPagamento)"
         },
         "transactionDate": {
           "type": "string",
-          "description": "Date and time of the transaction.",
+          "description": "Data e hora da transação.",
           "format": "date-time"
         },
         "amount": {
           "type": "number",
-          "description": "Amount paid in the transaction."
+          "description": "Valor pago na transação."
         },
         "paymentMethod": {
           "type": "string",
-          "description": "Payment method used (e.g., PayPal, Mercado Pago)."
+          "description": "Método de pagamento usado (ex: PayPal, Mercado Pago)."
         },
         "status": {
           "type": "string",
-          "description": "Status of the transaction (e.g., completed, pending, failed)."
+          "description": "Status da transação (ex: concluída, pendente, falha)."
         }
       },
       "required": [
@@ -232,27 +232,27 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SessionFeedback",
       "type": "object",
-      "description": "Represents feedback provided by a student after a lesson session.",
+      "description": "Representa o feedback fornecido por um aluno após uma sessão de aula.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the session feedback entity."
+          "description": "Identificador único para a entidade de feedback da sessão."
         },
         "lessonId": {
           "type": "string",
-          "description": "Reference to Lesson. (Relationship: Lesson 1:1 SessionFeedback)"
+          "description": "Referência à Aula. (Relação: Aula 1:1 FeedbackSessao)"
         },
         "rating": {
           "type": "number",
-          "description": "Rating given by the student (e.g., 1-5 stars)."
+          "description": "Avaliação dada pelo aluno (ex: 1-5 estrelas)."
         },
         "comments": {
           "type": "string",
-          "description": "Additional comments provided by the student."
+          "description": "Comentários adicionais fornecidos pelo aluno."
         },
         "feedbackDate": {
           "type": "string",
-          "description": "Date and time when the feedback was submitted.",
+          "description": "Data e hora em que o feedback foi enviado.",
           "format": "date-time"
         }
       },
@@ -279,11 +279,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profiles.  Accessible by the user and administrators.",
+          "description": "Armazena perfis de usuário. Acessível pelo usuário e administradores.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "O identificador único do usuário."
             }
           ]
         }
@@ -295,11 +295,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Documents in this collection grant admin privileges to the corresponding user ID. Existence of a document grants admin access.",
+          "description": "Documentos nesta coleção concedem privilégios de administrador ao ID de usuário correspondente. A existência de um documento concede acesso de administrador.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the administrator user."
+              "description": "O identificador único do usuário administrador."
             }
           ]
         }
@@ -311,11 +311,11 @@
           "schema": {
             "$ref": "#/backend/entities/Subject"
           },
-          "description": "Stores information about subjects offered on the platform.",
+          "description": "Armazena informações sobre as matérias oferecidas na plataforma.",
           "params": [
             {
               "name": "subjectId",
-              "description": "The unique identifier of the subject."
+              "description": "O identificador único da matéria."
             }
           ]
         }
@@ -327,11 +327,11 @@
           "schema": {
             "$ref": "#/backend/entities/TeacherProfile"
           },
-          "description": "Stores teacher profiles. Each profile contains information about the teacher, including the subjects they teach.",
+          "description": "Armazena perfis de professores. Cada perfil contém informações sobre o professor, incluindo as matérias que eles ensinam.",
           "params": [
             {
               "name": "teacherProfileId",
-              "description": "The unique identifier of the teacher profile."
+              "description": "O identificador único do perfil do professor."
             }
           ]
         }
@@ -343,15 +343,15 @@
           "schema": {
             "$ref": "#/backend/entities/Lesson"
           },
-          "description": "Stores lessons associated with a specific student. Includes studentId as part of the path to enforce ownership and authorization independence.",
+          "description": "Armazena aulas associadas a um aluno específico. Inclui studentId como parte do caminho para reforçar a posse e a independência de autorização.",
           "params": [
             {
               "name": "studentId",
-              "description": "The unique identifier of the student."
+              "description": "O identificador único do aluno."
             },
             {
               "name": "lessonId",
-              "description": "The unique identifier of the lesson."
+              "description": "O identificador único da aula."
             }
           ]
         }
@@ -363,11 +363,11 @@
           "schema": {
             "$ref": "#/backend/entities/PaymentPackage"
           },
-          "description": "Stores information about payment packages that students can purchase.",
+          "description": "Armazena informações sobre os pacotes de pagamento que os alunos podem comprar.",
           "params": [
             {
               "name": "paymentPackageId",
-              "description": "The unique identifier of the payment package."
+              "description": "O identificador único do pacote de pagamento."
             }
           ]
         }
@@ -379,15 +379,15 @@
           "schema": {
             "$ref": "#/backend/entities/PaymentTransaction"
           },
-          "description": "Stores payment transactions made by a user. Includes userId in the path to enforce ownership.",
+          "description": "Armazena transações de pagamento feitas por um usuário. Inclui userId no caminho para reforçar a posse.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "O identificador único do usuário."
             },
             {
               "name": "paymentTransactionId",
-              "description": "The unique identifier of the payment transaction."
+              "description": "O identificador único da transação de pagamento."
             }
           ]
         }
@@ -399,20 +399,20 @@
           "schema": {
             "$ref": "#/backend/entities/SessionFeedback"
           },
-          "description": "Stores session feedback for a specific lesson. While this could be nested under the user, keeping it separate allows listing all feedback more easily.",
+          "description": "Armazena o feedback da sessão para uma aula específica. Embora isso possa ser aninhado sob o usuário, mantê-lo separado permite listar todos os feedbacks mais facilmente.",
           "params": [
             {
               "name": "lessonId",
-              "description": "The unique identifier of the lesson."
+              "description": "O identificador único da aula."
             },
             {
               "name": "sessionFeedbackId",
-              "description": "The unique identifier of the session feedback."
+              "description": "O identificador único do feedback da sessão."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Aulas Online Senra application, focusing on user management, scheduling, payments, and feedback.  The structure emphasizes Authorization Independence by denormalizing data where necessary, particularly for collaborative data.  It is also structured to be very explicit, enhancing debuggability and maintainability. Segregation is used to keep documents of different authorization requirements separate.\n\nAuthorization Independence is primarily achieved through path-based ownership for user-specific data and the Membership Map pattern for collaborative scenarios (though no collaborative collections were explicitly requested).  For instance, lessons are stored under the student's user ID, ensuring only the student (and admins) can access them directly. Teacher profiles are stored under the teacher's user ID. This eliminates the need for `get()` calls in security rules to verify ownership.\n\nThe structure supports the required QAPs (Rules are not Filters) through structural segregation. User-specific data is stored under their respective user IDs, which enables secure `list` operations. Admins require special handling; they are given explicit access via a global roles collection, `roles_admin`.  This allows listing all items within a collection. For collaborative features, a membership map (`members`) would be denormalized to support QAPs.\n\nExplicit state modeling uses a `status` field for entities like `Lesson` and `PaymentTransaction` for clarity.  Predictable schema avoids dynamic keys and enforces consistent naming conventions, such as always using `userId` for user references. Wildcards are descriptive, like `{userId}` and `{lessonId}`."
+    "reasoning": "A estrutura do Firestore é projetada para suportar a aplicação Aulas Online Senra, focando em gerenciamento de usuários, agendamento, pagamentos e feedback. A estrutura enfatiza a Independência de Autorização desnormalizando dados onde necessário, particularmente para dados colaborativos. Ela também é estruturada para ser muito explícita, melhorando a depuração e a manutenibilidade. A segregação é usada para manter documentos com diferentes requisitos de autorização separados.\n\nA Independência de Autorização é alcançada principalmente através da posse baseada em caminho para dados específicos do usuário e do padrão de Mapa de Associação para cenários colaborativos (embora nenhuma coleção colaborativa tenha sido explicitamente solicitada). Por exemplo, as aulas são armazenadas sob o ID de usuário do aluno, garantindo que apenas o aluno (e administradores) possam acessá-las diretamente. Os perfis dos professores são armazenados sob o ID de usuário do professor. Isso elimina a necessidade de chamadas `get()` nas regras de segurança para verificar a posse.\n\nA estrutura suporta os QAPs necessários (Regras não são Filtros) através da segregação estrutural. Dados específicos do usuário são armazenados sob seus respectivos IDs de usuário, o que permite operações `list` seguras. Administradores requerem tratamento especial; eles recebem acesso explícito por meio de uma coleção de papéis global, `roles_admin`. Isso permite listar todos os itens dentro de uma coleção. Para recursos colaborativos, um mapa de associação (`members`) seria desnormalizado para suportar QAPs.\n\nA modelagem de estado explícita usa um campo `status` para entidades como `Lesson` e `PaymentTransaction` para clareza. O esquema previsível evita chaves dinâmicas e impõe convenções de nomenclatura consistentes, como sempre usar `userId` para referências de usuário. Os curingas são descritivos, como `{userId}` e `{lessonId}`."
   }
 }

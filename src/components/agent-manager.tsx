@@ -86,7 +86,7 @@ export function AgentManager() {
       });
       setAnalysisResult(result.analysis);
     } catch (error) {
-      console.error('Error running agent:', error);
+      console.error('Erro ao executar o agente:', error);
       toast({
         variant: 'destructive',
         title: 'Erro ao Executar Agente',

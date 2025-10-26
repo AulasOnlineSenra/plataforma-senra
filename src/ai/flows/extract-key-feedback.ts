@@ -1,11 +1,11 @@
 'use server';
 
 /**
- * @fileOverview Extracts frequent positive and negative keywords from student feedback on professor sessions.
+ * @fileOverview Extrai palavras-chave frequentes, positivas e negativas, do feedback dos alunos sobre as sessões dos professores.
  *
- * - extractKeyFeedback - A function that handles the extraction of key feedback from student reviews.
- * - ExtractKeyFeedbackInput - The input type for the extractKeyFeedback function.
- * - ExtractKeyFeedbackOutput - The return type for the extractKeyFeedback function.
+ * - extractKeyFeedback - Uma função que lida com a extração de feedback chave das avaliações dos alunos.
+ * - ExtractKeyFeedbackInput - O tipo de entrada para a função extractKeyFeedback.
+ * - ExtractKeyFeedbackOutput - O tipo de retorno para a função extractKeyFeedback.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,17 +14,17 @@ import {z} from 'genkit';
 const ExtractKeyFeedbackInputSchema = z.object({
   feedbackText: z
     .string()
-    .describe('The text of the student feedback on a professor session.'),
+    .describe('O texto do feedback do aluno sobre uma sessão de um professor.'),
 });
 export type ExtractKeyFeedbackInput = z.infer<typeof ExtractKeyFeedbackInputSchema>;
 
 const ExtractKeyFeedbackOutputSchema = z.object({
   positiveKeywords: z
     .string()
-    .describe('Keywords that frequently appear in positive feedback.'),
+    .describe('Palavras-chave que aparecem frequentemente em feedback positivo.'),
   negativeKeywords: z
     .string()
-    .describe('Keywords that frequently appear in negative feedback.'),
+    .describe('Palavras-chave que aparecem frequentemente em feedback negativo.'),
 });
 export type ExtractKeyFeedbackOutput = z.infer<typeof ExtractKeyFeedbackOutputSchema>;
 
@@ -36,11 +36,11 @@ const prompt = ai.definePrompt({
   name: 'extractKeyFeedbackPrompt',
   input: {schema: ExtractKeyFeedbackInputSchema},
   output: {schema: ExtractKeyFeedbackOutputSchema},
-  prompt: `You are an AI assistant designed to extract key feedback from student reviews about professor sessions.
+  prompt: `Você é um assistente de IA projetado para extrair feedback chave de avaliações de alunos sobre sessões de professores.
 
-  Analyze the provided feedback text and identify the most frequent positive and negative keywords. Return these keywords in the specified JSON format.
+  Analise o texto de feedback fornecido e identifique as palavras-chave positivas e negativas mais frequentes. Retorne essas palavras-chave no formato JSON especificado.
 
-  Feedback Text: {{{feedbackText}}}
+  Texto do Feedback: {{{feedbackText}}}
   `,
 });
 

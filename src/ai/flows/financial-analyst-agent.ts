@@ -1,26 +1,26 @@
 'use server';
 
 /**
- * @fileOverview A financial analyst AI agent for the Aulas Online Senra platform.
+ * @fileOverview Um agente de IA analista financeiro para a plataforma Aulas Online Senra.
  *
- * - financialAnalystAgent - A function that handles financial analysis based on user prompts.
- * - FinancialAnalystAgentInput - The input type for the financialAnalystAgent function.
- * - FinancialAnalystAgentOutput - The return type for the financialAnalystAgent function.
+ * - financialAnalystAgent - Uma função que lida com a análise financeira com base nas solicitações do usuário.
+ * - FinancialAnalystAgentInput - O tipo de entrada para a função financialAnalystAgent.
+ * - FinancialAnalystAgentOutput - O tipo de retorno para a função financialAnalystAgent.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const FinancialAnalystAgentInputSchema = z.object({
-  prompt: z.string().describe('The user\'s request for financial analysis.'),
-  // In a real scenario, you would pass real-time financial data here.
-  // For this prototype, we'll use a simplified data structure.
-  financialData: z.string().describe('A summary of the platform\'s financial data in JSON format.'),
+  prompt: z.string().describe('A solicitação do usuário para análise financeira.'),
+  // Em um cenário real, você passaria dados financeiros em tempo real aqui.
+  // Para este protótipo, usaremos uma estrutura de dados simplificada.
+  financialData: z.string().describe('Um resumo dos dados financeiros da plataforma em formato JSON.'),
 });
 export type FinancialAnalystAgentInput = z.infer<typeof FinancialAnalystAgentInputSchema>;
 
 const FinancialAnalystAgentOutputSchema = z.object({
-  analysis: z.string().describe('The AI\'s analysis and response to the user\'s prompt.'),
+  analysis: z.string().describe('A análise e resposta da IA à solicitação do usuário.'),
 });
 export type FinancialAnalystAgentOutput = z.infer<typeof FinancialAnalystAgentOutputSchema>;
 
@@ -32,17 +32,17 @@ const prompt = ai.definePrompt({
   name: 'financialAnalystAgentPrompt',
   input: { schema: FinancialAnalystAgentInputSchema },
   output: { schema: FinancialAnalystAgentOutputSchema },
-  prompt: `You are a financial analyst agent for an online tutoring platform called "Aulas Online Senra".
-Your task is to analyze the provided financial data and answer the user's prompt.
-Provide a clear, concise, and helpful analysis.
+  prompt: `Você é um agente analista financeiro para uma plataforma de tutoria online chamada "Aulas Online Senra".
+Sua tarefa é analisar os dados financeiros fornecidos e responder à solicitação do usuário.
+Forneça uma análise clara, concisa e útil.
 
-Financial Data (JSON):
+Dados Financeiros (JSON):
 {{{financialData}}}
 
-User's Request:
+Solicitação do Usuário:
 "{{{prompt}}}"
 
-Based on the data, provide your analysis below:
+Com base nos dados, forneça sua análise abaixo:
 `,
 });
 
