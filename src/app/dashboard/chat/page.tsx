@@ -330,7 +330,7 @@ export default function ChatPage() {
                                                 </Avatar>
                                             )}
                                             <div className={cn(
-                                                "max-w-xs lg:max-w-md rounded-lg p-3 text-sm flex flex-col shadow",
+                                                "max-w-[75%] md:max-w-[60%] rounded-lg p-3 text-sm flex flex-col shadow",
                                                 message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
                                             )}>
                                                 <p className="break-words whitespace-pre-wrap">{message.content}</p>
@@ -448,5 +448,7 @@ export default function ChatPage() {
 }
 
   
+
+    
 
     
