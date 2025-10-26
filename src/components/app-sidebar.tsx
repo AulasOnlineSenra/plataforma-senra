@@ -45,6 +45,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [user, setUser] = useState<User | null>(null);
   const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems);
   const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
+  const [hasNewMessages, setHasNewMessages] = useState(true);
 
   const updateUser = useCallback(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -213,11 +214,18 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const renderLink = (item: NavItem, isLogout = false, itemType?: 'main' | 'admin') => {
     const isActive = pathname === item.href;
     const isDraggable = userRole === 'admin' && itemType && !isMobile;
+    const isChat = item.href === '/dashboard/chat';
+
+    const handleLinkClick = () => {
+      if (isChat) {
+        setHasNewMessages(false);
+      }
+    };
     
     const LinkContent = (
       <div
         className={cn(
-          'flex items-center gap-4 rounded-lg px-3 py-2 transition-all',
+          'relative flex items-center gap-4 rounded-lg px-3 py-2 transition-all',
           'text-base group',
           isDraggable && 'cursor-grab',
           isActive
@@ -227,6 +235,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       >
         <item.icon className="h-5 w-5" />
         <span className={'font-medium'}>{item.label}</span>
+        {isChat && hasNewMessages && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
+        )}
       </div>
     );
 
@@ -246,7 +257,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
                 {LinkContent}
             </button>
         ) : (
-             <Link href={item.href} onDragStart={(e) => e.preventDefault()} draggable={false}>
+             <Link href={item.href} onClick={handleLinkClick} onDragStart={(e) => e.preventDefault()} draggable={false}>
               {LinkContent}
             </Link>
         )}
