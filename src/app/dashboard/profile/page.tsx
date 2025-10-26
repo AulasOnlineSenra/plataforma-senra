@@ -331,13 +331,15 @@ function ProfilePageComponent() {
                     </CardContent>
                 </CollapsibleCard>
 
-                 <CollapsibleCard title="Formação Acadêmica" description="Seu histórico educacional e qualificações." icon={BookUser}>
-                     <EducationManager
-                        initialEntries={profileUser.education || []}
-                        onSave={handleSaveEducation}
-                        canEdit={canEdit}
-                    />
-                </CollapsibleCard>
+                {profileUser.role !== 'student' && (
+                    <CollapsibleCard title="Formação Acadêmica" description="Seu histórico educacional e qualificações." icon={BookUser}>
+                        <EducationManager
+                            initialEntries={profileUser.education || []}
+                            onSave={handleSaveEducation}
+                            canEdit={canEdit}
+                        />
+                    </CollapsibleCard>
+                )}
 
                 {/* Teacher-specific cards */}
                 {isTeacher && teacherProfile && (
