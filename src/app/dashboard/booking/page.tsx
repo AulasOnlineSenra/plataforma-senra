@@ -105,6 +105,13 @@ function BookingPageComponent() {
     return () => window.removeEventListener('storage', updateData);
   }, [studentId]);
 
+  const availableTeachers = useMemo(() => {
+    if (!selectedSubject) {
+      return teachers;
+    }
+    return teachers.filter(t => t.subjects.includes(selectedSubject));
+  }, [selectedSubject, teachers]);
+
   const availableSubjects = useMemo(() => {
     if (!selectedTeacher) {
       return subjects;
@@ -119,13 +126,15 @@ function BookingPageComponent() {
   useEffect(() => {
     if (selectedSubject && !availableSubjects.some(s => s.id === selectedSubject)) {
       setSelectedSubject(undefined);
-      toast({
-        variant: 'destructive',
-        title: 'Disciplina redefinida',
-        description: 'A disciplina que você selecionou não é lecionada por este professor e foi removida.',
-      });
     }
-  }, [selectedSubject, availableSubjects, toast]);
+  }, [selectedSubject, availableSubjects]);
+
+  useEffect(() => {
+    if (selectedTeacher && !availableTeachers.some(t => t.id === selectedTeacher)) {
+      setSelectedTeacher(undefined);
+    }
+  }, [selectedTeacher, availableTeachers]);
+
 
   const handleClearSelections = () => {
     setSelectedSubject(undefined);
@@ -403,7 +412,25 @@ function BookingPageComponent() {
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-6">
             <div className="grid gap-2">
-              <Label htmlFor="teacher">Professor(a) de Preferência</Label>
+              <Label htmlFor="subject">Disciplina</Label>
+              <Select
+                value={selectedSubject}
+                onValueChange={setSelectedSubject}
+              >
+                <SelectTrigger id="subject">
+                  <SelectValue placeholder="Escolha uma disciplina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="teacher">Professor(a)</Label>
               <Select
                 value={selectedTeacher}
                 onValueChange={setSelectedTeacher}
@@ -412,7 +439,7 @@ function BookingPageComponent() {
                   <SelectValue placeholder="Escolha um(a) professor(a)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers.map((teacher) => (
+                  {availableTeachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -426,25 +453,6 @@ function BookingPageComponent() {
                         </Avatar>
                         <span>{teacher.name}</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="subject">Disciplina</Label>
-              <Select
-                value={selectedSubject}
-                onValueChange={setSelectedSubject}
-                disabled={!selectedTeacher}
-              >
-                <SelectTrigger id="subject">
-                  <SelectValue placeholder="Escolha uma disciplina" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSubjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -652,3 +660,5 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
