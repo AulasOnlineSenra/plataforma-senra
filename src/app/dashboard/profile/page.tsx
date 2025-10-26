@@ -188,6 +188,52 @@ function ProfilePageComponent() {
         handleSave('address', updatedAddress);
     };
 
+    const handleCepSave = async (cep: string) => {
+        handleSaveAddress('zipCode', cep);
+
+        const cepOnlyNumbers = cep.replace(/\D/g, '');
+        if (cepOnlyNumbers.length !== 8) {
+            return; // Not a valid CEP, do nothing
+        }
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cepOnlyNumbers}/json/`);
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const data = await response.json();
+            
+            if (data.erro) {
+                toast({
+                    variant: "destructive",
+                    title: "CEP não encontrado",
+                    description: "Por favor, verifique o CEP e tente novamente.",
+                });
+                return;
+            }
+
+            if (data.uf) {
+                handleSaveAddress('state', data.uf);
+            }
+            if (data.bairro) {
+                handleSaveAddress('neighborhood', data.bairro);
+            }
+            if (data.logradouro) {
+                handleSaveAddress('street', data.logradouro);
+            }
+             toast({
+                title: 'Endereço Preenchido!',
+                description: 'O estado e o bairro foram preenchidos automaticamente.',
+            });
+
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "Erro ao buscar CEP",
+                description: "Não foi possível buscar as informações do endereço. Tente novamente mais tarde.",
+            });
+            console.error("Failed to fetch CEP:", error);
+        }
+    };
+
     if (!profileUser) {
         return <div>Carregando perfil...</div>;
     }
@@ -270,7 +316,7 @@ function ProfilePageComponent() {
                         <EditableInput label="Data de Nascimento" value={profileUser.birthDate || ''} onSave={(v) => handleSave('birthDate', v)} canEdit={canEdit} type="date"/>
                     </CardContent>
                      <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 border-t pt-6">
-                        <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} placeholder="00000-000" onSave={(v) => handleSaveAddress('zipCode', v)} canEdit={canEdit} />
+                        <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} placeholder="00000-000" onSave={(v) => handleCepSave(v)} canEdit={canEdit} />
                         <EditableInput label="Estado" value={profileUser.address?.state || ''} placeholder="Ex: SP" onSave={(v) => handleSaveAddress('state', v)} canEdit={canEdit} />
                         <EditableInput label="Bairro" value={profileUser.address?.neighborhood || ''} placeholder="Ex: Centro" onSave={(v) => handleSaveAddress('neighborhood', v)} canEdit={canEdit} />
                         <EditableInput label="Rua" value={profileUser.address?.street || ''} placeholder="Ex: Rua Principal" onSave={(v) => handleSaveAddress('street', v)} canEdit={canEdit} className="lg:col-span-2" />
@@ -313,7 +359,7 @@ function ProfilePageComponent() {
                             </CardContent>
                              <CardContent className="grid gap-6 border-t pt-6">
                                 <h3 className="font-semibold">Disponibilidade Semanal</h3>
-                                { teacherProfile.availability &&
+                                { teacherProfile &&
                                     <AvailabilityManager
                                         availability={teacherProfile.availability || {}}
                                         onSave={(day, time, checked) => handleAvailabilityChange(day, time, checked)}
