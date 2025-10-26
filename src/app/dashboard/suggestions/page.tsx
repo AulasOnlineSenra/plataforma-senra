@@ -411,21 +411,24 @@ export default function SuggestionsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
+  const updateSuggestions = () => {
+    const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
+    if (storedSuggestions) {
+        const parsed = JSON.parse(storedSuggestions).map((s: any) => ({ ...s, timestamp: new Date(s.timestamp) }));
+        setSuggestions(parsed);
+    } else {
+        setSuggestions(initialSuggestions);
+    }
+  }
+
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
       setCurrentUser(getMockUser(role));
     }
     
-    const updateSuggestions = () => {
-        const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
-        if (storedSuggestions) {
-            setSuggestions(JSON.parse(storedSuggestions).map((s: any) => ({ ...s, timestamp: new Date(s.timestamp) })));
-        } else {
-            setSuggestions(initialSuggestions);
-        }
-    }
     updateSuggestions();
+
     window.addEventListener('storage', updateSuggestions);
     return () => window.removeEventListener('storage', updateSuggestions);
 
