@@ -39,6 +39,26 @@ import { cn } from '@/lib/utils';
 
 const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 
+
+const statusLabels: Record<Suggestion['status'], string> = {
+  received: 'Recebida',
+  rejected: 'Rejeitada',
+  implemented: 'Implementada',
+};
+
+const statusVariants: Record<Suggestion['status'], 'default' | 'destructive' | 'secondary'> = {
+  received: 'default',
+  rejected: 'destructive',
+  implemented: 'secondary',
+};
+
+const statusColors: Record<Suggestion['status'], string> = {
+  received: 'bg-blue-100 text-blue-800',
+  rejected: 'bg-red-100 text-red-800',
+  implemented: 'bg-green-100 text-green-800',
+};
+
+
 const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion: (newSuggestion: Suggestion) => void }) => {
   const [type, setType] = useState<'bug' | 'suggestion'>('suggestion');
   const [content, setContent] = useState('');
@@ -132,6 +152,69 @@ const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion
   );
 };
 
+const UserSuggestionsHistory = ({ user, allSuggestions }: { user: User; allSuggestions: Suggestion[] }) => {
+  const mySuggestions = useMemo(() => {
+    return allSuggestions
+      .filter(s => s.submittedBy === user.name) // Simple name check for prototype
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [user, allSuggestions]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Seu Histórico de Feedback</CardTitle>
+        <CardDescription>Acompanhe o status das suas sugestões e reports.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Descrição</TableHead>
+              <TableHead className="w-[120px]">Data</TableHead>
+              <TableHead className="w-[150px] text-right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {mySuggestions.length > 0 ? (
+              mySuggestions.map(suggestion => (
+                <TableRow key={suggestion.id}>
+                  <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
+                  <TableCell className="text-muted-foreground">{format(suggestion.timestamp, 'dd/MM/yyyy')}</TableCell>
+                  <TableCell className="text-right">
+                     <Badge
+                        variant={statusVariants[suggestion.status]}
+                        className={cn('justify-end', statusColors[suggestion.status])}
+                      >
+                        {statusLabels[suggestion.status]}
+                      </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={3} className="h-24 text-center">
+                  Você ainda não enviou nenhum feedback.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+};
+
+
+const UserSuggestionsView = ({ user, suggestions, onNewSuggestion }: { user: User, suggestions: Suggestion[], onNewSuggestion: (s: Suggestion) => void }) => {
+  return (
+    <div className="grid gap-6">
+      <SuggestionForm user={user} onNewSuggestion={onNewSuggestion} />
+      <UserSuggestionsHistory user={user} allSuggestions={suggestions} />
+    </div>
+  );
+};
+
+
 const AdminSuggestionsView = () => {
   const [allSuggestions, setAllSuggestions] = useState<Suggestion[]>([]);
   const [filter, setFilter] = useState<Suggestion['status'] | 'all'>('all');
@@ -190,25 +273,6 @@ const AdminSuggestionsView = () => {
     }
     return filtered.filter((s) => s.status === filter).sort((a,b) => (b.evaluationDate || 0).valueOf() - (a.evaluationDate || 0).valueOf());
   }, [filter, allSuggestions]);
-
-
-  const statusLabels: Record<Suggestion['status'], string> = {
-    received: 'Recebida',
-    rejected: 'Rejeitada',
-    implemented: 'Implementada',
-  };
-
-  const statusVariants: Record<Suggestion['status'], 'default' | 'destructive' | 'secondary'> = {
-    received: 'default',
-    rejected: 'destructive',
-    implemented: 'secondary',
-  };
-  
-   const statusColors: Record<Suggestion['status'], string> = {
-    received: 'bg-blue-100 text-blue-800',
-    rejected: 'bg-red-100 text-red-800',
-    implemented: 'bg-green-100 text-green-800',
-  };
 
 
   return (
@@ -388,8 +452,14 @@ export default function SuggestionsPage() {
       {currentUser.role === 'admin' ? (
         <AdminSuggestionsView />
       ) : (
-        <SuggestionForm user={currentUser} onNewSuggestion={handleNewSuggestion} />
+        <UserSuggestionsView 
+            user={currentUser} 
+            suggestions={suggestions} 
+            onNewSuggestion={handleNewSuggestion} 
+        />
       )}
     </div>
   );
 }
+
+    
