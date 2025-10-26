@@ -189,7 +189,7 @@ export default function SchedulePage() {
 
     const updatedEvents = events.map(e =>
       e.id === editingEvent.id
-        ? { ...e, start: updatedStartDate, end: updatedEndDate }
+        ? { ...e, start: updatedStartDate, end: updatedEndDate, status: 'scheduled' as 'scheduled' }
         : e
     );
     setEvents(updatedEvents);
@@ -387,7 +387,8 @@ export default function SchedulePage() {
                   <TableHead>Professor(a)</TableHead>
                   <TableHead>Aluno(a)</TableHead>
                   <TableHead>Disciplina</TableHead>
-                  <TableHead className="text-right">Data Original</TableHead>
+                  <TableHead>Data Original</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -400,15 +401,21 @@ export default function SchedulePage() {
                         <TableCell>{teacher?.name || 'N/A'}</TableCell>
                         <TableCell>{student?.name || 'N/A'}</TableCell>
                         <TableCell className="font-medium">{event.subject}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-muted-foreground">
                           {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" onClick={() => handleEditClick(event)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Remarcar
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       Nenhuma aula foi cancelada.
                     </TableCell>
                   </TableRow>
@@ -473,5 +480,3 @@ export default function SchedulePage() {
     </>
   );
 }
-
-    
