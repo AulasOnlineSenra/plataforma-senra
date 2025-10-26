@@ -242,7 +242,8 @@ export default function ChatPage() {
 
 
     return (
-        <div className="grid h-[calc(100vh-12rem)] w-full grid-cols-1 md:grid-cols-[1fr_2fr] gap-4">
+      <div className="flex h-[calc(100vh-8rem)] flex-col">
+        <div className="grid h-full w-full grid-cols-1 md:grid-cols-[320px_1fr] gap-4">
             <Card className="flex flex-col rounded-lg border h-full">
                 <div className="p-4 border-b">
                     <h2 className="font-headline text-xl font-bold">Conversas</h2>
@@ -276,7 +277,7 @@ export default function ChatPage() {
                                           <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
                                         </div>
                                         <p className="text-xs text-muted-foreground shrink-0 pt-1">
-                                            {formatDistanceToNow(contact.lastMessageTimestamp, { locale: ptBR, addSuffix: true })}
+                                            {formatDistanceToNow(contact.lastMessageTimestamp, { locale: ptBR, addSuffix: true }).replace('cerca de ', '')}
                                         </p>
                                     </div>
                                      {contact.unreadCount > 0 && (
@@ -397,50 +398,51 @@ export default function ChatPage() {
                     </CardHeader>
                 </Card>
             )}
-
-            <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                    <DialogTitle>Agendar Mensagem</DialogTitle>
-                    <DialogDescription>
-                        Selecione a data e o horário para enviar esta mensagem.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="flex justify-center">
-                            <Calendar
-                                mode="single"
-                                selected={selectedScheduleDate}
-                                onSelect={setSelectedScheduleDate}
-                                className="rounded-md border"
-                                locale={ptBR}
-                                disabled={{ before: new Date() }}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="time">Horário</Label>
-                            <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Selecione um horário" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-60">
-                                {availableTimes.map((time) => (
-                                    <SelectItem key={time} value={time}>{time}</SelectItem>
-                                ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="outline">Cancelar</Button>
-                    </DialogClose>
-                    <Button type="button" onClick={handleScheduleMessage}>Agendar</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
         </div>
+        <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                <DialogTitle>Agendar Mensagem</DialogTitle>
+                <DialogDescription>
+                    Selecione a data e o horário para enviar esta mensagem.
+                </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={selectedScheduleDate}
+                            onSelect={setSelectedScheduleDate}
+                            className="rounded-md border"
+                            locale={ptBR}
+                            disabled={{ before: new Date() }}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="time">Horário</Label>
+                        <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Selecione um horário" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                            {availableTimes.map((time) => (
+                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline">Cancelar</Button>
+                </DialogClose>
+                <Button type="button" onClick={handleScheduleMessage}>Agendar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    </div>
     )
 
 }
+
+    
