@@ -15,7 +15,7 @@ import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMo
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
-import { XCircle, Pencil, BookOpen } from 'lucide-react';
+import { XCircle, Pencil, BookOpen, Archive } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,6 +108,12 @@ export default function SchedulePage() {
   const completedEvents = useMemo(() => {
     return events
       .filter(e => e.status === 'completed')
+      .sort((a, b) => b.start.getTime() - a.start.getTime());
+  }, [events]);
+
+  const cancelledEvents = useMemo(() => {
+    return events
+      .filter(e => e.status === 'cancelled')
       .sort((a, b) => b.start.getTime() - a.start.getTime());
   }, [events]);
 
@@ -356,6 +362,54 @@ export default function SchedulePage() {
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
                       Nenhuma aula concluída ainda.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Archive className="h-6 w-6" />
+              Histórico de Aulas Canceladas
+            </CardTitle>
+            <CardDescription>
+              Um registro de todas as aulas que foram canceladas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Professor(a)</TableHead>
+                  <TableHead>Aluno(a)</TableHead>
+                  <TableHead>Disciplina</TableHead>
+                  <TableHead className="text-right">Data Original</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cancelledEvents.length > 0 ? (
+                  cancelledEvents.map((event) => {
+                    const student = getStudentById(event.studentId);
+                    const teacher = getTeacherById(event.teacherId);
+                    return (
+                      <TableRow key={event.id}>
+                        <TableCell>{teacher?.name || 'N/A'}</TableCell>
+                        <TableCell>{student?.name || 'N/A'}</TableCell>
+                        <TableCell className="font-medium">{event.subject}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      Nenhuma aula foi cancelada.
                     </TableCell>
                   </TableRow>
                 )}
