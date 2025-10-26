@@ -212,7 +212,7 @@ function ProfilePageComponent() {
                     title: "CEP não encontrado",
                     description: "Por favor, verifique o CEP e tente novamente.",
                 });
-                handleSave('address', updatedAddress); // Save the zip code anyway
+                handleSave('address', { ...updatedAddress });
                 return;
             }
     
@@ -236,7 +236,7 @@ function ProfilePageComponent() {
                 title: "Erro ao buscar CEP",
                 description: "Não foi possível buscar as informações do endereço. Tente novamente mais tarde.",
             });
-            handleSave('address', updatedAddress); // Save the zip code anyway
+            handleSave('address', { ...updatedAddress });
             console.error("Failed to fetch CEP:", error);
         }
     };
@@ -280,6 +280,12 @@ function ProfilePageComponent() {
         const updatedAvailability = { ...currentAvailability, [day]: dayAvailability.sort() };
         handleSave('availability', updatedAvailability);
     }
+    
+    const roleLabels: Record<UserRole, string> = {
+      admin: 'Administrador',
+      student: 'Aluno',
+      teacher: 'Professor',
+    };
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -296,7 +302,7 @@ function ProfilePageComponent() {
                             <div className="text-center md:text-left">
                                 <CardTitle className="text-2xl font-headline">{profileUser.name}</CardTitle>
                                 <CardDescription className="flex items-center gap-2 justify-center md:justify-start">
-                                    <Badge variant="secondary">{profileUser.role}</Badge> • Entrou em 2023
+                                    <Badge variant="secondary">{roleLabels[profileUser.role]}</Badge> • Entrou em 2023
                                 </CardDescription>
                             </div>
                         </div>
