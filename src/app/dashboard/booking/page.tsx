@@ -626,4 +626,6 @@ export default function BookingPage() {
     return (
         <Suspense fallback={<div>Carregando...</div>}>
             <BookingPageComponent />
-        
+        </Suspense>
+    );
+}
