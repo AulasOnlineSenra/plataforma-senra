@@ -109,7 +109,11 @@ function BookingPageComponent() {
     if (!selectedSubject) {
       return teachers;
     }
-    return teachers.filter(t => t.subjects.includes(selectedSubject));
+    const teacherIdsForSubject = teachers
+        .filter(t => t.subjects.includes(selectedSubject))
+        .map(t => t.id);
+
+    return teachers.filter(t => teacherIdsForSubject.includes(t.id));
   }, [selectedSubject, teachers]);
 
   const availableSubjects = useMemo(() => {
@@ -124,17 +128,30 @@ function BookingPageComponent() {
   }, [selectedTeacher, teachers]);
 
   useEffect(() => {
-    if (selectedSubject && !availableSubjects.some(s => s.id === selectedSubject)) {
-      setSelectedSubject(undefined);
+    if (selectedTeacher) {
+        const teacher = teachers.find(t => t.id === selectedTeacher);
+        if (teacher && selectedSubject && !teacher.subjects.includes(selectedSubject)) {
+            setSelectedSubject(undefined);
+        }
     }
-  }, [selectedSubject, availableSubjects]);
+  }, [selectedTeacher, selectedSubject, teachers]);
 
   useEffect(() => {
-    if (selectedTeacher && !availableTeachers.some(t => t.id === selectedTeacher)) {
-      setSelectedTeacher(undefined);
+    if (selectedSubject) {
+        const teacherIds = teachers.filter(t => t.subjects.includes(selectedSubject)).map(t => t.id);
+        if (selectedTeacher && !teacherIds.includes(selectedTeacher)) {
+            setSelectedTeacher(undefined);
+        }
     }
-  }, [selectedTeacher, availableTeachers]);
+  }, [selectedSubject, selectedTeacher, teachers]);
 
+  const handleSubjectChange = (subjectId: string) => {
+    if (selectedSubject === subjectId) {
+      setSelectedSubject(undefined);
+    } else {
+      setSelectedSubject(subjectId);
+    }
+  };
 
   const handleClearSelections = () => {
     setSelectedSubject(undefined);
@@ -415,13 +432,13 @@ function BookingPageComponent() {
               <Label htmlFor="subject">Disciplina</Label>
               <Select
                 value={selectedSubject}
-                onValueChange={setSelectedSubject}
+                onValueChange={handleSubjectChange}
               >
                 <SelectTrigger id="subject">
                   <SelectValue placeholder="Escolha uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subjects.map((subject) => (
+                  {availableSubjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       {subject.name}
                     </SelectItem>
@@ -660,5 +677,7 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
 
     
