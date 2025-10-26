@@ -29,14 +29,16 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole, User, NavItem, Teacher } from '@/lib/types';
-import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
+import { UserRole, User, NavItem, Teacher, ChatContact } from '@/lib/types';
+import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 
 const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
+const CHAT_CONTACTS_STORAGE_KEY = 'chatContacts';
+
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
@@ -45,16 +47,15 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [user, setUser] = useState<User | null>(null);
   const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems);
   const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
-  const [hasNewMessages, setHasNewMessages] = useState(true);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
 
-  const updateUser = useCallback(() => {
+  const updateUserAndNotifications = useCallback(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     const userId = localStorage.getItem('userId');
 
     if (role && userId) {
       setUserRole(role);
       
-      // Attempt to load the full, updated user object from the persisted lists
       const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialUsers));
       const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
       const allPersistedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
@@ -63,26 +64,30 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
       if (foundUser) {
         setUser(foundUser);
-        localStorage.setItem('currentUser', JSON.stringify(foundUser)); // Keep currentUser in sync
+        localStorage.setItem('currentUser', JSON.stringify(foundUser));
       } else {
-        // Fallback for safety, though this shouldn't happen in a normal flow
         const mockUser = getMockUser(role);
         setUser(mockUser);
         localStorage.setItem('currentUser', JSON.stringify(mockUser));
       }
+      
+      // Check for new messages
+      const storedContactsStr = localStorage.getItem(CHAT_CONTACTS_STORAGE_KEY);
+      const contacts: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : initialChatContacts;
+      const unread = contacts.some(c => c.unreadCount > 0);
+      setHasNewMessages(unread);
+
     } else {
       router.push('/login');
     }
   }, [router]);
 
   useEffect(() => {
-    updateUser();
+    updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        // We check for 'currentUser' key specifically to update the user avatar
-        // and other user details displayed on the sidebar.
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY) {
-            updateUser();
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === CHAT_CONTACTS_STORAGE_KEY) {
+            updateUserAndNotifications();
         }
     };
 
@@ -90,7 +95,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [updateUser]);
+  }, [updateUserAndNotifications]);
   
   useEffect(() => {
     const storedNavOrder = localStorage.getItem('navOrder');
@@ -115,7 +120,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     e.dataTransfer.effectAllowed = 'move';
     const target = e.currentTarget as HTMLDivElement;
     target.classList.add('dragging');
-    // Prevent the default drag ghost image (link preview)
     if (e.dataTransfer) {
       const empty = new Image();
       e.dataTransfer.setDragImage(empty, 0, 0);
@@ -146,7 +150,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     const itemsWithoutDragged = currentItems.filter(item => item.href !== draggedHref);
     let dropIndex = itemsWithoutDragged.findIndex(item => item.href === droppedOnHref);
 
-    // Adjust drop index based on mouse position
     const targetRect = droppedOnElement.getBoundingClientRect();
     const isAfter = e.clientY > targetRect.top + targetRect.height / 2;
     if (isAfter) {
@@ -174,7 +177,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
 
   if (!userRole || !user) {
-    return null; // Or a loading spinner
+    return null; 
   }
 
   const roleLabels: Record<UserRole, string> = {
