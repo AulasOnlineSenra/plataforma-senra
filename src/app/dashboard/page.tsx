@@ -152,6 +152,14 @@ export default function DashboardPage() {
       (e) => e[filterField] === user.id && e.status === 'scheduled'
     ).length;
   }, [user, scheduleEvents]);
+  
+  const userCompletedClasses = useMemo(() => {
+    if (!user) return 0;
+    const filterField = user.role === 'teacher' ? 'teacherId' : 'studentId';
+    return scheduleEvents.filter(
+      (e) => e[filterField] === user.id && e.status === 'completed'
+    ).length;
+  }, [user, scheduleEvents]);
     
   if (!user) {
     return null; // Or a loading spinner
@@ -357,7 +365,7 @@ export default function DashboardPage() {
               <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">28</div>
+              <div className="text-2xl font-bold">{userCompletedClasses}</div>
               <p className="text-xs text-muted-foreground">Total de aulas concluídas</p>
             </CardContent>
           </Card>
