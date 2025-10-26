@@ -247,7 +247,7 @@ export default function ChatPage() {
             backgroundRepeat: 'repeat',
             backgroundSize: '300px',
           }}>
-            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-0 md:gap-px md:p-4 bg-transparent">
+            <div className="grid h-[calc(100vh-5rem)] w-full grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[300px_1fr] gap-0 md:gap-px md:p-4 bg-transparent">
                 <Card className="flex flex-col rounded-none md:rounded-lg border-0 md:border">
                     <div className="p-4 border-b">
                         <h2 className="font-headline text-xl font-bold">Conversas</h2>
@@ -448,6 +448,8 @@ export default function ChatPage() {
 }
 
   
+
+    
 
     
 
