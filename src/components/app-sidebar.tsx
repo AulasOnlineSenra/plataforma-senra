@@ -34,7 +34,6 @@ import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdmin
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
-import { useResizablePanel } from './resizable-panel-provider';
 
 const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -43,7 +42,7 @@ const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 const LAST_SUGGESTIONS_VIEW_KEY = 'lastSuggestionsViewTimestamp';
 
 
-export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
+export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile?: boolean, isCollapsed?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -52,7 +51,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [hasNewSuggestions, setHasNewSuggestions] = useState(false);
-  const { isCollapsed } = useResizablePanel();
 
 
   const updateUserAndNotifications = useCallback(() => {

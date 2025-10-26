@@ -2,6 +2,7 @@
 'use client';
 
 import React, { createContext, useState, useContext, useMemo, ReactNode, useCallback } from 'react';
+import { ImperativePanelHandle } from 'react-resizable-panels';
 
 const SIDEBAR_MIN_WIDTH = 220;
 const SIDEBAR_MAX_WIDTH = 500;
@@ -13,15 +14,19 @@ interface ResizablePanelContextProps {
   setSidebarWidth: (width: number) => void;
   handleMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   isCollapsed: boolean;
+  setIsCollapsed: (isCollapsed: boolean) => void;
   toggleCollapse: () => void;
+  panelRef: React.RefObject<ImperativePanelHandle> | null;
 }
 
 const ResizablePanelContext = createContext<ResizablePanelContextProps | undefined>(undefined);
 
-export const ResizablePanelProvider = ({ children }: { children: ReactNode }) => {
+const ResizablePanelProvider = ({ children }: { children: ReactNode }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const panelRef = React.useRef<ImperativePanelHandle>(null);
+
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -29,7 +34,16 @@ export const ResizablePanelProvider = ({ children }: { children: ReactNode }) =>
   }, []);
 
   const toggleCollapse = useCallback(() => {
-    setIsCollapsed(prev => !prev);
+    const panel = panelRef.current;
+    if (panel) {
+        if (panel.isCollapsed()) {
+            panel.expand();
+            setIsCollapsed(false);
+        } else {
+            panel.collapse();
+            setIsCollapsed(true);
+        }
+    }
   }, []);
 
   const value = useMemo(() => ({
@@ -41,7 +55,9 @@ export const ResizablePanelProvider = ({ children }: { children: ReactNode }) =>
     },
     handleMouseDown,
     isCollapsed,
-    toggleCollapse
+    setIsCollapsed,
+    toggleCollapse,
+    panelRef
   }), [isDragging, sidebarWidth, handleMouseDown, isCollapsed, toggleCollapse]);
 
   return (
@@ -51,10 +67,16 @@ export const ResizablePanelProvider = ({ children }: { children: ReactNode }) =>
   );
 };
 
-export const useResizablePanel = () => {
+const useResizablePanel = () => {
   const context = useContext(ResizablePanelContext);
   if (!context) {
     throw new Error('useResizablePanel must be used within a ResizablePanelProvider');
   }
   return context;
 };
+
+// Expose the provider component as a property of the hook
+useResizablePanel.Provider = ResizablePanelProvider;
+
+
+export { useResizablePanel };
