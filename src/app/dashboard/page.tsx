@@ -66,12 +66,17 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole') as UserRole | null;
-    if (role) {
-      setUser(getMockUser(role));
-    }
-
     const updateData = () => {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        const role = localStorage.getItem('userRole') as UserRole | null;
+        if (role) {
+          setUser(getMockUser(role));
+        }
+      }
+
       // Update teacher count
       const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
       if (storedTeachers) {
