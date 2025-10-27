@@ -503,11 +503,11 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
     const timeSlots = ['08:00-10:00', '10:00-12:00', '13:00-15:00', '15:00-17:00', '18:00-20:00', '20:00-22:00'];
     
     return (
-        <div className="grid gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(daysOfWeek).map(([dayKey, dayName]) => (
-                <div key={dayKey}>
+                <div key={dayKey} className="p-4 border rounded-lg">
                     <h4 className="font-medium mb-3">{dayName}</h4>
-                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                     <div className="grid gap-3">
                         {timeSlots.map(slot => (
                              <div key={slot} className="flex items-center space-x-2">
                                 <Checkbox
