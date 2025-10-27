@@ -39,18 +39,20 @@ import { useToast } from '@/hooks/use-toast';
 const USERS_STORAGE_KEY = 'userList';
 
 function StudentList({
+  id,
   title,
   students,
   onStudentSelect,
   onDeleteStudent,
 }: {
+  id?: string;
   title: string;
   students: User[];
   onStudentSelect: (student: User) => void;
   onDeleteStudent: (student: User) => void;
 }) {
   return (
-    <Card>
+    <Card id={id}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
@@ -134,6 +136,20 @@ export default function StudentsPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === '#active-students') {
+      const element = document.getElementById(hash.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        element.classList.add('animate-highlight');
+        setTimeout(() => {
+          element.classList.remove('animate-highlight');
+        }, 2000);
+      }
+    }
+  }, []);
+
   const activeStudents = allUsers.filter(
     (u) => u.role === 'student' && u.status === 'active'
   );
@@ -178,6 +194,7 @@ export default function StudentsPage() {
       </div>
       <div className="grid gap-6">
         <StudentList
+          id="active-students"
           title="Alunos Ativos"
           students={activeStudents}
           onStudentSelect={handleStudentSelect}
