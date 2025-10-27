@@ -198,19 +198,34 @@ export default function SchedulePage() {
 
   const handlePermanentDeleteEvent = () => {
     if (!eventToDelete) return;
-    
-    const updatedEvents = events.filter(e => e.id !== eventToDelete.id);
+
+    const originalEvents = [...events];
+    const eventToDeleteCopy = { ...eventToDelete };
+
+    const updatedEvents = events.filter(e => e.id !== eventToDeleteCopy.id);
     setEvents(updatedEvents);
     localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
     window.dispatchEvent(new Event('storage'));
 
+    const handleUndo = () => {
+        setEvents(originalEvents);
+        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(originalEvents));
+        window.dispatchEvent(new Event('storage'));
+        toast({
+            title: 'Ação Desfeita',
+            description: `A aula de ${eventToDeleteCopy.subject} foi restaurada.`,
+        });
+    }
+
     toast({
       variant: 'destructive',
       title: 'Aula Excluída',
-      description: `A aula de ${eventToDelete.subject} foi excluída permanentemente.`,
+      description: `A aula de ${eventToDeleteCopy.subject} foi excluída.`,
+      action: <ToastAction altText="Desfazer" onClick={handleUndo}>Desfazer</ToastAction>
     });
     setEventToDelete(null);
   };
+
 
   const getStudentById = (studentId: string): User | undefined => {
     return users.find(u => u.id === studentId);
@@ -570,7 +585,7 @@ export default function SchedulePage() {
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-              registro da aula cancelada.
+              registro da aula.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
