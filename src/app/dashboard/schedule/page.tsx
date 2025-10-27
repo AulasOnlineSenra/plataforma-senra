@@ -221,6 +221,7 @@ export default function SchedulePage() {
       variant: 'destructive',
       title: 'Aula Excluída',
       description: `A aula de ${eventToDeleteCopy.subject} foi excluída.`,
+      duration: 5000,
       action: <ToastAction altText="Desfazer" onClick={handleUndo}>Desfazer</ToastAction>
     });
     setEventToDelete(null);
