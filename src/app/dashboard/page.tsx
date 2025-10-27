@@ -168,7 +168,7 @@ export default function DashboardPage() {
   const renderAdminDashboard = () => (
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Link href="/dashboard/schedule">
+        <Link href="/dashboard/schedule#scheduled-classes">
           <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>

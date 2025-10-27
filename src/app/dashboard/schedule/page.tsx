@@ -65,8 +65,9 @@ export default function SchedulePage() {
     }
 
     // Handle hash for highlighting
-    if (window.location.hash === '#cancelled-history') {
-      const element = document.getElementById('cancelled-history');
+    const hash = window.location.hash;
+    if (hash === '#cancelled-history' || hash === '#scheduled-classes') {
+      const element = document.getElementById(hash.substring(1));
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
         element.classList.add('animate-highlight');
@@ -266,7 +267,7 @@ export default function SchedulePage() {
               />
             </CardContent>
           </Card>
-          <Card className="lg:col-span-4">
+          <Card className="lg:col-span-4" id="scheduled-classes">
             <Tabs value={filterType} onValueChange={(value) => setFilterType(value as any)} className="w-full">
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
