@@ -506,7 +506,7 @@ function BookingPageComponent() {
                     onClick={() => setSelectedTime(time.start)}
                     className={cn(
                       'text-sm',
-                      selectedTime === time.start ? 'ring-2 ring-primary' : ''
+                      selectedTime === time.start ? 'bg-brand-yellow text-black hover:bg-brand-yellow/90' : ''
                     )}
                     disabled={!selectedTeacher || (selectedDates || []).length === 0}
                   >
@@ -653,3 +653,5 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
