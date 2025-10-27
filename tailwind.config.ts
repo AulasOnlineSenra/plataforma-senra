@@ -22,7 +22,7 @@ export default {
         headline: ['Belleza', 'sans-serif'],
       },
       colors: {
-        'brand-yellow': '#f5b000',
+        'brand-yellow': 'hsl(var(--brand-yellow))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -88,10 +88,21 @@ export default {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'highlight-border': {
+          '0%, 100%': { 
+            borderColor: 'hsl(var(--border))',
+            boxShadow: '0 0 0 0 hsl(var(--brand-yellow) / 0)',
+           },
+          '25%, 75%': { 
+            borderColor: 'hsl(var(--brand-yellow))',
+            boxShadow: '0 0 8px 2px hsl(var(--brand-yellow) / 0.5)',
+           },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'highlight': 'highlight-border 2s ease-out',
       },
     },
   },

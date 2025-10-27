@@ -63,6 +63,18 @@ export default function SchedulePage() {
     } else {
       setEvents(initialScheduleEvents);
     }
+
+    // Handle hash for highlighting
+    if (window.location.hash === '#cancelled-history') {
+      const element = document.getElementById('cancelled-history');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        element.classList.add('animate-highlight');
+        setTimeout(() => {
+          element.classList.remove('animate-highlight');
+        }, 2000); // Animation duration + buffer
+      }
+    }
   }, []);
 
 
@@ -370,7 +382,7 @@ export default function SchedulePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="cancelled-history">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Archive className="h-6 w-6" />

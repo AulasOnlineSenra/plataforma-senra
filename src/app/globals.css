@@ -24,6 +24,7 @@
     --input: 240 5.9% 90%;
     --ring: 198 65% 80%;
     --radius: 0.5rem;
+    --brand-yellow: 42 100% 47%; /* #f5b000 */
 
     --chart-1: 198 65% 70%;
     --chart-2: 89 62% 71%;
@@ -61,6 +62,7 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 198 65% 80%;
+    --brand-yellow: 42 100% 47%; /* #f5b000 */
 
     --chart-1: 198 65% 70%;
     --chart-2: 89 62% 71%;
@@ -112,5 +114,20 @@
   
   .drag-over {
     @apply bg-accent/20 ring-2 ring-accent;
+  }
+
+  .animate-highlight {
+    animation: highlight-border 2s ease-out;
+  }
+
+  @keyframes highlight-border {
+    0%, 100% {
+      border-color: hsl(var(--border));
+      box-shadow: 0 0 0 0 hsl(var(--brand-yellow) / 0);
+    }
+    25%, 75% {
+      border-color: hsl(var(--brand-yellow));
+      box-shadow: 0 0 8px 2px hsl(var(--brand-yellow) / 0.5);
+    }
   }
 }

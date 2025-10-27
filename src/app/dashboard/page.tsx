@@ -180,16 +180,18 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
-            <XCircle className="h-6 w-6 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
-            <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
-          </CardContent>
-        </Card>
+        <Link href="/dashboard/schedule#cancelled-history">
+          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
+              <XCircle className="h-6 w-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
+              <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
+            </CardContent>
+          </Card>
+        </Link>
         <Link href="/dashboard/teachers">
           <Card className="hover:bg-accent/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
