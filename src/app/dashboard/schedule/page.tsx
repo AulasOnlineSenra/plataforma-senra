@@ -15,7 +15,7 @@ import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMo
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
-import { XCircle, Pencil, BookOpen, Archive } from 'lucide-react';
+import { XCircle, Pencil, BookOpen, Archive, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +27,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -47,6 +57,7 @@ export default function SchedulePage() {
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<ScheduleEvent | null>(null);
   const [newDate, setNewDate] = useState<Date | undefined>();
   const [newTime, setNewTime] = useState<string | undefined>();
 
@@ -158,6 +169,22 @@ export default function SchedulePage() {
         </ToastAction>
       ),
     });
+  };
+
+  const handlePermanentDeleteEvent = () => {
+    if (!eventToDelete) return;
+    
+    const updatedEvents = events.filter(e => e.id !== eventToDelete.id);
+    setEvents(updatedEvents);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
+    window.dispatchEvent(new Event('storage'));
+
+    toast({
+      variant: 'destructive',
+      title: 'Aula Excluída',
+      description: `A aula de ${eventToDelete.subject} foi excluída permanentemente.`,
+    });
+    setEventToDelete(null);
   };
 
   const getStudentById = (studentId: string): User | undefined => {
@@ -422,6 +449,15 @@ export default function SchedulePage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Remarcar
                           </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="ml-2"
+                            onClick={() => setEventToDelete(event)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -490,6 +526,23 @@ export default function SchedulePage() {
           </DialogContent>
         </Dialog>
       )}
+       <AlertDialog open={!!eventToDelete} onOpenChange={() => setEventToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o
+              registro da aula cancelada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePermanentDeleteEvent}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
