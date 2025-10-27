@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import { User, UserRole, Teacher } from '@/lib/types';
-import { getMockUser, teachers as initialTeachers, allUsers as initialUsers } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, allUsers as initialUsers, users as initialRegularUsers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -362,9 +362,11 @@ export default function LoginPage() {
     const newUserDataString = localStorage.getItem('newlyRegisteredUser');
 
     // Combine all user data sources
-    const storedUsers = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || JSON.stringify(initialUsers));
-    const storedTeachers = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY) || JSON.stringify(initialTeachers));
-    const combinedUsers: (User | Teacher)[] = [...storedUsers, ...storedTeachers];
+    const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
+    const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
+    let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
+    let currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
+    const combinedUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
 
     // Case 1: Handle newly registered user
     if (newUserDataString) {
@@ -421,12 +423,26 @@ export default function LoginPage() {
     
     // Proceed with login if a user was found and validated
     if (userToLogin) {
-        localStorage.setItem('userRole', userToLogin.role);
-        // Store the full, up-to-date user object
-        localStorage.setItem('currentUser', JSON.stringify(userToLogin));
-        localStorage.setItem(`savedEmail-${userToLogin.role}`, email);
-        localStorage.setItem(`savedPassword-${userToLogin.role}`, password);
-        localStorage.setItem('userId', userToLogin.id); // Store userId for re-hydration
+        const now = new Date().toISOString();
+        const updatedUser = { ...userToLogin, lastAccess: now };
+
+        // Update the persisted list of users
+        if (updatedUser.role === 'teacher') {
+            const updatedTeachers = currentTeachers.map(t => t.id === updatedUser.id ? updatedUser as Teacher : t);
+            localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
+        } else {
+            const updatedUsers = currentUsers.map(u => u.id === updatedUser.id ? updatedUser as User : u);
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+        }
+
+        // Set current session data
+        localStorage.setItem('userRole', updatedUser.role);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
+        localStorage.setItem(`savedPassword-${updatedUser.role}`, password);
+        localStorage.setItem('userId', updatedUser.id);
+        
+        window.dispatchEvent(new Event('storage')); // Notify other tabs of the update
 
         if (isNewRegistration) {
             localStorage.removeItem('newlyRegisteredUser');
@@ -434,7 +450,7 @@ export default function LoginPage() {
         
         toast({
             title: "Login bem-sucedido!",
-            description: `Bem-vindo(a) de volta, ${userToLogin.name.split(' ')[0]}!`,
+            description: `Bem-vindo(a) de volta, ${updatedUser.name.split(' ')[0]}!`,
         });
         
         router.push('/dashboard');
