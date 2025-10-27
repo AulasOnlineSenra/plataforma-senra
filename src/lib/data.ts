@@ -366,6 +366,12 @@ export const navItems: NavItem[] = [
     roles: ['student', 'teacher'],
   },
   {
+    href: '/dashboard/simulados',
+    icon: FileText,
+    label: 'Simulados',
+    roles: ['teacher', 'admin'],
+  },
+  {
     href: '/dashboard/suggestions',
     icon: Lightbulb,
     label: 'Sugestões',
