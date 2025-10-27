@@ -49,9 +49,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
 import { NewUsersChart } from '@/components/charts/new-users-chart';
+import { useRouter } from 'next/navigation';
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
+const USERS_STORAGE_KEY = 'userList';
 
 
 export default function DashboardPage() {
@@ -63,6 +65,7 @@ export default function DashboardPage() {
   const [teacherCount, setTeacherCount] = useState(initialTeachers.length);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialScheduleEvents);
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const router = useRouter();
 
 
   useEffect(() => {
@@ -95,7 +98,7 @@ export default function DashboardPage() {
         setTeacherCount(initialTeachers.filter(t => t.status !== 'deleted').length);
       }
       
-      const storedUsers = localStorage.getItem('userList');
+      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
       if(storedUsers) {
         setUsers(JSON.parse(storedUsers));
       } else {
@@ -128,7 +131,7 @@ export default function DashboardPage() {
         window.removeEventListener('storage', updateData);
     }
 
-  }, []);
+  }, [router]);
   
   useEffect(() => {
     if (!carouselApi) {
@@ -149,10 +152,12 @@ export default function DashboardPage() {
     };
   }, [carouselApi]);
 
-  const upcomingEvents = scheduleEvents
+  const upcomingEvents = useMemo(() => {
+    return scheduleEvents
     .filter((e) => e.status === 'scheduled' && e.start > new Date())
     .sort((a, b) => a.start.getTime() - b.start.getTime())
     .slice(0, 3);
+  }, [scheduleEvents]);
 
   const userScheduledClasses = useMemo(() => {
     if (!user) return 0;
@@ -169,6 +174,14 @@ export default function DashboardPage() {
     const filterField = user.role === 'teacher' ? 'teacherId' : 'studentId';
     return scheduleEvents.filter(
       (e) => e[filterField] === user.id && e.status === 'completed'
+    ).length;
+  }, [user, scheduleEvents]);
+
+  const userCancelledClasses = useMemo(() => {
+    if (!user) return 0;
+    const filterField = user.role === 'teacher' ? 'teacherId' : 'studentId';
+    return scheduleEvents.filter(
+      (e) => e[filterField] === user.id && e.status === 'cancelled'
     ).length;
   }, [user, scheduleEvents]);
     
@@ -358,7 +371,7 @@ export default function DashboardPage() {
     </>
   );
 
-  const renderStudentTeacherDashboard = (scheduledClasses: number) => {
+  const renderStudentTeacherDashboard = () => {
     return (
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
@@ -369,7 +382,7 @@ export default function DashboardPage() {
                 <CalendarCheck className="h-6 w-6 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{scheduledClasses}</div>
+                <div className="text-2xl font-bold">{userScheduledClasses}</div>
                 <p className="text-xs text-muted-foreground">+2 na última semana</p>
               </CardContent>
             </Card>
@@ -393,7 +406,7 @@ export default function DashboardPage() {
                 <XCircle className="h-6 w-6 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
+                <div className="text-2xl font-bold">{userCancelledClasses}</div>
                 <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
               </CardContent>
             </Card>
@@ -509,7 +522,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard(userScheduledClasses)}
+      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
     </div>
   );
 }
