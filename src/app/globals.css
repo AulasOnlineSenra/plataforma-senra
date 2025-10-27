@@ -35,7 +35,7 @@
     --sidebar-background: 240 5% 15%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-border: 240 5% 20%;
-    --sidebar-accent: 240 5% 25%;
+    --sidebar-accent: hsl(var(--brand-yellow) / 0.5);
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-primary: 198 65% 80%;
     --sidebar-primary-foreground: 198 30% 10%;
@@ -73,7 +73,7 @@
     --sidebar-background: 240 5% 10%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-border: 240 5% 15%;
-    --sidebar-accent: 240 5% 20%;
+    --sidebar-accent: hsl(var(--brand-yellow) / 0.5);
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-primary: 198 65% 80%;
     --sidebar-primary-foreground: 198 30% 10%;
