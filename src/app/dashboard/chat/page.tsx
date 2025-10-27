@@ -13,11 +13,11 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock, X, MessageSquare } from 'lucide-react';
-import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers } from '@/lib/data';
+import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { User, UserRole, ChatMessage, ChatContact, Teacher } from '@/lib/types';
+import { User, UserRole, ChatMessage, ChatContact, Teacher, ScheduleEvent } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -52,8 +52,9 @@ export default function ChatPage() {
     const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
     const [messageContent, setMessageContent] = useState('');
     const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
-    const [chatContacts, setChatContacts] = useState<ChatContact[]>(initialChatContacts);
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
+    const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
+    const [allContacts, setAllContacts] = useState<ChatContact[]>(initialChatContacts);
 
 
     const updateData = useCallback(() => {
@@ -78,10 +79,19 @@ export default function ChatPage() {
         const storedContacts = localStorage.getItem('chatContacts');
         if (storedContacts) {
             const parsedContacts = JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }));
-            setChatContacts(parsedContacts.sort((a: ChatContact, b: ChatContact) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+            setAllContacts(parsedContacts);
         } else {
-            setChatContacts(initialChatContacts.sort((a: ChatContact, b: ChatContact) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+            setAllContacts(initialChatContacts);
         }
+        
+        const storedSchedule = localStorage.getItem('scheduleEvents');
+        if (storedSchedule) {
+            const parsedSchedule = JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) }));
+            setSchedule(parsedSchedule);
+        } else {
+            setSchedule(initialSchedule);
+        }
+
     }, []);
 
     useEffect(() => {
@@ -90,6 +100,40 @@ export default function ChatPage() {
         return () => window.removeEventListener('storage', updateData);
     }, [updateData]);
 
+
+    const chatContacts = useMemo(() => {
+        if (!currentUser) return [];
+
+        const now = new Date();
+        const futureScheduledEvents = schedule.filter(e => e.status === 'scheduled' && e.start > now);
+        
+        let validPartnerIds: string[] = [];
+
+        if (currentUser.role === 'admin') {
+            // Admins can see everyone
+            validPartnerIds = allUsers.map(u => u.id);
+        } else if (currentUser.role === 'student') {
+            const myTeacherIds = futureScheduledEvents
+                .filter(e => e.studentId === currentUser.id)
+                .map(e => e.teacherId);
+            validPartnerIds = [...new Set(myTeacherIds)];
+        } else if (currentUser.role === 'teacher') {
+            const myStudentIds = futureScheduledEvents
+                .filter(e => e.teacherId === currentUser.id)
+                .map(e => e.studentId);
+            validPartnerIds = [...new Set(myStudentIds)];
+        }
+        
+        // Admins should always be visible
+        const adminIds = allUsers.filter(u => u.role === 'admin').map(u => u.id);
+        validPartnerIds.push(...adminIds);
+
+
+        return allContacts
+            .filter(contact => validPartnerIds.includes(contact.id))
+            .sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+
+    }, [currentUser, schedule, allContacts, allUsers]);
 
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -110,10 +154,10 @@ export default function ChatPage() {
         if (contact) {
             setActiveChatPartner(contact);
              // Mark messages as read
-            const updatedContacts = chatContacts.map(c => 
+            const updatedContacts = allContacts.map(c => 
                 c.id === contactId ? { ...c, unreadCount: 0 } : c
             );
-            setChatContacts(updatedContacts);
+            setAllContacts(updatedContacts);
             localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
         }
     }
@@ -221,7 +265,7 @@ export default function ChatPage() {
         // For this prototype, we'll merge them, assuming the user's view is primary.
         const finalContacts = Array.from(new Map([...myUpdatedContacts, ...partnerUpdatedContacts].map(item => [item.id, item])).values());
         
-        setChatContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+        setAllContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
         localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
 
         window.dispatchEvent(new Event('storage'));
