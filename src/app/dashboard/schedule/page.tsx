@@ -77,7 +77,7 @@ export default function SchedulePage() {
 
     // Handle hash for highlighting
     const hash = window.location.hash;
-    if (hash === '#cancelled-history' || hash === '#scheduled-classes') {
+    if (hash === '#cancelled-history' || hash === '#scheduled-classes' || hash === '#completed-history') {
       const element = document.getElementById(hash.substring(1));
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
@@ -360,7 +360,7 @@ export default function SchedulePage() {
           </Card>
         </div>
 
-        <Card>
+        <Card id="completed-history">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-6 w-6" />
@@ -546,5 +546,3 @@ export default function SchedulePage() {
     </>
   );
 }
-
-    

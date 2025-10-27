@@ -351,46 +351,54 @@ export default function DashboardPage() {
     return (
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
-              <CalendarCheck className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{scheduledClasses}</div>
-              <p className="text-xs text-muted-foreground">+2 na última semana</p>
-            </CardContent>
-          </Card>
-           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aulas Realizadas</CardTitle>
-              <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userCompletedClasses}</div>
-              <p className="text-xs text-muted-foreground">Total de aulas concluídas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
-              <XCircle className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
-              <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Créditos de Aulas</CardTitle>
-              <BookCopy className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">8</div>
-              <p className="text-xs text-muted-foreground">Pacote de 12 aulas ativo</p>
-            </CardContent>
-          </Card>
+          <Link href="/dashboard/schedule#scheduled-classes">
+            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
+                <CalendarCheck className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{scheduledClasses}</div>
+                <p className="text-xs text-muted-foreground">+2 na última semana</p>
+              </CardContent>
+            </Card>
+          </Link>
+           <Link href="/dashboard/schedule#completed-history">
+            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Aulas Realizadas</CardTitle>
+                <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{userCompletedClasses}</div>
+                <p className="text-xs text-muted-foreground">Total de aulas concluídas</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/dashboard/schedule#cancelled-history">
+            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
+                <XCircle className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'cancelled').length}</div>
+                <p className="text-xs text-muted-foreground">Total de cancelamentos</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/dashboard/packages">
+            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Créditos de Aulas</CardTitle>
+                <BookCopy className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">8</div>
+                <p className="text-xs text-muted-foreground">Pacote de 12 aulas ativo</p>
+              </CardContent>
+            </Card>
+          </Link>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Feedback Médio</CardTitle>
