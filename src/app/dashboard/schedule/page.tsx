@@ -503,15 +503,17 @@ export default function SchedulePage() {
                             <Pencil className="h-4 w-4" />
                             <span className="sr-only">Remarcar</span>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setEventToDelete(event)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Excluir</span>
-                          </Button>
+                          {currentUser?.role === 'admin' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setEventToDelete(event)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Excluir</span>
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
