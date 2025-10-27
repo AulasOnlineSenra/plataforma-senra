@@ -10,14 +10,14 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { scheduleEvents as initialScheduleEvents, ScheduleEvent, users, teachers } from '@/lib/data';
+import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers, getMockUser } from '@/lib/data';
+import type { ScheduleEvent, User, Teacher } from '@/lib/types';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
 import { XCircle, Pencil, BookOpen, Archive, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -50,10 +50,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
+const USERS_STORAGE_KEY = 'userList';
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date | undefined>();
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
@@ -62,18 +66,36 @@ export default function SchedulePage() {
   const [newTime, setNewTime] = useState<string | undefined>();
 
   useEffect(() => {
-    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-    if (storedSchedule) {
-      // Dates are stored as strings in JSON, so we need to convert them back to Date objects
-      const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end),
-      }));
-      setEvents(parsedSchedule);
-    } else {
-      setEvents(initialScheduleEvents);
-    }
+    const updateData = () => {
+        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+        if (storedSchedule) {
+            const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
+                ...event,
+                start: new Date(event.start),
+                end: new Date(event.end),
+            }));
+            setEvents(parsedSchedule);
+        } else {
+            setEvents(initialScheduleEvents);
+        }
+        
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        if (storedUsers) {
+            setUsers(JSON.parse(storedUsers));
+        } else {
+            setUsers(initialUsers);
+        }
+
+        const storedCurrentUser = localStorage.getItem('currentUser');
+        if (storedCurrentUser) {
+            setCurrentUser(JSON.parse(storedCurrentUser));
+        } else {
+            setCurrentUser(getMockUser('student'));
+        }
+    };
+
+    updateData();
+    window.addEventListener('storage', updateData);
 
     // Handle hash for highlighting
     const hash = window.location.hash;
@@ -87,6 +109,9 @@ export default function SchedulePage() {
         }, 2000); // Animation duration + buffer
       }
     }
+     return () => {
+      window.removeEventListener('storage', updateData);
+    };
   }, []);
 
 
@@ -144,7 +169,7 @@ export default function SchedulePage() {
 
   const handleConfirmCancel = (eventId: string) => {
     const updatedEvents = events.map(e => 
-      e.id === eventId ? { ...e, status: 'cancelled' } : e
+      e.id === eventId ? { ...e, status: 'cancelled' as 'cancelled' } : e
     );
     setEvents(updatedEvents);
     localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
@@ -188,11 +213,10 @@ export default function SchedulePage() {
   };
 
   const getStudentById = (studentId: string): User | undefined => {
-    const allUsers = [...users];
-    return allUsers.find(u => u.id === studentId);
+    return users.find(u => u.id === studentId);
   }
   
-  const getTeacherById = (teacherId: string): User | undefined => {
+  const getTeacherById = (teacherId: string): Teacher | undefined => {
     return teachers.find(t => t.id === teacherId);
   }
 
@@ -374,7 +398,7 @@ export default function SchedulePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Professor(a)</TableHead>
+                  {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
                   <TableHead>Aluno(a)</TableHead>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Título da Aula</TableHead>
@@ -388,7 +412,7 @@ export default function SchedulePage() {
                     const teacher = getTeacherById(event.teacherId);
                     return (
                       <TableRow key={event.id}>
-                        <TableCell>{teacher?.name || 'N/A'}</TableCell>
+                        {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
                         <TableCell>{student?.name || 'N/A'}</TableCell>
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell>{event.title}</TableCell>
@@ -400,7 +424,7 @@ export default function SchedulePage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={currentUser?.role !== 'teacher' ? 5 : 4} className="h-24 text-center">
                       Nenhuma aula concluída ainda.
                     </TableCell>
                   </TableRow>
