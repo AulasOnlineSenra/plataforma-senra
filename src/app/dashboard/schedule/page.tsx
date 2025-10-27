@@ -403,6 +403,7 @@ export default function SchedulePage() {
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Título da Aula</TableHead>
                   <TableHead className="text-right">Data</TableHead>
+                  {currentUser?.role === 'admin' && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -419,12 +420,25 @@ export default function SchedulePage() {
                         <TableCell className="text-right text-muted-foreground">
                           {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
+                        {currentUser?.role === 'admin' && (
+                            <TableCell className="text-right">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => setEventToDelete(event)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Excluir</span>
+                                </Button>
+                            </TableCell>
+                        )}
                       </TableRow>
                     );
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={currentUser?.role !== 'teacher' ? 5 : 4} className="h-24 text-center">
+                    <TableCell colSpan={currentUser?.role === 'admin' ? 6 : (currentUser?.role !== 'teacher' ? 5 : 4)} className="h-24 text-center">
                       Nenhuma aula concluída ainda.
                     </TableCell>
                   </TableRow>
