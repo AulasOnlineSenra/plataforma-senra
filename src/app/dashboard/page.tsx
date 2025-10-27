@@ -73,16 +73,18 @@ export default function DashboardPage() {
       } else {
         const role = localStorage.getItem('userRole') as UserRole | null;
         if (role) {
-          setUser(getMockUser(role));
+          const mockUser = getMockUser(role);
+          setUser(mockUser);
+          localStorage.setItem('currentUser', JSON.stringify(mockUser));
+        } else {
+          router.push('/login');
         }
       }
 
-      // Update teacher count
       const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
       if (storedTeachers) {
         try {
           const teacherList: Teacher[] = JSON.parse(storedTeachers);
-          // Filter out deleted teachers before counting
           const activeTeachers = teacherList.filter(t => t.status !== 'deleted');
           setTeacherCount(activeTeachers.length);
         } catch (e) {
@@ -100,15 +102,19 @@ export default function DashboardPage() {
         setUsers(initialUsers);
       }
 
-      // Update schedule
       const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
       if (storedSchedule) {
-        const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
-          ...event,
-          start: new Date(event.start),
-          end: new Date(event.end),
-        }));
-        setScheduleEvents(parsedSchedule);
+        try {
+          const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
+            ...event,
+            start: new Date(event.start),
+            end: new Date(event.end),
+          }));
+          setScheduleEvents(parsedSchedule);
+        } catch (e) {
+            console.error("Failed to parse schedule from localStorage", e);
+            setScheduleEvents(initialScheduleEvents);
+        }
       } else {
         setScheduleEvents(initialScheduleEvents);
       }
