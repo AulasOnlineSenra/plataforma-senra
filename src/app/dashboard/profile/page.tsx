@@ -504,10 +504,10 @@ function AvailabilityDialog({
     applyToAll: boolean;
     onApplyToAll: (checked: boolean) => void;
 }) {
-    const [ranges, setRanges] = useState<TimeRange[]>(initialRanges);
+    const [ranges, setRanges] = useState<TimeRange[]>(initialRanges.length > 0 ? initialRanges : [{ start: '09:00', end: '17:00' }]);
 
     useEffect(() => {
-        setRanges(initialRanges);
+        setRanges(initialRanges.length > 0 ? initialRanges : [{ start: '09:00', end: '17:00' }]);
     }, [initialRanges]);
 
     const handleAddRange = () => {
@@ -601,12 +601,14 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
 
     const handleRemoveDay = (dayKey: string) => {
         const newAvailability = { ...currentAvailability };
-        delete newAvailability[dayKey];
+        delete (newAvailability as any)[dayKey];
         setCurrentAvailability(newAvailability);
         onSave(newAvailability);
     }
     
-    const handleSaveChanges = (dayKey: string, ranges: TimeRange[]) => {
+    const handleSaveDialog = (ranges: TimeRange[]) => {
+        if (!editingDay) return;
+
         let newAvailability = { ...currentAvailability };
         
         if (applyToAll) {
@@ -614,12 +616,13 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
                 newAvailability[day] = ranges;
             });
         } else {
-            newAvailability[dayKey] = ranges;
+            newAvailability[editingDay] = ranges;
         }
 
         setCurrentAvailability(newAvailability);
         onSave(newAvailability);
         setApplyToAll(false);
+        setEditingDay(null);
     };
 
     const getDayRanges = (dayKey: string): TimeRange[] => {
@@ -643,9 +646,11 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
                             <Button variant="ghost" size="icon" onClick={() => handleEditClick(dayKey)}>
                                 <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveDay(dayKey)}>
-                                <MinusCircle className="h-4 w-4 text-destructive" />
-                            </Button>
+                             {getDayRanges(dayKey).length > 0 && 
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveDay(dayKey)}>
+                                    <MinusCircle className="h-4 w-4 text-destructive" />
+                                </Button>
+                             }
                         </div>
                     )}
                 </div>
@@ -655,7 +660,7 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
                     isOpen={isDialogOpen}
                     onOpenChange={setIsDialogOpen}
                     initialRanges={getDayRanges(editingDay)}
-                    onSave={(ranges) => handleSaveChanges(editingDay, ranges)}
+                    onSave={handleSaveDialog}
                     applyToAll={applyToAll}
                     onApplyToAll={setApplyToAll}
                 />
@@ -677,4 +682,5 @@ export default function ProfilePage() {
     
 
     
+
 
