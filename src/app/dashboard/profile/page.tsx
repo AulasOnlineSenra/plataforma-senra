@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { getMockUser, teachers as initialTeachers, subjects, allUsers as initialAllUsers } from '@/lib/data';
-import { UserRole, Teacher, User, EducationEntry, EducationType } from '@/lib/types';
+import { UserRole, Teacher, User, EducationEntry, EducationType, Availability } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Plus,
@@ -30,6 +30,8 @@ import {
   Briefcase,
   User as UserIcon,
   BookUser,
+  Pencil,
+  MinusCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -39,6 +41,7 @@ import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -265,20 +268,9 @@ function ProfilePageComponent() {
         handleSave('subjects', updatedSubjects);
     }
     
-    const handleAvailabilityChange = (day: string, time: string, checked: boolean) => {
+    const handleAvailabilityChange = (newAvailability: Availability) => {
         if (!teacherProfile) return;
-
-        const currentAvailability = teacherProfile.availability || {};
-        let dayAvailability = currentAvailability[day] || [];
-
-        if (checked) {
-            dayAvailability = [...dayAvailability, time];
-        } else {
-            dayAvailability = dayAvailability.filter(t => t !== time);
-        }
-
-        const updatedAvailability = { ...currentAvailability, [day]: dayAvailability.sort() };
-        handleSave('availability', updatedAvailability);
+        handleSave('availability', newAvailability);
     }
     
     const roleLabels: Record<UserRole, string> = {
@@ -377,7 +369,7 @@ function ProfilePageComponent() {
                                 { teacherProfile &&
                                     <AvailabilityManager
                                         availability={teacherProfile.availability || {}}
-                                        onSave={(day, time, checked) => handleAvailabilityChange(day, time, checked)}
+                                        onSave={handleAvailabilityChange}
                                         canEdit={canEdit}
                                     />
                                 }
@@ -490,9 +482,110 @@ function EducationManager({ initialEntries, onSave, canEdit }: { initialEntries:
     );
 }
 
-function AvailabilityManager({ availability, onSave, canEdit }: { availability: Record<string, string[]>, onSave: (day: string, time: string, checked: boolean) => void, canEdit: boolean }) {
+const timeSlots = [
+    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', 
+    '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'
+];
+
+type TimeRange = { start: string; end: string };
+
+function AvailabilityDialog({ 
+    isOpen, 
+    onOpenChange, 
+    onSave,
+    initialRanges,
+    applyToAll,
+    onApplyToAll,
+}: { 
+    isOpen: boolean; 
+    onOpenChange: (open: boolean) => void;
+    onSave: (ranges: TimeRange[]) => void;
+    initialRanges: TimeRange[];
+    applyToAll: boolean;
+    onApplyToAll: (checked: boolean) => void;
+}) {
+    const [ranges, setRanges] = useState<TimeRange[]>(initialRanges);
+
+    useEffect(() => {
+        setRanges(initialRanges);
+    }, [initialRanges]);
+
+    const handleAddRange = () => {
+        setRanges([...ranges, { start: '09:00', end: '17:00' }]);
+    };
+
+    const handleRemoveRange = (index: number) => {
+        setRanges(ranges.filter((_, i) => i !== index));
+    };
+
+    const handleTimeChange = (index: number, type: 'start' | 'end', value: string) => {
+        const newRanges = [...ranges];
+        newRanges[index][type] = value;
+        setRanges(newRanges);
+    };
+
+    const handleSaveClick = () => {
+        onSave(ranges);
+        onOpenChange(false);
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Editar Disponibilidade</DialogTitle>
+                    <DialogDescription>
+                        Adicione ou remova os intervalos de tempo em que você está disponível.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    {ranges.map((range, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <Select value={range.start} onValueChange={(v) => handleTimeChange(index, 'start', v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <span>-</span>
+                            <Select value={range.end} onValueChange={(v) => handleTimeChange(index, 'end', v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveRange(index)}>
+                                <MinusCircle className="h-5 w-5 text-destructive" />
+                            </Button>
+                        </div>
+                    ))}
+                    <Button variant="outline" onClick={handleAddRange}>
+                        <Plus className="mr-2" /> Adicionar Intervalo
+                    </Button>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="apply-to-all" checked={applyToAll} onCheckedChange={(checked) => onApplyToAll(!!checked)} />
+                    <Label htmlFor="apply-to-all">Aplicar para todos os dias</Label>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button onClick={handleSaveClick}>Salvar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function AvailabilityManager({ availability, onSave, canEdit }: { availability: Availability, onSave: (newAvailability: Availability) => void, canEdit: boolean }) {
+    const [currentAvailability, setCurrentAvailability] = useState(availability);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingDay, setEditingDay] = useState<string | null>(null);
+    const [applyToAll, setApplyToAll] = useState(false);
+    
     const daysOfWeek = {
-        monday: 'Segunda-feira',
+        monday: 'Segunda-Feira',
         tuesday: 'Terça-feira',
         wednesday: 'Quarta-feira',
         thursday: 'Quinta-feira',
@@ -500,36 +593,77 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
         saturday: 'Sábado',
         sunday: 'Domingo',
     };
-    const timeSlots = ['08:00-10:00', '10:00-12:00', '13:00-15:00', '15:00-17:00', '18:00-20:00', '20:00-22:00'];
+
+    const handleEditClick = (dayKey: string) => {
+        setEditingDay(dayKey);
+        setIsDialogOpen(true);
+    };
+
+    const handleRemoveDay = (dayKey: string) => {
+        const newAvailability = { ...currentAvailability };
+        delete newAvailability[dayKey];
+        setCurrentAvailability(newAvailability);
+        onSave(newAvailability);
+    }
     
+    const handleSaveChanges = (dayKey: string, ranges: TimeRange[]) => {
+        let newAvailability = { ...currentAvailability };
+        
+        if (applyToAll) {
+            Object.keys(daysOfWeek).forEach(day => {
+                newAvailability[day] = ranges;
+            });
+        } else {
+            newAvailability[dayKey] = ranges;
+        }
+
+        setCurrentAvailability(newAvailability);
+        onSave(newAvailability);
+        setApplyToAll(false);
+    };
+
+    const getDayRanges = (dayKey: string): TimeRange[] => {
+        return currentAvailability[dayKey] || [];
+    }
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-2">
             {Object.entries(daysOfWeek).map(([dayKey, dayName]) => (
-                <div key={dayKey} className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-3">{dayName}</h4>
-                     <div className="grid gap-3">
-                        {timeSlots.map(slot => (
-                             <div key={slot} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`${dayKey}-${slot}`}
-                                    checked={availability[dayKey]?.includes(slot)}
-                                    onCheckedChange={(checked) => onSave(dayKey, slot, !!checked)}
-                                    disabled={!canEdit}
-                                />
-                                <label
-                                    htmlFor={`${dayKey}-${slot}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                    {slot}
-                                </label>
-                            </div>
-                        ))}
+                <div key={dayKey} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex flex-col">
+                        <span className="font-semibold">{dayName}</span>
+                        <span className="text-sm text-muted-foreground">
+                            {getDayRanges(dayKey).length > 0
+                                ? getDayRanges(dayKey).map(r => `${r.start} - ${r.end}`).join(', ')
+                                : 'Indisponível'}
+                        </span>
                     </div>
+                    {canEdit && (
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(dayKey)}>
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveDay(dayKey)}>
+                                <MinusCircle className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             ))}
+            {editingDay && (
+                <AvailabilityDialog 
+                    isOpen={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    initialRanges={getDayRanges(editingDay)}
+                    onSave={(ranges) => handleSaveChanges(editingDay, ranges)}
+                    applyToAll={applyToAll}
+                    onApplyToAll={setApplyToAll}
+                />
+            )}
         </div>
-    )
+    );
 }
+
 
 
 export default function ProfilePage() {
@@ -543,3 +677,4 @@ export default function ProfilePage() {
     
 
     
+

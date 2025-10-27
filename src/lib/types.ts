@@ -12,6 +12,13 @@ export interface EducationEntry {
   conclusionYear: string;
 }
 
+export interface TimeRange {
+  start: string;
+  end: string;
+}
+
+export type Availability = Record<string, TimeRange[]>;
+
 
 export interface User {
   id: string;
@@ -46,7 +53,7 @@ export interface Subject {
 export interface Teacher extends User {
   role: 'teacher';
   subjects: string[]; // array of subject IDs
-  availability: Record<string, string[]>; // e.g. { "monday": ["09:00", "10:00"] }
+  availability: Availability; // e.g. { "monday": [{ start: "09:00", end: "11:00" }] }
   status: 'active' | 'hidden' | 'deleted';
 }
 
