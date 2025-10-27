@@ -206,6 +206,20 @@ export default function TeachersPage() {
     };
   }, [updateTeacherList]);
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === '#teacher-list') {
+      const element = document.getElementById('teacher-list');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        element.classList.add('animate-highlight');
+        setTimeout(() => {
+          element.classList.remove('animate-highlight');
+        }, 2000);
+      }
+    }
+  }, []);
+
   const handleSendInvite = () => {
     if (!inviteEmail) {
       toast({
@@ -286,7 +300,7 @@ export default function TeachersPage() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 md:gap-8 overflow-hidden">
+      <div id="teacher-list" className="flex flex-1 flex-col gap-4 md:gap-8 overflow-hidden">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-2xl md:text-3xl font-bold">
             Nossos Professores
@@ -435,5 +449,3 @@ export default function TeachersPage() {
     </>
   );
 }
-
-    
