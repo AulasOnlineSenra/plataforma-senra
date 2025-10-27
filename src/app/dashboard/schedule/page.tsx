@@ -445,18 +445,18 @@ export default function SchedulePage() {
                           {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="outline" size="sm" onClick={() => handleEditClick(event)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Remarcar
+                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Remarcar</span>
                           </Button>
                           <Button
-                            variant="destructive"
-                            size="sm"
-                            className="ml-2"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
                             onClick={() => setEventToDelete(event)}
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Excluir</span>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -546,3 +546,5 @@ export default function SchedulePage() {
     </>
   );
 }
+
+    
