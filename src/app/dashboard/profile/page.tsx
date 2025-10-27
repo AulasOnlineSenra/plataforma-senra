@@ -350,7 +350,7 @@ function ProfilePageComponent() {
                 {/* Teacher-specific cards */}
                 {isTeacher && teacherProfile && (
                      <>
-                        <CollapsibleCard title="Perfil de Professor" description="Disciplinas que leciona e disponibilidade." icon={Briefcase}>
+                        <CollapsibleCard title="Disciplinas e Disponibilidade" description="Quais disciplinas você está apto(a) a lecionar e seus horários disponíveis." icon={Briefcase}>
                            <CardContent className="grid gap-6">
                                 <h3 className="font-semibold">Disciplinas Lecionadas</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
