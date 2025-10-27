@@ -46,7 +46,8 @@ export const users: User[] = [
         neighborhood: 'Consolação',
         street: 'Rua da Consolação',
         number: '123'
-    }
+    },
+    lastAccess: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'admin-1',
@@ -57,6 +58,7 @@ export const users: User[] = [
     timezone: 'America/Sao_Paulo',
     education: [{ id: 'edu-admin', course: 'Gerenciamento de Sistemas', university: 'Internet University', type: 'Bacharelado', conclusionYear: '2015' }],
     bio: 'Administrador da plataforma Aulas Online Senra.',
+    lastAccess: new Date().toISOString(),
   },
   {
     id: 'user-2',
@@ -67,6 +69,7 @@ export const users: User[] = [
     status: 'active',
     timezone: 'America/Manaus',
     referredByCode: 'ANA-5281',
+    lastAccess: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'user-3',
@@ -76,6 +79,7 @@ export const users: User[] = [
     role: 'student',
     status: 'inactive',
     timezone: 'America/Recife',
+    lastAccess: new Date(Date.now() - 95 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'user-4',
@@ -86,6 +90,7 @@ export const users: User[] = [
     status: 'active',
     timezone: 'America/Fortaleza',
     referredByCode: 'ANA-5281',
+    lastAccess: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
 
@@ -116,7 +121,8 @@ export let teachers: Teacher[] = [
         neighborhood: 'Copacabana',
         street: 'Avenida Atlântica',
         number: '456'
-    }
+    },
+    lastAccess: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'teacher-2',
@@ -133,6 +139,7 @@ export let teachers: Teacher[] = [
     },
     timezone: 'America/Sao_Paulo',
     status: 'active',
+    lastAccess: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'teacher-3',
@@ -152,6 +159,7 @@ export let teachers: Teacher[] = [
     },
     timezone: 'America/Noronha',
     status: 'active',
+    lastAccess: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
   },
 ];
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,6 +36,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const USERS_STORAGE_KEY = 'userList';
 
@@ -62,6 +65,7 @@ function StudentList({
             <TableRow>
               <TableHead>Aluno</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -88,6 +92,12 @@ function StudentList({
                   className="hidden sm:table-cell cursor-pointer"
                 >
                   {student.email}
+                </TableCell>
+                 <TableCell
+                  onClick={() => onStudentSelect(student)}
+                  className="hidden md:table-cell cursor-pointer text-muted-foreground"
+                >
+                  {student.lastAccess ? format(new Date(student.lastAccess), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Nunca'}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button

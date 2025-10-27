@@ -34,7 +34,8 @@ export interface User {
     neighborhood?: string;
     street?: string;
     number?: string;
-  }
+  },
+  lastAccess?: string;
 }
 
 export interface Subject {
