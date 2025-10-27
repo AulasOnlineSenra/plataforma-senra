@@ -268,7 +268,11 @@ function BookingPageComponent() {
 
 
     setBookings((prev) => [...prev, ...newBookings].sort((a, b) => a.start.getTime() - b.start.getTime()));
-    handleClearSelections();
+    // Clear only date/time selections to allow for quick booking of another class
+    setSelectedDates([]);
+    setSelectedTime(undefined);
+    setRecurrence('none');
+
 
     toast({
       title: 'Aula(s) Adicionada(s)!',
