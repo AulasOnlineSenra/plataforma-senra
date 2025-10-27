@@ -59,7 +59,7 @@ export default function SchedulePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const { toast } = useToast();
-  const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
+  const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('week');
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ScheduleEvent | null>(null);
   const [newDate, setNewDate] = useState<Date | undefined>();
