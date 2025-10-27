@@ -448,7 +448,7 @@ export default function SchedulePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Professor(a)</TableHead>
+                  {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
                   <TableHead>Aluno(a)</TableHead>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Data Original</TableHead>
@@ -462,7 +462,7 @@ export default function SchedulePage() {
                     const teacher = getTeacherById(event.teacherId);
                     return (
                       <TableRow key={event.id}>
-                        <TableCell>{teacher?.name || 'N/A'}</TableCell>
+                        {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
                         <TableCell>{student?.name || 'N/A'}</TableCell>
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell className="text-muted-foreground">
@@ -488,7 +488,7 @@ export default function SchedulePage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={currentUser?.role !== 'teacher' ? 5 : 4} className="h-24 text-center">
                       Nenhuma aula foi cancelada.
                     </TableCell>
                   </TableRow>
