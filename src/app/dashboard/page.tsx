@@ -514,13 +514,6 @@ export default function DashboardPage() {
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           Bem-vindo(a) de volta, {user.name.split(' ')[0]}!
         </h1>
-        {user.role === 'student' && (
-          <div className="ml-auto flex items-center gap-2">
-            <Button asChild>
-              <Link href="/dashboard/booking">Agendar Nova Aula</Link>
-            </Button>
-          </div>
-        )}
       </div>
       {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
     </div>
