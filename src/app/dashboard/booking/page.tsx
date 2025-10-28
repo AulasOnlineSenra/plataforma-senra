@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -21,14 +21,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers } from '@/lib/data';
+import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers, chatContacts as initialChatContacts, chatMessages as initialChatMessages } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes } from 'date-fns';
 import { Plus, Trash2, Repeat, X, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { User, Teacher, ScheduleEvent, Subject } from '@/lib/types';
+import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
 
 interface Booking {
   id: string;
@@ -60,6 +60,7 @@ function BookingPageComponent() {
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialSchedule);
   const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
 
 
   const { toast } = useToast();
@@ -86,6 +87,9 @@ function BookingPageComponent() {
         } else {
             setUsers(initialUsers);
         }
+
+        const combinedUsers = [...(JSON.parse(storedUsers || '[]')), ...(JSON.parse(storedTeachers || '[]'))];
+        setAllUsers(combinedUsers);
         
         if (studentId) {
             const studentUser = (JSON.parse(localStorage.getItem('userList') || '[]') as User[]).find(u => u.id === studentId);
@@ -312,8 +316,49 @@ function BookingPageComponent() {
     });
   };
 
-  const handleConfirmAllBookings = () => {
-    if (bookings.length === 0) {
+  const sendNotification = useCallback((senderId: string, receiverId: string, content: string) => {
+    const allMessagesStr = localStorage.getItem('chatMessages');
+    const allContactsStr = localStorage.getItem('chatContacts');
+    let allMessages: ChatMessage[] = allMessagesStr ? JSON.parse(allMessagesStr).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages;
+    let allContacts: ChatContact[] = allContactsStr ? JSON.parse(allContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : initialChatContacts;
+
+    const newMessage: ChatMessage = {
+        id: `msg-${Date.now()}-${Math.random()}`,
+        senderId,
+        receiverId,
+        content,
+        timestamp: new Date(),
+    };
+    allMessages.push(newMessage);
+
+    const updateContact = (contactOwnerId: string, partnerId: string) => {
+        const partnerDetails = allUsers.find(u => u.id === partnerId);
+        if (!partnerDetails) return;
+
+        let contactList = allContacts.filter(c => c.id !== partnerId);
+        const existingContact = allContacts.find(c => c.id === partnerId);
+        
+        const newContactEntry: ChatContact = {
+            id: partnerDetails.id,
+            name: partnerDetails.name,
+            avatarUrl: partnerDetails.avatarUrl,
+            lastMessage: content,
+            lastMessageTimestamp: newMessage.timestamp,
+            unreadCount: (existingContact?.id === partnerId && newMessage.receiverId === contactOwnerId) ? (existingContact.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
+        };
+
+        allContacts = [newContactEntry, ...contactList].sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+    };
+
+    updateContact(receiverId, senderId);
+    updateContact(senderId, receiverId);
+
+    localStorage.setItem('chatMessages', JSON.stringify(allMessages));
+    localStorage.setItem('chatContacts', JSON.stringify(allContacts));
+  }, [allUsers]);
+
+  const handleConfirmAllBookings = useCallback(() => {
+    if (bookings.length === 0 || !currentUser) {
       toast({
         variant: 'destructive',
         title: 'Nenhuma aula no resumo',
@@ -334,6 +379,31 @@ function BookingPageComponent() {
     
     const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
     localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
+
+    const adminUser = allUsers.find(u => u.role === 'admin');
+    if (!adminUser) {
+        console.error("Admin user not found for notifications");
+    }
+
+    newScheduleEvents.forEach(event => {
+        const teacher = teachers.find(t => t.id === event.teacherId);
+        const student = users.find(u => u.id === event.studentId);
+        const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+
+        const messageContent = `Nova aula agendada: ${event.subject} com ${teacher?.name} e ${student?.name} em ${dateStr}.`;
+        
+        // Notificar o admin
+        if (adminUser) {
+            sendNotification('system', adminUser.id, messageContent);
+        }
+        
+        // Notificar o professor
+        sendNotification('system', event.teacherId, `Você tem uma nova aula de ${event.subject} com ${student?.name} agendada para ${dateStr}.`);
+
+        // Notificar o aluno
+        sendNotification('system', event.studentId, `Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
+    });
+
     window.dispatchEvent(new Event('storage'));
 
     toast({
@@ -341,7 +411,7 @@ function BookingPageComponent() {
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
     setBookings([]);
-  };
+  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification]);
 
   const availableTimes = useMemo(() => {
     if (!selectedTeacher || !selectedDates || selectedDates.length === 0) {
@@ -659,3 +729,5 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
