@@ -48,6 +48,7 @@ function ChatPageComponent() {
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
@@ -287,6 +288,22 @@ function ChatPageComponent() {
           handleSendMessage();
         }
       };
+      
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // In a real app, you would upload this file and then send a message with the file URL.
+            // For now, we just show a toast.
+            toast({
+                title: "Arquivo Selecionado",
+                description: `Você selecionou "${file.name}". A funcionalidade de upload ainda não foi implementada.`,
+            });
+             // Reset the file input so the same file can be selected again
+            if(fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
 
     if (!currentUser) {
@@ -414,6 +431,12 @@ function ChatPageComponent() {
                             </div>
                         )}
                         <form onSubmit={handleSendMessage} className="relative">
+                            <Input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileSelect}
+                                className="hidden"
+                            />
                             <Input 
                                 placeholder="Digite uma mensagem..." 
                                 className="pr-24"
@@ -422,7 +445,7 @@ function ChatPageComponent() {
                                 onKeyDown={handleKeyDown}
                             />
                             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                                <Button type="button" size="icon" variant="ghost">
+                                <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
                                     <Paperclip className="h-5 w-5 text-muted-foreground" />
                                     <span className="sr-only">Anexar</span>
                                 </Button>
