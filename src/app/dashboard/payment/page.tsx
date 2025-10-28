@@ -140,33 +140,7 @@ function PaymentPageComponent() {
 
             <div>
                 <h3 className="font-semibold text-lg mb-4">Escolha o Método de Pagamento</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                     <Button
-                        variant="outline"
-                        className="h-24 flex-col gap-2"
-                        onClick={() => handlePayment('MercadoPago')}
-                    >
-                        <Image
-                            src="https://logopng.com.br/logos/mercado-pago-106.svg"
-                            alt="Mercado Pago"
-                            width={100}
-                            height={25}
-                        />
-                        <span className="text-xs text-muted-foreground">Cartão, Saldo ou Pix</span>
-                    </Button>
-                     <Button
-                        variant="outline"
-                        className="h-24 flex-col gap-2"
-                        onClick={() => handlePayment('PayPal')}
-                    >
-                        <Image
-                            src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg"
-                            alt="PayPal"
-                            width={80}
-                            height={20}
-                        />
-                         <span className="text-xs text-muted-foreground">Saldo ou Cartão</span>
-                    </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handlePayment('Cartão')}>
                         <CreditCard className="h-6 w-6" />
                         <span>Cartão de Crédito/Débito</span>
