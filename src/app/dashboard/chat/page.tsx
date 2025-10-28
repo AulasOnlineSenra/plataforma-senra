@@ -228,8 +228,17 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = async () => {
-        const contentToSave = scheduledMessageContent || messageContent;
-        if (!selectedScheduleDate || (!contentToSave.trim() && !contentToSave.includes('file::')) || !activeChatPartner || !currentUser?.id) {
+        if (!currentUser?.id) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Autenticação',
+                description: 'Por favor, faça login novamente para agendar mensagens.',
+            });
+            return;
+        }
+
+        const contentToSave = messageContent;
+        if (!selectedScheduleDate || (!contentToSave.trim() && !contentToSave.includes('file::')) || !activeChatPartner) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
@@ -274,7 +283,6 @@ function ChatPageComponent() {
         }
         
         setEditingMessageId(null);
-        setScheduledMessageContent('');
         setMessageContent('');
         setScheduledMessageTitle('');
         setScheduledMessageRecurrence('none');
@@ -759,11 +767,11 @@ function ChatPageComponent() {
                                 rows={5}
                                 className="pr-10"
                             />
-                            <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
+                             <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
                                 <Smile className="h-5 w-5 text-muted-foreground" />
                             </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                         <div className="grid grid-cols-2 gap-4">
                             <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
                                 <Upload className="mr-2 h-4 w-4" />
                                 Adicionar Mídia
@@ -773,7 +781,7 @@ function ChatPageComponent() {
                                 {isRecording ? "Parar Gravação" : "Gravar Áudio"}
                             </Button>
                         </div>
-                        {hasMicPermission === false && (
+                         {hasMicPermission === false && (
                             <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
                         )}
                         <div className="grid grid-cols-2 gap-4">
