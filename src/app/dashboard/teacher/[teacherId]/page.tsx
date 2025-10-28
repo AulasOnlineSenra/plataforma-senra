@@ -132,7 +132,7 @@ function TeacherDetailPageComponent() {
                                 <div>
                                     <p className="font-semibold">{c.subject}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
+                                        {format(c.start, "EEEE, dd/MM", { locale: ptBR })} às {format(c.start, "HH:mm")} - {format(c.end, "HH:mm")}
                                     </p>
                                 </div>
                                  <Button variant="outline" size="sm" asChild>
