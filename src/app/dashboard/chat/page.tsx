@@ -60,43 +60,386 @@ interface ScheduledMessage {
     recurrence: RecurrenceType;
 }
 
-function ChatPageComponent() {
-    const searchParams = useSearchParams();
-    const contactIdParam = searchParams.get('contactId');
+function ScheduleMessagesDialog({
+    isOpen,
+    onOpenChange,
+    activeChatPartner,
+    currentUser,
+}: {
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+    activeChatPartner: User | Teacher | null;
+    currentUser: User | null;
+}) {
     const { firestore } = useFirebase();
-    const { user: currentUser } = useUser();
-
-    const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const { toast } = useToast();
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [view, setView] = useState<'list' | 'create'>('list');
 
-    const [isScheduling, setIsScheduling] = useState(false);
-    const [scheduleDialogView, setScheduleDialogView] = useState<'list' | 'create'>('list');
-    
     const scheduledMessagesQuery = useMemo(() => {
         if (!firestore || !currentUser?.id) return null;
         return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
     }, [firestore, currentUser?.id]);
 
     const { data: scheduledMessages, isLoading: isLoadingScheduledMessages } = useCollection<ScheduledMessage>(scheduledMessagesQuery);
-
-
+    
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-    const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [messageContent, setMessageContent] = useState('');
     const [scheduledMessageTitle, setScheduledMessageTitle] = useState('');
+    const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [scheduledMessageRecurrence, setScheduledMessageRecurrence] = useState<RecurrenceType>('none');
+    const [isRecording, setIsRecording] = useState(false);
+    const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+    const handleScheduleMessage = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!currentUser?.id) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Autenticação',
+                description: 'Por favor, faça login novamente para agendar mensagens.',
+            });
+            return;
+        }
+
+        if (!messageContent.trim() && !messageContent.includes('file::')) {
+            toast({
+                variant: 'destructive',
+                title: 'Campos Incompletos',
+                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio.',
+            });
+            return;
+        }
+
+        if (!activeChatPartner) {
+            toast({
+                variant: 'destructive',
+                title: 'Nenhum contato selecionado',
+                description: 'Selecione um contato para agendar a mensagem.',
+            });
+            return;
+        }
+        
+        if (!selectedScheduleDate) {
+            toast({
+                variant: 'destructive',
+                title: 'Data e Hora inválidos',
+                description: 'Por favor, selecione uma data e hora para o agendamento.',
+            });
+            return;
+        }
+
+        if (!firestore) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Conexão',
+                description: 'Não foi possível conectar ao banco de dados.',
+            });
+            return;
+        }
+
+        const messageData = {
+            creatorId: currentUser.id,
+            contactId: activeChatPartner.id,
+            date: selectedScheduleDate,
+            content: messageContent,
+            title: scheduledMessageTitle,
+            recurrence: scheduledMessageRecurrence,
+            createdAt: serverTimestamp(),
+        };
+
+        if (editingMessageId) {
+            const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', editingMessageId);
+            await updateDoc(messageRef, messageData);
+            toast({
+                title: 'Mensagem Atualizada',
+                description: `Sua mensagem foi reagendada para ${format(selectedScheduleDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+            });
+        } else {
+            const collectionRef = collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+            await addDoc(collectionRef, messageData);
+            toast({
+                title: 'Mensagem Agendada',
+                description: `Sua mensagem foi agendada para ${format(selectedScheduleDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+            });
+        }
+        
+        setEditingMessageId(null);
+        setMessageContent('');
+        setScheduledMessageTitle('');
+        setScheduledMessageRecurrence('none');
+        setView('list');
+    };
+    
+    const handleEditScheduledMessage = (message: ScheduledMessage) => {
+        setEditingMessageId(message.id);
+        setMessageContent(message.content);
+        setScheduledMessageTitle(message.title || '');
+        setSelectedScheduleDate(new Date(message.date));
+        setScheduledMessageRecurrence(message.recurrence);
+        setView('create');
+    };
+
+    const handleRemoveScheduledMessage = async (id: string) => {
+        if (!currentUser?.id || !firestore) return;
+        const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', id);
+        await deleteDoc(messageRef);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                const dataUrl = loadEvent.target?.result as string;
+                const fileMessage = `file::${file.name}::${dataUrl}`;
+                setMessageContent(prev => prev ? `${prev}\n${fileMessage}` : fileMessage);
+                 toast({
+                    title: "Arquivo Anexado!",
+                    description: `O arquivo "${file.name}" foi anexado à sua mensagem agendada.`,
+                });
+            };
+            reader.readAsDataURL(file);
+
+            if(fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+    
+    const handleToggleRecording = async () => {
+        if (isRecording) {
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                setHasMicPermission(true);
+                
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+
+                mediaRecorder.ondataavailable = (event) => {
+                    setAudioChunks(prev => [...prev, event.data]);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64data = reader.result as string;
+                        const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
+                         setMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
+                        toast({
+                            title: "Gravação Anexada!",
+                            description: "Sua gravação de áudio foi anexada à mensagem agendada.",
+                        });
+                    };
+                    reader.readAsDataURL(audioBlob);
+
+                    setAudioChunks([]); 
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                setIsRecording(true);
+                
+            } catch (error) {
+                console.error("Error accessing microphone:", error);
+                setHasMicPermission(false);
+                toast({
+                    variant: 'destructive',
+                    title: 'Permissão de Microfone Negada',
+                    description: 'Por favor, permita o acesso ao microfone nas configurações do seu navegador.',
+                });
+            }
+        }
+    };
+
+    const getMessageType = (content: string) => {
+        if (content.startsWith('file::')) {
+            const [, fileName] = content.split('::');
+            if (fileName.endsWith('.mp3') || fileName.endsWith('.ogg') || fileName.endsWith('.webm')) {
+                return 'audio';
+            }
+            return 'file';
+        }
+        return 'txt';
+    }
+
+    const recurrenceLabels: Record<RecurrenceType, string> = {
+        none: 'Vazia',
+        daily: 'Diária',
+        weekly: 'Semanal',
+        monthly: 'Mensal',
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-4xl">
+              {view === 'list' ? (
+                <>
+                    <DialogHeader>
+                        <DialogTitle className="font-headline text-2xl">Mensagens Agendadas para {activeChatPartner?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className='py-4'>
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Título</TableHead>
+                                    <TableHead>Cliente</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Hora</TableHead>
+                                    <TableHead>Recorrência</TableHead>
+                                    <TableHead>Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser?.id).map(msg => (
+                                    <TableRow key={msg.id}>
+                                        <TableCell>{msg.title || 'Não Definido'}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={activeChatPartner?.avatarUrl} />
+                                                    <AvatarFallback>{activeChatPartner?.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <span>{activeChatPartner?.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{getMessageType(msg.content)}</TableCell>
+                                        <TableCell>{format(new Date(msg.date), 'dd/MM/yyyy')}</TableCell>
+                                        <TableCell>{format(new Date(msg.date), 'HH:mm')}</TableCell>
+                                        <TableCell>{recurrenceLabels[msg.recurrence]}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="ghost" size="icon" onClick={() => handleEditScheduledMessage(msg)}><Edit className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleRemoveScheduledMessage(msg.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                         </Table>
+                         {isLoadingScheduledMessages ? <p>Carregando...</p> : (scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser?.id).length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <p>Nenhuma mensagem agendada para este contato.</p>
+                            </div>
+                         )}
+                    </div>
+                    <DialogFooter className="sm:justify-center">
+                         <Button type="button" onClick={() => { setEditingMessageId(null); setMessageContent(''); setView('create'); }} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar
+                        </Button>
+                    </DialogFooter>
+                </>
+              ) : (
+                <form onSubmit={handleScheduleMessage}>
+                    <DialogHeader>
+                        <div className="flex items-center gap-4">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => setView('list')}>
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <DialogTitle className="font-headline text-2xl">{editingMessageId ? 'Editar Agendamento' : 'Criar Agendamento'}</DialogTitle>
+                        </div>
+                    </DialogHeader>
+                    <div className="grid gap-6 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="schedule-title">Título (Opcional)</Label>
+                            <Input id="schedule-title" placeholder="Insira aqui o título" value={scheduledMessageTitle} onChange={e => setScheduledMessageTitle(e.target.value)} />
+                        </div>
+                         <div className="grid gap-2 relative">
+                            <Label htmlFor="scheduled-message-content">Mensagem</Label>
+                            <Textarea
+                                id="scheduled-message-content"
+                                value={messageContent}
+                                onChange={(e) => setMessageContent(e.target.value)}
+                                placeholder="Insira sua mensagem ou adicione mídia/áudio abaixo..."
+                                rows={5}
+                                className="pr-10"
+                            />
+                             <Button type="button" variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
+                                <Smile className="h-5 w-5 text-muted-foreground" />
+                            </Button>
+                        </div>
+                         <div className="grid grid-cols-2 gap-4">
+                             <Input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileSelect}
+                                className="hidden"
+                                accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,audio/*"
+                            />
+                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Adicionar Mídia
+                            </Button>
+                             <Button type="button" variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
+                                {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
+                                {isRecording ? "Parar Gravação" : "Gravar Áudio"}
+                            </Button>
+                        </div>
+                         {hasMicPermission === false && (
+                            <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
+                        )}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                            <Label>Data</Label>
+                            <DatePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="time">Hora</Label>
+                                <TimePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="recurrence">Recorrência</Label>
+                            <Select value={scheduledMessageRecurrence} onValueChange={(v) => setScheduledMessageRecurrence(v as RecurrenceType)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Nenhuma selecionada" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Não repetir</SelectItem>
+                                    <SelectItem value="daily">Diariamente</SelectItem>
+                                    <SelectItem value="weekly">Semanalmente</SelectItem>
+                                    <SelectItem value="monthly">Mensalmente</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">Cancelar</Button>
+                        </DialogClose>
+                        <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
+                    </DialogFooter>
+                </form>
+              )}
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function ChatPageComponent() {
+    const searchParams = useSearchParams();
+    const contactIdParam = searchParams.get('contactId');
+    const { user: currentUser } = useUser();
+
+    const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [isScheduling, setIsScheduling] = useState(false);
     
     const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
     const [allContacts, setAllContacts] = useState<ChatContact[]>(initialChatContacts);
-
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const [isRecording, setIsRecording] = useState(false);
-    const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
-    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
     const getContactDetails = useCallback((contactId: string) => {
       return allUsers.find(u => u.id === contactId);
@@ -226,97 +569,7 @@ function ChatPageComponent() {
       return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
     
-    const handleScheduleMessage = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!currentUser?.id) {
-            toast({
-                variant: 'destructive',
-                title: 'Erro de Autenticação',
-                description: 'Por favor, faça login novamente para agendar mensagens.',
-            });
-            return;
-        }
-
-        const contentToSave = messageContent;
-        if (!contentToSave.trim() && !contentToSave.includes('file::')) {
-            toast({
-                variant: 'destructive',
-                title: 'Campos Incompletos',
-                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio.',
-            });
-            return;
-        }
-
-        if (!activeChatPartner) {
-             toast({
-                variant: 'destructive',
-                title: 'Nenhum contato selecionado',
-                description: 'Selecione um contato para agendar a mensagem.',
-            });
-            return;
-        }
-        
-        if (!selectedScheduleDate) {
-             toast({
-                variant: 'destructive',
-                title: 'Data e Hora inválidos',
-                description: 'Por favor, selecione uma data e hora para o agendamento.',
-            });
-            return;
-        }
-
-
-        if (!firestore) {
-             toast({
-                variant: 'destructive',
-                title: 'Erro de Conexão',
-                description: 'Não foi possível conectar ao banco de dados.',
-            });
-            return;
-        }
-
-        const messageData = {
-            creatorId: currentUser.id,
-            contactId: activeChatPartner.id,
-            date: selectedScheduleDate,
-            content: contentToSave,
-            title: scheduledMessageTitle,
-            recurrence: scheduledMessageRecurrence,
-            createdAt: serverTimestamp(),
-        };
-
-        if (editingMessageId) {
-            const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', editingMessageId);
-            await updateDoc(messageRef, messageData);
-            toast({
-                title: 'Mensagem Atualizada',
-                description: `Sua mensagem foi reagendada para ${format(selectedScheduleDate, "dd/MM/yyyy 'às' HH:mm")}.`,
-            });
-        } else {
-            const collectionRef = collection(firestore, 'users', currentUser.id, 'scheduledMessages');
-            await addDoc(collectionRef, messageData);
-            toast({
-                title: 'Mensagem Agendada',
-                description: `Sua mensagem foi agendada para ${format(selectedScheduleDate, "dd/MM/yyyy 'às' HH:mm")}.`,
-            });
-        }
-        
-        setEditingMessageId(null);
-        setMessageContent('');
-        setScheduledMessageTitle('');
-        setScheduledMessageRecurrence('none');
-        setScheduleDialogView('list');
-    };
     
-    const handleEditScheduledMessage = (message: ScheduledMessage) => {
-        setEditingMessageId(message.id);
-        setMessageContent(message.content);
-        setScheduledMessageTitle(message.title || '');
-        setSelectedScheduleDate(new Date(message.date));
-        setScheduledMessageRecurrence(message.recurrence);
-        setScheduleDialogView('create');
-    };
-
     const sendMessage = useCallback((senderId: string, receiverId: string, content: string) => {
       const newMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
@@ -380,16 +633,18 @@ function ChatPageComponent() {
       window.dispatchEvent(new Event('storage'));
     }, [getContactDetails]);
 
+    const [messageInput, setMessageInput] = useState('');
+
     const handleSendMessage = (e?: React.FormEvent, content?: string) => {
       if (e) e.preventDefault();
       
-      const messageToSend = content || messageContent;
+      const messageToSend = content || messageInput;
       if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
   
       sendMessage(currentUser.id, activeChatPartner.id, messageToSend);
       
       if (!content) {
-          setMessageContent('');
+          setMessageInput('');
       }
     };
     
@@ -407,15 +662,7 @@ function ChatPageComponent() {
             reader.onload = (loadEvent) => {
                 const dataUrl = loadEvent.target?.result as string;
                 const fileMessage = `file::${file.name}::${dataUrl}`;
-                if (isScheduling && scheduleDialogView === 'create') {
-                    setMessageContent(prev => prev ? `${prev}\n${fileMessage}` : fileMessage);
-                     toast({
-                        title: "Arquivo Anexado!",
-                        description: `O arquivo "${file.name}" foi anexado à sua mensagem agendada.`,
-                    });
-                } else {
-                    handleSendMessage(undefined, fileMessage);
-                }
+                handleSendMessage(undefined, fileMessage);
             };
             reader.readAsDataURL(file);
 
@@ -446,83 +693,20 @@ function ChatPageComponent() {
         return <p className="break-words whitespace-pre-wrap">{message.content}</p>;
     };
 
+    const { data: scheduledMessagesForDisplay } = useCollection<ScheduledMessage>(
+        useMemo(() => {
+            const { firestore } = useFirebase();
+            if (!firestore || !currentUser?.id) return null;
+            return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+        }, [currentUser?.id])
+    );
+
     const handleRemoveScheduledMessage = async (id: string) => {
+        const { firestore } = useFirebase();
         if (!currentUser?.id || !firestore) return;
         const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', id);
         await deleteDoc(messageRef);
     };
-
-    const handleToggleRecording = async () => {
-        if (isRecording) {
-            mediaRecorderRef.current?.stop();
-            setIsRecording(false);
-        } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                setHasMicPermission(true);
-                
-                const mediaRecorder = new MediaRecorder(stream);
-                mediaRecorderRef.current = mediaRecorder;
-
-                mediaRecorder.ondataavailable = (event) => {
-                    setAudioChunks(prev => [...prev, event.data]);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Use a common format like webm
-                    
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64data = reader.result as string;
-                        const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
-                        if (isScheduling && scheduleDialogView === 'create') {
-                            setMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
-                            toast({
-                                title: "Gravação Anexada!",
-                                description: "Sua gravação de áudio foi anexada à mensagem agendada.",
-                            });
-                        } else {
-                            handleSendMessage(undefined, audioMessage);
-                        }
-                    };
-                    reader.readAsDataURL(audioBlob);
-
-                    setAudioChunks([]); 
-                    stream.getTracks().forEach(track => track.stop());
-                };
-
-                mediaRecorder.start();
-                setIsRecording(true);
-                
-            } catch (error) {
-                console.error("Error accessing microphone:", error);
-                setHasMicPermission(false);
-                toast({
-                    variant: 'destructive',
-                    title: 'Permissão de Microfone Negada',
-                    description: 'Por favor, permita o acesso ao microfone nas configurações do seu navegador.',
-                });
-            }
-        }
-    };
-        
-    const recurrenceLabels: Record<RecurrenceType, string> = {
-        none: 'Vazia',
-        daily: 'Diária',
-        weekly: 'Semanal',
-        monthly: 'Mensal',
-    };
-
-    const getMessageType = (content: string) => {
-        if (content.startsWith('file::')) {
-            const [, fileName] = content.split('::');
-            if (fileName.endsWith('.mp3') || fileName.endsWith('.ogg') || fileName.endsWith('.webm')) {
-                return 'audio';
-            }
-            return 'file';
-        }
-        return 'txt';
-    }
 
 
     if (!currentUser) {
@@ -638,9 +822,9 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id).length > 0 && (
+                          {(scheduledMessagesForDisplay || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id).length > 0 && (
                             <div className="space-y-2 mb-2">
-                                {(scheduledMessages || [])
+                                {(scheduledMessagesForDisplay || [])
                                     .filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id)
                                     .map((msg) => (
                                   <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
@@ -666,8 +850,8 @@ function ChatPageComponent() {
                               <Input 
                                   placeholder="Digite uma mensagem..." 
                                   className="pr-24"
-                                  value={messageContent}
-                                  onChange={(e) => setMessageContent(e.target.value)}
+                                  value={messageInput}
+                                  onChange={(e) => setMessageInput(e.target.value)}
                                   onKeyDown={handleKeyDown}
                               />
                               <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
@@ -675,7 +859,7 @@ function ChatPageComponent() {
                                       <Paperclip className="h-5 w-5 text-muted-foreground" />
                                       <span className="sr-only">Anexar</span>
                                   </Button>
-                                  <Button type="button" size="icon" variant="ghost" onClick={() => { setScheduleDialogView('list'); setIsScheduling(true); }}>
+                                  <Button type="button" size="icon" variant="ghost" onClick={() => { setIsScheduling(true); }}>
                                       <Clock className="h-5 w-5 text-muted-foreground" />
                                       <span className="sr-only">Agendar</span>
                                   </Button>
@@ -701,143 +885,12 @@ function ChatPageComponent() {
                   </Card>
               )}
         </div>
-        <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-            <DialogContent className="sm:max-w-4xl">
-              {scheduleDialogView === 'list' ? (
-                <>
-                    <DialogHeader>
-                        <DialogTitle className="font-headline text-2xl">Mensagens Agendadas para {activeChatPartner?.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className='py-4'>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Título</TableHead>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Tipo</TableHead>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Hora</TableHead>
-                                    <TableHead>Recorrência</TableHead>
-                                    <TableHead>Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser.id).map(msg => (
-                                    <TableRow key={msg.id}>
-                                        <TableCell>{msg.title || 'Não Definido'}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={activeChatPartner?.avatarUrl} />
-                                                    <AvatarFallback>{activeChatPartner?.name.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <span>{activeChatPartner?.name}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{getMessageType(msg.content)}</TableCell>
-                                        <TableCell>{format(new Date(msg.date), 'dd/MM/yyyy')}</TableCell>
-                                        <TableCell>{format(new Date(msg.date), 'HH:mm')}</TableCell>
-                                        <TableCell>{recurrenceLabels[msg.recurrence]}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => handleEditScheduledMessage(msg)}><Edit className="h-4 w-4" /></Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleRemoveScheduledMessage(msg.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                         </Table>
-                         {isLoadingScheduledMessages ? <p>Carregando...</p> : (scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser.id).length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">
-                                <p>Nenhuma mensagem agendada para este contato.</p>
-                            </div>
-                         )}
-                    </div>
-                    <DialogFooter className="sm:justify-center">
-                         <Button type="button" onClick={() => { setEditingMessageId(null); setMessageContent(''); setScheduleDialogView('create'); }} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Criar
-                        </Button>
-                    </DialogFooter>
-                </>
-              ) : (
-                <form onSubmit={handleScheduleMessage}>
-                    <DialogHeader>
-                        <div className="flex items-center gap-4">
-                            <Button type="button" variant="ghost" size="icon" onClick={() => setScheduleDialogView('list')}>
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <DialogTitle className="font-headline text-2xl">{editingMessageId ? 'Editar Agendamento' : 'Criar Agendamento'}</DialogTitle>
-                        </div>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="schedule-title">Título (Opcional)</Label>
-                            <Input id="schedule-title" placeholder="Insira aqui o título" value={scheduledMessageTitle} onChange={e => setScheduledMessageTitle(e.target.value)} />
-                        </div>
-                         <div className="grid gap-2 relative">
-                            <Label htmlFor="scheduled-message-content">Mensagem</Label>
-                            <Textarea
-                                id="scheduled-message-content"
-                                value={messageContent}
-                                onChange={(e) => setMessageContent(e.target.value)}
-                                placeholder="Insira sua mensagem ou adicione mídia/áudio abaixo..."
-                                rows={5}
-                                className="pr-10"
-                            />
-                             <Button type="button" variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
-                                <Smile className="h-5 w-5 text-muted-foreground" />
-                            </Button>
-                        </div>
-                         <div className="grid grid-cols-2 gap-4">
-                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Adicionar Mídia
-                            </Button>
-                             <Button type="button" variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
-                                {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
-                                {isRecording ? "Parar Gravação" : "Gravar Áudio"}
-                            </Button>
-                        </div>
-                         {hasMicPermission === false && (
-                            <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
-                        )}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                            <Label>Data</Label>
-                            <DatePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="time">Hora</Label>
-                                <TimePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="recurrence">Recorrência</Label>
-                            <Select value={scheduledMessageRecurrence} onValueChange={(v) => setScheduledMessageRecurrence(v as RecurrenceType)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Nenhuma selecionada" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">Não repetir</SelectItem>
-                                    <SelectItem value="daily">Diariamente</SelectItem>
-                                    <SelectItem value="weekly">Semanalmente</SelectItem>
-                                    <SelectItem value="monthly">Mensalmente</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button type="button" variant="outline">Cancelar</Button>
-                        </DialogClose>
-                        <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
-                    </DialogFooter>
-                </form>
-              )}
-            </DialogContent>
-        </Dialog>
+        <ScheduleMessagesDialog 
+            isOpen={isScheduling}
+            onOpenChange={setIsScheduling}
+            activeChatPartner={activeChatPartner}
+            currentUser={currentUser}
+        />
       </>
     )
 
@@ -875,3 +928,4 @@ export default function ChatPage() {
     
 
     
+
