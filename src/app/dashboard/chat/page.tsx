@@ -228,7 +228,8 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = async () => {
-        if (!selectedScheduleDate || (!scheduledMessageContent.trim() && !scheduledMessageContent.includes('file::')) || !activeChatPartner || !currentUser?.id) {
+        const contentToSave = scheduledMessageContent || messageContent;
+        if (!selectedScheduleDate || (!contentToSave.trim() && !contentToSave.includes('file::')) || !activeChatPartner || !currentUser?.id) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
@@ -250,7 +251,7 @@ function ChatPageComponent() {
             creatorId: currentUser.id,
             contactId: activeChatPartner.id,
             date: selectedScheduleDate,
-            content: scheduledMessageContent,
+            content: contentToSave,
             title: scheduledMessageTitle,
             recurrence: scheduledMessageRecurrence,
             createdAt: serverTimestamp(),
@@ -274,6 +275,7 @@ function ChatPageComponent() {
         
         setEditingMessageId(null);
         setScheduledMessageContent('');
+        setMessageContent('');
         setScheduledMessageTitle('');
         setScheduledMessageRecurrence('none');
         setScheduleDialogView('list');
@@ -281,7 +283,7 @@ function ChatPageComponent() {
     
     const handleEditScheduledMessage = (message: ScheduledMessage) => {
         setEditingMessageId(message.id);
-        setScheduledMessageContent(message.content);
+        setMessageContent(message.content);
         setScheduledMessageTitle(message.title || '');
         setSelectedScheduleDate(new Date(message.date));
         setScheduledMessageRecurrence(message.recurrence);
@@ -379,7 +381,7 @@ function ChatPageComponent() {
                 const dataUrl = loadEvent.target?.result as string;
                 const fileMessage = `file::${file.name}::${dataUrl}`;
                 if (isScheduling && scheduleDialogView === 'create') {
-                    setScheduledMessageContent(prev => prev ? `${prev}\n${fileMessage}` : fileMessage);
+                    setMessageContent(prev => prev ? `${prev}\n${fileMessage}` : fileMessage);
                      toast({
                         title: "Arquivo Anexado!",
                         description: `O arquivo "${file.name}" foi anexado à sua mensagem agendada.`,
@@ -447,7 +449,7 @@ function ChatPageComponent() {
                         const base64data = reader.result as string;
                         const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
                         if (isScheduling && scheduleDialogView === 'create') {
-                            setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
+                            setMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
                             toast({
                                 title: "Gravação Anexada!",
                                 description: "Sua gravação de áudio foi anexada à mensagem agendada.",
@@ -726,7 +728,7 @@ function ChatPageComponent() {
                          )}
                     </div>
                     <DialogFooter className="sm:justify-center">
-                         <Button type="button" onClick={() => { setEditingMessageId(null); setScheduleDialogView('create'); }} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
+                         <Button type="button" onClick={() => { setEditingMessageId(null); setMessageContent(''); setScheduleDialogView('create'); }} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
                             <Plus className="mr-2 h-4 w-4" />
                             Criar
                         </Button>
@@ -751,8 +753,8 @@ function ChatPageComponent() {
                             <Label htmlFor="scheduled-message-content">Mensagem</Label>
                             <Textarea
                                 id="scheduled-message-content"
-                                value={scheduledMessageContent}
-                                onChange={(e) => setScheduledMessageContent(e.target.value)}
+                                value={messageContent}
+                                onChange={(e) => setMessageContent(e.target.value)}
                                 placeholder="Insira sua mensagem ou adicione mídia/áudio abaixo..."
                                 rows={5}
                                 className="pr-10"
@@ -761,33 +763,19 @@ function ChatPageComponent() {
                                 <Smile className="h-5 w-5 text-muted-foreground" />
                             </Button>
                         </div>
-                        <Tabs defaultValue="media" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="media">Mídia</TabsTrigger>
-                                <TabsTrigger value="audio">Áudio</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="media" className="pt-4">
-                                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Adicionar arquivo (Imagem, PDF, etc.)
-                                </Button>
-                            </TabsContent>
-                            <TabsContent value="audio" className="pt-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Adicionar áudio
-                                    </Button>
-                                    <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
-                                        {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
-                                        {isRecording ? "Parar Gravação" : "Gravar Áudio"}
-                                    </Button>
-                                </div>
-                                {hasMicPermission === false && (
-                                    <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
-                                )}
-                            </TabsContent>
-                        </Tabs>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Adicionar Mídia
+                            </Button>
+                             <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
+                                {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
+                                {isRecording ? "Parar Gravação" : "Gravar Áudio"}
+                            </Button>
+                        </div>
+                        {hasMicPermission === false && (
+                            <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
+                        )}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                             <Label>Data</Label>
