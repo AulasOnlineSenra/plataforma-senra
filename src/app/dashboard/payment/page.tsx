@@ -31,6 +31,8 @@ import { Label } from '@/components/ui/label';
 
 
 const PACKAGES_STORAGE_KEY = 'classPackages';
+const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
+const DEFAULT_PIX_KEY = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540550.005802BR5913NOME_COMPLETO6009SAO_PAULO62070503***6304E2B1';
 
 
 function PaymentPageComponent() {
@@ -38,13 +40,17 @@ function PaymentPageComponent() {
   const { toast } = useToast();
   const [classPackages, setClassPackages] = useState<ClassPackage[]>(defaultClassPackages);
   const [isPixDialogOpen, setIsPixDialogOpen] = useState(false);
-  const pixKey = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540550.005802BR5913NOME_COMPLETO6009SAO_PAULO62070503***6304E2B1';
+  const [pixKey, setPixKey] = useState(DEFAULT_PIX_KEY);
 
 
   useEffect(() => {
     const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
     if (storedPackages) {
       setClassPackages(JSON.parse(storedPackages));
+    }
+    const storedPixKey = localStorage.getItem(PIX_KEY_STORAGE_KEY);
+    if (storedPixKey) {
+      setPixKey(storedPixKey);
     }
   }, []);
 

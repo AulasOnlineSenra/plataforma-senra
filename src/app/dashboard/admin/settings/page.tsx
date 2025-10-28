@@ -14,18 +14,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
+import { Save, KeyRound } from 'lucide-react';
 
 const INACTIVITY_STORAGE_KEY = 'studentInactivityDays';
+const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 
 export default function AdminSettingsPage() {
   const [inactivityDays, setInactivityDays] = useState(90);
+  const [pixKey, setPixKey] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
     const storedDays = localStorage.getItem(INACTIVITY_STORAGE_KEY);
     if (storedDays) {
       setInactivityDays(parseInt(storedDays, 10));
+    }
+    const storedPixKey = localStorage.getItem(PIX_KEY_STORAGE_KEY);
+    if (storedPixKey) {
+      setPixKey(storedPixKey);
     }
   }, []);
 
@@ -34,6 +40,14 @@ export default function AdminSettingsPage() {
     toast({
       title: 'Configuração Salva!',
       description: 'O período de inatividade foi atualizado.',
+    });
+  };
+
+  const handleSavePixKey = () => {
+    localStorage.setItem(PIX_KEY_STORAGE_KEY, pixKey);
+    toast({
+      title: 'Chave Pix Salva!',
+      description: 'A nova chave Pix foi configurada para os pagamentos.',
     });
   };
 
@@ -82,6 +96,35 @@ export default function AdminSettingsPage() {
                 <Button onClick={handleSaveInactivity}>
                     <Save className="mr-2 h-4 w-4" />
                     Salvar Configuração de Inatividade
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
+       <Card>
+        <CardHeader>
+          <CardTitle>Configurações de Pagamento</CardTitle>
+          <CardDescription>
+            Configure as chaves de pagamento para as integrações da plataforma.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+            <div className="grid gap-2 max-w-md">
+                <Label htmlFor="pix-key">Chave Pix</Label>
+                <Input
+                    id="pix-key"
+                    type="text"
+                    value={pixKey}
+                    onChange={(e) => setPixKey(e.target.value)}
+                    placeholder='Cole sua chave Pix aqui'
+                />
+                <p className="text-sm text-muted-foreground">
+                    Esta chave será usada para gerar QR Codes de pagamento via Pix.
+                </p>
+            </div>
+             <div className="flex">
+                <Button onClick={handleSavePixKey}>
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    Salvar Chave Pix
                 </Button>
             </div>
         </CardContent>
