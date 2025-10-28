@@ -230,7 +230,7 @@ function ChatPageComponent() {
 
         toast({
             title: 'Mensagem Agendada',
-            description: `Sua mensagem será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+            description: `Sua mensagem "${newScheduledMessage.content}" será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
         });
     }
 
@@ -288,8 +288,41 @@ function ChatPageComponent() {
             return [newContactEntry, ...contacts];
         };
 
-        const myUpdatedContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
-        const partnerUpdatedContacts = updateUserContacts(myUpdatedContacts, activeChatPartner.id, currentUser.id, newMessage);
+        let myUpdatedContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
+        let partnerUpdatedContacts = updateUserContacts(myUpdatedContacts, activeChatPartner.id, currentUser.id, newMessage);
+
+        // Ensure both contacts are present in the list, even if they were filtered out before
+        const partnerContact = partnerUpdatedContacts.find(c => c.id === activeChatPartner.id);
+        const selfContact = partnerUpdatedContacts.find(c => c.id === currentUser.id);
+
+        if (!partnerContact) {
+            const partnerDetails = getContactDetails(activeChatPartner.id);
+            if(partnerDetails) {
+                 partnerUpdatedContacts.push({
+                    id: partnerDetails.id,
+                    name: partnerDetails.name,
+                    avatarUrl: partnerDetails.avatarUrl,
+                    lastMessage: newMessage.content,
+                    lastMessageTimestamp: newMessage.timestamp,
+                    unreadCount: 1, // For the partner
+                });
+            }
+        }
+        
+        if (!selfContact) {
+             const selfDetails = getContactDetails(currentUser.id);
+             if(selfDetails) {
+                 partnerUpdatedContacts.push({
+                    id: selfDetails.id,
+                    name: selfDetails.name,
+                    avatarUrl: selfDetails.avatarUrl,
+                    lastMessage: newMessage.content,
+                    lastMessageTimestamp: newMessage.timestamp,
+                    unreadCount: 0, // For self
+                });
+            }
+        }
+
         const finalContacts = Array.from(new Map(partnerUpdatedContacts.map(item => [item.id, item])).values());
         
         setAllContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
@@ -602,3 +635,4 @@ export default function ChatPage() {
     
 
     
+
