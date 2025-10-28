@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { format, formatDistanceToNow, isToday, isYesterday, addDays, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { User, UserRole, ChatMessage, ChatContact, Teacher, ScheduleEvent } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -103,11 +103,13 @@ function ChatPageComponent() {
           : initialChatContacts;
 
         const updatedContacts = currentContacts.map(c =>
-          c.id === contactId ? { ...c, unreadCount: 0 } : c
+          c.id === contactId && c.unreadCount && c.unreadCount > 0
+          ? { ...c, unreadCount: 0 } 
+          : c
         );
 
         localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
-        setAllContacts(updatedContacts);
+        setAllContacts(updatedContacts); // Update local state to re-render UI
         window.dispatchEvent(new Event('storage')); 
       }
     }, [getContactDetails, currentUser]);
@@ -232,9 +234,12 @@ function ChatPageComponent() {
         newScheduledDate.setHours(hours, minutes, 0, 0);
 
         let updatedMessages;
+        const currentScheduledMessagesStr = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
+        const currentScheduledMessages: ScheduledMessage[] = currentScheduledMessagesStr ? JSON.parse(currentScheduledMessagesStr).map((m: any) => ({ ...m, date: new Date(m.date) })) : [];
+
 
         if (editingMessageId) {
-            updatedMessages = scheduledMessages.map(msg =>
+            updatedMessages = currentScheduledMessages.map(msg =>
                 msg.id === editingMessageId
                     ? {
                           ...msg,
@@ -258,7 +263,7 @@ function ChatPageComponent() {
                 title: scheduledMessageTitle,
                 recurrence: scheduledMessageRecurrence,
             };
-            updatedMessages = [...scheduledMessages, newScheduledMessage];
+            updatedMessages = [...currentScheduledMessages, newScheduledMessage];
             toast({
                 title: 'Mensagem Agendada',
                 description: `Sua mensagem foi agendada para ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
@@ -292,24 +297,22 @@ function ChatPageComponent() {
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     });
 
-    const handleSendMessage = (e?: React.FormEvent, content?: string) => {
-      if (e) e.preventDefault();
-      
-      const messageToSend = content || messageContent;
-      if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
-  
+    const sendMessage = useCallback((senderId: string, receiverId: string, content: string) => {
       const newMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
-        senderId: currentUser.id,
-        receiverId: activeChatPartner.id,
-        content: messageToSend,
+        senderId: senderId,
+        receiverId: receiverId,
+        content: content,
         timestamp: new Date(),
       };
   
-      const updatedMessages = [...allMessages, newMessage];
-      setAllMessages(updatedMessages);
+      // Update messages
+      const currentMessagesStr = localStorage.getItem('chatMessages');
+      const currentMessages: ChatMessage[] = currentMessagesStr ? JSON.parse(currentMessagesStr).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages;
+      const updatedMessages = [...currentMessages, newMessage];
       localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
       
+      // Update contacts
       const updateUserContacts = (
           currentContactsList: ChatContact[],
           contactOwnerId: string,
@@ -354,13 +357,22 @@ function ChatPageComponent() {
           : initialChatContacts;
 
       // Update contacts for both the sender and receiver
-      const receiverContacts = updateUserContacts(allCurrentContacts, newMessage.receiverId, newMessage.senderId, newMessage, true);
-      const senderContacts = updateUserContacts(receiverContacts, newMessage.senderId, newMessage.receiverId, newMessage, false);
+      allCurrentContacts = updateUserContacts(allCurrentContacts, newMessage.receiverId, newMessage.senderId, newMessage, true);
+      allCurrentContacts = updateUserContacts(allCurrentContacts, newMessage.senderId, newMessage.receiverId, newMessage, false);
       
-      setAllContacts(senderContacts);
-      localStorage.setItem('chatContacts', JSON.stringify(senderContacts));
+      localStorage.setItem('chatContacts', JSON.stringify(allCurrentContacts));
 
       window.dispatchEvent(new Event('storage'));
+    }, [getContactDetails]);
+
+    const handleSendMessage = (e?: React.FormEvent, content?: string) => {
+      if (e) e.preventDefault();
+      
+      const messageToSend = content || messageContent;
+      if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
+  
+      sendMessage(currentUser.id, activeChatPartner.id, messageToSend);
+      
       if (!content) {
           setMessageContent('');
       }
@@ -481,6 +493,51 @@ function ChatPageComponent() {
             }
         }
     };
+    
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!currentUser) return;
+            
+            const now = new Date();
+            const currentScheduledMessagesStr = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
+            const currentScheduledMessages: ScheduledMessage[] = currentScheduledMessagesStr 
+                ? JSON.parse(currentScheduledMessagesStr).map((m: any) => ({ ...m, date: new Date(m.date) })) 
+                : [];
+
+            const dueMessages = currentScheduledMessages.filter(msg => now >= msg.date);
+            let messagesWereSent = false;
+            let remainingMessages = [...currentScheduledMessages];
+
+            dueMessages.forEach(msg => {
+                sendMessage(currentUser.id, msg.contactId, msg.content);
+                messagesWereSent = true;
+                
+                if (msg.recurrence === 'none') {
+                    remainingMessages = remainingMessages.filter(m => m.id !== msg.id);
+                } else {
+                    remainingMessages = remainingMessages.map(m => {
+                        if (m.id === msg.id) {
+                            let nextDate = new Date(m.date);
+                            switch (m.recurrence) {
+                                case 'daily': nextDate = addDays(nextDate, 1); break;
+                                case 'weekly': nextDate = addWeeks(nextDate, 1); break;
+                                case 'monthly': nextDate = addMonths(nextDate, 1); break;
+                            }
+                            return { ...m, date: nextDate };
+                        }
+                        return m;
+                    });
+                }
+            });
+
+            if (messagesWereSent) {
+                localStorage.setItem(SCHEDULED_MESSAGES_STORAGE_KEY, JSON.stringify(remainingMessages));
+                window.dispatchEvent(new Event('storage'));
+            }
+        }, 60000); // Check every minute
+
+        return () => clearInterval(interval);
+    }, [currentUser, sendMessage]);
     
     const recurrenceLabels: Record<RecurrenceType, string> = {
         none: 'Vazia',
