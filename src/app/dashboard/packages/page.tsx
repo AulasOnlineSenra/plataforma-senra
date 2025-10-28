@@ -203,9 +203,9 @@ export default function PackagesPage() {
               </ul>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-              <Button className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">Comprar com Mercado Pago</Button>
+              <Button className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">Comprar agora</Button>
               <Button variant="outline" className="w-full">
-                Comprar com PayPal
+                Falar com coordenador
               </Button>
             </CardFooter>
           </Card>
@@ -283,7 +283,7 @@ export default function PackagesPage() {
           </CardContent>
           <CardFooter className="flex-col gap-2 pt-6">
             <Button size="lg" className="w-full max-w-xs mx-auto bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-              Comprar Pacote Personalizado
+              Comprar agora
             </Button>
           </CardFooter>
         </Card>
