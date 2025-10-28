@@ -23,7 +23,6 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 198 65% 80%;
-    --radius: 0.5rem;
     --brand-yellow: 42 100% 47%; /* #f5b000 */
 
     --chart-1: 198 65% 70%;
@@ -35,8 +34,8 @@
     --sidebar-background: 240 5% 15%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-border: 240 5% 20%;
-    --sidebar-accent: hsl(var(--brand-yellow) / 0.5);
-    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-accent: hsl(var(--brand-yellow));
+    --sidebar-accent-foreground: 240 10% 3.9%;
     --sidebar-primary: 42 100% 47%;
     --sidebar-primary-foreground: 198 30% 10%;
     --sidebar-ring: 198 65% 80%;
@@ -73,8 +72,8 @@
     --sidebar-background: 240 5% 10%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-border: 240 5% 15%;
-    --sidebar-accent: hsl(var(--brand-yellow) / 0.5);
-    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-accent: hsl(var(--brand-yellow));
+    --sidebar-accent-foreground: 240 10% 3.9%;
     --sidebar-primary: 42 100% 47%;
     --sidebar-primary-foreground: 198 30% 10%;
     --sidebar-ring: 198 65% 80%;
