@@ -32,6 +32,7 @@ import {
   BookUser,
   Pencil,
   MinusCircle,
+  CalendarDays,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -67,21 +68,21 @@ const CollapsibleCard = ({
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <Card>
-                <CardHeader className="flex flex-row items-start justify-between">
-                    <div className="flex items-center gap-4">
-                        <Icon className="h-6 w-6 text-muted-foreground" />
-                        <div className="grid gap-1">
-                            <CardTitle>{title}</CardTitle>
-                            <CardDescription>{description}</CardDescription>
+                <CollapsibleTrigger className="w-full">
+                    <CardHeader className="flex flex-row items-start justify-between cursor-pointer hover:bg-accent/50 rounded-t-lg">
+                        <div className="flex items-center gap-4 text-left">
+                            <Icon className="h-6 w-6 text-muted-foreground" />
+                            <div className="grid gap-1">
+                                <CardTitle>{title}</CardTitle>
+                                <CardDescription>{description}</CardDescription>
+                            </div>
                         </div>
-                    </div>
-                    <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className='shrink-0'>
                             {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                             <span className="sr-only">{isOpen ? "Recolher" : "Expandir"}</span>
                         </Button>
-                    </CollapsibleTrigger>
-                </CardHeader>
+                    </CardHeader>
+                </CollapsibleTrigger>
                 <CollapsibleContent>
                     {children}
                 </CollapsibleContent>
@@ -337,9 +338,8 @@ function ProfilePageComponent() {
 
                 {isTeacher && teacherProfile && (
                      <>
-                        <CollapsibleCard title="Disciplinas e Disponibilidade" description="Quais disciplinas você está apto(a) a lecionar e seus horários disponíveis." icon={Briefcase}>
+                        <CollapsibleCard title="Disciplinas Lecionadas" description="Quais disciplinas você está apto(a) a lecionar." icon={Briefcase}>
                            <CardContent className="grid gap-6">
-                                <h3 className="font-semibold">Disciplinas Lecionadas</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {subjects.map(subject => (
                                     <div key={subject.id} className="flex items-center space-x-2">
@@ -359,8 +359,9 @@ function ProfilePageComponent() {
                                 ))}
                                 </div>
                             </CardContent>
-                             <CardContent className="grid gap-6 border-t pt-6">
-                                <h3 className="font-semibold">Disponibilidade Semanal</h3>
+                        </CollapsibleCard>
+                         <CollapsibleCard title="Disponibilidade Semanal" description="Seus horários disponíveis para aulas." icon={CalendarDays}>
+                             <CardContent className="grid gap-6">
                                 { teacherProfile &&
                                     <AvailabilityManager
                                         availability={teacherProfile.availability || {}}
