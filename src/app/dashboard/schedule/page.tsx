@@ -171,16 +171,24 @@ export default function SchedulePage() {
   }, [date, filterType, events, currentUser]);
   
   const completedEvents = useMemo(() => {
-    return events
-      .filter(e => e.status === 'completed')
-      .sort((a, b) => b.start.getTime() - a.start.getTime());
-  }, [events]);
+    let relevantEvents = events.filter(e => e.status === 'completed');
+    if (currentUser?.role === 'student') {
+      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
+    } else if (currentUser?.role === 'teacher') {
+      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
+    }
+    return relevantEvents.sort((a, b) => b.start.getTime() - a.start.getTime());
+  }, [events, currentUser]);
 
   const cancelledEvents = useMemo(() => {
-    return events
-      .filter(e => e.status === 'cancelled')
-      .sort((a, b) => b.start.getTime() - a.start.getTime());
-  }, [events]);
+    let relevantEvents = events.filter(e => e.status === 'cancelled');
+    if (currentUser?.role === 'student') {
+      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
+    } else if (currentUser?.role === 'teacher') {
+      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
+    }
+    return relevantEvents.sort((a, b) => b.start.getTime() - a.start.getTime());
+  }, [events, currentUser]);
 
 
   const handleConfirmCancel = (eventId: string) => {
@@ -273,6 +281,13 @@ export default function SchedulePage() {
     setNewDate(event.start);
     setNewTime(format(event.start, 'HH:mm'));
   };
+  
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    setDate(selectedDate);
+    if (selectedDate) {
+        setFilterType('day');
+    }
+  }
 
   const handleUpdateEvent = () => {
     if (!editingEvent || !newDate || !newTime) return;
@@ -324,7 +339,7 @@ export default function SchedulePage() {
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={handleDateSelect}
                 className="p-0 sm:p-3"
                 classNames={{
                   root: 'w-full',
