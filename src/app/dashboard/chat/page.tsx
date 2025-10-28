@@ -37,6 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TimePicker } from '@/components/ui/time-picker';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -73,7 +74,6 @@ function ChatPageComponent() {
     const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
-    const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
     const [scheduledMessageContent, setScheduledMessageContent] = useState('');
     const [scheduledMessageTitle, setScheduledMessageTitle] = useState('');
     const [scheduledMessageRecurrence, setScheduledMessageRecurrence] = useState<RecurrenceType>('none');
@@ -219,7 +219,7 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = () => {
-        if (!selectedScheduleDate || !selectedScheduleTime || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser) {
+        if (!selectedScheduleDate || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
@@ -228,9 +228,7 @@ function ChatPageComponent() {
             return;
         }
 
-        const [hours, minutes] = selectedScheduleTime.split(':').map(Number);
         const newScheduledDate = new Date(selectedScheduleDate);
-        newScheduledDate.setHours(hours, minutes, 0, 0);
 
         let updatedMessages;
         const currentScheduledMessagesStr = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
@@ -286,16 +284,9 @@ function ChatPageComponent() {
         setScheduledMessageContent(message.content);
         setScheduledMessageTitle(message.title || '');
         setSelectedScheduleDate(message.date);
-        setSelectedScheduleTime(format(message.date, 'HH:mm'));
         setScheduledMessageRecurrence(message.recurrence);
         setScheduleDialogView('create');
     };
-
-    const availableTimes = Array.from({ length: 24 * 2 }, (_, i) => {
-        const hours = Math.floor(i / 2);
-        const minutes = (i % 2) * 30;
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    });
 
     const sendMessage = useCallback((senderId: string, receiverId: string, content: string) => {
       const newMessage: ChatMessage = {
@@ -876,16 +867,7 @@ function ChatPageComponent() {
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="time">Hora</Label>
-                                <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="--:--" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                    {availableTimes.map((time) => (
-                                        <SelectItem key={time} value={time}>{time}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
+                                <TimePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
                             </div>
                         </div>
                         <div className="grid gap-2">
