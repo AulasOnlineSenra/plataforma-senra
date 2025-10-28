@@ -363,9 +363,7 @@ export default function SchedulePage() {
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => {
                     const teacher = getTeacherById(event.teacherId);
-                    const student = getStudentById(event.studentId);
-                    const personToShow = currentUser?.role === 'teacher' ? student : teacher;
-                    const fallback = personToShow ? personToShow.name.charAt(0) : '?';
+                    const fallback = teacher ? teacher.name.charAt(0) : '?';
                     return (
                         <div
                         key={event.id}
@@ -373,11 +371,11 @@ export default function SchedulePage() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                             <Avatar className='h-12 w-12'>
-                                <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
+                                <AvatarImage src={teacher?.avatarUrl} alt={teacher?.name} />
                                 <AvatarFallback>{fallback}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
-                              <p className="font-semibold">{personToShow?.name}</p>
+                              <p className="font-semibold">{teacher?.name}</p>
                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                               </div>
