@@ -341,7 +341,7 @@ export default function SchedulePage() {
                   scheduled: events.filter(e => e.status === 'scheduled').map((e) => e.start),
                 }}
                 modifiersClassNames={{
-                  scheduled: 'bg-primary text-primary-foreground',
+                  scheduled: 'bg-brand-yellow text-black',
                 }}
               />
             </CardContent>
