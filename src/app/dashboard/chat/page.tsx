@@ -49,11 +49,14 @@ type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly';
 
 interface ScheduledMessage {
     id: string;
+    contactId: string;
     date: Date;
     content: string;
     title?: string;
     recurrence: RecurrenceType;
 }
+
+const SCHEDULED_MESSAGES_STORAGE_KEY = 'scheduledMessagesList';
 
 function ChatPageComponent() {
     const searchParams = useSearchParams();
@@ -111,14 +114,8 @@ function ChatPageComponent() {
 
     const updateData = useCallback(() => {
         const loggedInUserStr = localStorage.getItem('currentUser');
-        if(loggedInUserStr) {
-            const user = JSON.parse(loggedInUserStr);
-            if (user.id !== currentUser?.id) {
-              setCurrentUser(user);
-            }
-        } else {
-            setCurrentUser(getMockUser('student'));
-        }
+        const user = loggedInUserStr ? JSON.parse(loggedInUserStr) : getMockUser('student');
+        setCurrentUser(user);
 
         const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
         const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
@@ -126,28 +123,18 @@ function ChatPageComponent() {
         setAllUsers(combinedUsers);
 
         const storedMessages = localStorage.getItem('chatMessages');
-        if (storedMessages) {
-            setAllMessages(JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
-        } else {
-            setAllMessages(initialChatMessages);
-        }
+        setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
         
         const storedContacts = localStorage.getItem('chatContacts');
-        if (storedContacts) {
-            const parsedContacts = JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }));
-            setAllContacts(parsedContacts);
-        } else {
-            setAllContacts(initialChatContacts);
-        }
+        setAllContacts(storedContacts ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : initialChatContacts);
         
         const storedSchedule = localStorage.getItem('scheduleEvents');
-        if (storedSchedule) {
-            const parsedSchedule = JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) }));
-            setSchedule(parsedSchedule);
-        } else {
-            setSchedule(initialSchedule);
-        }
-    }, [currentUser]);
+        setSchedule(storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) : initialSchedule);
+
+        const storedScheduledMessages = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
+        setScheduledMessages(storedScheduledMessages ? JSON.parse(storedScheduledMessages).map((m: any) => ({ ...m, date: new Date(m.date) })) : []);
+
+    }, []);
 
     useEffect(() => {
         updateData();
@@ -231,7 +218,7 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = () => {
-        if (!selectedScheduleDate || !selectedScheduleTime || !scheduledMessageContent.trim()) {
+        if (!selectedScheduleDate || !selectedScheduleTime || !scheduledMessageContent.trim() || !activeChatPartner) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
@@ -244,8 +231,10 @@ function ChatPageComponent() {
         const newScheduledDate = new Date(selectedScheduleDate);
         newScheduledDate.setHours(hours, minutes, 0, 0);
 
+        let updatedMessages;
+
         if (editingMessageId) {
-            const updatedMessages = scheduledMessages.map(msg =>
+            updatedMessages = scheduledMessages.map(msg =>
                 msg.id === editingMessageId
                     ? {
                           ...msg,
@@ -256,7 +245,6 @@ function ChatPageComponent() {
                       }
                     : msg
             );
-            setScheduledMessages(updatedMessages);
             toast({
                 title: 'Mensagem Atualizada',
                 description: `Sua mensagem foi reagendada para ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
@@ -264,17 +252,22 @@ function ChatPageComponent() {
         } else {
             const newScheduledMessage: ScheduledMessage = {
                 id: `sched-${Date.now()}`,
+                contactId: activeChatPartner.id,
                 date: newScheduledDate,
                 content: scheduledMessageContent,
                 title: scheduledMessageTitle,
                 recurrence: scheduledMessageRecurrence,
             };
-            setScheduledMessages(prev => [...prev, newScheduledMessage]);
+            updatedMessages = [...scheduledMessages, newScheduledMessage];
             toast({
                 title: 'Mensagem Agendada',
                 description: `Sua mensagem foi agendada para ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
             });
         }
+        
+        setScheduledMessages(updatedMessages);
+        localStorage.setItem(SCHEDULED_MESSAGES_STORAGE_KEY, JSON.stringify(updatedMessages));
+        window.dispatchEvent(new Event('storage'));
 
         setEditingMessageId(null);
         setScheduledMessageContent('');
@@ -317,13 +310,9 @@ function ChatPageComponent() {
       setAllMessages(updatedMessages);
       localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
       
-      const allCurrentContactsStr = localStorage.getItem('chatContacts');
-      let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
-          ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-          : initialChatContacts;
-
       const updateUserContacts = (
           currentContactsList: ChatContact[],
+          contactOwnerId: string,
           partnerId: string,
           message: ChatMessage,
           isReceiver: boolean
@@ -356,22 +345,20 @@ function ChatPageComponent() {
               });
           }
           
-          return updatedList;
+          return updatedList.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
       };
+      
+      const allCurrentContactsStr = localStorage.getItem('chatContacts');
+      let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
+          ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+          : initialChatContacts;
 
-      // This logic is tricky. We need to update two lists: the one for the current user and the one for the partner.
-      // In a real app, this would be handled by a backend, but for localStorage simulation:
+      // Update contacts for both the sender and receiver
+      const receiverContacts = updateUserContacts(allCurrentContacts, newMessage.receiverId, newMessage.senderId, newMessage, true);
+      const senderContacts = updateUserContacts(receiverContacts, newMessage.senderId, newMessage.receiverId, newMessage, false);
       
-      // Update for receiver
-      let receiverContacts = updateUserContacts(allCurrentContacts, newMessage.senderId, newMessage, true);
-      
-      // Update for sender
-      let senderContacts = updateUserContacts(receiverContacts, newMessage.receiverId, newMessage, false);
-      
-      const finalContacts = senderContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-      
-      setAllContacts(finalContacts);
-      localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
+      setAllContacts(senderContacts);
+      localStorage.setItem('chatContacts', JSON.stringify(senderContacts));
 
       window.dispatchEvent(new Event('storage'));
       if (!content) {
@@ -433,7 +420,10 @@ function ChatPageComponent() {
     };
 
     const handleRemoveScheduledMessage = (id: string) => {
-        setScheduledMessages(prev => prev.filter(msg => msg.id !== id));
+        const updatedMessages = scheduledMessages.filter(msg => msg.id !== id);
+        setScheduledMessages(updatedMessages);
+        localStorage.setItem(SCHEDULED_MESSAGES_STORAGE_KEY, JSON.stringify(updatedMessages));
+        window.dispatchEvent(new Event('storage'));
     };
 
     const handleToggleRecording = async () => {
@@ -624,7 +614,7 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {scheduledMessages.filter(m => m.id.includes(activeChatPartner.id)).length > 0 && (
+                          {scheduledMessages.filter(m => m.contactId === activeChatPartner.id).length > 0 && (
                             <div className="space-y-2 mb-2">
                                 {scheduledMessages.map((msg) => (
                                   <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
@@ -706,7 +696,7 @@ function ChatPageComponent() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {scheduledMessages.map(msg => (
+                                {scheduledMessages.filter(m => m.contactId === activeChatPartner?.id).map(msg => (
                                     <TableRow key={msg.id}>
                                         <TableCell>{msg.title || 'Não Definido'}</TableCell>
                                         <TableCell>
@@ -732,7 +722,7 @@ function ChatPageComponent() {
                                 ))}
                             </TableBody>
                          </Table>
-                         {scheduledMessages.length === 0 && (
+                         {scheduledMessages.filter(m => m.contactId === activeChatPartner?.id).length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
                                 <p>Nenhuma mensagem agendada para este contato.</p>
                             </div>
