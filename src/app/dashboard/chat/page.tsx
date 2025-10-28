@@ -93,14 +93,20 @@ function ChatPageComponent() {
         const contact = getContactDetails(contactId);
         if (contact) {
             setActiveChatPartner(contact);
-            setAllContacts(prevContacts => {
-                const updatedContacts = prevContacts.map(c => 
-                    c.id === contactId ? { ...c, unreadCount: 0 } : c
-                );
-                localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
-                window.dispatchEvent(new Event('storage'));
-                return updatedContacts;
-            });
+            
+            // Clear unread count for the selected contact
+            const storedContactsStr = localStorage.getItem('chatContacts');
+            let currentContacts: ChatContact[] = storedContactsStr 
+                ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+                : initialChatContacts;
+
+            const updatedContacts = currentContacts.map(c => 
+                c.id === contactId ? { ...c, unreadCount: 0 } : c
+            );
+
+            localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+            window.dispatchEvent(new Event('storage')); // Notify other components (like sidebar)
+            setAllContacts(updatedContacts);
         }
     }, [getContactDetails]);
 

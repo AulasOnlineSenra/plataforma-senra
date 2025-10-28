@@ -240,7 +240,10 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
 
     const handleLinkClick = () => {
       if (isChat) {
-        setHasNewMessages(false);
+        // The unread count is now cleared when selecting a contact,
+        // so we just need to ensure the sidebar UI updates.
+        // A simple re-check or depending on the storage event is enough.
+        updateUserAndNotifications();
       }
       if (isSuggestions && userRole === 'admin') {
         localStorage.setItem(LAST_SUGGESTIONS_VIEW_KEY, Date.now().toString());
