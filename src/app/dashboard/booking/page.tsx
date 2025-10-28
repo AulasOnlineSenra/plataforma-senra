@@ -440,7 +440,8 @@ function BookingPageComponent() {
     const allTimes: { start: string; end: string }[] = [];
 
     (selectedDates || []).forEach(date => {
-        const dayOfWeekName = format(date, 'eeee', { locale: ptBR }).toLowerCase() as keyof Teacher['availability'];
+        const dayOfWeekIndex = getDay(date);
+        const dayOfWeekName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex] as keyof Teacher['availability'];
         const dayAvailability = teacher.availability[dayOfWeekName];
 
         if (!dayAvailability) return;
@@ -767,3 +768,5 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
