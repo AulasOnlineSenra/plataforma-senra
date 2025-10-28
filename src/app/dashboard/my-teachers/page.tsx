@@ -16,16 +16,32 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, subjects } from '@/lib/data';
-import { Teacher, User, ScheduleEvent, Subject } from '@/lib/types';
+import { Teacher, User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ChevronDown, ChevronRight, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Fragment } from 'react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
-function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }) {
+function TeacherList({ title, teachers, scheduleEvents }: { title: string; teachers: Teacher[], scheduleEvents: ScheduleEvent[] }) {
+  const [openTeacherId, setOpenTeacherId] = useState<string | null>(null);
+
   const getSubjectNames = (subjectIds: string[]) => {
     return subjectIds.map(id => subjects.find(s => s.id === id)?.name).filter(Boolean).join(', ');
+  }
+  
+  const getEventsForTeacher = (teacherId: string) => {
+    return scheduleEvents
+        .filter(event => event.teacherId === teacherId && event.status === 'scheduled' && event.start > new Date())
+        .sort((a,b) => a.start.getTime() - b.start.getTime());
   }
 
   return (
@@ -37,36 +53,82 @@ function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]"></TableHead>
               <TableHead>Professor</TableHead>
               <TableHead className="hidden md:table-cell">Disciplinas</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {teachers.map((teacher) => (
-              <TableRow key={teacher.id}>
-                <TableCell>
-                  <Link href={`/dashboard/schedule?teacherId=${teacher.id}`} className="flex items-center gap-3 hover:underline">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                      <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="font-medium">{teacher.name}</div>
-                  </Link>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {getSubjectNames(teacher.subjects)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Conversar
-                    </Link>
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {teachers.map((teacher) => {
+              const teacherEvents = getEventsForTeacher(teacher.id);
+              const isCollapsibleOpen = openTeacherId === teacher.id;
+
+              return (
+                 <Fragment key={teacher.id}>
+                    <TableRow>
+                        <TableCell>
+                           <CollapsibleTrigger asChild>
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setOpenTeacherId(isCollapsibleOpen ? null : teacher.id)}
+                                disabled={teacherEvents.length === 0}
+                                className="disabled:opacity-50 disabled:cursor-not-allowed"
+                             >
+                               {isCollapsibleOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                               <span className="sr-only">Ver aulas</span>
+                             </Button>
+                           </CollapsibleTrigger>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="font-medium">{teacher.name}</div>
+                            </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                        {getSubjectNames(teacher.subjects)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Conversar
+                            </Link>
+                        </Button>
+                        </TableCell>
+                    </TableRow>
+                    <CollapsibleContent asChild>
+                       <tr className={cn("bg-accent/20", !isCollapsibleOpen && 'hidden')}>
+                           <TableCell colSpan={4} className="p-0">
+                               <div className="p-4">
+                                   <h4 className="font-semibold mb-2 text-sm ml-2">Próximas aulas com {teacher.name}:</h4>
+                                   {teacherEvents.length > 0 ? (
+                                       <ul className="space-y-2">
+                                           {teacherEvents.map(event => (
+                                               <li key={event.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50">
+                                                   <CalendarClock className="h-5 w-5 text-muted-foreground"/>
+                                                   <div className="flex-1 flex justify-between">
+                                                       <span className="font-medium">{event.subject}</span>
+                                                        <span className="text-muted-foreground">{format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                                                   </div>
+                                               </li>
+                                           ))}
+                                       </ul>
+                                   ) : (
+                                       <p className="text-center text-sm text-muted-foreground py-4">Nenhuma aula futura agendada com este professor.</p>
+                                   )}
+                               </div>
+                           </TableCell>
+                       </tr>
+                    </CollapsibleContent>
+                 </Fragment>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>
@@ -130,7 +192,7 @@ export default function MyTeachersPage() {
       </div>
       <div className="grid gap-6">
         {myTeachers.length > 0 ? (
-          <TeacherList title="Professores com aulas agendadas" teachers={myTeachers} />
+          <TeacherList title="Professores com aulas agendadas" teachers={myTeachers} scheduleEvents={scheduleEvents} />
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
