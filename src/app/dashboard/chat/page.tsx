@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -29,13 +29,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -44,10 +44,14 @@ const roleLabels: Record<UserRole, string> = {
   teacher: 'Professor',
 };
 
+type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly';
+
 interface ScheduledMessage {
     id: string;
     date: Date;
     content: string;
+    title?: string;
+    recurrence: RecurrenceType;
 }
 
 function ChatPageComponent() {
@@ -60,10 +64,14 @@ function ChatPageComponent() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isScheduling, setIsScheduling] = useState(false);
+    const [scheduleDialogView, setScheduleDialogView] = useState<'list' | 'create'>('list');
     const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
     const [scheduledMessageContent, setScheduledMessageContent] = useState('');
+    const [scheduledMessageTitle, setScheduledMessageTitle] = useState('');
+    const [scheduledMessageRecurrence, setScheduledMessageRecurrence] = useState<RecurrenceType>('none');
+    
     const [messageContent, setMessageContent] = useState('');
     const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
@@ -229,15 +237,20 @@ function ChatPageComponent() {
             id: `sched-${Date.now()}`,
             date: newScheduledDate,
             content: scheduledMessageContent,
+            title: scheduledMessageTitle,
+            recurrence: scheduledMessageRecurrence,
         };
 
         setScheduledMessages(prev => [...prev, newScheduledMessage]);
-        setIsScheduling(false);
+        
         setScheduledMessageContent('');
+        setScheduledMessageTitle('');
+        setScheduledMessageRecurrence('none');
+        setScheduleDialogView('list');
 
         toast({
             title: 'Mensagem Agendada',
-            description: `Sua mensagem será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+            description: `Sua mensagem foi agendada para ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
         });
     }
 
@@ -355,7 +368,7 @@ function ChatPageComponent() {
             reader.onload = (loadEvent) => {
                 const dataUrl = loadEvent.target?.result as string;
                 const fileMessage = `file::${file.name}::${dataUrl}`;
-                if (isScheduling) {
+                if (isScheduling && scheduleDialogView === 'create') {
                     setScheduledMessageContent(prev => prev ? `${prev}\n${fileMessage}` : fileMessage);
                      toast({
                         title: "Arquivo Anexado!",
@@ -483,6 +496,24 @@ function ChatPageComponent() {
             }
         }
     };
+    
+    const recurrenceLabels: Record<RecurrenceType, string> = {
+        none: 'Vazia',
+        daily: 'Diária',
+        weekly: 'Semanal',
+        monthly: 'Mensal',
+    };
+
+    const getMessageType = (content: string) => {
+        if (content.startsWith('file::')) {
+            const [, fileName] = content.split('::');
+            if (fileName.endsWith('.wav') || fileName.endsWith('.mp3') || fileName.endsWith('.ogg')) {
+                return 'audio';
+            }
+            return 'file';
+        }
+        return 'txt';
+    }
 
 
     if (!currentUser) {
@@ -598,7 +629,7 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {scheduledMessages.length > 0 && (
+                          {scheduledMessages.filter(m => m.id.includes(activeChatPartner.id)).length > 0 && (
                             <div className="space-y-2 mb-2">
                                 {scheduledMessages.map((msg) => (
                                   <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
@@ -619,7 +650,7 @@ function ChatPageComponent() {
                                   ref={fileInputRef}
                                   onChange={handleFileSelect}
                                   className="hidden"
-                                  accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx"
+                                  accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,audio/*"
                               />
                               <Input 
                                   placeholder="Digite uma mensagem..." 
@@ -633,7 +664,7 @@ function ChatPageComponent() {
                                       <Paperclip className="h-5 w-5 text-muted-foreground" />
                                       <span className="sr-only">Anexar</span>
                                   </Button>
-                                  <Button type="button" size="icon" variant="ghost" onClick={() => setIsScheduling(true)}>
+                                  <Button type="button" size="icon" variant="ghost" onClick={() => { setScheduleDialogView('list'); setIsScheduling(true); }}>
                                       <Clock className="h-5 w-5 text-muted-foreground" />
                                       <span className="sr-only">Agendar</span>
                                   </Button>
@@ -660,124 +691,189 @@ function ChatPageComponent() {
               )}
         </div>
         <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Criar Agendamento</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-6 py-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="schedule-title">Título (Opcional)</Label>
-                        <Input id="schedule-title" placeholder="Insira aqui o título" />
+            <DialogContent className="sm:max-w-4xl">
+              {scheduleDialogView === 'list' ? (
+                <>
+                    <DialogHeader>
+                        <DialogTitle className="font-headline text-2xl">Mensagens Agendadas para {activeChatPartner?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className='py-4'>
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Título</TableHead>
+                                    <TableHead>Cliente</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Hora</TableHead>
+                                    <TableHead>Recorrência</TableHead>
+                                    <TableHead>Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {scheduledMessages.map(msg => (
+                                    <TableRow key={msg.id}>
+                                        <TableCell>{msg.title || 'Não Definido'}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={activeChatPartner?.avatarUrl} />
+                                                    <AvatarFallback>{activeChatPartner?.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <span>{activeChatPartner?.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{getMessageType(msg.content)}</TableCell>
+                                        <TableCell>{format(msg.date, 'dd/MM/yyyy')}</TableCell>
+                                        <TableCell>{format(msg.date, 'HH:mm')}</TableCell>
+                                        <TableCell>{recurrenceLabels[msg.recurrence]}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleRemoveScheduledMessage(msg.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                         </Table>
+                         {scheduledMessages.length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <p>Nenhuma mensagem agendada para este contato.</p>
+                            </div>
+                         )}
                     </div>
-                    <Tabs defaultValue="text" className="w-full">
-                        <TabsList>
-                            <TabsTrigger value="text">Criar texto</TabsTrigger>
-                            <TabsTrigger value="media">Mídia</TabsTrigger>
-                            <TabsTrigger value="audio">Áudio</TabsTrigger>
-                            <TabsTrigger value="quick-message">Selecionar mensagem rápida</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="text" className="pt-4">
-                            <div className="grid gap-2 relative">
-                                <Label htmlFor="scheduled-message-content">Mensagem</Label>
-                                <Textarea
-                                    id="scheduled-message-content"
-                                    value={scheduledMessageContent}
-                                    onChange={(e) => setScheduledMessageContent(e.target.value)}
-                                    placeholder="Insira sua mensagem"
-                                    rows={5}
-                                    className="pr-10"
-                                />
-                                <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
-                                    <Smile className="h-5 w-5 text-muted-foreground" />
-                                </Button>
-                            </div>
-                        </TabsContent>
-                         <TabsContent value="media" className="pt-4">
-                            <div className="grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="media-message-content">Mensagem (Opcional)</Label>
+                    <DialogFooter className="sm:justify-center">
+                         <Button type="button" onClick={() => setScheduleDialogView('create')}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar
+                        </Button>
+                    </DialogFooter>
+                </>
+              ) : (
+                <>
+                    <DialogHeader>
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" size="icon" onClick={() => setScheduleDialogView('list')}>
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <DialogTitle className="font-headline text-2xl">Criar Agendamento</DialogTitle>
+                        </div>
+                    </DialogHeader>
+                    <div className="grid gap-6 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="schedule-title">Título (Opcional)</Label>
+                            <Input id="schedule-title" placeholder="Insira aqui o título" value={scheduledMessageTitle} onChange={e => setScheduledMessageTitle(e.target.value)} />
+                        </div>
+                        <Tabs defaultValue="text" className="w-full">
+                            <TabsList>
+                                <TabsTrigger value="text">Criar texto</TabsTrigger>
+                                <TabsTrigger value="media">Mídia</TabsTrigger>
+                                <TabsTrigger value="audio">Áudio</TabsTrigger>
+                                <TabsTrigger value="quick-message" disabled>Selecionar mensagem rápida</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="text" className="pt-4">
+                                <div className="grid gap-2 relative">
+                                    <Label htmlFor="scheduled-message-content">Mensagem</Label>
                                     <Textarea
-                                        id="media-message-content"
+                                        id="scheduled-message-content"
                                         value={scheduledMessageContent}
                                         onChange={(e) => setScheduledMessageContent(e.target.value)}
-                                        placeholder="Adicione uma legenda para sua mídia..."
-                                        rows={3}
+                                        placeholder="Insira sua mensagem"
+                                        rows={5}
+                                        className="pr-10"
                                     />
+                                    <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
+                                        <Smile className="h-5 w-5 text-muted-foreground" />
+                                    </Button>
                                 </div>
-                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Adicionar arquivo
-                                </Button>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="audio" className="pt-4">
-                            <div className="grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="audio-message-content">Legenda do Áudio (Opcional)</Label>
-                                    <Textarea
-                                        id="audio-message-content"
-                                        value={scheduledMessageContent}
-                                        onChange={(e) => setScheduledMessageContent(e.target.value)}
-                                        placeholder="Adicione uma legenda para o seu áudio..."
-                                        rows={3}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                            </TabsContent>
+                            <TabsContent value="media" className="pt-4">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="media-message-content">Mensagem (Opcional)</Label>
+                                        <Textarea
+                                            id="media-message-content"
+                                            value={scheduledMessageContent}
+                                            onChange={(e) => setScheduledMessageContent(e.target.value)}
+                                            placeholder="Adicione uma legenda para sua mídia..."
+                                            rows={3}
+                                        />
+                                    </div>
                                     <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                                         <Upload className="mr-2 h-4 w-4" />
-                                        Adicionar áudio
-                                    </Button>
-                                    <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
-                                        {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
-                                        {isRecording ? "Parar Gravação" : "Gravar Áudio"}
+                                        Adicionar arquivo
                                     </Button>
                                 </div>
-                                {hasMicPermission === false && (
-                                     <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
-                                )}
+                            </TabsContent>
+                            <TabsContent value="audio" className="pt-4">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="audio-message-content">Legenda do Áudio (Opcional)</Label>
+                                        <Textarea
+                                            id="audio-message-content"
+                                            value={scheduledMessageContent}
+                                            onChange={(e) => setScheduledMessageContent(e.target.value)}
+                                            placeholder="Adicione uma legenda para o seu áudio..."
+                                            rows={3}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Adicionar áudio
+                                        </Button>
+                                        <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
+                                            {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
+                                            {isRecording ? "Parar Gravação" : "Gravar Áudio"}
+                                        </Button>
+                                    </div>
+                                    {hasMicPermission === false && (
+                                        <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
+                                    )}
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                            <Label>Data</Label>
+                            <DatePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
                             </div>
-                        </TabsContent>
-                    </Tabs>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                           <Label>Data</Label>
-                           <DatePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
+                            <div className="grid gap-2">
+                                <Label htmlFor="time">Hora</Label>
+                                <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="--:--" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-60">
+                                    {availableTimes.map((time) => (
+                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="time">Hora</Label>
-                            <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
+                            <Label htmlFor="recurrence">Recorrência</Label>
+                            <Select value={scheduledMessageRecurrence} onValueChange={(v) => setScheduledMessageRecurrence(v as RecurrenceType)}>
                                 <SelectTrigger>
-                                <SelectValue placeholder="--:--" />
+                                    <SelectValue placeholder="Nenhuma selecionada" />
                                 </SelectTrigger>
-                                <SelectContent className="max-h-60">
-                                {availableTimes.map((time) => (
-                                    <SelectItem key={time} value={time}>{time}</SelectItem>
-                                ))}
+                                <SelectContent>
+                                    <SelectItem value="none">Não repetir</SelectItem>
+                                    <SelectItem value="daily">Diariamente</SelectItem>
+                                    <SelectItem value="weekly">Semanalmente</SelectItem>
+                                    <SelectItem value="monthly">Mensalmente</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
-                     <div className="grid gap-2">
-                        <Label htmlFor="recurrence">Recorrência</Label>
-                        <Select>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Nenhuma selecionada" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Não repetir</SelectItem>
-                                <SelectItem value="daily">Diariamente</SelectItem>
-                                <SelectItem value="weekly">Semanalmente</SelectItem>
-                                <SelectItem value="monthly">Mensalmente</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancelar</Button>
-                </DialogClose>
-                <Button type="button" onClick={handleScheduleMessage}>Criar</Button>
-                </DialogFooter>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setScheduleDialogView('list')}>Cancelar</Button>
+                        <Button type="button" onClick={handleScheduleMessage}>Criar</Button>
+                    </DialogFooter>
+                </>
+              )}
             </DialogContent>
         </Dialog>
       </>
