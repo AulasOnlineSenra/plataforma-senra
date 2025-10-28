@@ -13,14 +13,6 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 function TeacherList({ teachers, scheduleEvents }: { teachers: Teacher[], scheduleEvents: ScheduleEvent[] }) {
 
@@ -35,36 +27,38 @@ function TeacherList({ teachers, scheduleEvents }: { teachers: Teacher[], schedu
   return (
     <div className="space-y-4">
       {teachers.map((teacher) => (
-          <Card key={teacher.id}>
-            <div className="flex items-center p-4">
-                <div className="flex items-center gap-4 flex-1">
-                    <Avatar className="h-12 w-12">
-                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="grid gap-1">
-                        <p className="font-semibold text-lg">{teacher.name}</p>
-                        <p className="text-sm text-muted-foreground">{getSubjectNames(teacher.subjects)}</p>
+          <Link href={`/dashboard/teacher/${teacher.id}`} key={teacher.id} className="block group">
+            <Card className="transition-all group-hover:ring-2 group-hover:ring-primary">
+                <div className="flex items-center p-4">
+                    <div className="flex items-center gap-4 flex-1">
+                        <Avatar className="h-12 w-12">
+                            <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                            <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="grid gap-1">
+                            <p className="font-semibold text-lg">{teacher.name}</p>
+                            <p className="text-sm text-muted-foreground">{getSubjectNames(teacher.subjects)}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="flex items-center gap-2">
-                     <Button asChild variant="outline" size="sm">
-                        <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Conversar
-                        </Link>
-                    </Button>
-                    {hasUpcomingEvents(teacher.id) && (
-                        <Button asChild variant="secondary" size="sm">
-                            <Link href={`/dashboard/schedule?teacherId=${teacher.id}`}>
-                                <CalendarClock className="mr-2 h-4 w-4" />
-                                Ver Aulas
+                    <div className="flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                            <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Conversar
                             </Link>
                         </Button>
-                    )}
+                        {hasUpcomingEvents(teacher.id) && (
+                            <Button asChild variant="secondary" size="sm" onClick={(e) => e.stopPropagation()}>
+                                <Link href={`/dashboard/schedule?teacherId=${teacher.id}`}>
+                                    <CalendarClock className="mr-2 h-4 w-4" />
+                                    Ver Aulas
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            </div>
-          </Card>
+            </Card>
+          </Link>
       ))}
     </div>
   );
