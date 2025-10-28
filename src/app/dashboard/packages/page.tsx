@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Link from 'next/link';
 
 const PACKAGES_STORAGE_KEY = 'classPackages';
 
@@ -141,6 +142,15 @@ export default function PackagesPage() {
     return 'Nenhum desconto aplicado para aulas avulsas.';
   };
 
+  const getCalculatorURL = () => {
+    const params = new URLSearchParams();
+    params.append('name', `Pacote Personalizado`);
+    params.append('totalClasses', calculatedPackage.totalClasses.toString());
+    params.append('pricePerClass', calculatedPackage.pricePerClass.toString());
+    params.append('total', calculatedPackage.total.toString());
+    return `/dashboard/payment?${params.toString()}`;
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex flex-col items-center text-center">
@@ -203,7 +213,9 @@ export default function PackagesPage() {
               </ul>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-              <Button className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">Comprar agora</Button>
+              <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Link href={`/dashboard/payment?packageId=${pkg.id}`}>Comprar agora</Link>
+              </Button>
               <Button variant="outline" className="w-full">
                 Falar com coordenador
               </Button>
@@ -282,8 +294,8 @@ export default function PackagesPage() {
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-2 pt-6">
-            <Button size="lg" className="w-full max-w-xs mx-auto bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-              Comprar agora
+            <Button asChild size="lg" className="w-full max-w-xs mx-auto bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <Link href={getCalculatorURL()}>Comprar agora</Link>
             </Button>
           </CardFooter>
         </Card>
