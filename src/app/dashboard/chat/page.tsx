@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare, File } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -218,15 +218,17 @@ function ChatPageComponent() {
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     });
 
-    const handleSendMessage = (e?: React.FormEvent) => {
+    const handleSendMessage = (e?: React.FormEvent, content?: string) => {
         if (e) e.preventDefault();
-        if (!messageContent.trim() || !activeChatPartner || !currentUser) return;
+        
+        const messageToSend = content || messageContent;
+        if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
     
         const newMessage: ChatMessage = {
           id: `msg-${Date.now()}`,
           senderId: currentUser.id,
           receiverId: activeChatPartner.id,
-          content: messageContent,
+          content: messageToSend,
           timestamp: new Date(),
         };
     
@@ -234,8 +236,6 @@ function ChatPageComponent() {
         setAllMessages(updatedMessages);
         localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
         
-        // This is complex because we need to update the contact list for BOTH users.
-        // In a real app, this would happen on the backend. Here we simulate it.
         const allCurrentContactsStr = localStorage.getItem('chatContacts');
         const allCurrentContacts: ChatContact[] = allCurrentContactsStr 
             ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
@@ -247,7 +247,7 @@ function ChatPageComponent() {
             partnerId: string,
             message: ChatMessage
         ): ChatContact[] => {
-            let contacts = currentContactsList.filter(c => c.id !== partnerId); // Remove existing partner contact to re-insert at top
+            let contacts = currentContactsList.filter(c => c.id !== partnerId);
             const partnerDetails = getContactDetails(partnerId);
             if (!partnerDetails) return contacts;
 
@@ -258,27 +258,25 @@ function ChatPageComponent() {
                 id: partnerDetails.id,
                 name: partnerDetails.name,
                 avatarUrl: partnerDetails.avatarUrl,
-                lastMessage: message.content,
+                lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
                 lastMessageTimestamp: message.timestamp,
-                unreadCount: isReceiver ? (existingContact?.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
+                unreadCount: isReceiver && activeChatPartner?.id !== message.senderId ? (existingContact?.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
             };
 
             return [newContactEntry, ...contacts];
         };
 
-        // Update my contact list
         const myUpdatedContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
-
-        // Update partner's contact list
         const partnerUpdatedContacts = updateUserContacts(myUpdatedContacts, activeChatPartner.id, currentUser.id, newMessage);
-
         const finalContacts = Array.from(new Map(partnerUpdatedContacts.map(item => [item.id, item])).values());
         
         setAllContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
         localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
 
         window.dispatchEvent(new Event('storage'));
-        setMessageContent('');
+        if (!content) {
+            setMessageContent('');
+        }
       };
     
       const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -291,17 +289,35 @@ function ChatPageComponent() {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // In a real app, you would upload this file and then send a message with the file URL.
-            // For now, we just show a toast.
-            toast({
-                title: "Arquivo Selecionado",
-                description: `Você selecionou "${file.name}". A funcionalidade de upload ainda não foi implementada.`,
-            });
-             // Reset the file input so the same file can be selected again
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                const dataUrl = loadEvent.target?.result as string;
+                const fileMessage = `file::${file.name}::${dataUrl}`;
+                handleSendMessage(undefined, fileMessage);
+                toast({
+                    title: "Arquivo Enviado!",
+                    description: `O arquivo "${file.name}" foi enviado na conversa.`,
+                });
+            };
+            reader.readAsDataURL(file);
+
             if(fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
         }
+    };
+    
+    const renderMessageContent = (message: ChatMessage) => {
+        if (message.content.startsWith('file::')) {
+            const [, fileName, dataUrl] = message.content.split('::');
+            return (
+                <a href={dataUrl} download={fileName} className="flex items-center gap-2 underline text-current">
+                    <File className="h-4 w-4" />
+                    <span>{fileName}</span>
+                </a>
+            );
+        }
+        return <p className="break-words whitespace-pre-wrap">{message.content}</p>;
     };
 
 
@@ -402,7 +418,7 @@ function ChatPageComponent() {
                                               "max-w-[75%] md:max-w-[60%] rounded-lg p-3 text-sm flex flex-col shadow",
                                               message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
                                           )}>
-                                              <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                                              {renderMessageContent(message)}
                                               <p className={cn(
                                                   "text-xs shrink-0 self-end pt-1",
                                                   message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
@@ -540,5 +556,7 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
