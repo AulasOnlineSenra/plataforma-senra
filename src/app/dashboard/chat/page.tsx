@@ -59,23 +59,23 @@ function ChatPageComponent() {
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
     const [allContacts, setAllContacts] = useState<ChatContact[]>(initialChatContacts);
 
-
     const getContactDetails = useCallback((contactId: string) => {
-        return allUsers.find(u => u.id === contactId);
+      return allUsers.find(u => u.id === contactId);
     }, [allUsers]);
 
     const handleContactSelect = useCallback((contactId: string) => {
         const contact = getContactDetails(contactId);
         if (contact) {
             setActiveChatPartner(contact);
-             // Mark messages as read
-            const updatedContacts = allContacts.map(c => 
-                c.id === contactId ? { ...c, unreadCount: 0 } : c
-            );
-            setAllContacts(updatedContacts);
-            localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+            setAllContacts(prevContacts => {
+                const updatedContacts = prevContacts.map(c => 
+                    c.id === contactId ? { ...c, unreadCount: 0 } : c
+                );
+                localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+                return updatedContacts;
+            });
         }
-    }, [allContacts, getContactDetails]);
+    }, [getContactDetails]);
 
     const updateData = useCallback(() => {
         const loggedInUserStr = localStorage.getItem('currentUser');
@@ -112,21 +112,19 @@ function ChatPageComponent() {
         } else {
             setSchedule(initialSchedule);
         }
-
-        if (contactIdParam) {
-            const contact = combinedUsers.find(u => u.id === contactIdParam);
-            if (contact) {
-                handleContactSelect(contactIdParam);
-            }
-        }
-
-    }, [contactIdParam, handleContactSelect]);
+    }, []);
 
     useEffect(() => {
         updateData();
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
     }, [updateData]);
+    
+    useEffect(() => {
+        if (contactIdParam && allUsers.length > 0) {
+            handleContactSelect(contactIdParam);
+        }
+    }, [contactIdParam, allUsers, handleContactSelect]);
 
 
     const chatContacts = useMemo(() => {
@@ -509,4 +507,5 @@ export default function ChatPage() {
     
     
     
+
 
