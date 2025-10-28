@@ -65,7 +65,7 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
 
               return (
                  <Collapsible asChild key={teacher.id} open={isCollapsibleOpen} onOpenChange={() => setOpenTeacherId(isCollapsibleOpen ? null : teacher.id)}>
-                   <>
+                   <Fragment>
                     <TableRow className="align-middle">
                         <CollapsibleTrigger asChild>
                            <TableCell className="cursor-pointer">
@@ -119,7 +119,7 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
                            </TableCell>
                        </tr>
                     </CollapsibleContent>
-                   </>
+                   </Fragment>
                  </Collapsible>
               )
             })}
