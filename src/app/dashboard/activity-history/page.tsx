@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -16,13 +20,23 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const activities = [
-  { action: 'Agendou uma aula de Matemática', date: new Date() },
-  { action: 'Enviou uma mensagem para Ana Silva', date: new Date(Date.now() - 2 * 60 * 60 * 1000) },
-  { action: 'Atualizou o perfil', date: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-];
+interface Activity {
+  action: string;
+  date: Date;
+}
 
 export default function ActivityHistoryPage() {
+  const [activities, setActivities] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    // These will only run on the client, after initial hydration
+    setActivities([
+      { action: 'Agendou uma aula de Matemática', date: new Date() },
+      { action: 'Enviou uma mensagem para Ana Silva', date: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      { action: 'Atualizou o perfil', date: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    ]);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
