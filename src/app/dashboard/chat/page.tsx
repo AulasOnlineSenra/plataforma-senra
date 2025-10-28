@@ -77,7 +77,7 @@ function ChatPageComponent() {
     const scheduledMessagesQuery = useMemo(() => {
         if (!firestore || !currentUser?.id) return null;
         return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
-    }, [firestore, currentUser]);
+    }, [firestore, currentUser?.id]);
 
     const { data: scheduledMessages, isLoading: isLoadingScheduledMessages } = useCollection<ScheduledMessage>(scheduledMessagesQuery);
 
@@ -113,13 +113,19 @@ function ChatPageComponent() {
           ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
           : initialChatContacts;
 
-        const updatedContacts = currentContacts.map(c =>
+        const userContactsKey = `chatContacts_${currentUser.id}`;
+        const userContactsStr = localStorage.getItem(userContactsKey);
+        const userContacts: ChatContact[] = userContactsStr
+            ? JSON.parse(userContactsStr)
+            : currentContacts.filter(c => c.id !== currentUser.id);
+
+        const updatedContacts = userContacts.map(c =>
           c.id === contactId && c.unreadCount && c.unreadCount > 0
           ? { ...c, unreadCount: 0 } 
           : c
         );
 
-        localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+        localStorage.setItem(userContactsKey, JSON.stringify(updatedContacts));
         setAllContacts(updatedContacts);
         window.dispatchEvent(new Event('storage')); 
       }
@@ -134,10 +140,11 @@ function ChatPageComponent() {
         const storedMessages = localStorage.getItem('chatMessages');
         setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
         
-        const storedContacts = localStorage.getItem('chatContacts');
-        const parsedContacts = storedContacts ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : initialChatContacts;
         if(currentUser) {
-            setAllContacts(parsedContacts.filter((c: ChatContact) => c.id !== currentUser.id));
+            const userContactsKey = `chatContacts_${currentUser.id}`;
+            const storedContacts = localStorage.getItem(userContactsKey);
+            const parsedContacts = storedContacts ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : initialChatContacts.filter(c => c.id !== currentUser.id);
+            setAllContacts(parsedContacts);
         }
 
         
@@ -226,11 +233,11 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = async () => {
-        if (!selectedScheduleDate || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser?.id || !firestore) {
+        if (!selectedScheduleDate || (!scheduledMessageContent.trim() && !scheduledMessageContent.includes('file::')) || !activeChatPartner || !currentUser?.id || !firestore) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
-                description: 'Por favor, escreva uma mensagem e selecione uma data e horário.',
+                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio.',
             });
             return;
         }
@@ -291,17 +298,19 @@ function ChatPageComponent() {
       const updatedMessages = [...currentMessages, newMessage];
       localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
       
-      const allCurrentContactsStr = localStorage.getItem('chatContacts');
-      let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
-          ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-          : initialChatContacts;
-
       const updateUserContacts = (
+          ownerId: string,
           partnerId: string,
           isReceiver: boolean
-      ): ChatContact[] => {
+      ) => {
+          const userContactsKey = `chatContacts_${ownerId}`;
+          const allCurrentContactsStr = localStorage.getItem(userContactsKey);
+          let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
+              ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+              : initialChatContacts.filter(c => c.id !== ownerId);
+
           const partnerDetails = getContactDetails(partnerId);
-          if (!partnerDetails) return allCurrentContacts;
+          if (!partnerDetails) return;
 
           let contactExists = false;
           const updatedList = allCurrentContacts.map(c => {
@@ -311,7 +320,7 @@ function ChatPageComponent() {
                       ...c,
                       lastMessage: newMessage.content.startsWith('file::') ? 'Arquivo enviado' : newMessage.content,
                       lastMessageTimestamp: newMessage.timestamp,
-                      unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : (c.unreadCount || 0),
+                      unreadCount: isReceiver && c.unreadCount !== undefined ? c.unreadCount + 1 : (c.unreadCount || 0),
                   };
               }
               return c;
@@ -328,14 +337,13 @@ function ChatPageComponent() {
               });
           }
           
-          return updatedList.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+          const sortedList = updatedList.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+          localStorage.setItem(userContactsKey, JSON.stringify(sortedList));
       };
       
-      allCurrentContacts = updateUserContacts(newMessage.senderId, false);
-      allCurrentContacts = updateUserContacts(newMessage.receiverId, true);
+      updateUserContacts(newMessage.senderId, newMessage.receiverId, false);
+      updateUserContacts(newMessage.receiverId, newMessage.senderId, true);
       
-      localStorage.setItem('chatContacts', JSON.stringify(allCurrentContacts));
-
       window.dispatchEvent(new Event('storage'));
     }, [getContactDetails]);
 
@@ -406,7 +414,7 @@ function ChatPageComponent() {
     };
 
     const handleRemoveScheduledMessage = async (id: string) => {
-        if (!currentUser || !firestore) return;
+        if (!currentUser?.id || !firestore) return;
         const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', id);
         await deleteDoc(messageRef);
     };
@@ -597,7 +605,7 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner.id).length > 0 && (
+                          {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id).length > 0 && (
                             <div className="space-y-2 mb-2">
                                 {(scheduledMessages || [])
                                     .filter(m => m.contactId === activeChatPartner.id)
@@ -681,7 +689,7 @@ function ChatPageComponent() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id).map(msg => (
+                                {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser.id).map(msg => (
                                     <TableRow key={msg.id}>
                                         <TableCell>{msg.title || 'Não Definido'}</TableCell>
                                         <TableCell>
@@ -707,7 +715,7 @@ function ChatPageComponent() {
                                 ))}
                             </TableBody>
                          </Table>
-                         {isLoadingScheduledMessages ? <p>Carregando...</p> : (scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id).length === 0 && (
+                         {isLoadingScheduledMessages ? <p>Carregando...</p> : (scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser.id).length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
                                 <p>Nenhuma mensagem agendada para este contato.</p>
                             </div>
