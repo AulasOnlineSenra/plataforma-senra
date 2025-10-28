@@ -3,6 +3,8 @@
 
 import {
   Card,
+  CardHeader,
+  CardContent,
 } from '@/components/ui/card';
 import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, subjects } from '@/lib/data';
 import { Teacher, User, ScheduleEvent } from '@/lib/types';
