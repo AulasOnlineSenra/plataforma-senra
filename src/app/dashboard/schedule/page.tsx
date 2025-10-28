@@ -1,6 +1,7 @@
 
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -54,7 +55,10 @@ const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
 
-export default function SchedulePage() {
+function SchedulePageComponent() {
+  const searchParams = useSearchParams();
+  const teacherIdFilter = searchParams.get('teacherId');
+
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -107,7 +111,6 @@ export default function SchedulePage() {
     updateData();
     window.addEventListener('storage', updateData);
 
-    // Handle hash for highlighting
     const hash = window.location.hash;
     if (hash === '#cancelled-history' || hash === '#scheduled-classes' || hash === '#completed-history') {
       const element = document.getElementById(hash.substring(1));
@@ -116,7 +119,7 @@ export default function SchedulePage() {
         element.classList.add('animate-highlight');
         setTimeout(() => {
           element.classList.remove('animate-highlight');
-        }, 2000); // Animation duration + buffer
+        }, 2000);
       }
     }
      return () => {
@@ -124,16 +127,11 @@ export default function SchedulePage() {
     };
   }, []);
 
-
   useEffect(() => {
-    // This effect runs only on the client, after hydration
-    // which prevents the server/client mismatch.
     setDate(new Date());
   }, []);
 
   const filteredEvents = useMemo(() => {
-    if (!date) return [];
-    
     let relevantEvents = events.filter(e => e.status === 'scheduled');
 
     if (currentUser?.role === 'student') {
@@ -141,6 +139,12 @@ export default function SchedulePage() {
     } else if (currentUser?.role === 'teacher') {
       relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
     }
+    
+    if (teacherIdFilter) {
+      relevantEvents = relevantEvents.filter(e => e.teacherId === teacherIdFilter);
+    }
+
+    if (!date) return relevantEvents.sort((a,b) => a.start.getTime() - b.start.getTime());
 
     if (filterType === 'day') {
         return relevantEvents.filter(
@@ -168,7 +172,7 @@ export default function SchedulePage() {
         .filter(e => isWithinInterval(e.start, interval))
         .sort((a,b) => a.start.getTime() - b.start.getTime());
 
-  }, [date, filterType, events, currentUser]);
+  }, [date, filterType, events, currentUser, teacherIdFilter]);
   
   const completedEvents = useMemo(() => {
     let relevantEvents = events.filter(e => e.status === 'completed');
@@ -261,6 +265,10 @@ export default function SchedulePage() {
   }
 
   const getCardDescription = () => {
+    if (teacherIdFilter) {
+        const teacher = getTeacherById(teacherIdFilter);
+        return teacher ? `Mostrando apenas aulas com ${teacher.name}.` : 'Filtrando aulas por professor.';
+    }
     if (!date) return 'Resumo das suas aulas para o período selecionado.';
     const classCount = filteredEvents.length;
     const pluralize = (count: number) => count === 1 ? 'aula agendada' : 'aulas agendadas';
@@ -637,4 +645,12 @@ export default function SchedulePage() {
       </AlertDialog>
     </>
   );
+}
+
+export default function SchedulePage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <SchedulePageComponent />
+        </Suspense>
+    )
 }

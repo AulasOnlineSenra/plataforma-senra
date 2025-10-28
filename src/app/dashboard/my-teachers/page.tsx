@@ -46,13 +46,13 @@ function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }
             {teachers.map((teacher) => (
               <TableRow key={teacher.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <Link href={`/dashboard/schedule?teacherId=${teacher.id}`} className="flex items-center gap-3 hover:underline">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
                       <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="font-medium">{teacher.name}</div>
-                  </div>
+                  </Link>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {getSubjectNames(teacher.subjects)}
