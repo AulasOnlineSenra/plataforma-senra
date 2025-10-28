@@ -53,7 +53,6 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
               <TableHead>Professor</TableHead>
               <TableHead className="hidden md:table-cell">Disciplinas</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -67,39 +66,33 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
               return (
                  <Collapsible asChild key={teacher.id} open={isCollapsibleOpen} onOpenChange={() => setOpenTeacherId(isCollapsibleOpen ? null : teacher.id)}>
                    <>
-                    <TableRow>
-                        <TableCell>
-                           <CollapsibleTrigger asChild>
-                             <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled={teacherEvents.length === 0}
-                                className="disabled:opacity-50 disabled:cursor-not-allowed"
-                             >
-                               {isCollapsibleOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                               <span className="sr-only">Ver aulas</span>
-                             </Button>
-                           </CollapsibleTrigger>
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                                <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="font-medium">{teacher.name}</div>
-                            </div>
-                        </TableCell>
+                    <TableRow className="align-middle">
+                        <CollapsibleTrigger asChild>
+                           <TableCell className="cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                    <span className="w-[20px]">
+                                        {teacherEvents.length > 0 && (
+                                            isCollapsibleOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                                        )}
+                                    </span>
+                                    <Avatar className="h-10 w-10">
+                                    <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                    <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="font-medium">{teacher.name}</div>
+                                </div>
+                           </TableCell>
+                        </CollapsibleTrigger>
                         <TableCell className="hidden md:table-cell">
-                        {getSubjectNames(teacher.subjects)}
+                           {getSubjectNames(teacher.subjects)}
                         </TableCell>
                         <TableCell className="text-right">
-                        <Button asChild variant="outline" size="sm">
-                            <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Conversar
-                            </Link>
-                        </Button>
+                           <Button asChild variant="outline" size="sm">
+                               <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
+                               <MessageSquare className="mr-2 h-4 w-4" />
+                               Conversar
+                               </Link>
+                           </Button>
                         </TableCell>
                     </TableRow>
                     <CollapsibleContent asChild>
