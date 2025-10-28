@@ -569,6 +569,7 @@ function ChatPageComponent() {
                             value={scheduledMessageContent}
                             onChange={(e) => setScheduledMessageContent(e.target.value)}
                             placeholder="Sua mensagem agendada..."
+                            rows={5}
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -635,4 +636,5 @@ export default function ChatPage() {
     
 
     
+
 
