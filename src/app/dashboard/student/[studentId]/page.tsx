@@ -130,9 +130,9 @@ function StudentDetailPageComponent() {
                         upcomingClasses.map(c => (
                              <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
                                 <div>
-                                    <p className="font-semibold">{c.subject}</p>
+                                    <p className="font-semibold">{c.title}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
+                                        {c.subject} • {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
                                     </p>
                                 </div>
                                  <Button variant="outline" size="sm" asChild>
