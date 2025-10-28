@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [teacherCount, setTeacherCount] = useState(initialTeachers.length);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialScheduleEvents);
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
   const router = useRouter();
 
 
@@ -90,12 +91,15 @@ export default function DashboardPage() {
           const teacherList: Teacher[] = JSON.parse(storedTeachers);
           const activeTeachers = teacherList.filter(t => t.status !== 'deleted');
           setTeacherCount(activeTeachers.length);
+          setTeachers(teacherList);
         } catch (e) {
           console.error("Failed to parse teachers from localStorage", e);
           setTeacherCount(initialTeachers.filter(t => t.status !== 'deleted').length);
+          setTeachers(initialTeachers);
         }
       } else {
         setTeacherCount(initialTeachers.filter(t => t.status !== 'deleted').length);
+        setTeachers(initialTeachers);
       }
       
       const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -153,6 +157,17 @@ export default function DashboardPage() {
   }, [carouselApi]);
 
   const upcomingEvents = useMemo(() => {
+    if (!user) return [];
+    
+    const filterField = user.role === 'teacher' ? 'teacherId' : 'studentId';
+
+    return scheduleEvents
+    .filter((e) => e.status === 'scheduled' && e.start > new Date() && e[filterField] === user.id)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+    .slice(0, 3);
+  }, [scheduleEvents, user]);
+  
+  const allUpcomingEvents = useMemo(() => {
     return scheduleEvents
     .filter((e) => e.status === 'scheduled' && e.start > new Date())
     .sort((a, b) => a.start.getTime() - b.start.getTime())
@@ -350,10 +365,10 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {upcomingEvents.map((event) => (
+                {allUpcomingEvents.map((event) => (
                   <TableRow key={event.id}>
                      <TableCell>
-                      {initialTeachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
+                      {teachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
                       {users.find(u => u.id === event.studentId)?.name || 'N/A'}
@@ -469,7 +484,7 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         {user.role === 'student' ? 
-                          (initialTeachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
+                          (teachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
                           (users.find(u => u.id === event.studentId)?.name || 'N/A')
                         }
                       </TableCell>
