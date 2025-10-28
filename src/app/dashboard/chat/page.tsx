@@ -473,48 +473,48 @@ function ChatPageComponent() {
                       </CardHeader>
                   </Card>
               )}
-          </div>
-          <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-              <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                  <DialogTitle>Agendar Mensagem</DialogTitle>
-                  <DialogDescription>
-                      Selecione a data e o horário para enviar esta mensagem.
-                  </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                      <div className="flex justify-center">
-                          <Calendar
-                              mode="single"
-                              selected={selectedScheduleDate}
-                              onSelect={setSelectedScheduleDate}
-                              className="rounded-md border"
-                              locale={ptBR}
-                              disabled={{ before: new Date() }}
-                          />
-                      </div>
-                      <div className="grid gap-2">
-                          <Label htmlFor="time">Horário</Label>
-                          <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
-                              <SelectTrigger>
-                              <SelectValue placeholder="Selecione um horário" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-60">
-                              {availableTimes.map((time) => (
-                                  <SelectItem key={time} value={time}>{time}</SelectItem>
-                              ))}
-                              </SelectContent>
-                          </Select>
-                      </div>
-                  </div>
-                  <DialogFooter>
-                  <DialogClose asChild>
-                      <Button type="button" variant="outline">Cancelar</Button>
-                  </DialogClose>
-                  <Button type="button" onClick={handleScheduleMessage}>Agendar</Button>
-                  </DialogFooter>
-              </DialogContent>
-          </Dialog>
+        </div>
+        <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                <DialogTitle>Agendar Mensagem</DialogTitle>
+                <DialogDescription>
+                    Selecione a data e o horário para enviar esta mensagem.
+                </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={selectedScheduleDate}
+                            onSelect={setSelectedScheduleDate}
+                            className="rounded-md border"
+                            locale={ptBR}
+                            disabled={{ before: new Date() }}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="time">Horário</Label>
+                        <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Selecione um horário" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                            {availableTimes.map((time) => (
+                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline">Cancelar</Button>
+                </DialogClose>
+                <Button type="button" onClick={handleScheduleMessage}>Agendar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       </>
     )
 
@@ -537,4 +537,5 @@ export default function ChatPage() {
     
 
     
+
 
