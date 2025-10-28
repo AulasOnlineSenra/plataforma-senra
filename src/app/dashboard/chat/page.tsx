@@ -60,197 +60,24 @@ interface ScheduledMessage {
     recurrence: RecurrenceType;
 }
 
-function ScheduleMessageDialog({ 
-    isOpen, 
-    onOpenChange, 
-    contactName,
-    currentUser,
-    contactId,
-}: { 
-    isOpen: boolean; 
-    onOpenChange: (open: boolean) => void;
-    contactName: string;
-    currentUser: User | null;
-    contactId: string;
-}) {
-    const { firestore } = useFirebase();
-    const { toast } = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [messageTitle, setMessageTitle] = useState('');
-    const [messageContent, setMessageContent] = useState('');
-    const [scheduledDate, setScheduledDate] = useState<Date | undefined>(new Date());
-    const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
-    const [isRecording, setIsRecording] = useState(false);
-
-    const handleScheduleMessage = async (e: FormEvent) => {
-        e.preventDefault();
-
-        if (!currentUser?.id) {
-            toast({
-                variant: 'destructive',
-                title: 'Erro de Autenticação',
-                description: 'Você precisa estar logado para agendar mensagens.',
-            });
-            return;
-        }
-        
-        if ((!messageContent.trim() && !messageContent.includes('file::')) || !scheduledDate) {
-            toast({
-                variant: 'destructive',
-                title: 'Campos Incompletos',
-                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio, e selecione uma data e horário.',
-            });
-            return;
-        }
-
-        const messageData = {
-            creatorId: currentUser.id,
-            contactId: contactId,
-            title: messageTitle,
-            content: messageContent,
-            date: scheduledDate,
-            recurrence: recurrence,
-        };
-
-        const collectionRef = collection(firestore, 'users', currentUser.id, 'scheduledMessages');
-        await addDoc(collectionRef, messageData);
-        toast({
-            title: 'Mensagem Agendada',
-            description: `Sua mensagem para ${contactName} foi agendada para ${format(scheduledDate, "'dia' dd/MM 'às' HH:mm")}.`,
-        });
-
-        // Reset form and close dialog
-        setMessageTitle('');
-        setMessageContent('');
-        setScheduledDate(new Date());
-        setRecurrence('none');
-        onOpenChange(false);
-    };
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (loadEvent) => {
-                const dataUrl = loadEvent.target?.result as string;
-                const fileIdentifier = `file::${file.name}::${dataUrl}`;
-                setMessageContent(prev => prev ? `${prev}\n${fileIdentifier}` : fileIdentifier);
-            };
-            reader.readAsDataURL(file);
-
-            if(fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
-    };
-    
-    const handleToggleRecording = () => {
-        setIsRecording(!isRecording);
-        const audioIdentifier = `file::audio-gravado-${Date.now()}.mp3::data:audio/mpeg;base64,SUQz...`;
-        if (!isRecording) { // When starting recording
-            toast({ title: 'Gravação Iniciada', description: 'Clique novamente para parar.' });
-        } else { // When stopping recording
-            setMessageContent(prev => prev ? `${prev}\n${audioIdentifier}` : audioIdentifier);
-            toast({ title: 'Gravação Finalizada', description: 'Áudio anexado à mensagem.' });
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-4xl">
-                <form onSubmit={handleScheduleMessage}>
-                    <DialogHeader>
-                        <DialogTitle>Criar Agendamento</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="scheduled-message-title">Título (Opcional)</Label>
-                            <Input
-                                id="scheduled-message-title"
-                                value={messageTitle}
-                                onChange={(e) => setMessageTitle(e.target.value)}
-                                placeholder="Ex: Lembrete de aula"
-                            />
-                        </div>
-
-                        <div className="grid gap-2">
-                             <Label htmlFor="scheduled-message-content">Mensagem</Label>
-                            <Textarea
-                                id="scheduled-message-content"
-                                value={messageContent}
-                                onChange={(e) => setMessageContent(e.target.value)}
-                                placeholder="Escreva sua mensagem, anexe um arquivo ou grave um áudio..."
-                                rows={5}
-                                className="pr-10"
-                            />
-                             <div className="flex items-center gap-2 mt-2">
-                                 <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                    accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,audio/*"
-                                />
-                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2" /> Adicionar Mídia
-                                </Button>
-                                 <Button type="button" variant="outline" size="sm" onClick={handleToggleRecording}>
-                                    <Mic className={cn("mr-2", isRecording && "text-red-500 animate-pulse")} />
-                                    {isRecording ? 'Parar Gravação' : 'Gravar Áudio'}
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="grid md:grid-cols-3 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="scheduled-date">Data</Label>
-                                <DatePicker date={scheduledDate} setDate={setScheduledDate} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="scheduled-time">Hora</Label>
-                                <TimePicker date={scheduledDate} setDate={setScheduledDate} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="recurrence">Recorrência</Label>
-                                <Select value={recurrence} onValueChange={(value) => setRecurrence(value as RecurrenceType)}>
-                                    <SelectTrigger id="recurrence">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Não repetir</SelectItem>
-                                        <SelectItem value="daily">Diariamente</SelectItem>
-                                        <SelectItem value="weekly">Semanalmente</SelectItem>
-                                        <SelectItem value="monthly">Mensalmente</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button type="button" variant="outline">Cancelar</Button>
-                        </DialogClose>
-                        <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
-                            Criar
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
     const { user: currentUser, isUserLoading } = useUser();
     const { firestore } = useFirebase();
+    const { toast } = useToast();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // State for the scheduling dialog
     const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+    const [messageTitle, setMessageTitle] = useState('');
+    const [messageContent, setMessageContent] = useState('');
+    const [scheduledDate, setScheduledDate] = useState<Date | undefined>(new Date());
+    const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
+    const [isRecording, setIsRecording] = useState(false);
 
     
     const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
@@ -523,6 +350,79 @@ function ChatPageComponent() {
         await deleteDoc(messageRef);
     };
 
+    const handleScheduleMessage = async (e: FormEvent) => {
+        e.preventDefault();
+
+        if (!currentUser?.id || !activeChatPartner?.id) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Autenticação',
+                description: 'Você precisa estar logado e ter um chat ativo para agendar mensagens.',
+            });
+            return;
+        }
+        
+        if ((!messageContent.trim() && !messageContent.includes('file::')) || !scheduledDate) {
+            toast({
+                variant: 'destructive',
+                title: 'Campos Incompletos',
+                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio, e selecione uma data e horário.',
+            });
+            return;
+        }
+
+        const messageData = {
+            creatorId: currentUser.id,
+            contactId: activeChatPartner.id,
+            title: messageTitle,
+            content: messageContent,
+            date: scheduledDate,
+            recurrence: recurrence,
+        };
+
+        const collectionRef = collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+        await addDoc(collectionRef, messageData);
+        toast({
+            title: 'Mensagem Agendada',
+            description: `Sua mensagem para ${activeChatPartner.name} foi agendada para ${format(scheduledDate, "'dia' dd/MM 'às' HH:mm")}.`,
+        });
+
+        // Reset form and close dialog
+        setMessageTitle('');
+        setMessageContent('');
+        setScheduledDate(new Date());
+        setRecurrence('none');
+        setIsScheduleDialogOpen(false);
+    };
+
+    const handleScheduleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                const dataUrl = loadEvent.target?.result as string;
+                const fileIdentifier = `file::${file.name}::${dataUrl}`;
+                setMessageContent(prev => prev ? `${prev}\n${fileIdentifier}` : fileIdentifier);
+            };
+            reader.readAsDataURL(file);
+
+            if(fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+    
+    const handleToggleRecording = () => {
+        setIsRecording(!isRecording);
+        const audioIdentifier = `file::audio-gravado-${Date.now()}.mp3::data:audio/mpeg;base64,SUQz...`;
+        if (!isRecording) { // When starting recording
+            toast({ title: 'Gravação Iniciada', description: 'Clique novamente para parar.' });
+        } else { // When stopping recording
+            setMessageContent(prev => prev ? `${prev}\n${audioIdentifier}` : audioIdentifier);
+            toast({ title: 'Gravação Finalizada', description: 'Áudio anexado à mensagem.' });
+        }
+    };
+
 
     if (isUserLoading) {
         return <div>Carregando...</div>;
@@ -701,13 +601,87 @@ function ChatPageComponent() {
               )}
         </div>
         {activeChatPartner && (
-            <ScheduleMessageDialog
-                isOpen={isScheduleDialogOpen}
-                onOpenChange={setIsScheduleDialogOpen}
-                contactName={activeChatPartner.name}
-                currentUser={currentUser}
-                contactId={activeChatPartner.id}
-            />
+            <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+                <DialogContent className="sm:max-w-4xl">
+                    <form onSubmit={handleScheduleMessage}>
+                        <DialogHeader>
+                            <DialogTitle>Criar Agendamento</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-6 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="scheduled-message-title">Título (Opcional)</Label>
+                                <Input
+                                    id="scheduled-message-title"
+                                    value={messageTitle}
+                                    onChange={(e) => setMessageTitle(e.target.value)}
+                                    placeholder="Ex: Lembrete de aula"
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="scheduled-message-content">Mensagem</Label>
+                                <Textarea
+                                    id="scheduled-message-content"
+                                    value={messageContent}
+                                    onChange={(e) => setMessageContent(e.target.value)}
+                                    placeholder="Escreva sua mensagem, anexe um arquivo ou grave um áudio..."
+                                    rows={5}
+                                    className="pr-10"
+                                />
+                                <div className="flex items-center gap-2 mt-2">
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleScheduleFileSelect}
+                                        className="hidden"
+                                        accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,audio/*"
+                                    />
+                                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                        <Upload className="mr-2" /> Adicionar Mídia
+                                    </Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={handleToggleRecording}>
+                                        <Mic className={cn("mr-2", isRecording && "text-red-500 animate-pulse")} />
+                                        {isRecording ? 'Parar Gravação' : 'Gravar Áudio'}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="scheduled-date">Data</Label>
+                                    <DatePicker date={scheduledDate} setDate={setScheduledDate} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="scheduled-time">Hora</Label>
+                                    <TimePicker date={scheduledDate} setDate={setScheduledDate} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="recurrence">Recorrência</Label>
+                                    <Select value={recurrence} onValueChange={(value) => setRecurrence(value as RecurrenceType)}>
+                                        <SelectTrigger id="recurrence">
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Não repetir</SelectItem>
+                                            <SelectItem value="daily">Diariamente</SelectItem>
+                                            <SelectItem value="weekly">Semanalmente</SelectItem>
+                                            <SelectItem value="monthly">Mensalmente</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline">Cancelar</Button>
+                            </DialogClose>
+                            <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
+                                Criar
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         )}
       </>
     )
