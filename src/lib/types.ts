@@ -69,6 +69,7 @@ export interface ClassPackage {
 export interface ScheduleEvent {
   id: string;
   title: string;
+  description?: string;
   start: Date;
   end: Date;
   studentId: string;
