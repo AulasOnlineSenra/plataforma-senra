@@ -90,29 +90,32 @@ function ChatPageComponent() {
     }, [allUsers]);
 
     const handleContactSelect = useCallback((contactId: string) => {
-        const contact = getContactDetails(contactId);
-        if (contact) {
-            setActiveChatPartner(contact);
+      const contact = getContactDetails(contactId);
+      if (contact && currentUser) {
+        setActiveChatPartner(contact);
 
-            const storedContactsStr = localStorage.getItem('chatContacts');
-            let currentContacts: ChatContact[] = storedContactsStr
-                ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-                : initialChatContacts;
+        const storedContactsStr = localStorage.getItem('chatContacts');
+        let currentContacts: ChatContact[] = storedContactsStr
+          ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+          : initialChatContacts;
 
-            const updatedContacts = currentContacts.map(c =>
-                c.id === contactId ? { ...c, unreadCount: 0 } : c
-            );
+        const updatedContacts = currentContacts.map(c =>
+          c.id === contactId ? { ...c, unreadCount: 0 } : c
+        );
 
-            localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
-            window.dispatchEvent(new Event('storage'));
-            setAllContacts(updatedContacts);
-        }
-    }, [getContactDetails]);
+        localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+        setAllContacts(updatedContacts);
+        window.dispatchEvent(new Event('storage')); 
+      }
+    }, [getContactDetails, currentUser]);
 
     const updateData = useCallback(() => {
         const loggedInUserStr = localStorage.getItem('currentUser');
         if(loggedInUserStr) {
-            setCurrentUser(JSON.parse(loggedInUserStr));
+            const user = JSON.parse(loggedInUserStr);
+            if (user.id !== currentUser?.id) {
+              setCurrentUser(user);
+            }
         } else {
             setCurrentUser(getMockUser('student'));
         }
@@ -150,7 +153,7 @@ function ChatPageComponent() {
         updateData();
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, []);
+    }, [updateData]);
     
     useEffect(() => {
         if (contactIdParam && allUsers.length > 0) {
@@ -297,78 +300,84 @@ function ChatPageComponent() {
     });
 
     const handleSendMessage = (e?: React.FormEvent, content?: string) => {
-        if (e) e.preventDefault();
-        
-        const messageToSend = content || messageContent;
-        if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
-    
-        const newMessage: ChatMessage = {
-          id: `msg-${Date.now()}`,
-          senderId: currentUser.id,
-          receiverId: activeChatPartner.id,
-          content: messageToSend,
-          timestamp: new Date(),
-        };
-    
-        const updatedMessages = [...allMessages, newMessage];
-        setAllMessages(updatedMessages);
-        localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
-        
-        const allCurrentContactsStr = localStorage.getItem('chatContacts');
-        let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
-            ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-            : initialChatContacts;
-
-        const updateUserContacts = (
-            currentContactsList: ChatContact[],
-            userIdToUpdate: string,
-            partnerId: string,
-            message: ChatMessage,
-            isReceiver: boolean
-        ): ChatContact[] => {
-            const partnerDetails = getContactDetails(partnerId);
-            if (!partnerDetails) return currentContactsList;
-
-            let contactExists = false;
-            const updatedList = currentContactsList.map(c => {
-                if (c.id === partnerId) {
-                    contactExists = true;
-                    return {
-                        ...c,
-                        lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
-                        lastMessageTimestamp: message.timestamp,
-                        unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : c.unreadCount,
-                    };
-                }
-                return c;
-            });
-
-            if (!contactExists) {
-                 updatedList.push({
-                    id: partnerDetails.id,
-                    name: partnerDetails.name,
-                    avatarUrl: partnerDetails.avatarUrl,
-                    lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
-                    lastMessageTimestamp: message.timestamp,
-                    unreadCount: isReceiver ? 1 : 0,
-                });
-            }
-            
-            return updatedList;
-        };
-
-        allCurrentContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage, false);
-        allCurrentContacts = updateUserContacts(allCurrentContacts, activeChatPartner.id, currentUser.id, newMessage, true);
-        
-        const finalContacts = allCurrentContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-        setAllContacts(finalContacts);
-        localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
-
-        window.dispatchEvent(new Event('storage'));
-        if (!content) {
-            setMessageContent('');
-        }
+      if (e) e.preventDefault();
+      
+      const messageToSend = content || messageContent;
+      if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
+  
+      const newMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        senderId: currentUser.id,
+        receiverId: activeChatPartner.id,
+        content: messageToSend,
+        timestamp: new Date(),
       };
+  
+      const updatedMessages = [...allMessages, newMessage];
+      setAllMessages(updatedMessages);
+      localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+      
+      const allCurrentContactsStr = localStorage.getItem('chatContacts');
+      let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
+          ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+          : initialChatContacts;
+
+      const updateUserContacts = (
+          currentContactsList: ChatContact[],
+          partnerId: string,
+          message: ChatMessage,
+          isReceiver: boolean
+      ): ChatContact[] => {
+          const partnerDetails = getContactDetails(partnerId);
+          if (!partnerDetails) return currentContactsList;
+
+          let contactExists = false;
+          const updatedList = currentContactsList.map(c => {
+              if (c.id === partnerId) {
+                  contactExists = true;
+                  return {
+                      ...c,
+                      lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
+                      lastMessageTimestamp: message.timestamp,
+                      unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : (c.unreadCount || 0),
+                  };
+              }
+              return c;
+          });
+
+          if (!contactExists) {
+               updatedList.push({
+                  id: partnerDetails.id,
+                  name: partnerDetails.name,
+                  avatarUrl: partnerDetails.avatarUrl,
+                  lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
+                  lastMessageTimestamp: message.timestamp,
+                  unreadCount: isReceiver ? 1 : 0,
+              });
+          }
+          
+          return updatedList;
+      };
+
+      // This logic is tricky. We need to update two lists: the one for the current user and the one for the partner.
+      // In a real app, this would be handled by a backend, but for localStorage simulation:
+      
+      // Update for receiver
+      let receiverContacts = updateUserContacts(allCurrentContacts, newMessage.senderId, newMessage, true);
+      
+      // Update for sender
+      let senderContacts = updateUserContacts(receiverContacts, newMessage.receiverId, newMessage, false);
+      
+      const finalContacts = senderContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+      
+      setAllContacts(finalContacts);
+      localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
+
+      window.dispatchEvent(new Event('storage'));
+      if (!content) {
+          setMessageContent('');
+      }
+    };
     
       const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
