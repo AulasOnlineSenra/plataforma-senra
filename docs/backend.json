@@ -4,29 +4,29 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Representa um usuário da plataforma Aulas Online Senra.",
+      "description": "Represents a user in the system (student, teacher, or admin).",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade do usuário."
+          "description": "Unique identifier for the user."
         },
         "email": {
           "type": "string",
-          "description": "Endereço de e-mail do usuário.",
+          "description": "User's email address.",
           "format": "email"
         },
         "name": {
           "type": "string",
-          "description": "Nome completo do usuário."
+          "description": "User's full name."
         },
         "photoUrl": {
           "type": "string",
-          "description": "URL da foto de perfil do usuário.",
+          "description": "URL of the user's profile picture.",
           "format": "uri"
         },
         "role": {
           "type": "string",
-          "description": "Papel do usuário (ex: admin, aluno, professor).",
+          "description": "User's role (e.g., admin, teacher, student).",
           "format": "string"
         }
       },
@@ -41,111 +41,111 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subject",
       "type": "object",
-      "description": "Representa uma matéria ou disciplina oferecida na plataforma.",
+      "description": "Represents a subject or course offered.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade da matéria."
+          "description": "Unique identifier for the subject."
         },
         "name": {
           "type": "string",
-          "description": "Nome da matéria."
+          "description": "Name of the subject."
         },
         "description": {
           "type": "string",
-          "description": "Descrição da matéria."
+          "description": "Description of the subject."
         }
       },
       "required": [
         "id",
-        "name"
+        "name",
+        "description"
       ]
     },
     "TeacherProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TeacherProfile",
       "type": "object",
-      "description": "Representa as informações de perfil de um professor.",
+      "description": "Represents a teacher's profile with additional details.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade de perfil do professor."
+          "description": "Unique identifier for the teacher profile."
         },
         "userId": {
           "type": "string",
-          "description": "Referência ao Usuário. (Relação: Usuário 1:1 PerfilProfessor)"
+          "description": "Reference to User. (Relationship: User 1:1 TeacherProfile)"
         },
         "subjectId": {
           "type": "string",
-          "description": "Referência à Matéria. (Relação: Matéria 1:N PerfilProfessor)"
+          "description": "Reference to Subject. (Relationship: Subject 1:N TeacherProfile)"
         },
         "description": {
           "type": "string",
-          "description": "Descrição da formação e especialização do professor."
+          "description": "Description of the teacher's experience and qualifications."
         },
         "formation": {
           "type": "string",
-          "description": "Formação acadêmica do professor."
+          "description": "Teacher's education and academic qualifications."
         },
         "age": {
           "type": "number",
-          "description": "Idade do professor."
+          "description": "Teacher's age."
         },
         "availability": {
-          "type": "array",
-          "description": "Horários disponíveis para o professor.",
-          "items": {
-            "type": "string"
-          }
+          "type": "string",
+          "description": "Teacher's availability schedule."
         }
       },
       "required": [
         "id",
         "userId",
-        "subjectId"
+        "subjectId",
+        "description",
+        "availability"
       ]
     },
-    "Lesson": {
+    "ScheduledClass": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Lesson",
+      "title": "ScheduledClass",
       "type": "object",
-      "description": "Representa uma aula agendada.",
+      "description": "Represents a scheduled class or lesson.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade da aula."
+          "description": "Unique identifier for the scheduled class."
         },
         "studentId": {
           "type": "string",
-          "description": "Referência ao Usuário (aluno). (Relação: Usuário 1:N Aula)"
+          "description": "Reference to User (student). (Relationship: User 1:N ScheduledClass)"
         },
-        "teacherId": {
+        "teacherProfileId": {
           "type": "string",
-          "description": "Referência ao PerfilProfessor. (Relação: PerfilProfessor 1:N Aula)"
+          "description": "Reference to TeacherProfile. (Relationship: TeacherProfile 1:N ScheduledClass)"
         },
         "subjectId": {
           "type": "string",
-          "description": "Referência à Matéria. (Relação: Matéria 1:N Aula)"
+          "description": "Reference to Subject. (Relationship: Subject 1:N ScheduledClass)"
         },
         "startTime": {
           "type": "string",
-          "description": "Horário de início da aula.",
+          "description": "Start time of the class.",
           "format": "date-time"
         },
         "endTime": {
           "type": "string",
-          "description": "Horário de término da aula.",
+          "description": "End time of the class.",
           "format": "date-time"
         },
         "status": {
           "type": "string",
-          "description": "Status da aula (ex: agendada, concluída, cancelada)."
+          "description": "Status of the class (e.g., scheduled, completed, cancelled)."
         }
       },
       "required": [
         "id",
         "studentId",
-        "teacherId",
+        "teacherProfileId",
         "subjectId",
         "startTime",
         "endTime",
@@ -156,23 +156,23 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "PaymentPackage",
       "type": "object",
-      "description": "Representa um pacote de aulas que pode ser comprado.",
+      "description": "Represents a package of lessons that a student can purchase.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade do pacote de pagamento."
+          "description": "Unique identifier for the payment package."
         },
         "name": {
           "type": "string",
-          "description": "Nome do pacote de pagamento (ex: 4 aulas, 8 aulas)."
+          "description": "Name of the payment package (e.g., 4 lessons, 8 lessons)."
         },
         "numberOfLessons": {
           "type": "number",
-          "description": "Número de aulas incluídas no pacote."
+          "description": "Number of lessons included in the package."
         },
         "price": {
           "type": "number",
-          "description": "Preço do pacote de pagamento."
+          "description": "Price of the package."
         }
       },
       "required": [
@@ -186,42 +186,42 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "PaymentTransaction",
       "type": "object",
-      "description": "Representa uma transação de pagamento feita por um usuário.",
+      "description": "Represents a payment transaction made by a student.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade da transação de pagamento."
+          "description": "Unique identifier for the payment transaction."
         },
-        "userId": {
+        "studentId": {
           "type": "string",
-          "description": "Referência ao Usuário. (Relação: Usuário 1:N TransacaoPagamento)"
+          "description": "Reference to User (student). (Relationship: User 1:N PaymentTransaction)"
         },
-        "packageId": {
+        "paymentPackageId": {
           "type": "string",
-          "description": "Referência ao PacotePagamento. (Relação: PacotePagamento 1:N TransacaoPagamento)"
+          "description": "Reference to PaymentPackage. (Relationship: PaymentPackage 1:N PaymentTransaction)"
         },
         "transactionDate": {
           "type": "string",
-          "description": "Data e hora da transação.",
+          "description": "Date of the transaction.",
           "format": "date-time"
         },
         "amount": {
           "type": "number",
-          "description": "Valor pago na transação."
+          "description": "Amount paid in the transaction."
         },
         "paymentMethod": {
           "type": "string",
-          "description": "Método de pagamento usado (ex: PayPal, Mercado Pago)."
+          "description": "Payment method used (e.g., PayPal, Mercado Pago)."
         },
         "status": {
           "type": "string",
-          "description": "Status da transação (ex: concluída, pendente, falha)."
+          "description": "Status of the transaction (e.g., completed, pending, failed)."
         }
       },
       "required": [
         "id",
-        "userId",
-        "packageId",
+        "studentId",
+        "paymentPackageId",
         "transactionDate",
         "amount",
         "paymentMethod",
@@ -232,35 +232,71 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SessionFeedback",
       "type": "object",
-      "description": "Representa o feedback fornecido por um aluno após uma sessão de aula.",
+      "description": "Represents feedback given by a student after a class session.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Identificador único para a entidade de feedback da sessão."
+          "description": "Unique identifier for the session feedback."
         },
-        "lessonId": {
+        "scheduledClassId": {
           "type": "string",
-          "description": "Referência à Aula. (Relação: Aula 1:1 FeedbackSessao)"
+          "description": "Reference to ScheduledClass. (Relationship: ScheduledClass 1:N SessionFeedback)"
         },
         "rating": {
           "type": "number",
-          "description": "Avaliação dada pelo aluno (ex: 1-5 estrelas)."
+          "description": "Rating given by the student (e.g., 1-5 stars)."
         },
         "comments": {
           "type": "string",
-          "description": "Comentários adicionais fornecidos pelo aluno."
+          "description": "Additional comments provided by the student."
         },
         "feedbackDate": {
           "type": "string",
-          "description": "Data e hora em que o feedback foi enviado.",
+          "description": "Date when the feedback was given.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "lessonId",
+        "scheduledClassId",
         "rating",
         "feedbackDate"
+      ]
+    },
+    "ScheduledMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ScheduledMessage",
+      "type": "object",
+      "description": "Represents a scheduled message to be sent to a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the scheduled message."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User to whom the message is to be sent. (Relationship: User 1:N ScheduledMessage)"
+        },
+        "messageContent": {
+          "type": "string",
+          "description": "Content of the message to be sent."
+        },
+        "scheduledDateTime": {
+          "type": "string",
+          "description": "Date and time when the message should be sent.",
+          "format": "date-time"
+        },
+        "sent": {
+          "type": "boolean",
+          "description": "Indicates whether the message has been sent."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "messageContent",
+        "scheduledDateTime",
+        "sent"
       ]
     }
   },
@@ -279,27 +315,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Armazena perfis de usuário. Acessível pelo usuário e administradores.",
+          "description": "Stores user profiles.  Root-level collection to enable listing all users (admins only).",
           "params": [
             {
               "name": "userId",
-              "description": "O identificador único do usuário."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "adminRole",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Documentos nesta coleção concedem privilégios de administrador ao ID de usuário correspondente. A existência de um documento concede acesso de administrador.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "O identificador único do usuário administrador."
+              "description": "The unique identifier for the user."
             }
           ]
         }
@@ -311,108 +331,136 @@
           "schema": {
             "$ref": "#/backend/entities/Subject"
           },
-          "description": "Armazena informações sobre as matérias oferecidas na plataforma.",
+          "description": "Stores information about subjects offered.",
           "params": [
             {
               "name": "subjectId",
-              "description": "O identificador único da matéria."
+              "description": "The unique identifier for the subject."
             }
           ]
         }
       },
       {
-        "path": "/teacher_profiles/{teacherProfileId}",
+        "path": "/users/{userId}/teacherProfiles/{teacherProfileId}",
         "definition": {
           "entityName": "TeacherProfile",
           "schema": {
             "$ref": "#/backend/entities/TeacherProfile"
           },
-          "description": "Armazena perfis de professores. Cada perfil contém informações sobre o professor, incluindo as matérias que eles ensinam.",
+          "description": "Stores teacher profiles, linked to a specific user. Nested under /users/{userId} for ownership.",
           "params": [
             {
-              "name": "teacherProfileId",
-              "description": "O identificador único do perfil do professor."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{studentId}/lessons/{lessonId}",
-        "definition": {
-          "entityName": "Lesson",
-          "schema": {
-            "$ref": "#/backend/entities/Lesson"
-          },
-          "description": "Armazena aulas associadas a um aluno específico. Inclui studentId como parte do caminho para reforçar a posse e a independência de autorização.",
-          "params": [
-            {
-              "name": "studentId",
-              "description": "O identificador único do aluno."
+              "name": "userId",
+              "description": "The unique identifier for the user (teacher)."
             },
             {
-              "name": "lessonId",
-              "description": "O identificador único da aula."
+              "name": "teacherProfileId",
+              "description": "The unique identifier for the teacher profile."
             }
           ]
         }
       },
       {
-        "path": "/payment_packages/{paymentPackageId}",
+        "path": "/users/{userId}/scheduledClasses/{scheduledClassId}",
+        "definition": {
+          "entityName": "ScheduledClass",
+          "schema": {
+            "$ref": "#/backend/entities/ScheduledClass"
+          },
+          "description": "Stores scheduled classes, linked to a student user. Nested under /users/{userId} for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (student)."
+            },
+            {
+              "name": "scheduledClassId",
+              "description": "The unique identifier for the scheduled class."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/paymentPackages/{paymentPackageId}",
         "definition": {
           "entityName": "PaymentPackage",
           "schema": {
             "$ref": "#/backend/entities/PaymentPackage"
           },
-          "description": "Armazena informações sobre os pacotes de pagamento que os alunos podem comprar.",
+          "description": "Stores payment packages that students can purchase.",
           "params": [
             {
               "name": "paymentPackageId",
-              "description": "O identificador único do pacote de pagamento."
+              "description": "The unique identifier for the payment package."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/payment_transactions/{paymentTransactionId}",
+        "path": "/users/{userId}/paymentTransactions/{paymentTransactionId}",
         "definition": {
           "entityName": "PaymentTransaction",
           "schema": {
             "$ref": "#/backend/entities/PaymentTransaction"
           },
-          "description": "Armazena transações de pagamento feitas por um usuário. Inclui userId no caminho para reforçar a posse.",
+          "description": "Stores payment transactions made by a student user. Nested under /users/{userId} for ownership.",
           "params": [
             {
               "name": "userId",
-              "description": "O identificador único do usuário."
+              "description": "The unique identifier for the user (student)."
             },
             {
               "name": "paymentTransactionId",
-              "description": "O identificador único da transação de pagamento."
+              "description": "The unique identifier for the payment transaction."
             }
           ]
         }
       },
       {
-        "path": "/lessons/{lessonId}/session_feedback/{sessionFeedbackId}",
+        "path": "/users/{userId}/scheduledClasses/{scheduledClassId}/sessionFeedback/{sessionFeedbackId}",
         "definition": {
           "entityName": "SessionFeedback",
           "schema": {
             "$ref": "#/backend/entities/SessionFeedback"
           },
-          "description": "Armazena o feedback da sessão para uma aula específica. Embora isso possa ser aninhado sob o usuário, mantê-lo separado permite listar todos os feedbacks mais facilmente.",
+          "description": "Stores session feedback given by a student, linked to a scheduled class. Nested under /users/{userId}/scheduledClasses/{scheduledClassId} for data locality and ownership.",
           "params": [
             {
-              "name": "lessonId",
-              "description": "O identificador único da aula."
+              "name": "userId",
+              "description": "The unique identifier for the user (student)."
+            },
+            {
+              "name": "scheduledClassId",
+              "description": "The unique identifier for the scheduled class."
             },
             {
               "name": "sessionFeedbackId",
-              "description": "O identificador único do feedback da sessão."
+              "description": "The unique identifier for the session feedback."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/scheduledMessages/{scheduledMessageId}",
+        "definition": {
+          "entityName": "ScheduledMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ScheduledMessage"
+          },
+          "description": "Stores scheduled messages for users. Nested under /users/{userId} for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "scheduledMessageId",
+              "description": "The unique identifier for the scheduled message."
             }
           ]
         }
       }
     ],
-    "reasoning": "A estrutura do Firestore é projetada para suportar a aplicação Aulas Online Senra, focando em gerenciamento de usuários, agendamento, pagamentos e feedback. A estrutura enfatiza a Independência de Autorização desnormalizando dados onde necessário, particularmente para dados colaborativos. Ela também é estruturada para ser muito explícita, melhorando a depuração e a manutenibilidade. A segregação é usada para manter documentos com diferentes requisitos de autorização separados.\n\nA Independência de Autorização é alcançada principalmente através da posse baseada em caminho para dados específicos do usuário e do padrão de Mapa de Associação para cenários colaborativos (embora nenhuma coleção colaborativa tenha sido explicitamente solicitada). Por exemplo, as aulas são armazenadas sob o ID de usuário do aluno, garantindo que apenas o aluno (e administradores) possam acessá-las diretamente. Os perfis dos professores são armazenados sob o ID de usuário do professor. Isso elimina a necessidade de chamadas `get()` nas regras de segurança para verificar a posse.\n\nA estrutura suporta os QAPs necessários (Regras não são Filtros) através da segregação estrutural. Dados específicos do usuário são armazenados sob seus respectivos IDs de usuário, o que permite operações `list` seguras. Administradores requerem tratamento especial; eles recebem acesso explícito por meio de uma coleção de papéis global, `roles_admin`. Isso permite listar todos os itens dentro de uma coleção. Para recursos colaborativos, um mapa de associação (`members`) seria desnormalizado para suportar QAPs.\n\nA modelagem de estado explícita usa um campo `status` para entidades como `Lesson` e `PaymentTransaction` para clareza. O esquema previsível evita chaves dinâmicas e impõe convenções de nomenclatura consistentes, como sempre usar `userId` para referências de usuário. Os curingas são descritivos, como `{userId}` e `{lessonId}`."
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, support required QAPs (Queries are not Filters), and maintain data integrity.\n\n**Authorization Independence:**\n\n*   User-owned data (TeacherProfile, ScheduledClass, PaymentTransaction, SessionFeedback, ScheduledMessage) is nested under `/users/{userId}`. This eliminates the need for `get()` calls in security rules to check user ownership. The `userId` is inherently known from the path.\n\n**Structural Segregation & QAPs:**\n\n*   Each top-level collection or subcollection is designed to hold documents with similar security requirements. For example, scheduled messages (`/users/{userId}/scheduledMessages/{scheduledMessageId}`) are directly owned by users, allowing for secure listing and querying.\n*   The use of path-based ownership (`/users/{userId}/...`) ensures that list operations can be securely filtered based on the authenticated user's ID, without needing to read document data.\n\n**Additional Considerations:**\n\n*   The structure supports the app's core features, including user authentication, subject selection, scheduling, chat, feedback, payment, and role-based dashboards. The User entity includes a `role` field that can be used for role-based access control in the application logic (though security rules should rely on the path).\n\nScheduled Messages are now nested under the user. This allows to securely query all messages created by the user."
   }
 }

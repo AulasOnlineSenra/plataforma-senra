@@ -1,29 +1,29 @@
 'use client';
 import {
-  Auth, // Importa o tipo Auth para dicas de tipo
+  Auth, // Import Auth type for type hinting
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  // Assume que getAuth e app são inicializados em outro lugar
+  // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
 
-/** Inicia o login anônimo (não bloqueante). */
+/** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth): void {
-  // CRÍTICO: Chame signInAnonymously diretamente. NÃO use 'await signInAnonymously(...)'.
+  // CRITICAL: Call signInAnonymously directly. Do NOT use 'await signInAnonymously(...)'.
   signInAnonymously(authInstance);
-  // O código continua imediatamente. A mudança de estado de autenticação é tratada pelo listener onAuthStateChanged.
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
-/** Inicia o cadastro com email/senha (não bloqueante). */
+/** Initiate email/password sign-up (non-blocking). */
 export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): void {
-  // CRÍTICO: Chame createUserWithEmailAndPassword diretamente. NÃO use 'await createUserWithEmailAndPassword(...)'.
+  // CRITICAL: Call createUserWithEmailAndPassword directly. Do NOT use 'await createUserWithEmailAndPassword(...)'.
   createUserWithEmailAndPassword(authInstance, email, password);
-  // O código continua imediatamente. A mudança de estado de autenticação é tratada pelo listener onAuthStateChanged.
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
-/** Inicia o login com email/senha (não bloqueante). */
+/** Initiate email/password sign-in (non-blocking). */
 export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): void {
-  // CRÍTICO: Chame signInWithEmailAndPassword diretamente. NÃO use 'await signInWithEmailAndPassword(...)'.
+  // CRITICAL: Call signInWithEmailAndPassword directly. Do NOT use 'await signInWithEmailAndPassword(...)'.
   signInWithEmailAndPassword(authInstance, email, password);
-  // O código continua imediatamente. A mudança de estado de autenticação é tratada pelo listener onAuthStateChanged.
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
