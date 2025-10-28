@@ -38,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TimePicker } from '@/components/ui/time-picker';
-import { useCollection, useFirebase, useUser, useMemoFirebase, useAuth, useFirestore } from '@/firebase';
+import { useCollection, useFirebase, useUser, useMemoFirebase, useAuth, useFirestore, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 
@@ -64,8 +64,8 @@ function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
     const { user: currentUser, isUserLoading } = useUser();
-    const firestore = useFirestore();
     const auth = useAuth();
+    const firestore = useFirestore();
     const { toast } = useToast();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
@@ -383,18 +383,27 @@ function ChatPageComponent() {
         };
 
         const collectionRef = collection(firestore, 'users', authUser.uid, 'scheduledMessages');
-        await addDoc(collectionRef, messageData);
-        toast({
-            title: 'Mensagem Agendada',
-            description: `Sua mensagem para ${activeChatPartner.name} foi agendada para ${format(scheduledDate!, "'dia' dd/MM 'às' HH:mm")}.`,
-        });
+        try {
+            await addDoc(collectionRef, messageData);
+            toast({
+                title: 'Mensagem Agendada',
+                description: `Sua mensagem para ${activeChatPartner.name} foi agendada para ${format(scheduledDate!, "'dia' dd/MM 'às' HH:mm")}.`,
+            });
 
-        // Reset form and close dialog
-        setMessageTitle('');
-        setMessageContent('');
-        setScheduledDate(new Date());
-        setRecurrence('none');
-        setIsScheduleDialogOpen(false);
+            // Reset form and close dialog
+            setMessageTitle('');
+            setMessageContent('');
+            setScheduledDate(new Date());
+            setRecurrence('none');
+            setIsScheduleDialogOpen(false);
+        } catch (error) {
+            const contextualError = new FirestorePermissionError({
+                path: collectionRef.path,
+                operation: 'create',
+                requestResourceData: messageData,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        }
     };
 
     const handleScheduleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -698,3 +707,5 @@ export default function ChatPage() {
         </Suspense>
     )
 }
+
+    
