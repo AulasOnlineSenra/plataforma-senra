@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -612,6 +612,30 @@ function ChatPageComponent() {
                                     <Upload className="mr-2 h-4 w-4" />
                                     Adicionar arquivo
                                 </Button>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="audio" className="pt-4">
+                            <div className="grid gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="audio-message-content">Mensagem (Opcional)</Label>
+                                    <Textarea
+                                        id="audio-message-content"
+                                        value={scheduledMessageContent}
+                                        onChange={(e) => setScheduledMessageContent(e.target.value)}
+                                        placeholder="Adicione uma legenda para o seu áudio..."
+                                        rows={3}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Adicionar áudio
+                                    </Button>
+                                    <Button variant="outline">
+                                        <Mic className="mr-2 h-4 w-4" />
+                                        Gravar áudio
+                                    </Button>
+                                </div>
                             </div>
                         </TabsContent>
                     </Tabs>
