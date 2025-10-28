@@ -143,7 +143,7 @@ function ChatPageComponent() {
         updateData();
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, [updateData]);
+    }, []);
     
     useEffect(() => {
         if (contactIdParam && allUsers.length > 0) {
@@ -780,7 +780,7 @@ function ChatPageComponent() {
                          )}
                     </div>
                     <DialogFooter className="sm:justify-center">
-                         <Button type="button" onClick={() => { setEditingMessageId(null); setScheduleDialogView('create'); }}>
+                         <Button type="button" onClick={() => { setEditingMessageId(null); setScheduleDialogView('create'); }} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
                             <Plus className="mr-2 h-4 w-4" />
                             Criar
                         </Button>
@@ -905,7 +905,7 @@ function ChatPageComponent() {
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setScheduleDialogView('list')}>Cancelar</Button>
-                        <Button type="button" onClick={handleScheduleMessage}>{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
+                        <Button type="button" onClick={handleScheduleMessage} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
                     </DialogFooter>
                 </>
               )}
