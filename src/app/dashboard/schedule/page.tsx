@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const USERS_STORAGE_KEY = 'userList';
@@ -346,8 +347,8 @@ export default function SchedulePage() {
               />
             </CardContent>
           </Card>
-          <Card className="lg:col-span-4" id="scheduled-classes">
-            <Tabs value={filterType} onValueChange={(value) => setFilterType(value as any)} className="w-full">
+          <Card className="lg:col-span-4 flex flex-col" id="scheduled-classes">
+            <Tabs value={filterType} onValueChange={(value) => setFilterType(value as any)} className="w-full flex flex-col flex-1">
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div className="grid gap-1">
@@ -365,51 +366,54 @@ export default function SchedulePage() {
                 </TabsList>
               </div>
             </CardHeader>
-            <CardContent className="grid gap-4">
-              {filteredEvents.length > 0 ? (
-                filteredEvents.map((event) => {
-                    const isTeacherView = currentUser?.role === 'teacher';
-                    const personToShow = isTeacherView ? getStudentById(event.studentId) : getTeacherById(event.teacherId);
-                    const fallback = personToShow ? personToShow.name.charAt(0) : '?';
-                    
-                    return (
-                        <div
-                        key={event.id}
-                        className="flex items-center gap-4 rounded-lg border p-3"
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                            <Avatar className='h-12 w-12'>
-                                <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
-                                <AvatarFallback>{fallback}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1">
-                              <p className="font-semibold">{personToShow?.name}</p>
-                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}</span>
+            <CardContent className="flex-1">
+              <ScrollArea className="h-full max-h-[300px] pr-4">
+                <div className="grid gap-4">
+                  {filteredEvents.length > 0 ? (
+                    filteredEvents.map((event) => {
+                      const personToShow = getTeacherById(event.teacherId);
+                      const fallback = personToShow ? personToShow.name.charAt(0) : '?';
+                      
+                      return (
+                          <div
+                          key={event.id}
+                          className="flex items-center gap-4 rounded-lg border p-3"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                              <Avatar className='h-12 w-12'>
+                                  <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
+                                  <AvatarFallback>{fallback}</AvatarFallback>
+                              </Avatar>
+                              <div className="grid gap-1">
+                                <p className="font-semibold">{personToShow?.name}</p>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}</span>
+                                </div>
                               </div>
-                            </div>
+                          </div>
+                          <div className="text-center text-sm text-muted-foreground">
+                            {event.title}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
+                                <Pencil className="h-5 w-5 text-muted-foreground" />
+                                <span className="sr-only">Editar Aula</span>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
+                                <XCircle className="h-5 w-5" />
+                                <span className="sr-only">Cancelar Aula</span>
+                            </Button>
+                          </div>
                         </div>
-                        <div className="text-center text-sm text-muted-foreground">
-                          {event.title}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
-                              <Pencil className="h-5 w-5 text-muted-foreground" />
-                              <span className="sr-only">Editar Aula</span>
-                          </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
-                              <XCircle className="h-5 w-5" />
-                              <span className="sr-only">Cancelar Aula</span>
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                })
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-8">
-                  <p>Nenhuma aula agendada para este período.</p>
+                      )
+                    })
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full min-h-[150px]">
+                      <p>Nenhuma aula agendada para este período.</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </ScrollArea>
             </CardContent>
             </Tabs>
           </Card>
