@@ -25,7 +25,7 @@ import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as i
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse } from 'date-fns';
 import { Plus, Trash2, Repeat, X, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
@@ -140,29 +140,25 @@ function BookingPageComponent() {
     setRecurrence('none');
   };
 
-  const isConflict = (newBooking: Booking, studentId: string): boolean => {
-    // Check only scheduled events, ignore cancelled or completed ones.
+  const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
     const activeScheduleEvents = scheduleEvents.filter(event => event.status === 'scheduled');
-    const allExistingEvents: (Booking | ScheduleEvent)[] = [...activeScheduleEvents, ...bookings];
+    const allExistingEvents: (ScheduleEvent)[] = [...activeScheduleEvents];
 
     return allExistingEvents.some(existingBooking => {
-      // Check if the event is relevant (involves the same teacher or student)
-      const isTeacherBusy = 'teacherId' in existingBooking && existingBooking.teacherId === newBooking.teacherId;
-      const isStudentBusy = ('studentId' in existingBooking && existingBooking.studentId === studentId);
+      const isTeacherBusy = existingBooking.teacherId === teacherId;
+      const isStudentBusy = existingBooking.studentId === studentId;
       
       if (!isTeacherBusy && !isStudentBusy) {
         return false;
       }
 
-      const newStarts = newBooking.start.getTime();
-      const newEnds = newBooking.end.getTime();
-      const existingStarts = new Date((existingBooking as any).start).getTime();
-      const existingEnds = new Date((existingBooking as any).end).getTime();
+      const existingStarts = new Date(existingBooking.start).getTime();
+      const existingEnds = new Date(existingBooking.end).getTime();
 
-      // Check for overlap: (StartA < EndB) and (EndA > StartB)
-      return (newStarts < existingEnds && newEnds > existingStarts);
+      return (newBookingStart.getTime() < existingEnds && newBookingEnd.getTime() > existingStarts);
     });
   }
+
 
   const handleAddBooking = () => {
     if (
@@ -183,10 +179,8 @@ function BookingPageComponent() {
     }
 
     const newBookings: Booking[] = [];
-    const today = startOfToday();
     let conflictFound = false;
 
-    // Create bookings for all selected dates first
     selectedDates.forEach(date => {
         if (conflictFound) return;
         
@@ -206,15 +200,12 @@ function BookingPageComponent() {
 
         const endDate = addMinutes(startDate, CLASS_DURATION_MINUTES);
 
-        const newBooking: Booking = {
-            id: `booking-${startDate.getTime()}-${Math.random()}`,
-            subjectId: selectedSubject,
-            teacherId: selectedTeacher,
-            start: startDate,
-            end: endDate,
-        };
-
-        if (isConflict(newBooking, currentUser.id)) {
+        const bookingConflict = bookings.some(b => 
+            (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+            (startDate.getTime() < b.end.getTime() && endDate.getTime() > b.start.getTime())
+        );
+        
+        if (isConflict(startDate, endDate, currentUser.id, selectedTeacher) || bookingConflict) {
              toast({
                 variant: 'destructive',
                 title: 'Conflito de Horário',
@@ -222,17 +213,23 @@ function BookingPageComponent() {
             });
             conflictFound = true;
         } else {
+             const newBooking: Booking = {
+                id: `booking-${startDate.getTime()}-${Math.random()}`,
+                subjectId: selectedSubject,
+                teacherId: selectedTeacher,
+                start: startDate,
+                end: endDate,
+             };
              newBookings.push(newBooking);
         }
     });
 
     if (conflictFound) {
-        return; // Stop if any initial conflict is found
+        return; 
     }
 
-    // Handle recurrence if selected
     if (recurrence !== 'none') {
-      const repeatCount = 4; // Add 4 more weeks/months of classes
+      const repeatCount = 4;
       const originalDates = [...newBookings];
       let recurrenceConflictFound = false;
 
@@ -251,14 +248,13 @@ function BookingPageComponent() {
             newStartDate.setMonth(newStartDate.getMonth() + i);
           }
            const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES);
-           const recurringBooking: Booking = {
-             ...booking,
-             id: `booking-${newStartDate.getTime()}-${Math.random()}`,
-             start: newStartDate,
-             end: newEndDate,
-           };
-
-           if (isConflict(recurringBooking, currentUser.id) || newBookings.some(b => b.start.getTime() === recurringBooking.start.getTime())) {
+           
+           const recurringConflict = newBookings.some(b => 
+                (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+                (newStartDate.getTime() < b.end.getTime() && newEndDate.getTime() > b.start.getTime())
+           );
+           
+           if (isConflict(newStartDate, newEndDate, currentUser.id, selectedTeacher) || recurringConflict) {
                 toast({
                     variant: 'destructive',
                     title: 'Conflito de Horário na Recorrência',
@@ -266,6 +262,12 @@ function BookingPageComponent() {
                 });
                 recurrenceConflictFound = true;
            } else {
+               const recurringBooking: Booking = {
+                 ...booking,
+                 id: `booking-${newStartDate.getTime()}-${Math.random()}`,
+                 start: newStartDate,
+                 end: newEndDate,
+               };
                newBookings.push(recurringBooking);
            }
         });
@@ -274,7 +276,6 @@ function BookingPageComponent() {
 
 
     setBookings((prev) => [...prev, ...newBookings].sort((a, b) => a.start.getTime() - b.start.getTime()));
-    // Clear only date/time selections to allow for quick booking of another class
     setSelectedDates([]);
     setSelectedTime(undefined);
     setRecurrence('none');
@@ -291,16 +292,16 @@ function BookingPageComponent() {
   };
 
   const handleRepeatBooking = (booking: Booking) => {
-    if (!currentUser) return;
-    const newStartDate = addMinutes(booking.end, 15); // Add a small buffer
-    const newBooking: Booking = {
-      ...booking,
-      id: `booking-${newStartDate.getTime()}-${Math.random()}`,
-      start: newStartDate,
-      end: addMinutes(newStartDate, CLASS_DURATION_MINUTES)
-    };
+    if (!currentUser || !selectedTeacher) return;
+    const newStartDate = addMinutes(booking.end, 15);
+    const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES)
+    
+    const bookingConflict = bookings.some(b => 
+        (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+        (newStartDate.getTime() < b.end.getTime() && newEndDate.getTime() > b.start.getTime())
+    );
 
-    if(isConflict(newBooking, currentUser.id)) {
+    if(isConflict(newStartDate, newEndDate, currentUser.id, selectedTeacher) || bookingConflict) {
         toast({
             variant: 'destructive',
             title: 'Conflito de Horário',
@@ -308,6 +309,13 @@ function BookingPageComponent() {
         });
         return;
     }
+
+    const newBooking: Booking = {
+      ...booking,
+      id: `booking-${newStartDate.getTime()}-${Math.random()}`,
+      start: newStartDate,
+      end: newEndDate
+    };
 
     setBookings((prev) => [...prev, newBooking].sort((a, b) => a.start.getTime() - b.start.getTime()));
     toast({
@@ -393,13 +401,10 @@ function BookingPageComponent() {
 
         const adminMessageContent = `Nova aula agendada: ${event.subject} com ${teacher?.name} e ${student?.name} em ${dateStr}.`;
         
-        // Notificar o admin (de "system")
         sendNotification('system', adminUser.id, adminMessageContent);
         
-        // Notificar o professor (do admin)
         sendNotification(adminUser.id, event.teacherId, `Olá, ${teacher?.name}. Uma nova aula de ${event.subject} com ${student?.name} foi agendada para ${dateStr}.`);
 
-        // Notificar o aluno (do admin)
         sendNotification(adminUser.id, event.studentId, `Olá, ${student?.name}. Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
     });
 
@@ -412,35 +417,49 @@ function BookingPageComponent() {
     setBookings([]);
   }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification]);
 
-  const availableTimes = useMemo(() => {
-    if (!selectedTeacher || !selectedDates || selectedDates.length === 0) {
-      return [];
-    }
-    
-    const teacher = teachers.find(t => t.id === selectedTeacher);
-    if (!teacher) return [];
-
-    const times: { start: string; end: string }[] = [];
-    const date = new Date();
-    // Generate time slots from 08:00, incrementing by 30 mins
-    for (let h = 8; h <= 21; h++) {
-        for (let m = 0; m < 60; m += 30) {
-             date.setHours(h, m, 0, 0);
-             const endDate = addMinutes(date, CLASS_DURATION_MINUTES);
-
-             if(endDate.getHours() > 22 || (endDate.getHours() === 22 && endDate.getMinutes() > 0)) {
-                break;
-             }
-
-             times.push({
-                start: format(date, 'HH:mm'),
-                end: format(endDate, 'HH:mm')
-             });
+    const availableTimes = useMemo(() => {
+        if (!selectedTeacher || !selectedDates || selectedDates.length === 0 || !currentUser) {
+            return [];
         }
-    }
-    
-    return times;
-  }, [selectedTeacher, selectedDates, teachers]);
+        
+        const teacher = teachers.find(t => t.id === selectedTeacher);
+        if (!teacher || !teacher.availability) return [];
+
+        const times: { start: string; end: string }[] = [];
+        const dayOfWeekName = format(selectedDates[0], 'eeee', { locale: ptBR }).toLowerCase() as keyof Teacher['availability'];
+        const dayAvailability = teacher.availability[dayOfWeekName];
+        
+        if (!dayAvailability) return [];
+        
+        dayAvailability.forEach(range => {
+            let currentTime = parse(range.start, 'HH:mm', new Date());
+            const endTime = parse(range.end, 'HH:mm', new Date());
+
+            while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime) {
+                const slotStart = new Date(selectedDates[0]);
+                const [hours, minutes] = format(currentTime, 'HH:mm').split(':').map(Number);
+                slotStart.setHours(hours, minutes, 0, 0);
+                
+                const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
+
+                const existingBookingConflict = bookings.some(b => 
+                    (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+                    (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
+                );
+                
+                if (!isConflict(slotStart, slotEnd, currentUser.id, selectedTeacher) && !existingBookingConflict) {
+                     times.push({
+                        start: format(currentTime, 'HH:mm'),
+                        end: format(addMinutes(currentTime, CLASS_DURATION_MINUTES), 'HH:mm')
+                     });
+                }
+                
+                currentTime = addMinutes(currentTime, 30);
+            }
+        });
+
+        return times;
+    }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser]);
   
   useEffect(() => {
     if (!selectedTeacher || !currentUser) {
@@ -728,5 +747,3 @@ export default function BookingPage() {
         </Suspense>
     );
 }
-
-    
