@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Video, Mic, Calendar as CalendarIcon, Link as LinkIcon, Upload } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -350,11 +350,19 @@ function ChatPageComponent() {
             reader.onload = (loadEvent) => {
                 const dataUrl = loadEvent.target?.result as string;
                 const fileMessage = `file::${file.name}::${dataUrl}`;
-                handleSendMessage(undefined, fileMessage);
-                toast({
-                    title: "Arquivo Enviado!",
-                    description: `O arquivo "${file.name}" foi enviado na conversa.`,
-                });
+                if (isScheduling) {
+                    setScheduledMessageContent(prev => prev ? `${prev}\n${fileMessage}` : fileMessage);
+                     toast({
+                        title: "Arquivo Anexado!",
+                        description: `O arquivo "${file.name}" foi anexado à sua mensagem agendada.`,
+                    });
+                } else {
+                    handleSendMessage(undefined, fileMessage);
+                    toast({
+                        title: "Arquivo Enviado!",
+                        description: `O arquivo "${file.name}" foi enviado na conversa.`,
+                    });
+                }
             };
             reader.readAsDataURL(file);
 
@@ -594,11 +602,13 @@ function ChatPageComponent() {
                                     <Label htmlFor="media-message-content">Mensagem (Opcional)</Label>
                                     <Textarea
                                         id="media-message-content"
+                                        value={scheduledMessageContent}
+                                        onChange={(e) => setScheduledMessageContent(e.target.value)}
                                         placeholder="Adicione uma legenda para sua mídia..."
                                         rows={3}
                                     />
                                 </div>
-                                <Button variant="outline">
+                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                                     <Upload className="mr-2 h-4 w-4" />
                                     Adicionar arquivo
                                 </Button>
