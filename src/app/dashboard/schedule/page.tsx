@@ -353,8 +353,8 @@ export default function SchedulePage() {
             <CardContent className="grid gap-4">
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => {
-                    const person = currentUser?.role === 'teacher' ? getStudentById(event.studentId) : getTeacherById(event.teacherId);
-                    const fallback = person ? person.name.charAt(0) : '?';
+                    const teacher = getTeacherById(event.teacherId);
+                    const fallback = teacher ? teacher.name.charAt(0) : '?';
                     return (
                         <div
                         key={event.id}
@@ -362,13 +362,13 @@ export default function SchedulePage() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                             <Avatar className='h-12 w-12'>
-                                <AvatarImage src={person?.avatarUrl} alt={person?.name} />
+                                <AvatarImage src={teacher?.avatarUrl} alt={teacher?.name} />
                                 <AvatarFallback>{fallback}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
-                              <p className="font-semibold">{person?.name}</p>
+                              <p className="font-semibold">{teacher?.name}</p>
                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>{format(event.start, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</span>
+                                <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                               </div>
                             </div>
                         </div>
