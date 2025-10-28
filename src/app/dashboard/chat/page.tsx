@@ -38,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TimePicker } from '@/components/ui/time-picker';
-import { useCollection, useFirebase, useUser } from '@/firebase';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 
@@ -75,8 +75,8 @@ function ScheduleMessagesDialog({
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [view, setView] = useState<'list' | 'create'>('list');
-
-    const scheduledMessagesQuery = useMemo(() => {
+    
+    const scheduledMessagesQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser?.id) return null;
         return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
     }, [firestore, currentUser?.id]);
@@ -429,6 +429,7 @@ function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
     const { user: currentUser } = useUser();
+    const { firestore } = useFirebase();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -693,16 +694,14 @@ function ChatPageComponent() {
         return <p className="break-words whitespace-pre-wrap">{message.content}</p>;
     };
 
-    const { data: scheduledMessagesForDisplay } = useCollection<ScheduledMessage>(
-        useMemo(() => {
-            const { firestore } = useFirebase();
-            if (!firestore || !currentUser?.id) return null;
-            return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
-        }, [currentUser?.id])
-    );
+    const scheduledMessagesQuery = useMemoFirebase(() => {
+        if (!firestore || !currentUser?.id) return null;
+        return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+    }, [firestore, currentUser?.id]);
+
+    const { data: scheduledMessagesForDisplay } = useCollection<ScheduledMessage>(scheduledMessagesQuery);
 
     const handleRemoveScheduledMessage = async (id: string) => {
-        const { firestore } = useFirebase();
         if (!currentUser?.id || !firestore) return;
         const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', id);
         await deleteDoc(messageRef);
@@ -928,4 +927,5 @@ export default function ChatPage() {
     
 
     
+
 
