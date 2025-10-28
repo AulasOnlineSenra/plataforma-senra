@@ -36,6 +36,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Mp3Encoder } from 'lamejs';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -415,6 +416,30 @@ function ChatPageComponent() {
         setScheduledMessages(prev => prev.filter(msg => msg.id !== id));
     };
 
+    const audioBufferToMp3 = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+        return new Promise((resolve) => {
+            const mp3encoder = new Mp3Encoder(1, audioBuffer.sampleRate, 128);
+            const samples = audioBuffer.getChannelData(0);
+            const mp3Data = [];
+    
+            const sampleBlockSize = 1152;
+            for (let i = 0; i < samples.length; i += sampleBlockSize) {
+                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
+            }
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+    
+            const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+            resolve(mp3Blob);
+        });
+    };
+
     const handleToggleRecording = async () => {
         if (isRecording) {
             // Stop recording
@@ -434,21 +459,24 @@ function ChatPageComponent() {
                         setAudioChunks(prev => [...prev, event.data]);
                     };
 
-                    mediaRecorder.onstop = () => {
+                    mediaRecorder.onstop = async () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audioContext = new AudioContext();
+                        const arrayBuffer = await audioBlob.arrayBuffer();
+                        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                        const mp3Blob = await audioBufferToMp3(audioBuffer);
                         
                         const reader = new FileReader();
                         reader.onloadend = () => {
                             const base64data = reader.result as string;
-                             const audioMessage = `file::gravacao-${new Date().toISOString()}.wav::${base64data}`;
+                             const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
                             setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
                             toast({
                                 title: "Gravação Anexada!",
-                                description: "Sua gravação de áudio foi anexada à mensagem agendada.",
+                                description: "Sua gravação de áudio foi anexada à mensagem agendada como MP3.",
                             });
                         };
-                        reader.readAsDataURL(audioBlob);
+                        reader.readAsDataURL(mp3Blob);
 
                         setAudioChunks([]); // Clear chunks for next recording
                          // Stop all media tracks to turn off the mic indicator
@@ -474,19 +502,24 @@ function ChatPageComponent() {
                 mediaRecorderRef.current.ondataavailable = (event) => {
                     setAudioChunks(prev => [...prev, event.data]);
                 };
-                mediaRecorderRef.current.onstop = () => {
+                mediaRecorderRef.current.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioContext = new AudioContext();
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    const mp3Blob = await audioBufferToMp3(audioBuffer);
+
                      const reader = new FileReader();
                         reader.onloadend = () => {
                             const base64data = reader.result as string;
-                             const audioMessage = `file::gravacao-${new Date().toISOString()}.wav::${base64data}`;
+                             const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
                             setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
                             toast({
                                 title: "Gravação Anexada!",
-                                description: "Sua gravação de áudio foi anexada à mensagem agendada.",
+                                description: "Sua gravação de áudio foi anexada à mensagem agendada como MP3.",
                             });
                         };
-                        reader.readAsDataURL(audioBlob);
+                        reader.readAsDataURL(mp3Blob);
 
                     setAudioChunks([]);
                     stream.getTracks().forEach(track => track.stop());
