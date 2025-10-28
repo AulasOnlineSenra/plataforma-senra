@@ -82,13 +82,13 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
                            </CollapsibleTrigger>
                         </TableCell>
                         <TableCell>
-                            <Link href={`/dashboard/schedule?teacherId=${teacher.id}`} className="flex items-center gap-3 cursor-pointer group">
+                            <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
                                 <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
                                 <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <div className="font-medium group-hover:underline">{teacher.name}</div>
-                            </Link>
+                                <div className="font-medium">{teacher.name}</div>
+                            </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                         {getSubjectNames(teacher.subjects)}
