@@ -489,7 +489,7 @@ export default function DashboardPage() {
                         }
                       </TableCell>
                       <TableCell className="text-right">
-                        {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                        {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -525,7 +525,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           Bem-vindo(a) de volta, {user.name.split(' ')[0]}!
         </h1>
