@@ -68,7 +68,7 @@ const CollapsibleCard = ({
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <Card>
-                <CollapsibleTrigger className="w-full">
+                <CollapsibleTrigger asChild className="w-full">
                     <CardHeader className="flex flex-row items-start justify-between cursor-pointer hover:bg-accent/50 rounded-t-lg">
                         <div className="flex items-center gap-4 text-left">
                             <Icon className="h-6 w-6 text-muted-foreground" />
@@ -77,10 +77,10 @@ const CollapsibleCard = ({
                                 <CardDescription>{description}</CardDescription>
                             </div>
                         </div>
-                        <Button variant="ghost" size="icon" className='shrink-0'>
+                        <div className='shrink-0 p-2'>
                             {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                             <span className="sr-only">{isOpen ? "Recolher" : "Expandir"}</span>
-                        </Button>
+                        </div>
                     </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -159,13 +159,11 @@ function ProfilePageComponent() {
         
         let storageKey: string;
         let currentList: (User | Teacher)[];
-        let isTeacherList = false;
 
         if(updatedUser.role === 'teacher') {
             storageKey = TEACHERS_STORAGE_KEY;
             const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
             currentList = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
-            isTeacherList = true;
         } else {
             storageKey = USERS_STORAGE_KEY;
             const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
