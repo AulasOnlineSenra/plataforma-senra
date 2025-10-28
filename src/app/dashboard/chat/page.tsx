@@ -74,7 +74,7 @@ function ScheduleMessagesDialog({
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [view, setView] = useState<'list' | 'create'>('list');
+    const [view, setView] = useState<'list' | 'create'>('create');
     
     const scheduledMessagesQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser?.id) return null;
@@ -170,7 +170,7 @@ function ScheduleMessagesDialog({
         setMessageContent('');
         setScheduledMessageTitle('');
         setScheduledMessageRecurrence('none');
-        setView('list');
+        onOpenChange(false);
     };
     
     const handleEditScheduledMessage = (message: ScheduledMessage) => {
@@ -280,73 +280,10 @@ function ScheduleMessagesDialog({
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-4xl">
-              {view === 'list' ? (
-                <>
-                    <DialogHeader>
-                        <DialogTitle className="font-headline text-2xl">Mensagens Agendadas para {activeChatPartner?.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className='py-4'>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Título</TableHead>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Tipo</TableHead>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Hora</TableHead>
-                                    <TableHead>Recorrência</TableHead>
-                                    <TableHead>Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser?.id).map(msg => (
-                                    <TableRow key={msg.id}>
-                                        <TableCell>{msg.title || 'Não Definido'}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={activeChatPartner?.avatarUrl} />
-                                                    <AvatarFallback>{activeChatPartner?.name.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <span>{activeChatPartner?.name}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{getMessageType(msg.content)}</TableCell>
-                                        <TableCell>{format(new Date(msg.date), 'dd/MM/yyyy')}</TableCell>
-                                        <TableCell>{format(new Date(msg.date), 'HH:mm')}</TableCell>
-                                        <TableCell>{recurrenceLabels[msg.recurrence]}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => handleEditScheduledMessage(msg)}><Edit className="h-4 w-4" /></Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleRemoveScheduledMessage(msg.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                         </Table>
-                         {isLoadingScheduledMessages ? <p>Carregando...</p> : (scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id && m.creatorId === currentUser?.id).length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">
-                                <p>Nenhuma mensagem agendada para este contato.</p>
-                            </div>
-                         )}
-                    </div>
-                    <DialogFooter className="sm:justify-center">
-                         <Button type="button" onClick={() => { setEditingMessageId(null); setMessageContent(''); setView('create'); }} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Criar
-                        </Button>
-                    </DialogFooter>
-                </>
-              ) : (
+              
                 <form onSubmit={handleScheduleMessage}>
                     <DialogHeader>
-                        <div className="flex items-center gap-4">
-                            <Button type="button" variant="ghost" size="icon" onClick={() => setView('list')}>
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <DialogTitle className="font-headline text-2xl">{editingMessageId ? 'Editar Agendamento' : 'Criar Agendamento'}</DialogTitle>
-                        </div>
+                        <DialogTitle className="font-headline text-2xl">{editingMessageId ? 'Editar Agendamento' : 'Criar Agendamento'}</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-6 py-4">
                         <div className="grid gap-2">
@@ -419,7 +356,6 @@ function ScheduleMessagesDialog({
                         <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
                     </DialogFooter>
                 </form>
-              )}
             </DialogContent>
         </Dialog>
     )
@@ -897,9 +833,14 @@ function ChatPageComponent() {
 
 export default function ChatPage() {
     const { isUserLoading } = useUser();
+    
+    if (isUserLoading) {
+        return <div>Carregando...</div>;
+    }
+
     return (
         <Suspense fallback={<div>Carregando...</div>}>
-            {isUserLoading ? <div>Carregando...</div> : <ChatPageComponent />}
+            <ChatPageComponent />
         </Suspense>
     )
 }
@@ -933,3 +874,4 @@ export default function ChatPage() {
 
 
     
+
