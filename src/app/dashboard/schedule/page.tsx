@@ -371,7 +371,7 @@ export default function SchedulePage() {
                 <div className="grid gap-4">
                   {filteredEvents.length > 0 ? (
                     filteredEvents.map((event) => {
-                      const personToShow = getTeacherById(event.teacherId);
+                      const personToShow = currentUser?.role === 'teacher' ? getStudentById(event.studentId) : getTeacherById(event.teacherId);
                       const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                       
                       return (
