@@ -356,7 +356,7 @@ export default function SchedulePage() {
             <CardContent className="grid gap-4">
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => {
-                    const student = getStudentById(event.studentId);
+                    const teacher = getTeacherById(event.teacherId);
                     return (
                         <div
                         key={event.id}
@@ -364,11 +364,11 @@ export default function SchedulePage() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                             <Avatar className='h-12 w-12'>
-                                <AvatarImage src={student?.avatarUrl} alt={student?.name} />
-                                <AvatarFallback>{student ? student.name.charAt(0) : '?'}</AvatarFallback>
+                                <AvatarImage src={teacher?.avatarUrl} alt={teacher?.name} />
+                                <AvatarFallback>{teacher ? teacher.name.charAt(0) : '?'}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
-                              <p className="font-semibold">{student?.name}</p>
+                              <p className="font-semibold">{teacher?.name}</p>
                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span>{format(event.start, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</span>
                               </div>
@@ -482,7 +482,7 @@ export default function SchedulePage() {
                   <TableHead>Aluno(a)</TableHead>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Data Original</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  {currentUser?.role === 'admin' && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -498,6 +498,7 @@ export default function SchedulePage() {
                         <TableCell className="text-muted-foreground">
                           {format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
                         </TableCell>
+                        {currentUser?.role === 'admin' && (
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
                             <Pencil className="h-4 w-4" />
@@ -515,6 +516,7 @@ export default function SchedulePage() {
                             </Button>
                           )}
                         </TableCell>
+                        )}
                       </TableRow>
                     );
                   })
