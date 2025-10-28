@@ -383,6 +383,7 @@ function BookingPageComponent() {
     const adminUser = allUsers.find(u => u.role === 'admin');
     if (!adminUser) {
         console.error("Admin user not found for notifications");
+        return;
     }
 
     newScheduleEvents.forEach(event => {
@@ -390,18 +391,16 @@ function BookingPageComponent() {
         const student = users.find(u => u.id === event.studentId);
         const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
 
-        const messageContent = `Nova aula agendada: ${event.subject} com ${teacher?.name} e ${student?.name} em ${dateStr}.`;
+        const adminMessageContent = `Nova aula agendada: ${event.subject} com ${teacher?.name} e ${student?.name} em ${dateStr}.`;
         
-        // Notificar o admin
-        if (adminUser) {
-            sendNotification('system', adminUser.id, messageContent);
-        }
+        // Notificar o admin (de "system")
+        sendNotification('system', adminUser.id, adminMessageContent);
         
-        // Notificar o professor
-        sendNotification('system', event.teacherId, `Você tem uma nova aula de ${event.subject} com ${student?.name} agendada para ${dateStr}.`);
+        // Notificar o professor (do admin)
+        sendNotification(adminUser.id, event.teacherId, `Olá, ${teacher?.name}. Uma nova aula de ${event.subject} com ${student?.name} foi agendada para ${dateStr}.`);
 
-        // Notificar o aluno
-        sendNotification('system', event.studentId, `Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
+        // Notificar o aluno (do admin)
+        sendNotification(adminUser.id, event.studentId, `Olá, ${student?.name}. Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
     });
 
     window.dispatchEvent(new Event('storage'));
