@@ -38,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TimePicker } from '@/components/ui/time-picker';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useUser, useMemoFirebase, useAuth, useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 
@@ -64,7 +64,8 @@ function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
     const { user: currentUser, isUserLoading } = useUser();
-    const { firestore } = useFirebase();
+    const firestore = useFirestore();
+    const auth = useAuth();
     const { toast } = useToast();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
@@ -352,8 +353,9 @@ function ChatPageComponent() {
 
     const handleScheduleMessage = async (e: FormEvent) => {
         e.preventDefault();
-
-        if (!currentUser?.id || !activeChatPartner?.id) {
+        
+        const authUser = auth.currentUser;
+        if (!authUser?.uid || !activeChatPartner?.id) {
             toast({
                 variant: 'destructive',
                 title: 'Erro de Autenticação',
@@ -362,17 +364,17 @@ function ChatPageComponent() {
             return;
         }
         
-        if ((!messageContent.trim() && !messageContent.includes('file::')) || !scheduledDate) {
+        if (!messageContent.trim() && !messageContent.includes('file::')) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
-                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio, e selecione uma data e horário.',
+                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio.',
             });
             return;
         }
 
         const messageData = {
-            creatorId: currentUser.id,
+            creatorId: authUser.uid,
             contactId: activeChatPartner.id,
             title: messageTitle,
             content: messageContent,
@@ -380,11 +382,11 @@ function ChatPageComponent() {
             recurrence: recurrence,
         };
 
-        const collectionRef = collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+        const collectionRef = collection(firestore, 'users', authUser.uid, 'scheduledMessages');
         await addDoc(collectionRef, messageData);
         toast({
             title: 'Mensagem Agendada',
-            description: `Sua mensagem para ${activeChatPartner.name} foi agendada para ${format(scheduledDate, "'dia' dd/MM 'às' HH:mm")}.`,
+            description: `Sua mensagem para ${activeChatPartner.name} foi agendada para ${format(scheduledDate!, "'dia' dd/MM 'às' HH:mm")}.`,
         });
 
         // Reset form and close dialog
@@ -426,6 +428,9 @@ function ChatPageComponent() {
 
     if (isUserLoading) {
         return <div>Carregando...</div>;
+    }
+    if (!currentUser) {
+        return null;
     }
 
 
@@ -626,7 +631,6 @@ function ChatPageComponent() {
                                     onChange={(e) => setMessageContent(e.target.value)}
                                     placeholder="Escreva sua mensagem, anexe um arquivo ou grave um áudio..."
                                     rows={5}
-                                    className="pr-10"
                                 />
                                 <div className="flex items-center gap-2 mt-2">
                                     <input
