@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -84,11 +84,10 @@ function ChatPageComponent() {
 
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
-    const [scheduledMessageContent, setScheduledMessageContent] = useState('');
+    const [messageContent, setMessageContent] = useState('');
     const [scheduledMessageTitle, setScheduledMessageTitle] = useState('');
     const [scheduledMessageRecurrence, setScheduledMessageRecurrence] = useState<RecurrenceType>('none');
     
-    const [messageContent, setMessageContent] = useState('');
     const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
@@ -227,7 +226,8 @@ function ChatPageComponent() {
       return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
     
-    const handleScheduleMessage = async () => {
+    const handleScheduleMessage = async (e: FormEvent) => {
+        e.preventDefault();
         if (!currentUser?.id) {
             toast({
                 variant: 'destructive',
@@ -238,7 +238,7 @@ function ChatPageComponent() {
         }
 
         const contentToSave = messageContent;
-        if (!selectedScheduleDate || (!contentToSave.trim() && !contentToSave.includes('file::')) || !activeChatPartner) {
+        if (!contentToSave.trim() && !contentToSave.includes('file::')) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
@@ -246,6 +246,25 @@ function ChatPageComponent() {
             });
             return;
         }
+
+        if (!activeChatPartner) {
+             toast({
+                variant: 'destructive',
+                title: 'Nenhum contato selecionado',
+                description: 'Selecione um contato para agendar a mensagem.',
+            });
+            return;
+        }
+        
+        if (!selectedScheduleDate) {
+             toast({
+                variant: 'destructive',
+                title: 'Data e Hora inválidos',
+                description: 'Por favor, selecione uma data e hora para o agendamento.',
+            });
+            return;
+        }
+
 
         if (!firestore) {
              toast({
@@ -743,10 +762,10 @@ function ChatPageComponent() {
                     </DialogFooter>
                 </>
               ) : (
-                <>
+                <form onSubmit={handleScheduleMessage}>
                     <DialogHeader>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" onClick={() => setScheduleDialogView('list')}>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => setScheduleDialogView('list')}>
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                             <DialogTitle className="font-headline text-2xl">{editingMessageId ? 'Editar Agendamento' : 'Criar Agendamento'}</DialogTitle>
@@ -757,7 +776,7 @@ function ChatPageComponent() {
                             <Label htmlFor="schedule-title">Título (Opcional)</Label>
                             <Input id="schedule-title" placeholder="Insira aqui o título" value={scheduledMessageTitle} onChange={e => setScheduledMessageTitle(e.target.value)} />
                         </div>
-                        <div className="grid gap-2 relative">
+                         <div className="grid gap-2 relative">
                             <Label htmlFor="scheduled-message-content">Mensagem</Label>
                             <Textarea
                                 id="scheduled-message-content"
@@ -767,16 +786,16 @@ function ChatPageComponent() {
                                 rows={5}
                                 className="pr-10"
                             />
-                             <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
+                             <Button type="button" variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
                                 <Smile className="h-5 w-5 text-muted-foreground" />
                             </Button>
                         </div>
                          <div className="grid grid-cols-2 gap-4">
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
                                 <Upload className="mr-2 h-4 w-4" />
                                 Adicionar Mídia
                             </Button>
-                             <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
+                             <Button type="button" variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
                                 {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
                                 {isRecording ? "Parar Gravação" : "Gravar Áudio"}
                             </Button>
@@ -810,10 +829,12 @@ function ChatPageComponent() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setScheduleDialogView('list')}>Cancelar</Button>
-                        <Button type="button" onClick={handleScheduleMessage} className="bg-brand-yellow text-black hover:bg-brand-yellow/90">{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">Cancelar</Button>
+                        </DialogClose>
+                        <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">{editingMessageId ? 'Salvar Alterações' : 'Criar'}</Button>
                     </DialogFooter>
-                </>
+                </form>
               )}
             </DialogContent>
         </Dialog>
