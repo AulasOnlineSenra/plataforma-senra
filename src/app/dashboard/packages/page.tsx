@@ -26,6 +26,13 @@ import {
 
 const PACKAGES_STORAGE_KEY = 'classPackages';
 
+const packageFeatures = [
+  'Aulas individuais e personalizadas',
+  'Flexibilidade de horários',
+  'Professores especialistas',
+  'Suporte via chat',
+];
+
 export default function PackagesPage() {
   const [classesPerWeek, setClassesPerWeek] = useState<number>(1);
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
