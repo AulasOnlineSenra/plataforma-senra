@@ -428,7 +428,7 @@ function ScheduleMessagesDialog({
 function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
-    const { user: currentUser } = useUser();
+    const { user: currentUser, isUserLoading } = useUser();
     const { firestore } = useFirebase();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
@@ -708,8 +708,8 @@ function ChatPageComponent() {
     };
 
 
-    if (!currentUser) {
-        return null;
+    if (isUserLoading) {
+      return null; // Or a loading spinner
     }
 
 
@@ -728,7 +728,7 @@ function ChatPageComponent() {
                       <div className="p-2">
                           {chatContacts.map(contact => {
                               const contactDetails = getContactDetails(contact.id);
-                              if (!contactDetails || contact.id === currentUser.id) return null;
+                              if (!contactDetails || contact.id === currentUser?.id) return null;
                               
                               return (
                               <button key={contact.id} onClick={() => handleContactSelect(contact.id)} className={cn(
@@ -793,9 +793,9 @@ function ChatPageComponent() {
                                   {groupedMessages[date].map(message => (
                                       <div key={message.id} className={cn(
                                           "flex w-full items-end gap-2",
-                                          message.senderId === currentUser.id ? "justify-end" : "justify-start"
+                                          message.senderId === currentUser?.id ? "justify-end" : "justify-start"
                                       )}>
-                                          {message.senderId !== currentUser.id && activeChatPartner && (
+                                          {message.senderId !== currentUser?.id && activeChatPartner && (
                                               <Avatar className="h-8 w-8 self-end">
                                                   <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
                                                   <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
@@ -803,12 +803,12 @@ function ChatPageComponent() {
                                           )}
                                           <div className={cn(
                                               "max-w-[75%] md:max-w-[60%] rounded-lg p-3 text-sm flex flex-col shadow",
-                                              message.senderId === currentUser.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
+                                              message.senderId === currentUser?.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
                                           )}>
                                               {renderMessageContent(message)}
                                               <p className={cn(
                                                   "text-xs shrink-0 self-end pt-1",
-                                                  message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                  message.senderId === currentUser?.id ? "text-primary-foreground/70" : "text-muted-foreground"
                                               )}>
                                                   {format(new Date(message.timestamp), 'HH:mm')}
                                               </p>
@@ -821,10 +821,10 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {(scheduledMessagesForDisplay || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id).length > 0 && (
+                          {(scheduledMessagesForDisplay || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser?.id).length > 0 && (
                             <div className="space-y-2 mb-2">
                                 {(scheduledMessagesForDisplay || [])
-                                    .filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id)
+                                    .filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser?.id)
                                     .map((msg) => (
                                   <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
                                       <div className="flex items-center gap-2 overflow-hidden">
@@ -896,9 +896,10 @@ function ChatPageComponent() {
 }
 
 export default function ChatPage() {
+    const { isUserLoading } = useUser();
     return (
         <Suspense fallback={<div>Carregando...</div>}>
-            <ChatPageComponent />
+            {isUserLoading ? <div>Carregando...</div> : <ChatPageComponent />}
         </Suspense>
     )
 }
@@ -929,3 +930,6 @@ export default function ChatPage() {
     
 
 
+
+
+    
