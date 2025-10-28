@@ -313,7 +313,7 @@ function ChatPageComponent() {
     return (
       <>
         <div className="grid flex-1 w-full grid-cols-1 md:grid-cols-[450px_1fr] gap-4">
-              <Card className="flex flex-col rounded-lg border">
+              <Card className="flex flex-col rounded-lg border max-h-[calc(100vh-8rem)]">
                   <div className="p-4 border-b">
                       <h2 className="font-headline text-xl font-bold">Conversas</h2>
                       <div className="relative mt-2">
@@ -362,7 +362,7 @@ function ChatPageComponent() {
               </Card>
 
               { activeChatPartner ? (
-                  <Card className="flex flex-col rounded-lg border bg-card" style={{
+                  <Card className="flex flex-col rounded-lg border bg-card max-h-[calc(100vh-8rem)]" style={{
                       backgroundImage: "url('/chat-bg.png')",
                       backgroundRepeat: 'repeat',
                       backgroundSize: '300px',
@@ -539,3 +539,6 @@ export default function ChatPage() {
     
 
 
+
+
+    
