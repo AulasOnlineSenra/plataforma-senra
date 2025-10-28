@@ -39,7 +39,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TimePicker } from '@/components/ui/time-picker';
 import { useCollection, useFirebase } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -74,7 +74,7 @@ function ChatPageComponent() {
     const [scheduleDialogView, setScheduleDialogView] = useState<'list' | 'create'>('list');
     
     const scheduledMessagesQuery = useMemo(() => {
-        if (!firestore || !currentUser) return null;
+        if (!firestore || !currentUser || !currentUser.id) return null;
         return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
     }, [firestore, currentUser]);
 
