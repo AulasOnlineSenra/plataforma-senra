@@ -189,7 +189,8 @@ function ChatPageComponent() {
     }, [allMessages, currentUser, activeChatPartner]);
 
     const formatDateSeparator = (dateStr: string) => {
-      const date = new Date(dateStr);
+      // Fix for timezone issue: Add timezone offset to treat date as local
+      const date = new Date(dateStr + 'T00:00:00');
       if (isToday(date)) return 'Hoje';
       if (isYesterday(date)) return 'Ontem';
       return format(date, 'dd \'de\' MMMM \'de\' yyyy', { locale: ptBR });
@@ -510,5 +511,7 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
