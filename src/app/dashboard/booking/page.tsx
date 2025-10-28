@@ -137,7 +137,9 @@ function BookingPageComponent() {
   };
 
   const isConflict = (newBooking: Booking, studentId: string): boolean => {
-    const allExistingEvents: (Booking | ScheduleEvent)[] = [...scheduleEvents, ...bookings];
+    // Check only scheduled events, ignore cancelled or completed ones.
+    const activeScheduleEvents = scheduleEvents.filter(event => event.status === 'scheduled');
+    const allExistingEvents: (Booking | ScheduleEvent)[] = [...activeScheduleEvents, ...bookings];
 
     return allExistingEvents.some(existingBooking => {
       // Check if the event is relevant (involves the same teacher or student)
@@ -657,5 +659,3 @@ export default function BookingPage() {
         </Suspense>
     );
 }
-
-    
