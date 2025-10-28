@@ -429,55 +429,56 @@ function BookingPageComponent() {
   }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam]);
 
     const availableTimes = useMemo(() => {
-        const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-        if (!selectedTeacher || !selectedDates || selectedDates.length === 0 || !studentToBook) {
-            return [];
-        }
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+    if (!selectedTeacher || !selectedDates || selectedDates.length === 0 || !studentToBook) {
+        return [];
+    }
 
-        const teacher = teachers.find(t => t.id === selectedTeacher);
-        if (!teacher || !teacher.availability) return [];
+    const teacher = teachers.find(t => t.id === selectedTeacher);
+    if (!teacher || !teacher.availability) return [];
 
-        const allTimes: { start: string; end: string }[] = [];
+    const allTimes: { start: string; end: string }[] = [];
 
-        selectedDates.forEach(date => {
-            const dayOfWeekName = format(date, 'eeee', { locale: ptBR }).toLowerCase() as keyof Teacher['availability'];
-            const dayAvailability = teacher.availability[dayOfWeekName];
+    (selectedDates || []).forEach(date => {
+        const dayOfWeekName = format(date, 'eeee', { locale: ptBR }).toLowerCase() as keyof Teacher['availability'];
+        const dayAvailability = teacher.availability[dayOfWeekName];
 
-            if (!dayAvailability) return;
+        if (!dayAvailability) return;
 
-            dayAvailability.forEach(range => {
-                let currentTime = parse(range.start, 'HH:mm', new Date());
-                const endTime = parse(range.end, 'HH:mm', new Date());
+        dayAvailability.forEach(range => {
+            let currentTime = parse(range.start, 'HH:mm', new Date());
+            const endTime = parse(range.end, 'HH:mm', new Date());
 
-                while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime) {
-                    const slotStart = new Date(date);
-                    const [hours, minutes] = format(currentTime, 'HH:mm').split(':').map(Number);
-                    slotStart.setHours(hours, minutes, 0, 0);
-
-                    const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
-                    
-                    const existingBookingConflict = bookings.some(b =>
-                        (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-                        (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
-                    );
-                    
-                    if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
-                        allTimes.push({
-                            start: format(currentTime, 'HH:mm'),
-                            end: format(addMinutes(currentTime, CLASS_DURATION_MINUTES), 'HH:mm')
-                        });
-                    }
-                    currentTime = addMinutes(currentTime, 30);
+            while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime) {
+                const slotStart = new Date(date);
+                const [hours, minutes] = format(currentTime, 'HH:mm').split(':').map(Number);
+                slotStart.setHours(hours, minutes, 0, 0);
+                const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
+                
+                const existingBookingConflict = bookings.some(b =>
+                    (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
+                    (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
+                );
+                
+                if (isBefore(slotStart, new Date())) {
+                    // Skip past times
+                } else if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
+                    allTimes.push({
+                        start: format(currentTime, 'HH:mm'),
+                        end: format(addMinutes(currentTime, CLASS_DURATION_MINUTES), 'HH:mm')
+                    });
                 }
-            });
+                currentTime = addMinutes(currentTime, 30);
+            }
         });
-        
-        const uniqueTimes = Array.from(new Set(allTimes.map(t => t.start))).map(start => {
-            return allTimes.find(t => t.start === start)!
-        }).sort((a,b) => a.start.localeCompare(b.start));
+    });
+    
+    const uniqueTimes = Array.from(new Set(allTimes.map(t => t.start))).map(start => {
+        return allTimes.find(t => t.start === start)!
+    }).sort((a,b) => a.start.localeCompare(b.start));
 
-        return uniqueTimes;
-    }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser, studentIdParam, users]);
+    return uniqueTimes;
+}, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser, studentIdParam, users]);
   
   useEffect(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
