@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -69,6 +69,11 @@ function ChatPageComponent() {
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
     const [allContacts, setAllContacts] = useState<ChatContact[]>(initialChatContacts);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
     const getContactDetails = useCallback((contactId: string) => {
       return allUsers.find(u => u.id === contactId);
@@ -232,7 +237,7 @@ function ChatPageComponent() {
 
         toast({
             title: 'Mensagem Agendada',
-            description: `Sua mensagem "${newScheduledMessage.content}" será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+            description: `Sua mensagem será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
         });
     }
 
@@ -375,6 +380,14 @@ function ChatPageComponent() {
     const renderMessageContent = (message: ChatMessage) => {
         if (message.content.startsWith('file::')) {
             const [, fileName, dataUrl] = message.content.split('::');
+            const isAudio = fileName.endsWith('.wav') || fileName.endsWith('.mp3') || fileName.endsWith('.ogg');
+            if (isAudio) {
+                return (
+                    <audio controls src={dataUrl} className="w-full max-w-xs">
+                        Seu navegador não suporta o elemento de áudio.
+                    </audio>
+                )
+            }
             return (
                 <a href={dataUrl} download={fileName} className="flex items-center gap-2 underline text-current">
                     <FileIcon className="h-4 w-4" />
@@ -387,6 +400,88 @@ function ChatPageComponent() {
 
     const handleRemoveScheduledMessage = (id: string) => {
         setScheduledMessages(prev => prev.filter(msg => msg.id !== id));
+    };
+
+    const handleToggleRecording = async () => {
+        if (isRecording) {
+            // Stop recording
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+        } else {
+            // Start recording
+            if (!hasMicPermission) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    setHasMicPermission(true);
+                    
+                    const mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorderRef.current = mediaRecorder;
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        setAudioChunks(prev => [...prev, event.data]);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64data = reader.result as string;
+                             const audioMessage = `file::gravacao-${new Date().toISOString()}.wav::${base64data}`;
+                            setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
+                            toast({
+                                title: "Gravação Anexada!",
+                                description: "Sua gravação de áudio foi anexada à mensagem agendada.",
+                            });
+                        };
+                        reader.readAsDataURL(audioBlob);
+
+                        setAudioChunks([]); // Clear chunks for next recording
+                         // Stop all media tracks to turn off the mic indicator
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    setIsRecording(true);
+                    
+                } catch (error) {
+                    console.error("Error accessing microphone:", error);
+                    setHasMicPermission(false);
+                    toast({
+                        variant: 'destructive',
+                        title: 'Permissão de Microfone Negada',
+                        description: 'Por favor, permita o acesso ao microfone nas configurações do seu navegador.',
+                    });
+                }
+            } else if (mediaRecorderRef.current) {
+                 // If permission is already granted, just start recording
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorderRef.current = new MediaRecorder(stream); // Re-create with a fresh stream
+                mediaRecorderRef.current.ondataavailable = (event) => {
+                    setAudioChunks(prev => [...prev, event.data]);
+                };
+                mediaRecorderRef.current.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                     const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64data = reader.result as string;
+                             const audioMessage = `file::gravacao-${new Date().toISOString()}.wav::${base64data}`;
+                            setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
+                            toast({
+                                title: "Gravação Anexada!",
+                                description: "Sua gravação de áudio foi anexada à mensagem agendada.",
+                            });
+                        };
+                        reader.readAsDataURL(audioBlob);
+
+                    setAudioChunks([]);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                mediaRecorderRef.current.start();
+                setIsRecording(true);
+            }
+        }
     };
 
 
@@ -524,6 +619,7 @@ function ChatPageComponent() {
                                   ref={fileInputRef}
                                   onChange={handleFileSelect}
                                   className="hidden"
+                                  accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx"
                               />
                               <Input 
                                   placeholder="Digite uma mensagem..." 
@@ -617,7 +713,7 @@ function ChatPageComponent() {
                         <TabsContent value="audio" className="pt-4">
                             <div className="grid gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="audio-message-content">Mensagem (Opcional)</Label>
+                                    <Label htmlFor="audio-message-content">Legenda do Áudio (Opcional)</Label>
                                     <Textarea
                                         id="audio-message-content"
                                         value={scheduledMessageContent}
@@ -631,11 +727,14 @@ function ChatPageComponent() {
                                         <Upload className="mr-2 h-4 w-4" />
                                         Adicionar áudio
                                     </Button>
-                                    <Button variant="outline">
-                                        <Mic className="mr-2 h-4 w-4" />
-                                        Gravar áudio
+                                    <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
+                                        {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
+                                        {isRecording ? "Parar Gravação" : "Gravar Áudio"}
                                     </Button>
                                 </div>
+                                {hasMicPermission === false && (
+                                     <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
+                                )}
                             </div>
                         </TabsContent>
                     </Tabs>
@@ -714,5 +813,7 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
