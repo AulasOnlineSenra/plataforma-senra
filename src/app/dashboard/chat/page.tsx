@@ -108,16 +108,11 @@ function ChatPageComponent() {
       if (contact && currentUser) {
         setActiveChatPartner(contact);
 
-        const storedContactsStr = localStorage.getItem('chatContacts');
-        let currentContacts: ChatContact[] = storedContactsStr
-          ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-          : initialChatContacts;
-
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const userContactsStr = localStorage.getItem(userContactsKey);
         const userContacts: ChatContact[] = userContactsStr
             ? JSON.parse(userContactsStr)
-            : currentContacts.filter(c => c.id !== currentUser.id);
+            : initialChatContacts.filter(c => c.id !== currentUser.id);
 
         const updatedContacts = userContacts.map(c =>
           c.id === contactId && c.unreadCount && c.unreadCount > 0
@@ -233,11 +228,20 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = async () => {
-        if (!selectedScheduleDate || (!scheduledMessageContent.trim() && !scheduledMessageContent.includes('file::')) || !activeChatPartner || !currentUser?.id || !firestore) {
+        if (!selectedScheduleDate || (!scheduledMessageContent.trim() && !scheduledMessageContent.includes('file::')) || !activeChatPartner || !currentUser?.id) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
                 description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio.',
+            });
+            return;
+        }
+
+        if (!firestore) {
+             toast({
+                variant: 'destructive',
+                title: 'Erro de Conexão',
+                description: 'Não foi possível conectar ao banco de dados.',
             });
             return;
         }
@@ -608,7 +612,7 @@ function ChatPageComponent() {
                           {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id).length > 0 && (
                             <div className="space-y-2 mb-2">
                                 {(scheduledMessages || [])
-                                    .filter(m => m.contactId === activeChatPartner.id)
+                                    .filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser.id)
                                     .map((msg) => (
                                   <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
                                       <div className="flex items-center gap-2 overflow-hidden">
@@ -743,72 +747,45 @@ function ChatPageComponent() {
                             <Label htmlFor="schedule-title">Título (Opcional)</Label>
                             <Input id="schedule-title" placeholder="Insira aqui o título" value={scheduledMessageTitle} onChange={e => setScheduledMessageTitle(e.target.value)} />
                         </div>
-                        <Tabs defaultValue="text" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="text">Criar texto</TabsTrigger>
+                        <div className="grid gap-2 relative">
+                            <Label htmlFor="scheduled-message-content">Mensagem</Label>
+                            <Textarea
+                                id="scheduled-message-content"
+                                value={scheduledMessageContent}
+                                onChange={(e) => setScheduledMessageContent(e.target.value)}
+                                placeholder="Insira sua mensagem ou adicione mídia/áudio abaixo..."
+                                rows={5}
+                                className="pr-10"
+                            />
+                            <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
+                                <Smile className="h-5 w-5 text-muted-foreground" />
+                            </Button>
+                        </div>
+                        <Tabs defaultValue="media" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="media">Mídia</TabsTrigger>
                                 <TabsTrigger value="audio">Áudio</TabsTrigger>
                             </TabsList>
-                            <TabsContent value="text" className="pt-4">
-                                <div className="grid gap-2 relative">
-                                    <Label htmlFor="scheduled-message-content">Mensagem</Label>
-                                    <Textarea
-                                        id="scheduled-message-content"
-                                        value={scheduledMessageContent}
-                                        onChange={(e) => setScheduledMessageContent(e.target.value)}
-                                        placeholder="Insira sua mensagem"
-                                        rows={5}
-                                        className="pr-10"
-                                    />
-                                    <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
-                                        <Smile className="h-5 w-5 text-muted-foreground" />
-                                    </Button>
-                                </div>
-                            </TabsContent>
                             <TabsContent value="media" className="pt-4">
-                                <div className="grid gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="media-message-content">Mensagem (Opcional)</Label>
-                                        <Textarea
-                                            id="media-message-content"
-                                            value={scheduledMessageContent}
-                                            onChange={(e) => setScheduledMessageContent(e.target.value)}
-                                            placeholder="Adicione uma legenda para sua mídia..."
-                                            rows={3}
-                                        />
-                                    </div>
-                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Adicionar arquivo
-                                    </Button>
-                                </div>
+                                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Adicionar arquivo (Imagem, PDF, etc.)
+                                </Button>
                             </TabsContent>
                             <TabsContent value="audio" className="pt-4">
-                                <div className="grid gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="audio-message-content">Legenda do Áudio (Opcional)</Label>
-                                        <Textarea
-                                            id="audio-message-content"
-                                            value={scheduledMessageContent}
-                                            onChange={(e) => setScheduledMessageContent(e.target.value)}
-                                            placeholder="Adicione uma legenda para o seu áudio..."
-                                            rows={3}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                            <Upload className="mr-2 h-4 w-4" />
-                                            Adicionar áudio
-                                        </Button>
-                                        <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
-                                            {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
-                                            {isRecording ? "Parar Gravação" : "Gravar Áudio"}
-                                        </Button>
-                                    </div>
-                                    {hasMicPermission === false && (
-                                        <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
-                                    )}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Adicionar áudio
+                                    </Button>
+                                    <Button variant="outline" onClick={handleToggleRecording} className={cn(isRecording && "text-red-500 border-red-500 hover:text-red-600")}>
+                                        {isRecording ? <CircleDot className="mr-2 h-4 w-4 animate-pulse" /> : <Mic className="mr-2 h-4 w-4" />}
+                                        {isRecording ? "Parar Gravação" : "Gravar Áudio"}
+                                    </Button>
                                 </div>
+                                {hasMicPermission === false && (
+                                    <p className="text-xs text-destructive text-center col-span-2">A permissão do microfone é necessária para gravar áudio.</p>
+                                )}
                             </TabsContent>
                         </Tabs>
                         <div className="grid grid-cols-2 gap-4">
