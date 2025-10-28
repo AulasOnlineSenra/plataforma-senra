@@ -98,6 +98,7 @@ function ChatPageComponent() {
                     c.id === contactId ? { ...c, unreadCount: 0 } : c
                 );
                 localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+                window.dispatchEvent(new Event('storage'));
                 return updatedContacts;
             });
         }
@@ -423,7 +424,7 @@ function ChatPageComponent() {
     const renderMessageContent = (message: ChatMessage) => {
         if (message.content.startsWith('file::')) {
             const [, fileName, dataUrl] = message.content.split('::');
-            const isAudio = fileName.endsWith('.wav') || fileName.endsWith('.mp3') || fileName.endsWith('.ogg') || fileName.endsWith('.webm');
+            const isAudio = fileName.endsWith('.mp3') || fileName.endsWith('.ogg') || fileName.endsWith('.webm');
             if (isAudio) {
                 return (
                     <audio controls src={dataUrl} className="w-full max-w-xs">
@@ -512,7 +513,7 @@ function ChatPageComponent() {
     const getMessageType = (content: string) => {
         if (content.startsWith('file::')) {
             const [, fileName] = content.split('::');
-            if (fileName.endsWith('.wav') || fileName.endsWith('.mp3') || fileName.endsWith('.ogg')) {
+            if (fileName.endsWith('.mp3') || fileName.endsWith('.ogg') || fileName.endsWith('.webm')) {
                 return 'audio';
             }
             return 'file';
