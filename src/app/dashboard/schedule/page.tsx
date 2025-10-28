@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers, getMockUser } from '@/lib/data';
+import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers, getMockUser } from '@/lib/data';
 import type { ScheduleEvent, User, Teacher } from '@/lib/types';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -51,11 +51,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const USERS_STORAGE_KEY = 'userList';
+const TEACHERS_STORAGE_KEY = 'teacherList';
 
 export default function SchedulePage() {
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const { toast } = useToast();
@@ -84,6 +86,13 @@ export default function SchedulePage() {
             setUsers(JSON.parse(storedUsers));
         } else {
             setUsers(initialUsers);
+        }
+        
+        const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+        if (storedTeachers) {
+            setTeachers(JSON.parse(storedTeachers));
+        } else {
+            setTeachers(initialTeachers);
         }
 
         const storedCurrentUser = localStorage.getItem('currentUser');
@@ -116,9 +125,9 @@ export default function SchedulePage() {
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setDate(new Date());
-    }
+    // This effect runs only on the client, after hydration
+    // which prevents the server/client mismatch.
+    setDate(new Date());
   }, []);
 
   const filteredEvents = useMemo(() => {
@@ -354,7 +363,9 @@ export default function SchedulePage() {
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => {
                     const teacher = getTeacherById(event.teacherId);
-                    const fallback = teacher ? teacher.name.charAt(0) : '?';
+                    const student = getStudentById(event.studentId);
+                    const personToShow = currentUser?.role === 'teacher' ? student : teacher;
+                    const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                     return (
                         <div
                         key={event.id}
@@ -362,11 +373,11 @@ export default function SchedulePage() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                             <Avatar className='h-12 w-12'>
-                                <AvatarImage src={teacher?.avatarUrl} alt={teacher?.name} />
+                                <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
                                 <AvatarFallback>{fallback}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
-                              <p className="font-semibold">{teacher?.name}</p>
+                              <p className="font-semibold">{personToShow?.name}</p>
                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                               </div>
@@ -413,7 +424,7 @@ export default function SchedulePage() {
               <TableHeader>
                 <TableRow>
                   {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
-                  <TableHead>Aluno(a)</TableHead>
+                  {currentUser?.role !== 'student' && <TableHead>Aluno(a)</TableHead>}
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Título da Aula</TableHead>
                   <TableHead className="text-right">Data</TableHead>
@@ -428,7 +439,7 @@ export default function SchedulePage() {
                     return (
                       <TableRow key={event.id}>
                         {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
-                        <TableCell>{student?.name || 'N/A'}</TableCell>
+                        {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell>{event.title}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
@@ -477,7 +488,7 @@ export default function SchedulePage() {
               <TableHeader>
                 <TableRow>
                   {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
-                  <TableHead>Aluno(a)</TableHead>
+                  {currentUser?.role !== 'student' && <TableHead>Aluno(a)</TableHead>}
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Data Original</TableHead>
                   {currentUser?.role === 'admin' && <TableHead className="text-right">Ações</TableHead>}
@@ -491,7 +502,7 @@ export default function SchedulePage() {
                     return (
                       <TableRow key={event.id}>
                         {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
-                        <TableCell>{student?.name || 'N/A'}</TableCell>
+                        {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
