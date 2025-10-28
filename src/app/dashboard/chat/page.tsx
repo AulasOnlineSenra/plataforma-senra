@@ -38,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TimePicker } from '@/components/ui/time-picker';
-import { useCollection, useFirebase } from '@/firebase';
+import { useCollection, useFirebase, useUser } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 
@@ -63,7 +63,8 @@ interface ScheduledMessage {
 function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
-    const { firestore, user: currentUser } = useFirebase();
+    const { firestore } = useFirebase();
+    const { user: currentUser } = useUser();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const { toast } = useToast();
@@ -74,7 +75,7 @@ function ChatPageComponent() {
     const [scheduleDialogView, setScheduleDialogView] = useState<'list' | 'create'>('list');
     
     const scheduledMessagesQuery = useMemo(() => {
-        if (!firestore || !currentUser || !currentUser.id) return null;
+        if (!firestore || !currentUser?.id) return null;
         return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
     }, [firestore, currentUser]);
 
@@ -225,7 +226,7 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = async () => {
-        if (!selectedScheduleDate || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser || !firestore) {
+        if (!selectedScheduleDate || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser?.id || !firestore) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
