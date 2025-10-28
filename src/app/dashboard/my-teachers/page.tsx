@@ -28,7 +28,7 @@ function TeacherList({ teachers, scheduleEvents }: { teachers: Teacher[], schedu
     <div className="space-y-4">
       {teachers.map((teacher) => (
           <Link href={`/dashboard/teacher/${teacher.id}`} key={teacher.id} className="block group">
-            <Card className="transition-all group-hover:ring-2 group-hover:ring-primary">
+            <Card className="transition-all group-hover:ring-2 group-hover:ring-brand-yellow">
                 <div className="flex items-center p-4">
                     <div className="flex items-center gap-4 flex-1">
                         <Avatar className="h-12 w-12">
