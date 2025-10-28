@@ -554,7 +554,7 @@ function ChatPageComponent() {
               )}
         </div>
         <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                 <DialogTitle>Agendar Mensagem</DialogTitle>
                 <DialogDescription>
