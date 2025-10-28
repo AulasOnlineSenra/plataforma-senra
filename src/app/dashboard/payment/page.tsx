@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -10,14 +10,25 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { classPackages as defaultClassPackages } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Check, CreditCard, Landmark, ShoppingCart } from 'lucide-react';
+import { Check, CreditCard, Landmark, ShoppingCart, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { ClassPackage } from '@/lib/types';
-import { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
 
 const PACKAGES_STORAGE_KEY = 'classPackages';
 
@@ -26,6 +37,9 @@ function PaymentPageComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [classPackages, setClassPackages] = useState<ClassPackage[]>(defaultClassPackages);
+  const [isPixDialogOpen, setIsPixDialogOpen] = useState(false);
+  const pixKey = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540550.005802BR5913NOME_COMPLETO6009SAO_PAULO62070503***6304E2B1';
+
 
   useEffect(() => {
     const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
@@ -42,7 +56,8 @@ function PaymentPageComponent() {
   const customPricePerClass = searchParams.get('pricePerClass');
   const customTotal = searchParams.get('total');
 
-  let selectedPackage;
+  let selectedPackage: (ClassPackage & { total?: number }) | undefined;
+
 
   if (packageId) {
     selectedPackage = classPackages.find(p => p.id === packageId);
@@ -89,9 +104,18 @@ function PaymentPageComponent() {
         });
     }, 3000);
   }
+  
+  const handleCopyPixKey = () => {
+    navigator.clipboard.writeText(pixKey);
+    toast({
+      title: 'Chave Pix Copiada!',
+      description: 'A chave foi copiada para a área de transferência.',
+    });
+  };
 
 
   return (
+    <>
     <div className="flex flex-1 flex-col items-center gap-4 md:gap-8">
       <div className="text-center w-full max-w-4xl">
         <h1 className="font-headline text-3xl md:text-4xl font-bold">
@@ -145,7 +169,7 @@ function PaymentPageComponent() {
                         <CreditCard className="h-6 w-6" />
                         <span>Cartão de Crédito/Débito</span>
                     </Button>
-                     <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handlePayment('Pix')}>
+                     <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => setIsPixDialogOpen(true)}>
                         <Landmark className="h-6 w-6" />
                         <span>Pix</span>
                     </Button>
@@ -159,6 +183,54 @@ function PaymentPageComponent() {
         </Card>
       </div>
     </div>
+     <Dialog open={isPixDialogOpen} onOpenChange={setIsPixDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pagamento com Pix</DialogTitle>
+            <DialogDescription>
+              Escaneie o QR Code com seu aplicativo de banco ou copie a chave para
+              pagar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="p-4 bg-white rounded-lg border">
+              <Image
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixKey)}`}
+                alt="QR Code para pagamento Pix"
+                width={200}
+                height={200}
+              />
+            </div>
+            <div className="w-full grid gap-2">
+              <Label htmlFor="pix-key">Chave Pix (Copia e Cola)</Label>
+              <div className="relative">
+                <Input
+                  id="pix-key"
+                  readOnly
+                  value={pixKey}
+                  className="pr-12 text-xs"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                  onClick={handleCopyPixKey}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Fechar
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
