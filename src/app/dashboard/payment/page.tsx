@@ -9,17 +9,30 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { classPackages } from '@/lib/data';
+import { classPackages as defaultClassPackages } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Check, CreditCard, Landmark } from 'lucide-react';
+import { Check, CreditCard, Landmark, ShoppingCart } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { ClassPackage } from '@/lib/types';
+import { useState, useEffect } from 'react';
+
+const PACKAGES_STORAGE_KEY = 'classPackages';
+
 
 function PaymentPageComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const [classPackages, setClassPackages] = useState<ClassPackage[]>(defaultClassPackages);
+
+  useEffect(() => {
+    const storedPackages = localStorage.getItem(PACKAGES_STORAGE_KEY);
+    if (storedPackages) {
+      setClassPackages(JSON.parse(storedPackages));
+    }
+  }, []);
 
   const packageId = searchParams.get('packageId');
   
@@ -39,6 +52,8 @@ function PaymentPageComponent() {
       name: customName,
       numClasses: parseInt(customTotalClasses),
       pricePerClass: parseFloat(customPricePerClass),
+      durationMinutes: 90, // Assuming default
+      popular: false,
       total: parseFloat(customTotal)
     };
   }
@@ -61,7 +76,7 @@ function PaymentPageComponent() {
   
   const total = selectedPackage.total || (selectedPackage.numClasses * selectedPackage.pricePerClass);
 
-  const handlePayment = (method: 'PayPal' | 'MercadoPago') => {
+  const handlePayment = (method: string) => {
     toast({
         title: "Processando Pagamento...",
         description: `Seu pagamento de R$ ${total.toFixed(2).replace('.',',')} com ${method} está sendo processado.`,
@@ -77,112 +92,95 @@ function PaymentPageComponent() {
 
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-4 md:gap-8 max-w-4xl mx-auto">
-      <div className="text-center">
+    <div className="flex flex-1 flex-col items-center gap-4 md:gap-8">
+      <div className="text-center w-full max-w-4xl">
         <h1 className="font-headline text-3xl md:text-4xl font-bold">
           Finalizar Pagamento
         </h1>
-        <p className="max-w-2xl text-muted-foreground mt-2">
+        <p className="max-w-2xl text-muted-foreground mt-2 mx-auto">
           Você está a um passo de começar suas aulas.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 w-full mt-8">
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle>Resumo do Pedido</CardTitle>
+      <div className="w-full max-w-4xl mx-auto mt-8">
+        <Card className="shadow-lg">
+          <CardHeader className="bg-muted/50 rounded-t-lg border-b">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="h-6 w-6 text-primary" />
+              <CardTitle className="text-xl">Resumo do Pedido</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="flex-1 grid gap-4">
-            <div className="flex justify-between items-center p-4 border rounded-lg">
-              <div>
-                <p className="font-bold text-lg">{selectedPackage.name}</p>
-                <p className="text-sm text-muted-foreground">
-                    {selectedPackage.numClasses} {selectedPackage.numClasses > 1 ? 'aulas' : 'aula'}
-                </p>
-              </div>
-              <p className="font-bold text-lg">
-                R$ {total.toFixed(2).replace('.',',')}
-              </p>
+          <CardContent className="p-6 grid gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-4">
+                   <h3 className="font-semibold text-lg">{selectedPackage.name}</h3>
+                   <div className="flex items-center text-sm text-muted-foreground">
+                       <Check className="h-4 w-4 mr-2 text-green-500" />
+                       <span>{selectedPackage.numClasses} {selectedPackage.numClasses > 1 ? 'aulas' : 'aula'} de {selectedPackage.durationMinutes} min</span>
+                   </div>
+                   <div className="flex items-center text-sm text-muted-foreground">
+                       <Check className="h-4 w-4 mr-2 text-green-500" />
+                       <span>Acesso a professores especialistas</span>
+                   </div>
+                   <div className="flex items-center text-sm text-muted-foreground">
+                       <Check className="h-4 w-4 mr-2 text-green-500" />
+                       <span>Flexibilidade de horários</span>
+                   </div>
+                </div>
+                 <div className="flex flex-col items-start md:items-end justify-center bg-accent/20 p-6 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Valor por aula</p>
+                    <p className="text-lg font-medium">R$ {selectedPackage.pricePerClass.toFixed(2).replace('.', ',')}</p>
+                    <Separator className="my-3"/>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-3xl font-bold">R$ {total.toFixed(2).replace('.', ',')}</p>
+                 </div>
             </div>
-            <div className="flex justify-between items-center text-lg font-bold p-4 border-t">
-              <span>Total</span>
-              <span>R$ {total.toFixed(2).replace('.',',')}</span>
-            </div>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground">
-            <Check className="h-4 w-4 mr-2 text-green-500" />
-            <span>Compra segura e garantida.</span>
-          </CardFooter>
-        </Card>
+            
+            <Separator />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Escolha o Método de Pagamento</CardTitle>
-            <CardDescription>
-              Selecione sua forma de pagamento preferida.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <Button
-              variant="outline"
-              className="h-20 justify-start p-4 text-left"
-              onClick={() => handlePayment('MercadoPago')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-12 flex items-center justify-center rounded-md bg-white p-1">
-                  <Image
-                    src="https://logopng.com.br/logos/mercado-pago-106.svg"
-                    alt="Mercado Pago"
-                    width={100}
-                    height={25}
-                  />
-                </div>
-                <div>
-                  <p className="font-semibold">Mercado Pago</p>
-                  <p className="text-xs text-muted-foreground">
-                    Cartão de crédito, débito ou saldo em conta.
-                  </p>
-                </div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 justify-start p-4 text-left"
-              onClick={() => handlePayment('PayPal')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-12 flex items-center justify-center rounded-md bg-white p-1">
-                   <Image
-                    src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg"
-                    alt="PayPal"
-                    width={80}
-                    height={20}
-                  />
-                </div>
-                <div>
-                  <p className="font-semibold">PayPal</p>
-                  <p className="text-xs text-muted-foreground">
-                    Use seu saldo ou cartões salvos no PayPal.
-                  </p>
-                </div>
-              </div>
-            </Button>
-            <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">outras opções</span>
+            <div>
+                <h3 className="font-semibold text-lg mb-4">Escolha o Método de Pagamento</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                     <Button
+                        variant="outline"
+                        className="h-24 flex-col gap-2"
+                        onClick={() => handlePayment('MercadoPago')}
+                    >
+                        <Image
+                            src="https://logopng.com.br/logos/mercado-pago-106.svg"
+                            alt="Mercado Pago"
+                            width={100}
+                            height={25}
+                        />
+                        <span className="text-xs text-muted-foreground">Cartão, Saldo ou Pix</span>
+                    </Button>
+                     <Button
+                        variant="outline"
+                        className="h-24 flex-col gap-2"
+                        onClick={() => handlePayment('PayPal')}
+                    >
+                        <Image
+                            src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg"
+                            alt="PayPal"
+                            width={80}
+                            height={20}
+                        />
+                         <span className="text-xs text-muted-foreground">Saldo ou Cartão</span>
+                    </Button>
+                    <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handlePayment('Cartão')}>
+                        <CreditCard className="h-6 w-6" />
+                        <span>Cartão de Crédito/Débito</span>
+                    </Button>
+                     <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handlePayment('Pix')}>
+                        <Landmark className="h-6 w-6" />
+                        <span>Pix</span>
+                    </Button>
                 </div>
             </div>
-            <Button variant="secondary" className="h-14">
-                <CreditCard className="mr-3" />
-                Cartão de Crédito/Débito
-            </Button>
-             <Button variant="secondary" className="h-14">
-                <Landmark className="mr-3" />
-                Pix
-            </Button>
+            <p className="text-xs text-muted-foreground text-center pt-4">
+                <Check className="h-3 w-3 inline-block mr-1 text-green-500" />
+                Pagamento seguro e processado por nossos parceiros.
+            </p>
           </CardContent>
         </Card>
       </div>
