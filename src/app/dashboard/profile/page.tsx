@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/collapsible"
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { getMockUser, teachers as initialTeachers, subjects, allUsers as initialAllUsers } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, subjects, allUsers as initialAllUsers, users as initialRegularUsers } from '@/lib/data';
 import { UserRole, Teacher, User, EducationEntry, EducationType, Availability } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -117,7 +117,7 @@ function ProfilePageComponent() {
     const updateAllUsers = useCallback(() => {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
         const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-        const users = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+        const users = storedUsers ? JSON.parse(storedUsers) : initialRegularUsers;
         const teachers = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
         setAllUsers([...users, ...teachers]);
     }, []);
@@ -155,26 +155,32 @@ function ProfilePageComponent() {
         if (!profileUser) return;
         
         const updatedUser = { ...profileUser, [field]: value };
+        setProfileUser(updatedUser);
         
         let storageKey: string;
-        let currentList: any[];
+        let currentList: (User | Teacher)[];
+        let isTeacherList = false;
 
         if(updatedUser.role === 'teacher') {
             storageKey = TEACHERS_STORAGE_KEY;
-            currentList = allUsers.filter(u => u.role === 'teacher');
+            const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+            currentList = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+            isTeacherList = true;
         } else {
             storageKey = USERS_STORAGE_KEY;
-            currentList = allUsers.filter(u => u.role !== 'teacher');
+            const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+            currentList = storedUsers ? JSON.parse(storedUsers) : initialRegularUsers;
         }
         
         const updatedList = currentList.map(u => u.id === updatedUser.id ? updatedUser : u);
         
         localStorage.setItem(storageKey, JSON.stringify(updatedList));
-        window.dispatchEvent(new Event('storage'));
 
         if(loggedInUser?.id === updatedUser.id) {
             localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         }
+        
+        window.dispatchEvent(new Event('storage'));
 
         toast({
             title: 'Perfil Atualizado!',
@@ -361,7 +367,7 @@ function ProfilePageComponent() {
                             </CardContent>
                         </CollapsibleCard>
                          <CollapsibleCard title="Disponibilidade Semanal" description="Seus horários disponíveis para aulas." icon={CalendarDays}>
-                             <CardContent className="grid gap-6">
+                             <CardContent className="grid gap-6 pt-6">
                                 { teacherProfile &&
                                     <AvailabilityManager
                                         availability={teacherProfile.availability || {}}
@@ -579,6 +585,10 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
     const [editingDay, setEditingDay] = useState<string | null>(null);
     const [applyToAll, setApplyToAll] = useState(false);
     
+    useEffect(() => {
+        setCurrentAvailability(availability);
+    }, [availability]);
+
     const daysOfWeek = {
         monday: 'Segunda-Feira',
         tuesday: 'Terça-feira',
