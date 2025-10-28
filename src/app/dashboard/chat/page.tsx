@@ -94,7 +94,6 @@ function ChatPageComponent() {
         if (contact) {
             setActiveChatPartner(contact);
             
-            // Clear unread count for the selected contact
             const storedContactsStr = localStorage.getItem('chatContacts');
             let currentContacts: ChatContact[] = storedContactsStr 
                 ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
@@ -105,7 +104,7 @@ function ChatPageComponent() {
             );
 
             localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
-            window.dispatchEvent(new Event('storage')); // Notify other components (like sidebar)
+            window.dispatchEvent(new Event('storage'));
             setAllContacts(updatedContacts);
         }
     }, [getContactDetails]);
@@ -316,7 +315,7 @@ function ChatPageComponent() {
         localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
         
         const allCurrentContactsStr = localStorage.getItem('chatContacts');
-        const allCurrentContacts: ChatContact[] = allCurrentContactsStr 
+        let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
             ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
             : initialChatContacts;
 
@@ -324,65 +323,45 @@ function ChatPageComponent() {
             currentContactsList: ChatContact[],
             userIdToUpdate: string,
             partnerId: string,
-            message: ChatMessage
+            message: ChatMessage,
+            isReceiver: boolean
         ): ChatContact[] => {
-            let contacts = currentContactsList.filter(c => c.id !== partnerId);
             const partnerDetails = getContactDetails(partnerId);
-            if (!partnerDetails) return contacts;
+            if (!partnerDetails) return currentContactsList;
 
-            const isReceiver = message.receiverId === userIdToUpdate;
-            const existingContact = currentContactsList.find(c => c.id === partnerId);
-            
-            const newContactEntry: ChatContact = {
-                id: partnerDetails.id,
-                name: partnerDetails.name,
-                avatarUrl: partnerDetails.avatarUrl,
-                lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
-                lastMessageTimestamp: message.timestamp,
-                unreadCount: isReceiver ? (existingContact?.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
-            };
+            let contactExists = false;
+            const updatedList = currentContactsList.map(c => {
+                if (c.id === partnerId) {
+                    contactExists = true;
+                    return {
+                        ...c,
+                        lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
+                        lastMessageTimestamp: message.timestamp,
+                        unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : c.unreadCount,
+                    };
+                }
+                return c;
+            });
 
-            return [newContactEntry, ...contacts];
-        };
-
-        let myUpdatedContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
-        let partnerUpdatedContacts = updateUserContacts(myUpdatedContacts, activeChatPartner.id, currentUser.id, newMessage);
-
-        // Ensure both contacts are present in the list, even if they were filtered out before
-        const partnerContact = partnerUpdatedContacts.find(c => c.id === activeChatPartner.id);
-        const selfContact = partnerUpdatedContacts.find(c => c.id === currentUser.id);
-
-        if (!partnerContact) {
-            const partnerDetails = getContactDetails(activeChatPartner.id);
-            if(partnerDetails) {
-                 partnerUpdatedContacts.push({
+            if (!contactExists) {
+                 updatedList.push({
                     id: partnerDetails.id,
                     name: partnerDetails.name,
                     avatarUrl: partnerDetails.avatarUrl,
-                    lastMessage: newMessage.content,
-                    lastMessageTimestamp: newMessage.timestamp,
-                    unreadCount: 1, // For the partner
+                    lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
+                    lastMessageTimestamp: message.timestamp,
+                    unreadCount: isReceiver ? 1 : 0,
                 });
             }
-        }
-        
-        if (!selfContact) {
-             const selfDetails = getContactDetails(currentUser.id);
-             if(selfDetails) {
-                 partnerUpdatedContacts.push({
-                    id: selfDetails.id,
-                    name: selfDetails.name,
-                    avatarUrl: selfDetails.avatarUrl,
-                    lastMessage: newMessage.content,
-                    lastMessageTimestamp: newMessage.timestamp,
-                    unreadCount: 0, // For self
-                });
-            }
-        }
+            
+            return updatedList;
+        };
 
-        const finalContacts = Array.from(new Map(partnerUpdatedContacts.map(item => [item.id, item])).values());
+        allCurrentContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage, false);
+        allCurrentContacts = updateUserContacts(allCurrentContacts, activeChatPartner.id, currentUser.id, newMessage, true);
         
-        setAllContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
+        const finalContacts = allCurrentContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        setAllContacts(finalContacts);
         localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
 
         window.dispatchEvent(new Event('storage'));
@@ -413,10 +392,6 @@ function ChatPageComponent() {
                     });
                 } else {
                     handleSendMessage(undefined, fileMessage);
-                    toast({
-                        title: "Arquivo Enviado!",
-                        description: `O arquivo "${file.name}" foi enviado na conversa.`,
-                    });
                 }
             };
             reader.readAsDataURL(file);
@@ -463,7 +438,7 @@ function ChatPageComponent() {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 setHasMicPermission(true);
                 
-                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                const mediaRecorder = new MediaRecorder(stream);
                 mediaRecorderRef.current = mediaRecorder;
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -471,7 +446,7 @@ function ChatPageComponent() {
                 };
 
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
                     
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -489,8 +464,7 @@ function ChatPageComponent() {
                     };
                     reader.readAsDataURL(audioBlob);
 
-                    setAudioChunks([]); // Clear chunks for next recording
-                     // Stop all media tracks to turn off the mic indicator
+                    setAudioChunks([]); 
                     stream.getTracks().forEach(track => track.stop());
                 };
 

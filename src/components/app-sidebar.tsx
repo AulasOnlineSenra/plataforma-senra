@@ -75,13 +75,11 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
         localStorage.setItem('currentUser', JSON.stringify(mockUser));
       }
       
-      // Check for new messages
       const storedContactsStr = localStorage.getItem(CHAT_CONTACTS_STORAGE_KEY);
       const contacts: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : initialChatContacts;
       const unread = contacts.some(c => c.unreadCount > 0);
       setHasNewMessages(unread);
 
-       // Check for new suggestions if user is admin
       if (role === 'admin') {
         const storedSuggestionsStr = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
         const suggestions: Suggestion[] = storedSuggestionsStr ? JSON.parse(storedSuggestionsStr).map((s: any) => ({...s, timestamp: new Date(s.timestamp)})) : initialSuggestions;
@@ -239,15 +237,9 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     const isSuggestions = item.href === '/dashboard/suggestions';
 
     const handleLinkClick = () => {
-      if (isChat) {
-        // The unread count is now cleared when selecting a contact,
-        // so we just need to ensure the sidebar UI updates.
-        // A simple re-check or depending on the storage event is enough.
-        updateUserAndNotifications();
-      }
       if (isSuggestions && userRole === 'admin') {
         localStorage.setItem(LAST_SUGGESTIONS_VIEW_KEY, Date.now().toString());
-        setHasNewSuggestions(false); // Optimistically update UI
+        setHasNewSuggestions(false);
       }
     };
     
