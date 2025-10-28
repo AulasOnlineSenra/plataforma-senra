@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
@@ -36,7 +37,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Mp3Encoder } from 'lamejs';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -416,30 +416,6 @@ function ChatPageComponent() {
         setScheduledMessages(prev => prev.filter(msg => msg.id !== id));
     };
 
-    const audioBufferToMp3 = async (audioBuffer: AudioBuffer): Promise<Blob> => {
-        return new Promise((resolve) => {
-            const mp3encoder = new Mp3Encoder(1, audioBuffer.sampleRate, 128);
-            const samples = audioBuffer.getChannelData(0);
-            const mp3Data = [];
-    
-            const sampleBlockSize = 1152;
-            for (let i = 0; i < samples.length; i += sampleBlockSize) {
-                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
-                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
-                if (mp3buf.length > 0) {
-                    mp3Data.push(mp3buf);
-                }
-            }
-            const mp3buf = mp3encoder.flush();
-            if (mp3buf.length > 0) {
-                mp3Data.push(mp3buf);
-            }
-    
-            const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
-            resolve(mp3Blob);
-        });
-    };
-
     const handleToggleRecording = async () => {
         if (isRecording) {
             // Stop recording
@@ -447,85 +423,48 @@ function ChatPageComponent() {
             setIsRecording(false);
         } else {
             // Start recording
-            if (!hasMicPermission) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    setHasMicPermission(true);
-                    
-                    const mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorderRef.current = mediaRecorder;
-
-                    mediaRecorder.ondataavailable = (event) => {
-                        setAudioChunks(prev => [...prev, event.data]);
-                    };
-
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        const audioContext = new AudioContext();
-                        const arrayBuffer = await audioBlob.arrayBuffer();
-                        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                        const mp3Blob = await audioBufferToMp3(audioBuffer);
-                        
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64data = reader.result as string;
-                             const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
-                            setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
-                            toast({
-                                title: "Gravação Anexada!",
-                                description: "Sua gravação de áudio foi anexada à mensagem agendada como MP3.",
-                            });
-                        };
-                        reader.readAsDataURL(mp3Blob);
-
-                        setAudioChunks([]); // Clear chunks for next recording
-                         // Stop all media tracks to turn off the mic indicator
-                        stream.getTracks().forEach(track => track.stop());
-                    };
-
-                    mediaRecorder.start();
-                    setIsRecording(true);
-                    
-                } catch (error) {
-                    console.error("Error accessing microphone:", error);
-                    setHasMicPermission(false);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Permissão de Microfone Negada',
-                        description: 'Por favor, permita o acesso ao microfone nas configurações do seu navegador.',
-                    });
-                }
-            } else if (mediaRecorderRef.current) {
-                 // If permission is already granted, just start recording
+            try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorderRef.current = new MediaRecorder(stream); // Re-create with a fresh stream
-                mediaRecorderRef.current.ondataavailable = (event) => {
+                setHasMicPermission(true);
+                
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+
+                mediaRecorder.ondataavailable = (event) => {
                     setAudioChunks(prev => [...prev, event.data]);
                 };
-                mediaRecorderRef.current.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const audioContext = new AudioContext();
-                    const arrayBuffer = await audioBlob.arrayBuffer();
-                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                    const mp3Blob = await audioBufferToMp3(audioBuffer);
 
-                     const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64data = reader.result as string;
-                             const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
-                            setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
-                            toast({
-                                title: "Gravação Anexada!",
-                                description: "Sua gravação de áudio foi anexada à mensagem agendada como MP3.",
-                            });
-                        };
-                        reader.readAsDataURL(mp3Blob);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Use a common type like webm
+                    
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64data = reader.result as string;
+                        const audioMessage = `file::gravacao-${new Date().toISOString()}.mp3::${base64data}`;
+                        setScheduledMessageContent(prev => prev ? `${prev}\n${audioMessage}` : audioMessage);
+                        toast({
+                            title: "Gravação Anexada!",
+                            description: "Sua gravação de áudio foi anexada à mensagem agendada.",
+                        });
+                    };
+                    reader.readAsDataURL(audioBlob);
 
-                    setAudioChunks([]);
+                    setAudioChunks([]); // Clear chunks for next recording
+                     // Stop all media tracks to turn off the mic indicator
                     stream.getTracks().forEach(track => track.stop());
                 };
-                mediaRecorderRef.current.start();
+
+                mediaRecorder.start();
                 setIsRecording(true);
+                
+            } catch (error) {
+                console.error("Error accessing microphone:", error);
+                setHasMicPermission(false);
+                toast({
+                    variant: 'destructive',
+                    title: 'Permissão de Microfone Negada',
+                    description: 'Por favor, permita o acesso ao microfone nas configurações do seu navegador.',
+                });
             }
         }
     };
