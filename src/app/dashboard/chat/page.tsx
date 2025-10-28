@@ -194,7 +194,7 @@ function ChatPageComponent() {
       const date = new Date(dateStr + 'T00:00:00');
       if (isToday(date)) return 'Hoje';
       if (isYesterday(date)) return 'Ontem';
-      return format(date, 'dd \'de\' MMMM \'de\' yyyy', { locale: ptBR });
+      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
     
     const handleScheduleMessage = () => {
@@ -242,16 +242,17 @@ function ChatPageComponent() {
             : initialChatContacts;
 
         const updateUserContacts = (
+            currentContactsList: ChatContact[],
             userIdToUpdate: string,
             partnerId: string,
             message: ChatMessage
         ): ChatContact[] => {
-            let contacts = allCurrentContacts.filter(c => c.id !== partnerId); // Remove existing partner contact to re-insert at top
+            let contacts = currentContactsList.filter(c => c.id !== partnerId); // Remove existing partner contact to re-insert at top
             const partnerDetails = getContactDetails(partnerId);
             if (!partnerDetails) return contacts;
 
             const isReceiver = message.receiverId === userIdToUpdate;
-            const existingContact = allCurrentContacts.find(c => c.id === partnerId);
+            const existingContact = currentContactsList.find(c => c.id === partnerId);
             
             const newContactEntry: ChatContact = {
                 id: partnerDetails.id,
@@ -266,14 +267,12 @@ function ChatPageComponent() {
         };
 
         // Update my contact list
-        const myUpdatedContacts = updateUserContacts(currentUser.id, activeChatPartner.id, newMessage);
+        const myUpdatedContacts = updateUserContacts(allCurrentContacts, currentUser.id, activeChatPartner.id, newMessage);
 
         // Update partner's contact list
-        const partnerUpdatedContacts = updateUserContacts(activeChatPartner.id, currentUser.id, newMessage);
+        const partnerUpdatedContacts = updateUserContacts(myUpdatedContacts, activeChatPartner.id, currentUser.id, newMessage);
 
-        // This is still a simulation. In a real app, you wouldn't merge lists like this.
-        // For this prototype, we'll merge them, assuming the user's view is primary.
-        const finalContacts = Array.from(new Map([...myUpdatedContacts, ...partnerUpdatedContacts].map(item => [item.id, item])).values());
+        const finalContacts = Array.from(new Map(partnerUpdatedContacts.map(item => [item.id, item])).values());
         
         setAllContacts(finalContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime()));
         localStorage.setItem('chatContacts', JSON.stringify(finalContacts));
