@@ -93,13 +93,13 @@ function ChatPageComponent() {
         const contact = getContactDetails(contactId);
         if (contact) {
             setActiveChatPartner(contact);
-            
+
             const storedContactsStr = localStorage.getItem('chatContacts');
-            let currentContacts: ChatContact[] = storedContactsStr 
+            let currentContacts: ChatContact[] = storedContactsStr
                 ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
                 : initialChatContacts;
 
-            const updatedContacts = currentContacts.map(c => 
+            const updatedContacts = currentContacts.map(c =>
                 c.id === contactId ? { ...c, unreadCount: 0 } : c
             );
 
@@ -144,7 +144,7 @@ function ChatPageComponent() {
         } else {
             setSchedule(initialSchedule);
         }
-    }, []);
+    }, [currentUser]);
 
     useEffect(() => {
         updateData();
@@ -752,7 +752,7 @@ function ChatPageComponent() {
                             <Input id="schedule-title" placeholder="Insira aqui o título" value={scheduledMessageTitle} onChange={e => setScheduledMessageTitle(e.target.value)} />
                         </div>
                         <Tabs defaultValue="text" className="w-full">
-                            <TabsList>
+                            <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="text">Criar texto</TabsTrigger>
                                 <TabsTrigger value="media">Mídia</TabsTrigger>
                                 <TabsTrigger value="audio">Áudio</TabsTrigger>
