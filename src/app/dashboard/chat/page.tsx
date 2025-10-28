@@ -150,7 +150,7 @@ function ChatPageComponent() {
         updateData();
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, [updateData]);
+    }, []);
     
     useEffect(() => {
         if (contactIdParam && allUsers.length > 0) {
