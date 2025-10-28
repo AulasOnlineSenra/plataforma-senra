@@ -256,7 +256,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
           isDraggable && 'cursor-grab',
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-            : 'text-sidebar-foreground/80 hover:text-primary-foreground hover:bg-sidebar-accent',
+            : 'text-sidebar-foreground/80 hover:text-brand-yellow hover:bg-sidebar-accent',
           isCollapsed && 'justify-center'
         )}
       >

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,8 +35,8 @@
     --sidebar-background: 240 5% 15%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-border: 240 5% 20%;
-    --sidebar-accent: hsl(var(--brand-yellow));
-    --sidebar-accent-foreground: 240 10% 3.9%;
+    --sidebar-accent: hsl(var(--brand-yellow) / 0.1);
+    --sidebar-accent-foreground: hsl(var(--brand-yellow));
     --sidebar-primary: 42 100% 47%;
     --sidebar-primary-foreground: 198 30% 10%;
     --sidebar-ring: 198 65% 80%;
@@ -72,8 +73,8 @@
     --sidebar-background: 240 5% 10%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-border: 240 5% 15%;
-    --sidebar-accent: hsl(var(--brand-yellow));
-    --sidebar-accent-foreground: 240 10% 3.9%;
+    --sidebar-accent: hsl(var(--brand-yellow) / 0.1);
+    --sidebar-accent-foreground: hsl(var(--brand-yellow));
     --sidebar-primary: 42 100% 47%;
     --sidebar-primary-foreground: 198 30% 10%;
     --sidebar-ring: 198 65% 80%;
