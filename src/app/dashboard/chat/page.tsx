@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare, File } from 'lucide-react';
+import { Search, Send, Paperclip, Clock, X, MessageSquare, File, Smile, Video, Mic, Calendar as CalendarIcon, Link as LinkIcon } from 'lucide-react';
 import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -34,6 +34,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DatePicker } from '@/components/ui/date-picker';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -554,41 +556,49 @@ function ChatPageComponent() {
               )}
         </div>
         <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                <DialogTitle>Agendar Mensagem</DialogTitle>
-                <DialogDescription>
-                    Escreva sua mensagem e selecione a data e o horário para o envio.
-                </DialogDescription>
+                    <DialogTitle className="font-headline text-2xl">Criar Agendamento</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-6 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="scheduled-message-content">Mensagem</Label>
-                        <Textarea
-                            id="scheduled-message-content"
-                            value={scheduledMessageContent}
-                            onChange={(e) => setScheduledMessageContent(e.target.value)}
-                            placeholder="Sua mensagem agendada..."
-                            rows={5}
-                        />
+                        <Label htmlFor="schedule-title">Título (Opcional)</Label>
+                        <Input id="schedule-title" placeholder="Insira aqui o título" />
                     </div>
+                    <Tabs defaultValue="text" className="w-full">
+                        <TabsList>
+                            <TabsTrigger value="text">Criar texto</TabsTrigger>
+                            <TabsTrigger value="media">Mídia</TabsTrigger>
+                            <TabsTrigger value="audio">Áudio</TabsTrigger>
+                            <TabsTrigger value="quick-message">Selecionar mensagem rápida</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="text" className="pt-4">
+                            <div className="grid gap-2 relative">
+                                <Label htmlFor="scheduled-message-content">Mensagem</Label>
+                                <Textarea
+                                    id="scheduled-message-content"
+                                    value={scheduledMessageContent}
+                                    onChange={(e) => setScheduledMessageContent(e.target.value)}
+                                    placeholder="Insira sua mensagem"
+                                    rows={5}
+                                    className="pr-10"
+                                />
+                                <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 h-8 w-8">
+                                    <Smile className="h-5 w-5 text-muted-foreground" />
+                                </Button>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                            <Label>Data</Label>
-                           <Calendar
-                                mode="single"
-                                selected={selectedScheduleDate}
-                                onSelect={setSelectedScheduleDate}
-                                className="rounded-md border"
-                                locale={ptBR}
-                                disabled={{ before: new Date() }}
-                            />
+                           <DatePicker date={selectedScheduleDate} setDate={setSelectedScheduleDate} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="time">Horário</Label>
+                            <Label htmlFor="time">Hora</Label>
                             <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
                                 <SelectTrigger>
-                                <SelectValue placeholder="Selecione um horário" />
+                                <SelectValue placeholder="--:--" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-60">
                                 {availableTimes.map((time) => (
@@ -598,12 +608,26 @@ function ChatPageComponent() {
                             </Select>
                         </div>
                     </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="recurrence">Recorrência</Label>
+                        <Select>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Nenhuma selecionada" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Não repetir</SelectItem>
+                                <SelectItem value="daily">Diariamente</SelectItem>
+                                <SelectItem value="weekly">Semanalmente</SelectItem>
+                                <SelectItem value="monthly">Mensalmente</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                 <DialogFooter>
                 <DialogClose asChild>
                     <Button type="button" variant="outline">Cancelar</Button>
                 </DialogClose>
-                <Button type="button" onClick={handleScheduleMessage}>Agendar</Button>
+                <Button type="button" onClick={handleScheduleMessage}>Criar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -636,5 +660,6 @@ export default function ChatPage() {
     
 
     
+
 
 
