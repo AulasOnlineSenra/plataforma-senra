@@ -38,6 +38,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TimePicker } from '@/components/ui/time-picker';
+import { useCollection, useFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from '@/firebase';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -58,12 +60,11 @@ interface ScheduledMessage {
     recurrence: RecurrenceType;
 }
 
-const SCHEDULED_MESSAGES_STORAGE_KEY = 'scheduledMessagesList';
-
 function ChatPageComponent() {
     const searchParams = useSearchParams();
     const contactIdParam = searchParams.get('contactId');
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const { firestore, user: currentUser } = useFirebase();
+
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -71,7 +72,15 @@ function ChatPageComponent() {
 
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduleDialogView, setScheduleDialogView] = useState<'list' | 'create'>('list');
-    const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
+    
+    const scheduledMessagesQuery = useMemo(() => {
+        if (!firestore || !currentUser) return null;
+        return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+    }, [firestore, currentUser]);
+
+    const { data: scheduledMessages, isLoading: isLoadingScheduledMessages } = useCollection<ScheduledMessage>(scheduledMessagesQuery);
+
+
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [scheduledMessageContent, setScheduledMessageContent] = useState('');
@@ -116,10 +125,6 @@ function ChatPageComponent() {
     }, [getContactDetails, currentUser]);
 
     const updateData = useCallback(() => {
-        const loggedInUserStr = localStorage.getItem('currentUser');
-        const user = loggedInUserStr ? JSON.parse(loggedInUserStr) : getMockUser('student');
-        setCurrentUser(user);
-
         const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
         const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
         const combinedUsers = [...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)];
@@ -130,22 +135,21 @@ function ChatPageComponent() {
         
         const storedContacts = localStorage.getItem('chatContacts');
         const parsedContacts = storedContacts ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : initialChatContacts;
-        setAllContacts(parsedContacts.filter((c: ChatContact) => c.id !== user.id));
+        if(currentUser) {
+            setAllContacts(parsedContacts.filter((c: ChatContact) => c.id !== currentUser.id));
+        }
 
         
         const storedSchedule = localStorage.getItem('scheduleEvents');
         setSchedule(storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) : initialSchedule);
 
-        const storedScheduledMessages = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
-        setScheduledMessages(storedScheduledMessages ? JSON.parse(storedScheduledMessages).map((m: any) => ({ ...m, date: new Date(m.date) })) : []);
-
-    }, []);
+    }, [currentUser]);
 
     useEffect(() => {
         updateData();
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, []);
+    }, [updateData]);
     
     useEffect(() => {
         if (contactIdParam && allUsers.length > 0) {
@@ -220,8 +224,8 @@ function ChatPageComponent() {
       return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
     
-    const handleScheduleMessage = () => {
-        if (!selectedScheduleDate || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser) {
+    const handleScheduleMessage = async () => {
+        if (!selectedScheduleDate || !scheduledMessageContent.trim() || !activeChatPartner || !currentUser || !firestore) {
             toast({
                 variant: 'destructive',
                 title: 'Campos Incompletos',
@@ -230,50 +234,32 @@ function ChatPageComponent() {
             return;
         }
 
-        const newScheduledDate = new Date(selectedScheduleDate);
-
-        let updatedMessages;
-        const currentScheduledMessagesStr = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
-        const currentScheduledMessages: ScheduledMessage[] = currentScheduledMessagesStr ? JSON.parse(currentScheduledMessagesStr).map((m: any) => ({ ...m, date: new Date(m.date) })) : [];
-
+        const messageData = {
+            creatorId: currentUser.id,
+            contactId: activeChatPartner.id,
+            date: selectedScheduleDate,
+            content: scheduledMessageContent,
+            title: scheduledMessageTitle,
+            recurrence: scheduledMessageRecurrence,
+            createdAt: serverTimestamp(),
+        };
 
         if (editingMessageId) {
-            updatedMessages = currentScheduledMessages.map(msg =>
-                msg.id === editingMessageId
-                    ? {
-                          ...msg,
-                          date: newScheduledDate,
-                          content: scheduledMessageContent,
-                          title: scheduledMessageTitle,
-                          recurrence: scheduledMessageRecurrence,
-                      }
-                    : msg
-            );
+            const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', editingMessageId);
+            await updateDoc(messageRef, messageData);
             toast({
                 title: 'Mensagem Atualizada',
-                description: `Sua mensagem foi reagendada para ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+                description: `Sua mensagem foi reagendada para ${format(selectedScheduleDate, "dd/MM/yyyy 'às' HH:mm")}.`,
             });
         } else {
-            const newScheduledMessage: ScheduledMessage = {
-                id: `sched-${Date.now()}`,
-                creatorId: currentUser.id,
-                contactId: activeChatPartner.id,
-                date: newScheduledDate,
-                content: scheduledMessageContent,
-                title: scheduledMessageTitle,
-                recurrence: scheduledMessageRecurrence,
-            };
-            updatedMessages = [...currentScheduledMessages, newScheduledMessage];
+            const collectionRef = collection(firestore, 'users', currentUser.id, 'scheduledMessages');
+            await addDoc(collectionRef, messageData);
             toast({
                 title: 'Mensagem Agendada',
-                description: `Sua mensagem foi agendada para ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+                description: `Sua mensagem foi agendada para ${format(selectedScheduleDate, "dd/MM/yyyy 'às' HH:mm")}.`,
             });
         }
         
-        setScheduledMessages(updatedMessages);
-        localStorage.setItem(SCHEDULED_MESSAGES_STORAGE_KEY, JSON.stringify(updatedMessages));
-        window.dispatchEvent(new Event('storage'));
-
         setEditingMessageId(null);
         setScheduledMessageContent('');
         setScheduledMessageTitle('');
@@ -285,7 +271,7 @@ function ChatPageComponent() {
         setEditingMessageId(message.id);
         setScheduledMessageContent(message.content);
         setScheduledMessageTitle(message.title || '');
-        setSelectedScheduleDate(message.date);
+        setSelectedScheduleDate(new Date(message.date));
         setScheduledMessageRecurrence(message.recurrence);
         setScheduleDialogView('create');
     };
@@ -418,11 +404,10 @@ function ChatPageComponent() {
         return <p className="break-words whitespace-pre-wrap">{message.content}</p>;
     };
 
-    const handleRemoveScheduledMessage = (id: string) => {
-        const updatedMessages = scheduledMessages.filter(msg => msg.id !== id);
-        setScheduledMessages(updatedMessages);
-        localStorage.setItem(SCHEDULED_MESSAGES_STORAGE_KEY, JSON.stringify(updatedMessages));
-        window.dispatchEvent(new Event('storage'));
+    const handleRemoveScheduledMessage = async (id: string) => {
+        if (!currentUser || !firestore) return;
+        const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', id);
+        await deleteDoc(messageRef);
     };
 
     const handleToggleRecording = async () => {
@@ -478,52 +463,7 @@ function ChatPageComponent() {
             }
         }
     };
-    
-    useEffect(() => {
-    const interval = setInterval(() => {
-        if (!currentUser) return;
-
-        const now = new Date();
-        const currentScheduledMessagesStr = localStorage.getItem(SCHEDULED_MESSAGES_STORAGE_KEY);
-        const currentScheduledMessages: ScheduledMessage[] = currentScheduledMessagesStr
-            ? JSON.parse(currentScheduledMessagesStr).map((m: any) => ({ ...m, date: new Date(m.date) }))
-            : [];
-
-        const dueMessages = currentScheduledMessages.filter(msg => msg.creatorId === currentUser.id && now >= msg.date);
-
-        if (dueMessages.length > 0) {
-            let updatedMessages = [...currentScheduledMessages];
-
-            dueMessages.forEach(msg => {
-                sendMessage(msg.creatorId, msg.contactId, msg.content);
-
-                if (msg.recurrence === 'none') {
-                    updatedMessages = updatedMessages.filter(m => m.id !== msg.id);
-                } else {
-                    updatedMessages = updatedMessages.map(m => {
-                        if (m.id === msg.id) {
-                            let nextDate = new Date(m.date);
-                            switch (m.recurrence) {
-                                case 'daily': nextDate = addDays(nextDate, 1); break;
-                                case 'weekly': nextDate = addWeeks(nextDate, 1); break;
-                                case 'monthly': nextDate = addMonths(nextDate, 1); break;
-                            }
-                            return { ...m, date: nextDate };
-                        }
-                        return m;
-                    });
-                }
-            });
-
-            setScheduledMessages(updatedMessages);
-            localStorage.setItem(SCHEDULED_MESSAGES_STORAGE_KEY, JSON.stringify(updatedMessages));
-            window.dispatchEvent(new Event('storage'));
-        }
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-}, [currentUser, sendMessage]);
-    
+        
     const recurrenceLabels: Record<RecurrenceType, string> = {
         none: 'Vazia',
         daily: 'Diária',
@@ -645,7 +585,7 @@ function ChatPageComponent() {
                                                   "text-xs shrink-0 self-end pt-1",
                                                   message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground"
                                               )}>
-                                                  {format(message.timestamp, 'HH:mm')}
+                                                  {format(new Date(message.timestamp), 'HH:mm')}
                                               </p>
                                           </div>
                                       </div>
@@ -656,15 +596,15 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {scheduledMessages.filter(m => m.creatorId === currentUser.id && m.contactId === activeChatPartner.id).length > 0 && (
+                          {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner.id).length > 0 && (
                             <div className="space-y-2 mb-2">
-                                {scheduledMessages
-                                    .filter(m => m.creatorId === currentUser.id && m.contactId === activeChatPartner.id)
+                                {(scheduledMessages || [])
+                                    .filter(m => m.contactId === activeChatPartner.id)
                                     .map((msg) => (
                                   <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
                                       <div className="flex items-center gap-2 overflow-hidden">
                                           <Clock className="h-4 w-4 shrink-0" />
-                                          <span className="truncate">"{msg.content}" para {format(msg.date, "dd/MM 'às' HH:mm")}</span>
+                                          <span className="truncate">"{msg.content}" para {format(new Date(msg.date), "dd/MM 'às' HH:mm")}</span>
                                       </div>
                                       <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveScheduledMessage(msg.id)}>
                                           <X className="h-4 w-4" />
@@ -740,7 +680,7 @@ function ChatPageComponent() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {scheduledMessages.filter(m => m.creatorId === currentUser.id && m.contactId === activeChatPartner?.id).map(msg => (
+                                {(scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id).map(msg => (
                                     <TableRow key={msg.id}>
                                         <TableCell>{msg.title || 'Não Definido'}</TableCell>
                                         <TableCell>
@@ -753,8 +693,8 @@ function ChatPageComponent() {
                                             </div>
                                         </TableCell>
                                         <TableCell>{getMessageType(msg.content)}</TableCell>
-                                        <TableCell>{format(msg.date, 'dd/MM/yyyy')}</TableCell>
-                                        <TableCell>{format(msg.date, 'HH:mm')}</TableCell>
+                                        <TableCell>{format(new Date(msg.date), 'dd/MM/yyyy')}</TableCell>
+                                        <TableCell>{format(new Date(msg.date), 'HH:mm')}</TableCell>
                                         <TableCell>{recurrenceLabels[msg.recurrence]}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
@@ -766,7 +706,7 @@ function ChatPageComponent() {
                                 ))}
                             </TableBody>
                          </Table>
-                         {scheduledMessages.filter(m => m.creatorId === currentUser.id && m.contactId === activeChatPartner?.id).length === 0 && (
+                         {isLoadingScheduledMessages ? <p>Carregando...</p> : (scheduledMessages || []).filter(m => m.contactId === activeChatPartner?.id).length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
                                 <p>Nenhuma mensagem agendada para este contato.</p>
                             </div>
