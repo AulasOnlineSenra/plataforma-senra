@@ -742,7 +742,6 @@ function ChatPageComponent() {
                                 <TabsTrigger value="text">Criar texto</TabsTrigger>
                                 <TabsTrigger value="media">Mídia</TabsTrigger>
                                 <TabsTrigger value="audio">Áudio</TabsTrigger>
-                                <TabsTrigger value="quick-message" disabled>Selecionar mensagem rápida</TabsTrigger>
                             </TabsList>
                             <TabsContent value="text" className="pt-4">
                                 <div className="grid gap-2 relative">
