@@ -171,7 +171,6 @@ function ProfilePageComponent() {
         localStorage.setItem(storageKey, JSON.stringify(updatedList));
         window.dispatchEvent(new Event('storage'));
 
-        // If the logged-in user is editing their own profile, update currentUser in localStorage
         if(loggedInUser?.id === updatedUser.id) {
             localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         }
@@ -286,8 +285,7 @@ function ProfilePageComponent() {
             </div>
             
             <div className="grid gap-6">
-                {/* User Info Card */}
-                <Card>
+                <CollapsibleCard title="Informações Pessoais" description="Seus dados de perfil, contato e endereço." icon={UserIcon} defaultOpen={true}>
                     <CardHeader>
                         <div className="flex flex-col md:flex-row items-center gap-6">
                             <ProfileAvatarUploader user={profileUser} onSave={(url) => handleSave('avatarUrl', url)} canEdit={canEdit} />
@@ -299,7 +297,7 @@ function ProfilePageComponent() {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                     <CardContent>
                         <EditableTextarea
                             label="Biografia"
                             value={profileUser.bio || ''}
@@ -308,25 +306,23 @@ function ProfilePageComponent() {
                             canEdit={canEdit}
                          />
                     </CardContent>
-                </Card>
-
-                {/* Personal & Professional Info */}
-                 <CollapsibleCard title="Informações Pessoais" description="Dados de identificação e contato." icon={UserIcon}>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <EditableInput label="Nome Completo" value={profileUser.name} onSave={(v) => handleSave('name', v)} canEdit={canEdit} />
-                        <EditableInput label="Apelido" value={profileUser.nickname || ''} placeholder="Como prefere ser chamado(a)?" onSave={(v) => handleSave('nickname', v)} canEdit={canEdit} />
-                        <EditableInput label="Email" value={profileUser.email} onSave={(v) => handleSave('email', v)} canEdit={canEdit} type="email" />
-                        <EditableInput label="Telefone" value={profileUser.phone || ''} placeholder="(00) 00000-0000" onSave={(v) => handleSave('phone', v)} canEdit={canEdit} type="tel" />
-                        <EditableInput label="CPF" value={profileUser.cpf || ''} placeholder="000.000.000-00" onSave={(v) => handleSave('cpf', v)} canEdit={canEdit} />
-                        <EditableInput label="Data de Nascimento" value={profileUser.birthDate || ''} onSave={(v) => handleSave('birthDate', v)} canEdit={canEdit} type="date"/>
-                    </CardContent>
-                     <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 border-t pt-6">
-                        <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} placeholder="00000-000" onSave={(v) => handleCepSave(v)} canEdit={canEdit} />
-                        <EditableInput label="Estado" value={profileUser.address?.state || ''} placeholder="Ex: SP" onSave={(v) => handleSaveAddress('state', v)} canEdit={canEdit} />
-                        <EditableInput label="Bairro" value={profileUser.address?.neighborhood || ''} placeholder="Ex: Centro" onSave={(v) => handleSaveAddress('neighborhood', v)} canEdit={canEdit} />
-                        <EditableInput label="Rua" value={profileUser.address?.street || ''} placeholder="Ex: Rua Principal" onSave={(v) => handleSaveAddress('street', v)} canEdit={canEdit} className="lg:col-span-2" />
-                        <EditableInput label="Número" value={profileUser.address?.number || ''} placeholder="Ex: 123" onSave={(v) => handleSaveAddress('number', v)} canEdit={canEdit} />
-                    </CardContent>
+                    <CollapsibleContent>
+                        <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 border-t pt-6">
+                            <EditableInput label="Nome Completo" value={profileUser.name} onSave={(v) => handleSave('name', v)} canEdit={canEdit} />
+                            <EditableInput label="Apelido" value={profileUser.nickname || ''} placeholder="Como prefere ser chamado(a)?" onSave={(v) => handleSave('nickname', v)} canEdit={canEdit} />
+                            <EditableInput label="Email" value={profileUser.email} onSave={(v) => handleSave('email', v)} canEdit={canEdit} type="email" />
+                            <EditableInput label="Telefone" value={profileUser.phone || ''} placeholder="(00) 00000-0000" onSave={(v) => handleSave('phone', v)} canEdit={canEdit} type="tel" />
+                            <EditableInput label="CPF" value={profileUser.cpf || ''} placeholder="000.000.000-00" onSave={(v) => handleSave('cpf', v)} canEdit={canEdit} />
+                            <EditableInput label="Data de Nascimento" value={profileUser.birthDate || ''} onSave={(v) => handleSave('birthDate', v)} canEdit={canEdit} type="date"/>
+                        </CardContent>
+                        <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 border-t pt-6">
+                            <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} placeholder="00000-000" onSave={(v) => handleCepSave(v)} canEdit={canEdit} />
+                            <EditableInput label="Estado" value={profileUser.address?.state || ''} placeholder="Ex: SP" onSave={(v) => handleSaveAddress('state', v)} canEdit={canEdit} />
+                            <EditableInput label="Bairro" value={profileUser.address?.neighborhood || ''} placeholder="Ex: Centro" onSave={(v) => handleSaveAddress('neighborhood', v)} canEdit={canEdit} />
+                            <EditableInput label="Rua" value={profileUser.address?.street || ''} placeholder="Ex: Rua Principal" onSave={(v) => handleSaveAddress('street', v)} canEdit={canEdit} className="lg:col-span-2" />
+                            <EditableInput label="Número" value={profileUser.address?.number || ''} placeholder="Ex: 123" onSave={(v) => handleSaveAddress('number', v)} canEdit={canEdit} />
+                        </CardContent>
+                    </CollapsibleContent>
                 </CollapsibleCard>
 
                 {profileUser.role !== 'student' && (
@@ -339,7 +335,6 @@ function ProfilePageComponent() {
                     </CollapsibleCard>
                 )}
 
-                {/* Teacher-specific cards */}
                 {isTeacher && teacherProfile && (
                      <>
                         <CollapsibleCard title="Disciplinas e Disponibilidade" description="Quais disciplinas você está apto(a) a lecionar e seus horários disponíveis." icon={Briefcase}>
@@ -378,7 +373,6 @@ function ProfilePageComponent() {
                     </>
                 )}
                 
-                {/* Integration Card */}
                 <CollapsibleCard title="Integrações" description="Conecte seu perfil com outras ferramentas." icon={Webhook}>
                     <CardContent className="grid md:grid-cols-2 gap-4">
                         <Card>
@@ -678,9 +672,3 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
-
-    
-
-    
-
-
