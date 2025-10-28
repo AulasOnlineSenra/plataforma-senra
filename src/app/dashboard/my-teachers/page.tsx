@@ -65,14 +65,14 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
               const isCollapsibleOpen = openTeacherId === teacher.id;
 
               return (
-                 <Fragment key={teacher.id}>
+                 <Collapsible asChild key={teacher.id} open={isCollapsibleOpen} onOpenChange={() => setOpenTeacherId(isCollapsibleOpen ? null : teacher.id)}>
+                   <>
                     <TableRow>
                         <TableCell>
                            <CollapsibleTrigger asChild>
                              <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setOpenTeacherId(isCollapsibleOpen ? null : teacher.id)}
                                 disabled={teacherEvents.length === 0}
                                 className="disabled:opacity-50 disabled:cursor-not-allowed"
                              >
@@ -82,13 +82,13 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
                            </CollapsibleTrigger>
                         </TableCell>
                         <TableCell>
-                            <div className="flex items-center gap-3">
+                            <Link href={`/dashboard/schedule?teacherId=${teacher.id}`} className="flex items-center gap-3 cursor-pointer group">
                                 <Avatar className="h-10 w-10">
                                 <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
                                 <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <div className="font-medium">{teacher.name}</div>
-                            </div>
+                                <div className="font-medium group-hover:underline">{teacher.name}</div>
+                            </Link>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                         {getSubjectNames(teacher.subjects)}
@@ -126,7 +126,8 @@ function TeacherList({ title, teachers, scheduleEvents }: { title: string; teach
                            </TableCell>
                        </tr>
                     </CollapsibleContent>
-                 </Fragment>
+                   </>
+                 </Collapsible>
               )
             })}
           </TableBody>
