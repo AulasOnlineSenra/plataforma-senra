@@ -135,6 +135,12 @@ export default function SchedulePage() {
     
     let relevantEvents = events.filter(e => e.status === 'scheduled');
 
+    if (currentUser?.role === 'student') {
+      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
+    } else if (currentUser?.role === 'teacher') {
+      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
+    }
+
     if (filterType === 'day') {
         return relevantEvents.filter(
             (e) =>
@@ -161,7 +167,7 @@ export default function SchedulePage() {
         .filter(e => isWithinInterval(e.start, interval))
         .sort((a,b) => a.start.getTime() - b.start.getTime());
 
-  }, [date, filterType, events]);
+  }, [date, filterType, events, currentUser]);
   
   const completedEvents = useMemo(() => {
     return events
@@ -379,7 +385,7 @@ export default function SchedulePage() {
                             <div className="grid gap-1">
                               <p className="font-semibold">{personToShow?.name}</p>
                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                                <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}</span>
                               </div>
                             </div>
                         </div>
@@ -613,5 +619,3 @@ export default function SchedulePage() {
     </>
   );
 }
-
-    
