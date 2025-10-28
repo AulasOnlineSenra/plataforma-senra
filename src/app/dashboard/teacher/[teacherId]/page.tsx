@@ -8,12 +8,13 @@ import { Teacher, ScheduleEvent, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, Download, FileText, BookCopy, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronRight, FileText, BookCopy, CalendarCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 function TeacherDetailPageComponent() {
     const params = useParams();
@@ -100,63 +101,76 @@ function TeacherDetailPageComponent() {
                     </div>
                 </div>
             </header>
-
-            <div className="grid md:grid-cols-2 gap-6 mt-4">
+            
+            <Tabs defaultValue="classes" className="w-full mt-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="classes">
+                    <CalendarCheck className="mr-2" />
+                    Aulas Agendadas
+                </TabsTrigger>
+                <TabsTrigger value="materials">
+                    <FileText className="mr-2" />
+                    Materiais de Aula
+                </TabsTrigger>
+                <TabsTrigger value="simulations">
+                    <BookCopy className="mr-2" />
+                    Simulados
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="classes">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Próximas Aulas</CardTitle>
+                    <CardDescription>
+                      Suas aulas agendadas com {teacher.name}.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                     {upcomingClasses.length > 0 ? (
+                        upcomingClasses.map(c => (
+                             <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
+                                <div>
+                                    <p className="font-semibold">{c.subject}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
+                                    </p>
+                                </div>
+                                 <Button variant="outline" size="sm" asChild>
+                                    <Link href="/dashboard/schedule">Ver na Agenda</Link>
+                                </Button>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <p>Nenhuma aula futura agendada com este professor.</p>
+                        </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="materials">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><FileText /> Materiais de Aula</CardTitle>
+                        <CardTitle>Materiais de Aula</CardTitle>
                         <CardDescription>Materiais compartilhados pelo professor.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center py-10 text-muted-foreground">
                         <p>Nenhum material compartilhado ainda.</p>
                     </CardContent>
                 </Card>
+              </TabsContent>
+              <TabsContent value="simulations">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BookCopy /> Simulados</CardTitle>
+                        <CardTitle>Simulados</CardTitle>
                         <CardDescription>Simulados e exercícios propostos.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center py-10 text-muted-foreground">
                         <p>Nenhum simulado disponível no momento.</p>
                     </CardContent>
                 </Card>
-            </div>
-            
-            <Collapsible defaultOpen={true}>
-                <CollapsibleTrigger className="w-full">
-                    <Card className="hover:bg-accent/50 transition-colors">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Aulas Agendadas</CardTitle>
-                            <ChevronDown className="h-5 w-5 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                        </CardHeader>
-                    </Card>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <Card className="border-t-0 rounded-t-none">
-                        <CardContent className="p-4 space-y-3">
-                            {upcomingClasses.length > 0 ? (
-                                upcomingClasses.map(c => (
-                                     <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
-                                        <div>
-                                            <p className="font-semibold">{c.subject}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
-                                            </p>
-                                        </div>
-                                         <Button variant="outline" size="sm" asChild>
-                                            <Link href="/dashboard/schedule">Ver na Agenda</Link>
-                                        </Button>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-6 text-muted-foreground">
-                                    <p>Nenhuma aula futura agendada com este professor.</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </CollapsibleContent>
-            </Collapsible>
+              </TabsContent>
+            </Tabs>
         </div>
     );
 }
