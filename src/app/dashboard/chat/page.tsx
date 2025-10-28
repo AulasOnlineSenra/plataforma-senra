@@ -33,6 +33,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -40,6 +41,11 @@ const roleLabels: Record<UserRole, string> = {
   student: 'Aluno',
   teacher: 'Professor',
 };
+
+interface ScheduledMessage {
+    date: Date;
+    content: string;
+}
 
 function ChatPageComponent() {
     const searchParams = useSearchParams();
@@ -51,9 +57,10 @@ function ChatPageComponent() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isScheduling, setIsScheduling] = useState(false);
-    const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
+    const [scheduledMessage, setScheduledMessage] = useState<ScheduledMessage | null>(null);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
+    const [scheduledMessageContent, setScheduledMessageContent] = useState('');
     const [messageContent, setMessageContent] = useState('');
     const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
@@ -198,14 +205,23 @@ function ChatPageComponent() {
     }
     
     const handleScheduleMessage = () => {
-        if (!selectedScheduleDate || !selectedScheduleTime) return;
+        if (!selectedScheduleDate || !selectedScheduleTime || !scheduledMessageContent.trim()) {
+            toast({
+                variant: 'destructive',
+                title: 'Campos Incompletos',
+                description: 'Por favor, escreva uma mensagem e selecione uma data e horário.',
+            });
+            return;
+        }
 
         const [hours, minutes] = selectedScheduleTime.split(':').map(Number);
         const newScheduledDate = new Date(selectedScheduleDate);
         newScheduledDate.setHours(hours, minutes, 0, 0);
-
-        setScheduledDateTime(newScheduledDate);
+        
+        setScheduledMessage({ date: newScheduledDate, content: scheduledMessageContent });
         setIsScheduling(false);
+        setScheduledMessageContent('');
+
         toast({
             title: 'Mensagem Agendada',
             description: `Sua mensagem será enviada em ${format(newScheduledDate, "dd/MM/yyyy 'às' HH:mm")}.`,
@@ -260,7 +276,7 @@ function ChatPageComponent() {
                 avatarUrl: partnerDetails.avatarUrl,
                 lastMessage: message.content.startsWith('file::') ? 'Arquivo enviado' : message.content,
                 lastMessageTimestamp: message.timestamp,
-                unreadCount: isReceiver && activeChatPartner?.id !== message.senderId ? (existingContact?.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
+                unreadCount: isReceiver ? (existingContact?.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
             };
 
             return [newContactEntry, ...contacts];
@@ -434,13 +450,13 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {scheduledDateTime && (
+                          {scheduledMessage && (
                               <div className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md mb-2 text-sm">
-                                  <div className="flex items-center gap-2">
-                                      <Clock className="h-4 w-4" />
-                                      <span>Mensagem agendada para: {format(scheduledDateTime, "dd/MM 'às' HH:mm")}</span>
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                      <Clock className="h-4 w-4 shrink-0" />
+                                      <span className="truncate">"{scheduledMessage.content}" para {format(scheduledMessage.date, "dd/MM 'às' HH:mm")}</span>
                                   </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setScheduledDateTime(null)}>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setScheduledMessage(null)}>
                                       <X className="h-4 w-4" />
                                   </Button>
                               </div>
@@ -495,32 +511,44 @@ function ChatPageComponent() {
                 <DialogHeader>
                 <DialogTitle>Agendar Mensagem</DialogTitle>
                 <DialogDescription>
-                    Selecione a data e o horário para enviar esta mensagem.
+                    Escreva sua mensagem e selecione a data e o horário para o envio.
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="flex justify-center">
-                        <Calendar
-                            mode="single"
-                            selected={selectedScheduleDate}
-                            onSelect={setSelectedScheduleDate}
-                            className="rounded-md border"
-                            locale={ptBR}
-                            disabled={{ before: new Date() }}
+                    <div className="grid gap-2">
+                        <Label htmlFor="scheduled-message-content">Mensagem</Label>
+                        <Textarea
+                            id="scheduled-message-content"
+                            value={scheduledMessageContent}
+                            onChange={(e) => setScheduledMessageContent(e.target.value)}
+                            placeholder="Sua mensagem agendada..."
                         />
                     </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="time">Horário</Label>
-                        <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Selecione um horário" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                            {availableTimes.map((time) => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                           <Label>Data</Label>
+                           <Calendar
+                                mode="single"
+                                selected={selectedScheduleDate}
+                                onSelect={setSelectedScheduleDate}
+                                className="rounded-md border"
+                                locale={ptBR}
+                                disabled={{ before: new Date() }}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="time">Horário</Label>
+                            <Select value={selectedScheduleTime} onValueChange={setSelectedScheduleTime}>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Selecione um horário" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-60">
+                                {availableTimes.map((time) => (
+                                    <SelectItem key={time} value={time}>{time}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
