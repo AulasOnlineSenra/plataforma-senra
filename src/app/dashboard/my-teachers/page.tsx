@@ -15,8 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
-import { Teacher, User, ScheduleEvent } from '@/lib/types';
+import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, subjects } from '@/lib/data';
+import { Teacher, User, ScheduleEvent, Subject } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
@@ -24,6 +24,10 @@ import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
 
 function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }) {
+  const getSubjectNames = (subjectIds: string[]) => {
+    return subjectIds.map(id => subjects.find(s => s.id === id)?.name).filter(Boolean).join(', ');
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -51,7 +55,7 @@ function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {teacher.subjects.join(', ')}
+                  {getSubjectNames(teacher.subjects)}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="outline" size="sm">
@@ -141,5 +145,3 @@ export default function MyTeachersPage() {
     </div>
   );
 }
-
-    
