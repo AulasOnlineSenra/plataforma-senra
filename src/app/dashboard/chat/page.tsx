@@ -43,6 +43,7 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 interface ScheduledMessage {
+    id: string;
     date: Date;
     content: string;
 }
@@ -57,7 +58,7 @@ function ChatPageComponent() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isScheduling, setIsScheduling] = useState(false);
-    const [scheduledMessage, setScheduledMessage] = useState<ScheduledMessage | null>(null);
+    const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date | undefined>(new Date());
     const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('12:00');
     const [scheduledMessageContent, setScheduledMessageContent] = useState('');
@@ -197,7 +198,6 @@ function ChatPageComponent() {
     }, [allMessages, currentUser, activeChatPartner]);
 
     const formatDateSeparator = (dateStr: string) => {
-      // Fix for timezone issue: Add timezone offset to treat date as local
       const date = new Date(dateStr + 'T00:00:00');
       if (isToday(date)) return 'Hoje';
       if (isYesterday(date)) return 'Ontem';
@@ -218,7 +218,13 @@ function ChatPageComponent() {
         const newScheduledDate = new Date(selectedScheduleDate);
         newScheduledDate.setHours(hours, minutes, 0, 0);
         
-        setScheduledMessage({ date: newScheduledDate, content: scheduledMessageContent });
+        const newScheduledMessage: ScheduledMessage = {
+            id: `sched-${Date.now()}`,
+            date: newScheduledDate,
+            content: scheduledMessageContent,
+        };
+
+        setScheduledMessages(prev => [...prev, newScheduledMessage]);
         setIsScheduling(false);
         setScheduledMessageContent('');
 
@@ -336,6 +342,10 @@ function ChatPageComponent() {
         return <p className="break-words whitespace-pre-wrap">{message.content}</p>;
     };
 
+    const handleRemoveScheduledMessage = (id: string) => {
+        setScheduledMessages(prev => prev.filter(msg => msg.id !== id));
+    };
+
 
     if (!currentUser) {
         return null; // Or a loading spinner
@@ -450,16 +460,20 @@ function ChatPageComponent() {
                           </div>
                       </ScrollArea>
                       <div className="p-4 border-t bg-card">
-                          {scheduledMessage && (
-                              <div className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md mb-2 text-sm">
-                                  <div className="flex items-center gap-2 overflow-hidden">
-                                      <Clock className="h-4 w-4 shrink-0" />
-                                      <span className="truncate">"{scheduledMessage.content}" para {format(scheduledMessage.date, "dd/MM 'às' HH:mm")}</span>
+                          {scheduledMessages.length > 0 && (
+                            <div className="space-y-2 mb-2">
+                                {scheduledMessages.map((msg) => (
+                                  <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
+                                      <div className="flex items-center gap-2 overflow-hidden">
+                                          <Clock className="h-4 w-4 shrink-0" />
+                                          <span className="truncate">"{msg.content}" para {format(msg.date, "dd/MM 'às' HH:mm")}</span>
+                                      </div>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveScheduledMessage(msg.id)}>
+                                          <X className="h-4 w-4" />
+                                      </Button>
                                   </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setScheduledMessage(null)}>
-                                      <X className="h-4 w-4" />
-                                  </Button>
-                              </div>
+                                ))}
+                            </div>
                           )}
                           <form onSubmit={handleSendMessage} className="relative">
                               <Input
