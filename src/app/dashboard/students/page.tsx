@@ -23,8 +23,6 @@ import { User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { StudentDetails } from '@/components/student-details';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +36,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const USERS_STORAGE_KEY = 'userList';
 
@@ -45,15 +45,15 @@ function StudentList({
   id,
   title,
   students,
-  onStudentSelect,
   onDeleteStudent,
 }: {
   id?: string;
   title: string;
   students: User[];
-  onStudentSelect: (student: User) => void;
   onDeleteStudent: (student: User) => void;
 }) {
+  const router = useRouter();
+
   return (
     <Card id={id}>
       <CardHeader>
@@ -71,11 +71,11 @@ function StudentList({
           </TableHeader>
           <TableBody>
             {students.map((student) => (
-              <TableRow key={student.id} className="group">
-                <TableCell
-                  onClick={() => onStudentSelect(student)}
-                  className="cursor-pointer"
-                >
+              <TableRow key={student.id} 
+                onClick={() => router.push(`/dashboard/student/${student.id}`)}
+                className="cursor-pointer group"
+              >
+                <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage
@@ -88,14 +88,12 @@ function StudentList({
                   </div>
                 </TableCell>
                 <TableCell
-                  onClick={() => onStudentSelect(student)}
-                  className="hidden sm:table-cell cursor-pointer"
+                  className="hidden sm:table-cell"
                 >
                   {student.email}
                 </TableCell>
                  <TableCell
-                  onClick={() => onStudentSelect(student)}
-                  className="hidden md:table-cell cursor-pointer text-muted-foreground"
+                  className="hidden md:table-cell text-muted-foreground"
                 >
                   {student.lastAccess ? format(new Date(student.lastAccess), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Nunca'}
                 </TableCell>
@@ -105,7 +103,7 @@ function StudentList({
                     size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onStudentSelect(student);
+                      router.push(`/dashboard/student/${student.id}`);
                     }}
                   >
                     <MoreHorizontal className="h-4 w-4" />
@@ -167,15 +165,8 @@ export default function StudentsPage() {
     (u) => u.role === 'student' && u.status === 'inactive'
   );
 
-  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   
-
-  const handleStudentSelect = (student: User) => {
-    setSelectedStudent(student);
-    setIsSheetOpen(true);
-  };
 
   const handleDeleteRequest = (student: User) => {
     setStudentToDelete(student);
@@ -207,22 +198,14 @@ export default function StudentsPage() {
           id="active-students"
           title="Alunos Ativos"
           students={activeStudents}
-          onStudentSelect={handleStudentSelect}
           onDeleteStudent={handleDeleteRequest}
         />
         <StudentList
           title="Alunos Inativos"
           students={inactiveStudents}
-          onStudentSelect={handleStudentSelect}
           onDeleteStudent={handleDeleteRequest}
         />
       </div>
-
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="sm:max-w-lg w-[90vw] p-0">
-          {selectedStudent && <StudentDetails student={selectedStudent} />}
-        </SheetContent>
-      </Sheet>
 
       <AlertDialog
         open={!!studentToDelete}
