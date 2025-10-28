@@ -33,7 +33,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         maxSize={20}
         className={cn(
           'hidden md:block transition-all duration-300 ease-in-out min-w-[50px]',
-          !isCollapsed && 'md:min-w-[220px] lg:min-w-[280px]'
+          !isCollapsed && 'md:min-w-[170px] lg:min-w-[230px]'
         )}
       >
         <div className="h-full border-r bg-sidebar">
