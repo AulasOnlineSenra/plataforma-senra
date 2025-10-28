@@ -34,6 +34,7 @@ interface Booking {
   id: string;
   subjectId: string;
   teacherId: string;
+  studentId: string;
   start: Date;
   end: Date;
 }
@@ -44,7 +45,7 @@ const CLASS_DURATION_MINUTES = 90;
 
 function BookingPageComponent() {
   const searchParams = useSearchParams();
-  const studentId = searchParams.get('studentId');
+  const studentIdParam = searchParams.get('studentId');
   const studentName = searchParams.get('studentName');
   const teacherIdParam = searchParams.get('teacherId');
   const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
@@ -75,31 +76,40 @@ function BookingPageComponent() {
         }
 
         const storedTeachers = localStorage.getItem('teacherList');
+        let currentTeachers: Teacher[] = [];
         if (storedTeachers) {
-            setTeachers(JSON.parse(storedTeachers));
+            currentTeachers = JSON.parse(storedTeachers);
+            setTeachers(currentTeachers);
         } else {
+            currentTeachers = initialTeachers;
             setTeachers(initialTeachers);
         }
 
         const storedUsers = localStorage.getItem('userList');
-        if (storedUsers) {
-            setUsers(JSON.parse(storedUsers));
+        const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+        setUsers(currentUsers);
+        
+        setAllUsers([...currentUsers, ...currentTeachers]);
+        
+        const loggedInUserStr = localStorage.getItem('currentUser');
+        let loggedInUser: User | null = null;
+        if (loggedInUserStr) {
+            loggedInUser = JSON.parse(loggedInUserStr);
         } else {
-            setUsers(initialUsers);
+            loggedInUser = getMockUser('student');
+        }
+        setCurrentUser(loggedInUser);
+
+        if (studentIdParam) {
+            const studentUser = currentUsers.find((u: User) => u.id === studentIdParam);
+            setCurrentUser(studentUser || getMockUser('student'));
         }
 
-        const combinedUsers = [...(JSON.parse(storedUsers || '[]')), ...(JSON.parse(storedTeachers || '[]'))];
-        setAllUsers(combinedUsers);
-        
-        if (studentId) {
-            const studentUser = (JSON.parse(localStorage.getItem('userList') || '[]') as User[]).find(u => u.id === studentId);
-            setCurrentUser(studentUser || getMockUser('student'));
-        } else {
-            const loggedInUserStr = localStorage.getItem('currentUser');
-            if (loggedInUserStr) {
-                setCurrentUser(JSON.parse(loggedInUserStr));
-            } else {
-                setCurrentUser(getMockUser('student'));
+        if (teacherIdParam) {
+            const teacherFromParam = currentTeachers.find(t => t.id === teacherIdParam);
+            if (teacherFromParam && teacherFromParam.subjects.length > 0) {
+                setSelectedTeacher(teacherIdParam);
+                setSelectedSubject(teacherFromParam.subjects[0]);
             }
         }
     };
@@ -107,28 +117,25 @@ function BookingPageComponent() {
     updateData();
     window.addEventListener('storage', updateData);
     return () => window.removeEventListener('storage', updateData);
-  }, [studentId]);
+  }, [studentIdParam, teacherIdParam]);
 
   const availableTeachers = useMemo(() => {
     if (!selectedSubject) {
-      return teachers;
+      return teachers.filter(t => t.status === 'active');
     }
-    return teachers.filter((t) => t.subjects.includes(selectedSubject));
+    return teachers.filter((t) => t.subjects.includes(selectedSubject) && t.status === 'active');
   }, [selectedSubject, teachers]);
 
   const handleSubjectChange = (subjectId: string) => {
-    if (selectedSubject === subjectId) {
-      setSelectedSubject(undefined);
-    } else {
-      setSelectedSubject(subjectId);
+    setSelectedSubject(subjectId);
+    // If the currently selected teacher doesn't teach this subject, deselect them
+    const currentTeacher = teachers.find(t => t.id === selectedTeacher);
+    if (currentTeacher && !currentTeacher.subjects.includes(subjectId)) {
+        setSelectedTeacher(undefined);
     }
   };
 
   const handleTeacherChange = (teacherId: string) => {
-    if (selectedTeacher === teacherId) {
-        setSelectedTeacher(undefined);
-        return;
-    }
     setSelectedTeacher(teacherId);
   };
 
@@ -142,9 +149,8 @@ function BookingPageComponent() {
 
   const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
     const activeScheduleEvents = scheduleEvents.filter(event => event.status === 'scheduled');
-    const allExistingEvents: (ScheduleEvent)[] = [...activeScheduleEvents];
 
-    return allExistingEvents.some(existingBooking => {
+    return activeScheduleEvents.some(existingBooking => {
       const isTeacherBusy = existingBooking.teacherId === teacherId;
       const isStudentBusy = existingBooking.studentId === studentId;
       
@@ -161,13 +167,15 @@ function BookingPageComponent() {
 
 
   const handleAddBooking = () => {
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+
     if (
       !selectedSubject ||
       !selectedTeacher ||
       !selectedDates ||
       selectedDates.length === 0 ||
       !selectedTime ||
-      !currentUser
+      !studentToBook
     ) {
       toast({
         variant: 'destructive',
@@ -201,11 +209,11 @@ function BookingPageComponent() {
         const endDate = addMinutes(startDate, CLASS_DURATION_MINUTES);
 
         const bookingConflict = bookings.some(b => 
-            (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+            (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
             (startDate.getTime() < b.end.getTime() && endDate.getTime() > b.start.getTime())
         );
         
-        if (isConflict(startDate, endDate, currentUser.id, selectedTeacher) || bookingConflict) {
+        if (isConflict(startDate, endDate, studentToBook.id, selectedTeacher) || bookingConflict) {
              toast({
                 variant: 'destructive',
                 title: 'Conflito de Horário',
@@ -217,6 +225,7 @@ function BookingPageComponent() {
                 id: `booking-${startDate.getTime()}-${Math.random()}`,
                 subjectId: selectedSubject,
                 teacherId: selectedTeacher,
+                studentId: studentToBook.id,
                 start: startDate,
                 end: endDate,
              };
@@ -250,11 +259,11 @@ function BookingPageComponent() {
            const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES);
            
            const recurringConflict = newBookings.some(b => 
-                (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+                (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
                 (newStartDate.getTime() < b.end.getTime() && newEndDate.getTime() > b.start.getTime())
            );
            
-           if (isConflict(newStartDate, newEndDate, currentUser.id, selectedTeacher) || recurringConflict) {
+           if (isConflict(newStartDate, newEndDate, studentToBook.id, selectedTeacher) || recurringConflict) {
                 toast({
                     variant: 'destructive',
                     title: 'Conflito de Horário na Recorrência',
@@ -292,16 +301,17 @@ function BookingPageComponent() {
   };
 
   const handleRepeatBooking = (booking: Booking) => {
-    if (!currentUser || !selectedTeacher) return;
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+    if (!studentToBook || !selectedTeacher) return;
     const newStartDate = addMinutes(booking.end, 15);
     const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES)
     
     const bookingConflict = bookings.some(b => 
-        (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+        (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
         (newStartDate.getTime() < b.end.getTime() && newEndDate.getTime() > b.start.getTime())
     );
 
-    if(isConflict(newStartDate, newEndDate, currentUser.id, selectedTeacher) || bookingConflict) {
+    if(isConflict(newStartDate, newEndDate, studentToBook.id, selectedTeacher) || bookingConflict) {
         toast({
             variant: 'destructive',
             title: 'Conflito de Horário',
@@ -366,7 +376,8 @@ function BookingPageComponent() {
   }, [allUsers]);
 
   const handleConfirmAllBookings = useCallback(() => {
-    if (bookings.length === 0 || !currentUser) {
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+    if (bookings.length === 0 || !studentToBook) {
       toast({
         variant: 'destructive',
         title: 'Nenhuma aula no resumo',
@@ -379,7 +390,7 @@ function BookingPageComponent() {
       title: `Aula de ${subjects.find(s => s.id === b.subjectId)?.name}`,
       start: b.start,
       end: b.end,
-      studentId: currentUser!.id,
+      studentId: studentToBook!.id,
       teacherId: b.teacherId,
       subject: subjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
       status: 'scheduled' as 'scheduled',
@@ -415,10 +426,11 @@ function BookingPageComponent() {
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
     setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification]);
+  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam]);
 
     const availableTimes = useMemo(() => {
-        if (!selectedTeacher || !selectedDates || selectedDates.length === 0 || !currentUser) {
+        const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+        if (!selectedTeacher || !selectedDates || selectedDates.length === 0 || !studentToBook) {
             return [];
         }
         
@@ -443,11 +455,11 @@ function BookingPageComponent() {
                 const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
 
                 const existingBookingConflict = bookings.some(b => 
-                    (b.teacherId === selectedTeacher || b.studentId === currentUser.id) &&
+                    (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
                     (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
                 );
                 
-                if (!isConflict(slotStart, slotEnd, currentUser.id, selectedTeacher) && !existingBookingConflict) {
+                if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
                      times.push({
                         start: format(currentTime, 'HH:mm'),
                         end: format(addMinutes(currentTime, CLASS_DURATION_MINUTES), 'HH:mm')
@@ -459,16 +471,17 @@ function BookingPageComponent() {
         });
 
         return times;
-    }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser]);
+    }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser, studentIdParam, users]);
   
   useEffect(() => {
-    if (!selectedTeacher || !currentUser) {
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+    if (!selectedTeacher || !studentToBook) {
       setTimezoneDifference(null);
       return;
     }
 
     const teacher = teachers.find(t => t.id === selectedTeacher);
-    const studentTimezone = currentUser.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const studentTimezone = studentToBook.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     const teacherTimezone = teacher?.timezone;
 
     if (teacherTimezone && studentTimezone !== teacherTimezone) {
@@ -480,7 +493,7 @@ function BookingPageComponent() {
     } else {
       setTimezoneDifference(null);
     }
-  }, [selectedTeacher, currentUser, teachers]);
+  }, [selectedTeacher, currentUser, teachers, studentIdParam, users]);
 
 
   return (
@@ -747,3 +760,5 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
