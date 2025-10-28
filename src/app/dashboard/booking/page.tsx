@@ -470,7 +470,7 @@ function BookingPageComponent() {
               end: format(slotEnd, 'HH:mm')
             });
           }
-          currentTime = addMinutes(currentTime, 30); // Increment by 30 minutes
+          currentTime = addMinutes(currentTime, 30); // Correctly increment by 30 minutes
         }
       });
     });
@@ -769,8 +769,3 @@ export default function BookingPage() {
         </Suspense>
     );
 }
-
-    
-    
-
-    
