@@ -1,15 +1,16 @@
 
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { users as initialUsers, getMockUser } from '@/lib/data';
-import { User } from '@/lib/types';
+import { users as initialUsers, getMockUser, scheduleEvents as initialSchedule, teachers as initialTeachers, subjects } from '@/lib/data';
+import { User, ScheduleEvent, Teacher } from '@/lib/types';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -17,16 +18,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, Clock, CheckCircle, BookOpen, Plus, XCircle, ChevronRight } from 'lucide-react';
+import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-
-const mockActivities = [
-  { action: 'Agendou aula de Matemática', date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-  { action: 'Comprou pacote de 8 aulas', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-  { action: 'Concluiu aula de Física', date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-  { action: 'Enviou mensagem para Ana Silva', date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) },
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 function StudentDetailPageComponent() {
@@ -35,13 +29,41 @@ function StudentDetailPageComponent() {
     const router = useRouter();
 
     const [student, setStudent] = useState<User | null>(null);
+    const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
 
     useEffect(() => {
-        const storedUsers = localStorage.getItem('userList');
-        const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-        const foundStudent = currentUsers.find(u => u.id === studentId);
-        setStudent(foundStudent || null);
+        const updateData = () => {
+            const storedUsers = localStorage.getItem('userList');
+            const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+            const foundStudent = currentUsers.find(u => u.id === studentId);
+            setStudent(foundStudent || null);
+
+            const storedSchedule = localStorage.getItem('scheduleEvents');
+            const currentSchedule: ScheduleEvent[] = storedSchedule 
+                ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) 
+                : initialSchedule;
+            setSchedule(currentSchedule);
+            
+            const storedUser = localStorage.getItem('currentUser');
+            setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('teacher'));
+        }
+        
+        updateData();
+        window.addEventListener('storage', updateData);
+        return () => window.removeEventListener('storage', updateData);
     }, [studentId]);
+    
+    const upcomingClasses = useMemo(() => {
+        if (!student || !currentUser) return [];
+        return schedule.filter(e => 
+            e.studentId === student.id &&
+            e.teacherId === currentUser.id && // Assuming the current user is a teacher viewing the student
+            e.status === 'scheduled' &&
+            e.start > new Date()
+        ).sort((a, b) => a.start.getTime() - b.start.getTime());
+    }, [schedule, student, currentUser]);
 
 
     if (!student) {
@@ -61,103 +83,94 @@ function StudentDetailPageComponent() {
     
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
-             <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Link href="/dashboard/students" className="hover:underline">Meus Alunos</Link>
                 <ChevronRight className="h-4 w-4" />
                 <span className="font-medium text-foreground">{student.name}</span>
             </div>
             
             <header className='flex items-center gap-4'>
-                <Avatar className="h-16 w-16">
+                <Avatar className="h-16 w-16 border-2 border-primary">
                     <AvatarImage src={student.avatarUrl} alt={student.name} />
                     <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <h1 className="text-2xl font-bold font-headline">{student.name}</h1>
-                    <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
+                     <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
                         {student.status === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
                 </div>
             </header>
             
-            <div className="grid gap-6">
+            <Tabs defaultValue="classes" className="w-full mt-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="classes">
+                    <CalendarCheck className="mr-2" />
+                    Aulas Agendadas
+                </TabsTrigger>
+                <TabsTrigger value="materials">
+                    <FileText className="mr-2" />
+                    Materiais de Aula
+                </TabsTrigger>
+                <TabsTrigger value="simulations">
+                    <BookCopy className="mr-2" />
+                    Simulados
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="classes">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className='text-lg'>Informações de Contato</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-3 text-sm">
-                        <div className="flex items-center gap-3">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span>{student.email}</span>
-                        </div>
-                        {student.phone && (
-                            <div className="flex items-center gap-3">
-                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                <span>{student.phone}</span>
+                  <CardHeader>
+                    <CardTitle>Próximas Aulas</CardTitle>
+                    <CardDescription>
+                      Aulas agendadas com {student.name}.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                     {upcomingClasses.length > 0 ? (
+                        upcomingClasses.map(c => (
+                             <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
+                                <div>
+                                    <p className="font-semibold">{c.subject}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
+                                    </p>
+                                </div>
+                                 <Button variant="outline" size="sm" asChild>
+                                    <Link href="/dashboard/schedule">Ver na Agenda</Link>
+                                </Button>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='text-lg'>Ações Rápidas</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4">
-                        <Button asChild>
-                            <Link href={`/dashboard/booking?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}`}>
-                                <Plus /> Agendar Nova Aula
-                            </Link>
-                        </Button>
-                         <Button asChild variant="outline">
-                            <Link href="/dashboard/schedule">
-                                <XCircle /> Cancelar Aula
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='text-lg'>Estatísticas</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4 text-center">
-                        <div className="p-4 rounded-lg bg-accent/50">
-                            <CheckCircle className="h-7 w-7 mx-auto text-primary" />
-                            <p className="text-2xl font-bold mt-2">28</p>
-                            <p className="text-xs text-muted-foreground">Aulas Concluídas</p>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <p>Nenhuma aula futura agendada com este aluno.</p>
                         </div>
-                        <div className="p-4 rounded-lg bg-accent/50">
-                            <BookOpen className="h-7 w-7 mx-auto text-primary" />
-                            <p className="text-2xl font-bold mt-2">4</p>
-                            <p className="text-xs text-muted-foreground">Pacotes Comprados</p>
-                        </div>
-                    </CardContent>
+                    )}
+                  </CardContent>
                 </Card>
-
-                <Card>
+              </TabsContent>
+              <TabsContent value="materials">
+                 <Card>
                     <CardHeader>
-                        <CardTitle className='text-lg'>Atividade Recente</CardTitle>
+                        <CardTitle>Materiais de Aula</CardTitle>
+                        <CardDescription>Materiais compartilhados com o aluno.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-4">
-                            {mockActivities.map((activity, index) => (
-                                <li key={index} className="flex items-start gap-3 text-sm">
-                                    <div className="pt-1">
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">{activity.action}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {format(activity.date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                        </p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                    <CardContent className="text-center py-10 text-muted-foreground">
+                        <p>Nenhum material compartilhado ainda.</p>
                     </CardContent>
                 </Card>
-            </div>
+              </TabsContent>
+              <TabsContent value="simulations">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Simulados</CardTitle>
+                        <CardDescription>Simulados e exercícios propostos para o aluno.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-center py-10 text-muted-foreground">
+                        <p>Nenhum simulado disponível no momento.</p>
+                    </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
         </div>
     );
 }
