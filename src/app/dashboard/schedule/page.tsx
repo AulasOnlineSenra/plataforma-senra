@@ -325,11 +325,8 @@ export default function SchedulePage() {
                 modifiers={{
                   scheduled: events.filter(e => e.status === 'scheduled').map((e) => e.start),
                 }}
-                modifiersStyles={{
-                  scheduled: {
-                    color: 'hsl(var(--primary-foreground))',
-                    backgroundColor: 'hsl(var(--primary))',
-                  },
+                modifiersClassNames={{
+                  scheduled: 'bg-primary text-primary-foreground',
                 }}
               />
             </CardContent>
@@ -356,7 +353,8 @@ export default function SchedulePage() {
             <CardContent className="grid gap-4">
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => {
-                    const teacher = getTeacherById(event.teacherId);
+                    const person = currentUser?.role === 'teacher' ? getStudentById(event.studentId) : getTeacherById(event.teacherId);
+                    const fallback = person ? person.name.charAt(0) : '?';
                     return (
                         <div
                         key={event.id}
@@ -364,11 +362,11 @@ export default function SchedulePage() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                             <Avatar className='h-12 w-12'>
-                                <AvatarImage src={teacher?.avatarUrl} alt={teacher?.name} />
-                                <AvatarFallback>{teacher ? teacher.name.charAt(0) : '?'}</AvatarFallback>
+                                <AvatarImage src={person?.avatarUrl} alt={person?.name} />
+                                <AvatarFallback>{fallback}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
-                              <p className="font-semibold">{teacher?.name}</p>
+                              <p className="font-semibold">{person?.name}</p>
                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span>{format(event.start, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</span>
                               </div>
@@ -522,7 +520,7 @@ export default function SchedulePage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={currentUser?.role !== 'teacher' ? 5 : 4} className="h-24 text-center">
+                    <TableCell colSpan={currentUser?.role === 'admin' ? 5 : 4} className="h-24 text-center">
                       Nenhuma aula foi cancelada.
                     </TableCell>
                   </TableRow>
