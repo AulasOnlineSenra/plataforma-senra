@@ -59,7 +59,7 @@ function TeacherList({ title, teachers }: { title: string; teachers: Teacher[] }
                 </TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/dashboard/chat">
+                    <Link href={`/dashboard/chat?contactId=${teacher.id}`}>
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Conversar
                     </Link>

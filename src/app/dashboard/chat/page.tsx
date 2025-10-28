@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -40,7 +41,9 @@ const roleLabels: Record<UserRole, string> = {
   teacher: 'Professor',
 };
 
-export default function ChatPage() {
+function ChatPageComponent() {
+    const searchParams = useSearchParams();
+    const contactIdParam = searchParams.get('contactId');
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
     const { toast } = useToast();
@@ -57,6 +60,23 @@ export default function ChatPage() {
     const [allContacts, setAllContacts] = useState<ChatContact[]>(initialChatContacts);
 
 
+    const getContactDetails = useCallback((contactId: string) => {
+        return allUsers.find(u => u.id === contactId);
+    }, [allUsers]);
+
+    const handleContactSelect = useCallback((contactId: string) => {
+        const contact = getContactDetails(contactId);
+        if (contact) {
+            setActiveChatPartner(contact);
+             // Mark messages as read
+            const updatedContacts = allContacts.map(c => 
+                c.id === contactId ? { ...c, unreadCount: 0 } : c
+            );
+            setAllContacts(updatedContacts);
+            localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
+        }
+    }, [allContacts, getContactDetails]);
+
     const updateData = useCallback(() => {
         const loggedInUserStr = localStorage.getItem('currentUser');
         if(loggedInUserStr) {
@@ -67,7 +87,8 @@ export default function ChatPage() {
 
         const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
         const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
-        setAllUsers([...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)]);
+        const combinedUsers = [...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)];
+        setAllUsers(combinedUsers);
 
         const storedMessages = localStorage.getItem('chatMessages');
         if (storedMessages) {
@@ -92,7 +113,14 @@ export default function ChatPage() {
             setSchedule(initialSchedule);
         }
 
-    }, []);
+        if (contactIdParam) {
+            const contact = combinedUsers.find(u => u.id === contactIdParam);
+            if (contact) {
+                handleContactSelect(contactIdParam);
+            }
+        }
+
+    }, [contactIdParam, handleContactSelect]);
 
     useEffect(() => {
         updateData();
@@ -143,25 +171,7 @@ export default function ChatPage() {
           }
         }
     }, [activeChatPartner, allMessages]);
-
-
-    const getContactDetails = (contactId: string) => {
-        return allUsers.find(u => u.id === contactId);
-    }
     
-    const handleContactSelect = (contactId: string) => {
-        const contact = getContactDetails(contactId);
-        if (contact) {
-            setActiveChatPartner(contact);
-             // Mark messages as read
-            const updatedContacts = allContacts.map(c => 
-                c.id === contactId ? { ...c, unreadCount: 0 } : c
-            );
-            setAllContacts(updatedContacts);
-            localStorage.setItem('chatContacts', JSON.stringify(updatedContacts));
-        }
-    }
-
     const groupedMessages = useMemo(() => {
         if (!currentUser || !activeChatPartner) return {};
         
@@ -489,6 +499,14 @@ export default function ChatPage() {
 
 }
 
+export default function ChatPage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <ChatPageComponent />
+        </Suspense>
+    )
+}
     
     
     
+
