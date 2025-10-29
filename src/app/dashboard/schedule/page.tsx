@@ -618,10 +618,10 @@ function SchedulePageComponent() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="date" className="text-right">
+                <Label htmlFor="date" className="text-right sr-only">
                   Data
                 </Label>
-                <div className="col-span-3">
+                <div className="col-span-4">
                   <Calendar
                     mode="single"
                     selected={newDate}
