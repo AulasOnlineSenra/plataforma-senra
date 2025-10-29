@@ -2,7 +2,7 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -21,11 +21,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { classPackages as defaultClassPackages } from '@/lib/data';
+import { classPackages as defaultClassPackages, users as initialUsers, getMockUser } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Check, CreditCard, Landmark, ShoppingCart, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { ClassPackage } from '@/lib/types';
+import { ClassPackage, User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -33,14 +33,17 @@ import { Label } from '@/components/ui/label';
 const PACKAGES_STORAGE_KEY = 'classPackages';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 const DEFAULT_PIX_KEY = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540550.005802BR5913NOME_COMPLETO6009SAO_PAULO62070503***6304E2B1';
+const USERS_STORAGE_KEY = 'userList';
 
 
 function PaymentPageComponent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
   const [classPackages, setClassPackages] = useState<ClassPackage[]>(defaultClassPackages);
   const [isPixDialogOpen, setIsPixDialogOpen] = useState(false);
   const [pixKey, setPixKey] = useState(DEFAULT_PIX_KEY);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
 
   useEffect(() => {
@@ -52,6 +55,8 @@ function PaymentPageComponent() {
     if (storedPixKey) {
       setPixKey(storedPixKey);
     }
+    const storedUser = localStorage.getItem('currentUser');
+    setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('student'));
   }, []);
 
   const packageId = searchParams.get('packageId');
@@ -88,9 +93,7 @@ function PaymentPageComponent() {
         <p className="text-muted-foreground">
           Não foi possível encontrar os detalhes do pacote selecionado.
         </p>
-        <Button asChild>
-          <a href="/dashboard/packages">Voltar para Pacotes</a>
-        </Button>
+        <Button onClick={() => router.push('/dashboard/packages')}>Voltar para Pacotes</Button>
       </div>
     );
   }
@@ -98,16 +101,43 @@ function PaymentPageComponent() {
   const total = selectedPackage.total || (selectedPackage.numClasses * selectedPackage.pricePerClass);
 
   const handlePayment = (method: string) => {
+    if (!currentUser) {
+        toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Usuário não encontrado. Faça login novamente.",
+        });
+        return;
+    }
+    
     toast({
         title: "Processando Pagamento...",
         description: `Seu pagamento de R$ ${total.toFixed(2).replace('.',',')} com ${method} está sendo processado.`,
     });
-    // In a real app, you would redirect to the payment gateway
+
     setTimeout(() => {
-         toast({
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        const users: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+        
+        const userIndex = users.findIndex(u => u.id === currentUser.id);
+
+        if (userIndex !== -1 && selectedPackage) {
+            const updatedUser = { ...users[userIndex] };
+            updatedUser.classCredits = (updatedUser.classCredits || 0) + selectedPackage.numClasses;
+            updatedUser.activePackage = selectedPackage.name;
+            
+            users[userIndex] = updatedUser;
+            
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Update current user in storage
+            window.dispatchEvent(new Event('storage')); // Notify other tabs
+        }
+
+        toast({
             title: "Pagamento Aprovado!",
             description: "Seus créditos de aula foram adicionados à sua conta.",
         });
+        router.push('/dashboard');
     }, 3000);
   }
   
@@ -229,8 +259,8 @@ function PaymentPageComponent() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Fechar
+              <Button type="button" variant="outline" onClick={() => handlePayment('Pix')}>
+                Já Paguei
               </Button>
             </DialogClose>
           </DialogFooter>

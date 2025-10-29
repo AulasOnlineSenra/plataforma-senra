@@ -43,6 +43,8 @@ export interface User {
     number?: string;
   },
   lastAccess?: string;
+  classCredits?: number;
+  activePackage?: string;
 }
 
 export interface Subject {

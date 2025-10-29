@@ -48,6 +48,8 @@ export const users: User[] = [
         number: '123'
     },
     lastAccess: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    classCredits: 8,
+    activePackage: 'Pacote de 12 aulas',
   },
   {
     id: 'admin-1',
@@ -70,6 +72,8 @@ export const users: User[] = [
     timezone: 'America/Manaus',
     referredByCode: 'ANA-5281',
     lastAccess: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    classCredits: 4,
+    activePackage: 'Pacote de 4 aulas',
   },
   {
     id: 'user-3',
@@ -80,6 +84,7 @@ export const users: User[] = [
     status: 'inactive',
     timezone: 'America/Recife',
     lastAccess: new Date(Date.now() - 95 * 24 * 60 * 60 * 1000).toISOString(),
+    classCredits: 0,
   },
   {
     id: 'user-4',
@@ -91,6 +96,8 @@ export const users: User[] = [
     timezone: 'America/Fortaleza',
     referredByCode: 'ANA-5281',
     lastAccess: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    classCredits: 10,
+    activePackage: 'Pacote de 12 aulas',
   },
 ];
 
@@ -471,4 +478,5 @@ export const adminNavItems: NavItem[] = [
 
 
     
+
 

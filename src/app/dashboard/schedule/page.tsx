@@ -85,12 +85,25 @@ function SchedulePageComponent() {
         } else {
             scheduleToProcess = initialScheduleEvents;
         }
+        
+        const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
+        let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialUsers;
 
         const now = new Date();
         let hasChanges = false;
+        let creditsDebited = false;
+        
         const updatedSchedule = scheduleToProcess.map(event => {
             if (event.status === 'scheduled' && now > event.end) {
                 hasChanges = true;
+                
+                // Debit class credit from the student
+                const studentIndex = currentUsers.findIndex(u => u.id === event.studentId);
+                if (studentIndex > -1 && currentUsers[studentIndex].classCredits && currentUsers[studentIndex].classCredits! > 0) {
+                    currentUsers[studentIndex].classCredits! -= 1;
+                    creditsDebited = true;
+                }
+                
                 return { ...event, status: 'completed' as 'completed' };
             }
             return event;
@@ -98,6 +111,10 @@ function SchedulePageComponent() {
 
         if (hasChanges) {
             localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+            if(creditsDebited) {
+                localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(currentUsers));
+                window.dispatchEvent(new Event('storage'));
+            }
         }
 
         setEvents(updatedSchedule);

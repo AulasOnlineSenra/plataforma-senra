@@ -104,7 +104,12 @@ export default function DashboardPage() {
       
       const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
       if(storedUsers) {
-        setUsers(JSON.parse(storedUsers));
+        const currentUsers = JSON.parse(storedUsers);
+        setUsers(currentUsers);
+        const currentUserFromStorage = currentUsers.find((u: User) => u.id === user?.id);
+        if (currentUserFromStorage) {
+            setUser(currentUserFromStorage);
+        }
       } else {
         setUsers(initialUsers);
       }
@@ -135,7 +140,7 @@ export default function DashboardPage() {
         window.removeEventListener('storage', updateData);
     }
 
-  }, [router]);
+  }, [router, user?.id]);
   
   useEffect(() => {
     if (!carouselApi) {
@@ -433,8 +438,8 @@ export default function DashboardPage() {
                 <BookCopy className="h-6 w-6 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">8</div>
-                <p className="text-xs text-muted-foreground">Pacote de 12 aulas ativo</p>
+                <div className="text-2xl font-bold">{user.classCredits ?? 0}</div>
+                <p className="text-xs text-muted-foreground">{user.activePackage ?? 'Nenhum pacote ativo'}</p>
               </CardContent>
             </Card>
           </Link>
