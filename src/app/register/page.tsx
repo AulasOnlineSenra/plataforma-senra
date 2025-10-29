@@ -14,7 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 import { User, UserRole, Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { teachers as initialTeachers, allUsers as initialUsers } from '@/lib/data';
+import { teachers as initialTeachers, users as initialUsers } from '@/lib/data';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -67,6 +67,23 @@ export default function RegisterPage() {
         });
         return;
     }
+
+    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+    const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+    const currentTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+    const allExistingUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
+
+    const emailExists = allExistingUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (emailExists) {
+        toast({
+            variant: "destructive",
+            title: "Email já Cadastrado",
+            description: "Este endereço de e-mail já está em uso. Por favor, tente fazer login ou use um e-mail diferente.",
+        });
+        return;
+    }
     
     // Create a new user object based on the form data
     let newUser: User | Teacher;
@@ -92,15 +109,11 @@ export default function RegisterPage() {
             status: 'active',
         } as Teacher;
 
-        const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-        const currentTeachers = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
         const updatedTeachers = [...currentTeachers, newUser];
         localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
 
     } else {
         newUser = { ...baseUser, role: role } as User;
-        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
         const updatedUsers = [...currentUsers, newUser];
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
     }
