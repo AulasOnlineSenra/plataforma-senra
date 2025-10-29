@@ -15,7 +15,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
-import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, getContactsForUser, getAllUsers } from '@/lib/data';
+import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, getAllUsers, users as initialRegularUsers, teachers as initialTeachers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -78,29 +78,55 @@ function ChatPageComponent() {
 
     
     const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
+    const [chatContacts, setChatContacts] = useState<ChatContact[]>([]);
     
-    const chatContacts = useMemo(() => {
-        if (!currentUser) return [];
-        return getContactsForUser(currentUser);
+    useEffect(() => {
+        if (!currentUser) return;
+
+        // Load all necessary data from localStorage once.
+        const storedUsers = localStorage.getItem('userList');
+        const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialRegularUsers;
+
+        const storedTeachers = localStorage.getItem('teacherList');
+        const currentTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+        
+        const allSystemUsers = [...currentUsers, ...currentTeachers];
+
+        const userContactsKey = `chatContacts_${currentUser.id}`;
+        const storedContactsStr = localStorage.getItem(userContactsKey);
+        const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : [];
+        const contactsMap = new Map(contactsData.map(c => [c.id, c]));
+        
+        let potentialPartners: (User | Teacher)[] = [];
+
+        if (currentUser.role === 'admin') {
+            potentialPartners = allSystemUsers.filter(u => u.id !== currentUser.id);
+        } else if (currentUser.role === 'student') {
+            potentialPartners = allSystemUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
+        } else if (currentUser.role === 'teacher') {
+            potentialPartners = allSystemUsers.filter(u => u.role === 'student' || u.role === 'admin');
+        }
+
+        const fullContactList: ChatContact[] = potentialPartners.map(partner => {
+            const existingContact = contactsMap.get(partner.id);
+            return {
+                id: partner.id,
+                name: partner.name,
+                avatarUrl: partner.avatarUrl,
+                role: partner.role,
+                lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
+                lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
+                unreadCount: existingContact?.unreadCount || 0,
+            };
+        }).sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+
+        setChatContacts(fullContactList);
+
+        const storedMessages = localStorage.getItem('chatMessages');
+        setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
+
     }, [currentUser]);
 
-    const updateData = useCallback(() => {
-      const storedMessages = localStorage.getItem('chatMessages');
-      setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
-    }, []);
-
-    useEffect(() => {
-        updateData();
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'chatMessages' || e.key === `chatContacts_${currentUser?.id}` || e.key === 'userList' || e.key === 'teacherList' ) {
-                updateData();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, [updateData, currentUser?.id]);
-    
     const handleContactSelect = useCallback((contactId: string) => {
         const allUsers = getAllUsers();
         const contact = allUsers.find(u => u.id === contactId);
