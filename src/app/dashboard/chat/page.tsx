@@ -108,8 +108,6 @@ function ChatPageComponent() {
     }, [allUsers, currentUser]);
 
     const updateData = useCallback(() => {
-        const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
-        const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
         setAllUsers(getAllUsers());
 
         const storedMessages = localStorage.getItem('chatMessages');
@@ -135,58 +133,26 @@ function ChatPageComponent() {
 
     const chatContacts = useMemo(() => {
         if (!currentUser || allUsers.length === 0) return [];
-    
-        // Admin sees everyone
-        if (currentUser.role === 'admin') {
-            const allPossibleContacts = allUsers.filter(user => user.id !== currentUser.id);
-            const userContactsKey = `chatContacts_${currentUser.id}`;
-            const storedContacts = localStorage.getItem(userContactsKey);
-            const contactsMap: Map<string, ChatContact> = new Map(
-                storedContacts
-                    ? JSON.parse(storedContacts).map((c: ChatContact) => [c.id, { ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }])
-                    : []
-            );
-    
-            const combinedContacts = allPossibleContacts.map(user => {
-                const existingContact = contactsMap.get(user.id);
-                return existingContact || {
-                    id: user.id,
-                    name: user.name,
-                    avatarUrl: user.avatarUrl,
-                    role: user.role,
-                    lastMessage: 'Nenhuma mensagem ainda.',
-                    lastMessageTimestamp: new Date(0),
-                    unreadCount: 0,
-                };
-            });
-    
-            return combinedContacts.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-        }
-    
-        // Student and Teacher logic
+        
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContacts = localStorage.getItem(userContactsKey);
         const parsedContacts: ChatContact[] = storedContacts
             ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
             : [];
-    
-        let validPartnerIds: string[] = [];
-    
-        if (currentUser.role === 'student') {
-            const allTeacherIds = allUsers.filter(u => u.role === 'teacher').map(u => u.id);
-            validPartnerIds.push(...allTeacherIds);
+        const contactsMap = new Map(parsedContacts.map(c => [c.id, c]));
+
+        let potentialPartners: (User | Teacher)[] = [];
+
+        if (currentUser.role === 'admin') {
+            potentialPartners = allUsers.filter(user => user.id !== currentUser.id);
+        } else if (currentUser.role === 'student') {
+            potentialPartners = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
         } else if (currentUser.role === 'teacher') {
-            const allStudentIds = allUsers.filter(u => u.role === 'student').map(u => u.id);
-            validPartnerIds.push(...allStudentIds);
+             potentialPartners = allUsers.filter(u => u.role === 'student' || u.role === 'admin');
         }
         
-        const adminIds = allUsers.filter(u => u.role === 'admin').map(u => u.id);
-        validPartnerIds.push(...adminIds);
-    
-        const validPartners = allUsers.filter(u => validPartnerIds.includes(u.id));
-        const contactsMap = new Map(parsedContacts.map(c => [c.id, c]));
-    
-        const fullContactList = validPartners.map(partner => {
+        const fullContactList = potentialPartners.map(partner => {
+            if(partner.id === currentUser.id) return null;
             const existingContact = contactsMap.get(partner.id);
             return existingContact || {
                 id: partner.id,
@@ -197,7 +163,7 @@ function ChatPageComponent() {
                 lastMessageTimestamp: new Date(0),
                 unreadCount: 0,
             };
-        });
+        }).filter(Boolean) as ChatContact[];
     
         return fullContactList.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
     
@@ -282,6 +248,7 @@ function ChatPageComponent() {
                   id: partnerDetails.id,
                   name: partnerDetails.name,
                   avatarUrl: partnerDetails.avatarUrl,
+                  role: partnerDetails.role,
                   lastMessage: newMessage.content.startsWith('file::') ? 'Arquivo enviado' : newMessage.content,
                   lastMessageTimestamp: newMessage.timestamp,
                   unreadCount: isReceiver ? 1 : 0,
@@ -745,4 +712,5 @@ export default function ChatPage() {
 
 
     
+
 
