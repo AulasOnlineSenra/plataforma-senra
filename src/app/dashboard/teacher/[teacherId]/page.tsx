@@ -8,17 +8,20 @@ import { Teacher, ScheduleEvent, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, FileText, BookCopy, CalendarCheck } from 'lucide-react';
+import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 
 
 function TeacherDetailPageComponent() {
     const params = useParams();
     const teacherId = params.teacherId as string;
+    const { toast } = useToast();
 
     const [teacher, setTeacher] = useState<Teacher | null>(null);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
@@ -56,6 +59,35 @@ function TeacherDetailPageComponent() {
         ).sort((a, b) => a.start.getTime() - b.start.getTime());
     }, [schedule, teacher, currentUser]);
     
+    const handleConfirmCancel = (eventId: string) => {
+        const updatedEvents = schedule.map(e => 
+        e.id === eventId ? { ...e, status: 'cancelled' as 'cancelled' } : e
+        );
+        setSchedule(updatedEvents);
+        localStorage.setItem('scheduleEvents', JSON.stringify(updatedEvents));
+        window.dispatchEvent(new Event('storage'));
+
+        const event = schedule.find(e => e.id === eventId);
+        toast({
+            title: "Aula Cancelada",
+            description: `A aula de ${event?.subject} foi cancelada.`,
+        });
+    };
+
+    const handleCancelClick = (event: ScheduleEvent) => {
+        toast({
+        title: `Cancelar aula de ${event.subject}?`,
+        description: 'A ação será confirmada em 5 segundos.',
+        variant: 'destructive',
+        duration: 5000,
+        action: (
+            <ToastAction altText="Confirmar" onClick={() => handleConfirmCancel(event.id)}>
+            Confirmar
+            </ToastAction>
+        ),
+        });
+    };
+
     if (!teacher) {
         return (
             <div className="flex flex-1 items-center justify-center">
@@ -128,16 +160,27 @@ function TeacherDetailPageComponent() {
                   <CardContent className="space-y-3">
                      {upcomingClasses.length > 0 ? (
                         upcomingClasses.map(c => (
-                             <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
+                            <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
                                 <div>
                                     <p className="font-semibold">{c.subject}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {format(c.start, "EEEE, dd/MM", { locale: ptBR })} às {format(c.start, "HH:mm")} - {format(c.end, "HH:mm")}
                                     </p>
                                 </div>
-                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href="/dashboard/schedule">Ver na Agenda</Link>
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="ghost" size="icon" onClick={() => {
+                                        // A lógica de edição abriria um modal, que não está no escopo aqui.
+                                        // Por enquanto, redireciona para a agenda, onde a edição é possível.
+                                        toast({ title: 'Edição de Aula', description: 'A edição de aulas é feita na página principal da Agenda.' });
+                                    }}>
+                                        <Pencil className="h-5 w-5 text-muted-foreground" />
+                                        <span className="sr-only">Editar Aula</span>
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(c)}>
+                                        <XCircle className="h-5 w-5" />
+                                        <span className="sr-only">Cancelar Aula</span>
+                                    </Button>
+                                </div>
                             </div>
                         ))
                     ) : (
