@@ -152,7 +152,7 @@ function ChatPageComponent() {
         if (!currentUser) return [];
 
         if (currentUser.role === 'admin') {
-            const allCurrentUsers = [...initialUsers, ...initialTeachers];
+            const allCurrentUsers = allUsers; // Use the state that gets updated
             const contactMap = new Map(allContacts.map(c => [c.id, c]));
 
             const updatedContacts = allCurrentUsers
@@ -162,12 +162,13 @@ function ChatPageComponent() {
                     if (existingContact) {
                         return existingContact;
                     }
+                    // Create a new contact entry if one doesn't exist
                     return {
                         id: user.id,
                         name: user.name,
                         avatarUrl: user.avatarUrl,
                         lastMessage: 'Nenhuma mensagem ainda.',
-                        lastMessageTimestamp: new Date(0),
+                        lastMessageTimestamp: new Date(0), // Put them at the bottom if no interaction
                         unreadCount: 0,
                     };
                 });
