@@ -118,11 +118,28 @@ function ChatPageComponent() {
 
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContacts = localStorage.getItem(userContactsKey);
-        const updatedContacts = (storedContacts ? JSON.parse(storedContacts) : []).map((c: ChatContact) =>
-          c.id === contactId && c.unreadCount && c.unreadCount > 0
-          ? { ...c, unreadCount: 0 } 
-          : c
-        );
+        let currentContacts: ChatContact[] = storedContacts ? JSON.parse(storedContacts) : [];
+        
+        let contactFound = false;
+        const updatedContacts = currentContacts.map((c: ChatContact) => {
+          if (c.id === contactId) {
+            contactFound = true;
+            return c.unreadCount && c.unreadCount > 0 ? { ...c, unreadCount: 0 } : c;
+          }
+          return c;
+        });
+
+        if (!contactFound && contact) {
+            updatedContacts.push({
+                id: contact.id,
+                name: contact.name,
+                avatarUrl: contact.avatarUrl,
+                role: contact.role,
+                lastMessage: 'Nenhuma mensagem ainda.',
+                lastMessageTimestamp: new Date(0),
+                unreadCount: 0,
+            });
+        }
 
         localStorage.setItem(userContactsKey, JSON.stringify(updatedContacts));
         window.dispatchEvent(new Event('storage')); 
@@ -223,9 +240,9 @@ function ChatPageComponent() {
           const allCurrentContactsStr = localStorage.getItem(userContactsKey);
           let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
               ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-              : initialChatContacts.filter(c => c.id !== ownerId);
+              : [];
 
-          const partnerDetails = allUsers.find(u => u.id === partnerId);
+          const partnerDetails = getAllUsers().find(u => u.id === partnerId);
           if (!partnerDetails) return;
 
           let contactExists = false;
@@ -262,7 +279,7 @@ function ChatPageComponent() {
       updateUserContacts(newMessage.receiverId, newMessage.senderId, true);
       
       window.dispatchEvent(new Event('storage'));
-    }, [allUsers]);
+    }, []);
 
     const [messageInput, setMessageInput] = useState('');
 
@@ -717,3 +734,6 @@ export default function ChatPage() {
 
     
 
+
+
+    
