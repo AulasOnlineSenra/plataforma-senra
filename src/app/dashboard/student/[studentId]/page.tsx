@@ -134,18 +134,20 @@ function StudentDetailPageComponent() {
                     <span className="font-medium text-foreground">{student.name}</span>
                 </div>
                 
-                <header className='flex items-center gap-4'>
-                    <Avatar className="h-16 w-16 border-2 border-primary">
-                        <AvatarImage src={student.avatarUrl} alt={student.name} />
-                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h1 className="text-2xl font-bold font-headline">{student.name}</h1>
-                        <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
-                            {student.status === 'active' ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                    </div>
-                </header>
+                <Link href={`/dashboard/profile?userId=${student.id}`} className="group">
+                    <header className='flex items-center gap-4 rounded-lg p-2 -ml-2 group-hover:bg-accent/50 transition-colors'>
+                        <Avatar className="h-16 w-16 border-2 border-primary">
+                            <AvatarImage src={student.avatarUrl} alt={student.name} />
+                            <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h1 className="text-2xl font-bold font-headline">{student.name}</h1>
+                            <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
+                                {student.status === 'active' ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                        </div>
+                    </header>
+                </Link>
                 
                 <Tabs defaultValue="classes" className="w-full mt-4">
                 <TabsList className="grid w-full grid-cols-3">
