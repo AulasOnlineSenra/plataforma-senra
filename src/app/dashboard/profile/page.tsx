@@ -121,7 +121,7 @@ function ProfilePageComponent() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [showCurrentPassword, setShowCurrentPassword] = useState(true);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
     const updateAllUsers = useCallback(() => {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -308,7 +308,7 @@ function ProfilePageComponent() {
         if (profileUser) {
             const savedPassword = localStorage.getItem(`savedPassword-${profileUser.id}`) || 'password';
             setCurrentPassword(savedPassword);
-            setShowCurrentPassword(true);
+            setShowCurrentPassword(false);
         }
         setIsPasswordDialogOpen(true);
     };
@@ -430,13 +430,13 @@ function ProfilePageComponent() {
                                 {subjects.map(subject => (
                                     <div key={subject.id} className="flex items-center space-x-2">
                                         <Checkbox
-                                            id={`subj-${subject.id}`}
+                                            id={`subj-${'\'\''}${subject.id}`}
                                             checked={teacherProfile.subjects?.includes(subject.id)}
                                             onCheckedChange={(checked) => handleSubjectsChange(subject.id, !!checked)}
                                             disabled={!canEdit}
                                         />
                                         <label
-                                            htmlFor={`subj-${subject.id}`}
+                                            htmlFor={`subj-${'\'\''}${subject.id}`}
                                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                         >
                                             {subject.name}
@@ -865,3 +865,5 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
+
+    

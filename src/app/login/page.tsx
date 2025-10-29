@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import { User, UserRole, Teacher } from '@/lib/types';
-import { getMockUser, teachers as initialTeachers, allUsers as initialUsers, users as initialRegularUsers } from '@/lib/data';
+import { getMockUser, teachers as initialTeachers, users as initialRegularUsers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -301,30 +301,34 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (role) {
-        const adminUser = initialRegularUsers.find(u => u.role === 'admin' && u.email.toLowerCase() === email.toLowerCase());
-        const targetUserId = adminUser ? adminUser.id : (initialUsers.find(u => u.email.toLowerCase() === email.toLowerCase())?.id);
-        
-        // If logging in as admin, always use the default admin email.
+        const usersStr = localStorage.getItem(USERS_STORAGE_KEY);
+        const teachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
+        const allUsers = [
+            ...(usersStr ? JSON.parse(usersStr) : initialRegularUsers),
+            ...(teachersStr ? JSON.parse(teachersStr) : initialTeachers)
+        ];
+
+        let defaultUser: User | Teacher | undefined;
         if (role === 'admin') {
-            const defaultAdmin = initialRegularUsers.find(u => u.role === 'admin');
-            if (!email && defaultAdmin) {
-              setEmail(defaultAdmin.email);
-              const adminPassword = localStorage.getItem(`savedPassword-${defaultAdmin.id}`);
-              setPassword(adminPassword || 'password');
-            }
-        }
-        
-        if (targetUserId) {
-            const savedPassword = localStorage.getItem(`savedPassword-${targetUserId}`);
-            setPassword(savedPassword || '');
+            defaultUser = allUsers.find(u => u.role === 'admin');
+        } else if (role === 'teacher') {
+            defaultUser = allUsers.find(u => u.role === 'teacher');
         } else {
-             const savedEmail = localStorage.getItem(`savedEmail-${role}`);
-            if (savedEmail && !email) {
-                setEmail(savedEmail);
+            defaultUser = allUsers.find(u => u.role === 'student');
+        }
+
+        if (!email && defaultUser) {
+            setEmail(defaultUser.email);
+            const savedPassword = localStorage.getItem(`savedPassword-${defaultUser.id}`);
+            setPassword(savedPassword || 'password');
+        } else {
+            const targetUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+            if (targetUser) {
+                const savedPassword = localStorage.getItem(`savedPassword-${targetUser.id}`);
+                setPassword(savedPassword || 'password');
             }
         }
     } else {
-        // When returning to role selection, clear fields
         setEmail('');
         setPassword('');
     }
@@ -373,9 +377,9 @@ export default function LoginPage() {
 
     // Combine all user data sources
     const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-    let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
+    const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
     const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
-    let currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
+    const currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
     const combinedUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
 
     // Case 1: Handle newly registered user
@@ -383,7 +387,6 @@ export default function LoginPage() {
         try {
             const newUser = JSON.parse(newUserDataString);
             if (newUser.email === email && newUser.role === role) {
-                // Find the full user object from our combined list to ensure it's up-to-date
                 userToLogin = combinedUsers.find(u => u.id === newUser.id) || null;
                 isNewRegistration = true;
             } else if (newUser.email === email && newUser.role !== role) {
@@ -405,10 +408,8 @@ export default function LoginPage() {
 
         if (foundUser) {
             if (foundUser.role === role) {
-                // For this prototype, we check the password stored in localStorage.
-                // In a real app, this verification would happen on the server side with a hashed password.
                 const storedPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
-                if (storedPassword === password || (storedPassword === null && password === 'password')) { // 'password' as a fallback for initial users
+                if (storedPassword === password || (storedPassword === null && password === 'password')) {
                     userToLogin = foundUser;
                 } else if (storedPassword !== password) {
                      toast({
@@ -448,7 +449,6 @@ export default function LoginPage() {
         const now = new Date().toISOString();
         const updatedUser = { ...userToLogin, lastAccess: now };
 
-        // Update the persisted list of users
         if (updatedUser.role === 'teacher') {
             const updatedTeachers = currentTeachers.map(t => t.id === updatedUser.id ? updatedUser as Teacher : t);
             localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
@@ -457,16 +457,13 @@ export default function LoginPage() {
             localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
         }
 
-        // Set current session data
         localStorage.setItem('userRole', updatedUser.role);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
-        // Important: We store the password used for login to persist it.
-        // This ensures that a newly changed password becomes the one used for the next login.
         localStorage.setItem(`savedPassword-${updatedUser.id}`, password);
         localStorage.setItem('userId', updatedUser.id);
         
-        window.dispatchEvent(new Event('storage')); // Notify other tabs of the update
+        window.dispatchEvent(new Event('storage'));
 
         if (isNewRegistration) {
             localStorage.removeItem('newlyRegisteredUser');
@@ -548,3 +545,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
