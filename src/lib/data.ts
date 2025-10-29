@@ -176,6 +176,46 @@ export const getAllUsers = (): (User | Teacher)[] => {
     return [...currentUsers, ...currentTeachers];
 };
 
+export const getContactsForUser = (currentUser: User | Teacher): ChatContact[] => {
+    if (typeof window === 'undefined') return [];
+
+    const allCurrentUsers = getAllUsers();
+    
+    let potentialPartners: (User | Teacher)[] = [];
+
+    if (currentUser.role === 'admin') {
+        potentialPartners = allCurrentUsers.filter(user => user.id !== currentUser.id);
+    } else if (currentUser.role === 'student') {
+        potentialPartners = allCurrentUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
+    } else if (currentUser.role === 'teacher') {
+        potentialPartners = allCurrentUsers.filter(u => u.role === 'student' || u.role === 'admin');
+    }
+
+    const userContactsKey = `chatContacts_${currentUser.id}`;
+    const storedContactsStr = localStorage.getItem(userContactsKey);
+    const existingContactsData: ChatContact[] = storedContactsStr 
+        ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+        : [];
+        
+    const contactsMap = new Map(existingContactsData.map(c => [c.id, c]));
+
+    const fullContactList = potentialPartners.map(partner => {
+        const existingContact = contactsMap.get(partner.id);
+        return {
+            id: partner.id,
+            name: partner.name,
+            avatarUrl: partner.avatarUrl,
+            role: partner.role,
+            lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
+            lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
+            unreadCount: existingContact?.unreadCount || 0,
+        };
+    });
+
+    return fullContactList.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+};
+
+
 
 export const subjects: Subject[] = [
   { id: 'subj-1', name: 'Matemática' },
