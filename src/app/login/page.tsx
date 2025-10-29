@@ -371,16 +371,16 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    let userToLogin: User | Teacher | null = null;
-    let isNewRegistration = false;
-    const newUserDataString = localStorage.getItem('newlyRegisteredUser');
-
-    // Combine all user data sources
+    // Always get the most up-to-date user lists from localStorage
     const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
     const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
     const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
     const currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
     const combinedUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
+    
+    let userToLogin: User | Teacher | null = null;
+    let isNewRegistration = false;
+    const newUserDataString = localStorage.getItem('newlyRegisteredUser');
 
     // Case 1: Handle newly registered user
     if (newUserDataString) {
@@ -460,13 +460,13 @@ export default function LoginPage() {
         localStorage.setItem('userRole', updatedUser.role);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
-        localStorage.setItem(`savedPassword-${updatedUser.id}`, password);
         localStorage.setItem('userId', updatedUser.id);
         
         window.dispatchEvent(new Event('storage'));
 
         if (isNewRegistration) {
             localStorage.removeItem('newlyRegisteredUser');
+            localStorage.setItem(`savedPassword-${updatedUser.id}`, password);
         }
         
         toast({
@@ -545,5 +545,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
