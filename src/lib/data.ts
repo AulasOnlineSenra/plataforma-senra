@@ -475,7 +475,7 @@ export const adminNavItems: NavItem[] = [
 ];
 
 export const paymentHistory: PaymentTransaction[] = [
-  { id: 'pay-1', studentId: 'user-1', packageName: 'Pacote 12 Aulas', amount: 1020.00, date: new Date(now.getFullYear(), now.getMonth() - 1, 15, 10, 30), paymentMethod: 'Cartão de Crédito' },
-  { id: 'pay-2', studentId: 'user-1', packageName: 'Pacote 4 Aulas', amount: 380.00, date: new Date(now.getFullYear(), now.getMonth() - 2, 20, 14, 0), paymentMethod: 'Pix' },
-  { id: 'pay-3', studentId: 'user-2', packageName: 'Pacote 4 Aulas', amount: 380.00, date: new Date(now.getFullYear(), now.getMonth(), 2, 18, 45), paymentMethod: 'Cartão de Crédito' },
+  { id: 'pay-1', studentId: 'user-1', packageName: 'Pacote 12 Aulas', creditsAdded: 12, amount: 1020.00, date: new Date(now.getFullYear(), now.getMonth() - 1, 15, 10, 30), paymentMethod: 'Cartão de Crédito' },
+  { id: 'pay-2', studentId: 'user-1', packageName: 'Pacote 4 Aulas', creditsAdded: 4, amount: 380.00, date: new Date(now.getFullYear(), now.getMonth() - 2, 20, 14, 0), paymentMethod: 'Pix' },
+  { id: 'pay-3', studentId: 'user-2', packageName: 'Pacote 4 Aulas', creditsAdded: 4, amount: 380.00, date: new Date(now.getFullYear(), now.getMonth(), 2, 18, 45), paymentMethod: 'Cartão de Crédito' },
 ];

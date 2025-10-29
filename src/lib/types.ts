@@ -128,6 +128,7 @@ export interface PaymentTransaction {
   id: string;
   studentId: string;
   packageName: string;
+  creditsAdded: number;
   amount: number;
   date: Date;
   paymentMethod: string;

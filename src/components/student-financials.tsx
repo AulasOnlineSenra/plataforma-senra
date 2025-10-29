@@ -40,6 +40,7 @@ export default function StudentFinancials() {
               <TableHead>Pacote</TableHead>
               <TableHead>Data da Compra</TableHead>
               <TableHead>Método de Pagamento</TableHead>
+              <TableHead className="text-center">Créditos Adquiridos</TableHead>
               <TableHead className="text-right">Valor</TableHead>
             </TableRow>
           </TableHeader>
@@ -58,6 +59,9 @@ export default function StudentFinancials() {
                   <TableCell>
                     <Badge variant="outline">{transaction.paymentMethod}</Badge>
                   </TableCell>
+                  <TableCell className="text-center font-medium text-primary">
+                    +{transaction.creditsAdded}
+                  </TableCell>
                   <TableCell className="text-right font-mono">
                     R$ {transaction.amount.toFixed(2).replace('.', ',')}
                   </TableCell>
@@ -66,7 +70,7 @@ export default function StudentFinancials() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Nenhum histórico de compras encontrado.
