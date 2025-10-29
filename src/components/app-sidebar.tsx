@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, DragEvent } from 'react';
@@ -75,8 +76,9 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
         localStorage.setItem('currentUser', JSON.stringify(mockUser));
       }
       
-      const storedContactsStr = localStorage.getItem(CHAT_CONTACTS_STORAGE_KEY);
-      const contacts: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : initialChatContacts;
+      const userContactsKey = `chatContacts_${userId}`;
+      const storedContactsStr = localStorage.getItem(userContactsKey);
+      const contacts: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : initialChatContacts.filter(c => c.id !== userId);
       const unread = contacts.some(c => c.unreadCount > 0);
       setHasNewMessages(unread);
 
@@ -102,7 +104,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === CHAT_CONTACTS_STORAGE_KEY || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY) {
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY) {
             updateUserAndNotifications();
         }
     };
@@ -111,7 +113,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [updateUserAndNotifications]);
+  }, [updateUserAndNotifications, user?.id]);
   
   useEffect(() => {
     const storedNavOrder = localStorage.getItem('navOrder');

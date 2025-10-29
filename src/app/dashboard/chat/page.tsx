@@ -152,28 +152,33 @@ function ChatPageComponent() {
         if (!currentUser) return [];
 
         if (currentUser.role === 'admin') {
-            const allCurrentUsers = allUsers; // Use the state that gets updated
-            const contactMap = new Map(allContacts.map(c => [c.id, c]));
+          const userContactsKey = `chatContacts_${currentUser.id}`;
+          const storedContacts = localStorage.getItem(userContactsKey);
+          const parsedContacts: ChatContact[] = storedContacts
+            ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+            : initialChatContacts.filter(c => c.id !== currentUser.id);
 
-            const updatedContacts = allCurrentUsers
-                .filter(user => user.id !== currentUser.id)
-                .map(user => {
-                    const existingContact = contactMap.get(user.id);
-                    if (existingContact) {
-                        return existingContact;
-                    }
-                    // Create a new contact entry if one doesn't exist
-                    return {
-                        id: user.id,
-                        name: user.name,
-                        avatarUrl: user.avatarUrl,
-                        lastMessage: 'Nenhuma mensagem ainda.',
-                        lastMessageTimestamp: new Date(0), // Put them at the bottom if no interaction
-                        unreadCount: 0,
-                    };
-                });
-            
-            return updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+          const contactMap = new Map(parsedContacts.map(c => [c.id, c]));
+
+          const updatedContacts = allUsers
+            .filter(user => user.id !== currentUser.id)
+            .map(user => {
+              const existingContact = contactMap.get(user.id);
+              if (existingContact) {
+                return existingContact;
+              }
+              // Create a new contact entry if one doesn't exist
+              return {
+                id: user.id,
+                name: user.name,
+                avatarUrl: user.avatarUrl,
+                lastMessage: 'Nenhuma mensagem ainda.',
+                lastMessageTimestamp: new Date(0), // Put them at the bottom if no interaction
+                unreadCount: 0,
+              };
+            });
+          
+          return updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
         }
 
 

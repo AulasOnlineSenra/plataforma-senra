@@ -321,7 +321,7 @@ export const navItems: NavItem[] = [
     href: '/dashboard/booking',
     icon: BookOpenCheck,
     label: 'Agendar Aula',
-    roles: ['student'],
+    roles: ['student', 'admin'],
   },
   {
     href: '/dashboard/chat',
@@ -386,6 +386,12 @@ export const navItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
+  {
+    href: '/dashboard/admin/students',
+    icon: Users,
+    label: 'Alunos (Admin)',
+    roles: ['admin'],
+  },
   {
     href: '/dashboard/admin/packages',
     icon: Package,
