@@ -34,10 +34,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
-import { useCollection, useFirebase, useUser, useMemoFirebase, useAuth, useFirestore, FirestorePermissionError, errorEmitter } from '@/firebase';
+import { useCollection, useFirebase, useUser, useMemoFirebase, useAuth, useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 
 const roleLabels: Record<UserRole, string> = {
@@ -81,6 +83,8 @@ function ChatPageComponent() {
     
     const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
     const [chatContacts, setChatContacts] = useState<ChatContact[]>([]);
+    const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
+
     
     const getAllUsers = useCallback((): (User | Teacher)[] => {
         const storedUsers = localStorage.getItem('userList');
@@ -93,9 +97,14 @@ function ChatPageComponent() {
     }, []);
 
     useEffect(() => {
-        if (!currentUser) return;
-    
-        const allSystemUsers = getAllUsers();
+        const users = getAllUsers();
+        setAllUsers(users);
+        const storedMessages = localStorage.getItem('chatMessages');
+        setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
+    }, [getAllUsers]);
+
+    useEffect(() => {
+        if (!currentUser || allUsers.length === 0) return;
     
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContactsStr = localStorage.getItem(userContactsKey);
@@ -105,11 +114,11 @@ function ChatPageComponent() {
         let potentialPartners: (User | Teacher)[] = [];
     
         if (currentUser.role === 'admin') {
-            potentialPartners = allSystemUsers.filter(u => u.id !== currentUser.id);
+            potentialPartners = allUsers.filter(u => u.id !== currentUser.id);
         } else if (currentUser.role === 'student') {
-            potentialPartners = allSystemUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
+            potentialPartners = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
         } else if (currentUser.role === 'teacher') {
-            potentialPartners = allSystemUsers.filter(u => u.role === 'student' || u.role === 'admin');
+            potentialPartners = allUsers.filter(u => u.role === 'student' || u.role === 'admin');
         }
     
         const fullContactList: ChatContact[] = potentialPartners.map(partner => {
@@ -127,13 +136,9 @@ function ChatPageComponent() {
     
         setChatContacts(fullContactList);
     
-        const storedMessages = localStorage.getItem('chatMessages');
-        setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
-    
-    }, [currentUser, getAllUsers]);
+    }, [currentUser, allUsers]);
 
     const handleContactSelect = useCallback((contactId: string) => {
-        const allUsers = getAllUsers();
         const contact = allUsers.find(u => u.id === contactId);
 
         if (contact && currentUser) {
@@ -141,7 +146,7 @@ function ChatPageComponent() {
 
             const userContactsKey = `chatContacts_${currentUser.id}`;
             const storedContacts = localStorage.getItem(userContactsKey);
-            let currentContacts: ChatContact[] = storedContacts ? JSON.parse(storedContacts).map(c => ({...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp)})) : [];
+            let currentContacts: ChatContact[] = storedContacts ? JSON.parse(storedContacts).map((c: any) => ({...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp)})) : [];
             
             let contactFound = false;
             const updatedContacts = currentContacts.map((c: ChatContact) => {
@@ -167,13 +172,13 @@ function ChatPageComponent() {
             localStorage.setItem(userContactsKey, JSON.stringify(updatedContacts));
             window.dispatchEvent(new Event('storage')); 
         }
-    }, [currentUser, getAllUsers]);
+    }, [currentUser, allUsers]);
     
     useEffect(() => {
-        if (contactIdParam) {
+        if (contactIdParam && allUsers.length > 0) {
             handleContactSelect(contactIdParam);
         }
-    }, [contactIdParam, handleContactSelect]);
+    }, [contactIdParam, handleContactSelect, allUsers]);
 
 
     useEffect(() => {
@@ -209,7 +214,6 @@ function ChatPageComponent() {
     
     
     const sendMessage = useCallback((senderId: string, receiverId: string, content: string) => {
-      const allUsers = getAllUsers();
       const newMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
         senderId: senderId,
@@ -271,7 +275,7 @@ function ChatPageComponent() {
       updateUserContacts(newMessage.receiverId, newMessage.senderId, true);
       
       window.dispatchEvent(new Event('storage'));
-    }, [getAllUsers]);
+    }, [allUsers]);
 
     const [messageInput, setMessageInput] = useState('');
 
@@ -727,5 +731,7 @@ export default function ChatPage() {
     
 
 
+
+    
 
     
