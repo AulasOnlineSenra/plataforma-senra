@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, DragEvent, MouseEvent } from 'react';
@@ -374,8 +373,8 @@ export default function LoginPage() {
 
     // Combine all user data sources
     const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-    const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
     let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
+    const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
     let currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
     const combinedUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
 
@@ -409,8 +408,15 @@ export default function LoginPage() {
                 // For this prototype, we check the password stored in localStorage.
                 // In a real app, this verification would happen on the server side with a hashed password.
                 const storedPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
-                if (storedPassword === password || password === 'password') { // 'password' as a fallback for initial users
+                if (storedPassword === password || (storedPassword === null && password === 'password')) { // 'password' as a fallback for initial users
                     userToLogin = foundUser;
+                } else if (storedPassword !== password) {
+                     toast({
+                        variant: "destructive",
+                        title: "Credenciais Inválidas",
+                        description: "Email ou senha incorretos para o perfil selecionado.",
+                    });
+                    return;
                 }
             } else {
                  toast({
