@@ -123,3 +123,12 @@ export interface NavItem {
     label: string;
     roles: UserRole[];
 }
+
+export interface PaymentTransaction {
+  id: string;
+  studentId: string;
+  packageName: string;
+  amount: number;
+  date: Date;
+  paymentMethod: string;
+}

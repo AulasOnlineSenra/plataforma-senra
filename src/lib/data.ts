@@ -1,6 +1,6 @@
 
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -200,7 +200,7 @@ export const getContactsForUser = (currentUser: User): ChatContact[] => {
 
   // NOTE: This logic might be incorrect for a real app.
   // It reads from a separate localStorage key `chatContacts` which might not be what's desired.
-  // It should probably read from a user-specific key e.g. `chatContacts_${currentUser.id}`
+  // It should probably read from a user-specific key e.g. `chatContacts_${'\'\''}${currentUser.id}`
   const storedContactsStr = localStorage.getItem('chatContacts');
   const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : initialChatContacts;
   const contactsMap = new Map(contactsData.map(c => [c.id, c]));
@@ -474,9 +474,8 @@ export const adminNavItems: NavItem[] = [
   },
 ];
 
-    
-
-
-    
-
-
+export const paymentHistory: PaymentTransaction[] = [
+  { id: 'pay-1', studentId: 'user-1', packageName: 'Pacote 12 Aulas', amount: 1020.00, date: new Date(now.getFullYear(), now.getMonth() - 1, 15, 10, 30), paymentMethod: 'Cartão de Crédito' },
+  { id: 'pay-2', studentId: 'user-1', packageName: 'Pacote 4 Aulas', amount: 380.00, date: new Date(now.getFullYear(), now.getMonth() - 2, 20, 14, 0), paymentMethod: 'Pix' },
+  { id: 'pay-3', studentId: 'user-2', packageName: 'Pacote 4 Aulas', amount: 380.00, date: new Date(now.getFullYear(), now.getMonth(), 2, 18, 45), paymentMethod: 'Cartão de Crédito' },
+];

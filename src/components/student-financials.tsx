@@ -6,26 +6,76 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from './ui/button';
-import Link from 'next/link';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { paymentHistory } from '@/lib/data';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Badge } from './ui/badge';
 
 export default function StudentFinancials() {
+  const transactions = paymentHistory.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
   return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Minhas Finanças</CardTitle>
-          <CardDescription>
-            Gerencie seus pacotes de aulas e histórico de pagamentos.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Nenhum pacote de aulas ativo no momento.</p>
-          </div>
-           <Button asChild>
-              <Link href="/dashboard/packages">Ver Pacotes</Link>
-            </Button>
-        </CardContent>
-      </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Histórico de Compras</CardTitle>
+        <CardDescription>
+          Aqui você pode ver um registro de todos os pacotes de aulas que você
+          adquiriu.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Pacote</TableHead>
+              <TableHead>Data da Compra</TableHead>
+              <TableHead>Método de Pagamento</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">
+                    {transaction.packageName}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(transaction.date), "dd/MM/yyyy 'às' HH:mm", {
+                      locale: ptBR,
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{transaction.paymentMethod}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    R$ {transaction.amount.toFixed(2).replace('.', ',')}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  Nenhum histórico de compras encontrado.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
