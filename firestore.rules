@@ -3,63 +3,50 @@
  *
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model for user-specific data,
- * while allowing public read access to certain collections like 'subjects' and 'paymentPackages'.
+ * while allowing public read access to certain top-level collections.
+ * All write operations are protected by authorization checks based on the
+ * authenticated user's ID.
  *
  * Data Structure:
- * - User profiles are stored in the root-level `/users/{userId}` collection.
+ * - User profiles are stored in the `/users/{userId}` collection.
  * - Teacher profiles, scheduled classes, payment transactions, session feedback, and scheduled messages
  *   are nested under `/users/{userId}` to enforce ownership.
- * - Subjects and payment packages are stored in root-level collections and are publicly readable.
+ * - Subjects and payment packages are stored in top-level collections for public access.
  *
  * Key Security Decisions:
- * - Listing all users is generally disallowed for privacy reasons, except potentially for admin roles (TODO: Implement role-based access).
- * - Public read access is granted to the 'subjects' and 'paymentPackages' collections.
- * - Write access to user-owned data is restricted to the owner.
- * - Data consistency between the path and document's internal fields is enforced on create and update.
+ * - Users can only create, update, and delete their own user documents and associated subcollections.
+ * - Listing all users is not explicitly denied (assuming admin role will be checked in application logic).
+ * - Top-level collections for subjects and payment packages are publicly readable.
  *
  * Denormalization for Authorization:
- * - User ownership is enforced by nesting data under `/users/{userId}`, making the `userId` available from the path.
- *   This avoids the need for expensive `get()` calls to determine ownership.
- *
- * Structural Segregation:
- * - Private user data is stored under the `/users/{userId}` path, ensuring it's not publicly accessible.
+ * - Ownership is enforced by nesting documents under `/users/{userId}`, eliminating the need
+ *   for `get()` calls to verify ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows reading and writing user profile data.
+     * @description Allows users to read and manage their own user documents.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user can create their own profile if the userId matches their auth.uid.
-     * @allow (get, list) - Anyone can read user profiles (for public display).
-     * @allow (update, delete) - Only the user can update/delete their own profile.
-     * @deny (create) - If the userId does not match the authenticated user's id.
-     * @deny (update, delete) - If the authenticated user is not the owner.
-     * @principle Enforces document ownership for writes and allows public reads.
+     * @allow (get, list) if true
+     * @allow (create) if isOwner(userId)
+     * @allow (update, delete) if isExistingOwner(userId)
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Enforces document ownership for writes; allows public reads.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if true;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update, delete: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows reading subject information.
+     * @description Allows public read access to subjects.
      * @path /subjects/{subjectId}
-     * @allow (get, list) - Anyone can read subject information.
-     * @deny (create, update, delete) - No one can create, update, or delete subjects.
-     * @principle Allows public reads, restricts writes.
+     * @allow (get, list) if true
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Allows public reads; restricts writes.
      */
     match /subjects/{subjectId} {
       allow get, list: if true;
@@ -67,63 +54,41 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows reading and writing teacher profile data for a specific user.
+     * @description Allows users to manage their own teacher profiles.
      * @path /users/{userId}/teacherProfiles/{teacherProfileId}
-     * @allow (create) - Authenticated user can create their own teacher profile under their userId.
-     * @allow (get, list) - Only the owner can read their own teacher profiles.
-     * @allow (update, delete) - Only the owner can update/delete their own teacher profile.
-     * @deny (create) - If the userId does not match the authenticated user's id.
-     * @deny (update, delete) - If the authenticated user is not the owner.
-     * @principle Enforces document ownership for writes and restricts reads to the owner.
+     * @allow (get, list) if isOwner(userId)
+     * @allow (create) if isOwner(userId)
+     * @allow (update, delete) if isExistingOwner(userId)
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
      */
     match /users/{userId}/teacherProfiles/{teacherProfileId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update, delete: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows reading and writing scheduled class data for a specific user.
+     * @description Allows users to manage their own scheduled classes.
      * @path /users/{userId}/scheduledClasses/{scheduledClassId}
-     * @allow (create) - Authenticated user can create scheduled classes under their userId.
-     * @allow (get, list) - Only the owner can read their own scheduled classes.
-     * @allow (update, delete) - Only the owner can update/delete their own scheduled classes.
-     * @deny (create) - If the userId does not match the authenticated user's id.
-     * @deny (update, delete) - If the authenticated user is not the owner.
-     * @principle Enforces document ownership for writes and restricts reads to the owner.
+     * @allow (get, list) if isOwner(userId)
+     * @allow (create) if isOwner(userId)
+     * @allow (update, delete) if isExistingOwner(userId)
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
      */
     match /users/{userId}/scheduledClasses/{scheduledClassId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
-      allow update, delete: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+      allow create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows reading payment package information.
+     * @description Allows public read access to payment packages.
      * @path /paymentPackages/{paymentPackageId}
-     * @allow (get, list) - Anyone can read payment package information.
-     * @deny (create, update, delete) - No one can create, update, or delete payment packages.
-     * @principle Allows public reads, restricts writes.
+     * @allow (get, list) if true
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Allows public reads; restricts writes.
      */
     match /paymentPackages/{paymentPackageId} {
       allow get, list: if true;
@@ -131,80 +96,60 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows reading and writing payment transaction data for a specific user.
+     * @description Allows users to manage their own payment transactions.
      * @path /users/{userId}/paymentTransactions/{paymentTransactionId}
-     * @allow (create) - Authenticated user can create payment transactions under their userId.
-     * @allow (get, list) - Only the owner can read their own payment transactions.
-     * @allow (update, delete) - Only the owner can update/delete their own payment transactions.
-     * @deny (create) - If the userId does not match the authenticated user's id.
-     * @deny (update, delete) - If the authenticated user is not the owner.
-     * @principle Enforces document ownership for writes and restricts reads to the owner.
+     * @allow (get, list) if isOwner(userId)
+     * @allow (create) if isOwner(userId)
+     * @allow (update, delete) if isExistingOwner(userId)
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
      */
     match /users/{userId}/paymentTransactions/{paymentTransactionId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
-      allow update, delete: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+      allow create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows reading and writing session feedback data for a specific user and scheduled class.
+     * @description Allows users to manage their own session feedback.
      * @path /users/{userId}/scheduledClasses/{scheduledClassId}/sessionFeedback/{sessionFeedbackId}
-     * @allow (create) - Authenticated user can create session feedback under their userId and scheduledClassId.
-     * @allow (get, list) - Only the owner can read their own session feedback.
-     * @allow (update, delete) - Only the owner can update/delete their own session feedback.
-     * @deny (create) - If the userId does not match the authenticated user's id.
-     * @deny (update, delete) - If the authenticated user is not the owner.
-     * @principle Enforces document ownership for writes and restricts reads to the owner.
+     * @allow (get, list) if isOwner(userId)
+     * @allow (create) if isOwner(userId)
+     * @allow (update, delete) if isExistingOwner(userId)
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
      */
     match /users/{userId}/scheduledClasses/{scheduledClassId}/sessionFeedback/{sessionFeedbackId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId); // No need to validate studentId, parent validation handles ownership
-      allow update, delete: if isExistingOwner(userId); // No need to validate studentId, parent validation handles ownership
+      allow create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows reading and writing scheduled messages for a specific user.
+     * @description Allows users to manage their own scheduled messages.
      * @path /users/{userId}/scheduledMessages/{scheduledMessageId}
-     * @allow (create) - Authenticated user can create scheduled messages under their userId.
-     * @allow (get, list) - Only the owner can read their own scheduled messages.
-     * @allow (update, delete) - Only the owner can update/delete their own scheduled messages.
-     * @deny (create) - If the userId does not match the authenticated user's id.
-     * @deny (update, delete) - If the authenticated user is not the owner.
+     * @allow (get, list) if isOwner(userId)
+     * @allow (create) if isOwner(userId) && request.resource.data.creatorId == request.auth.uid;
+     * @allow (update, delete) if isExistingOwner(userId);
+     * @deny (create, update, delete) if !isSignedIn()
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
      */
     match /users/{userId}/scheduledMessages/{scheduledMessageId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update, delete: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow create: if isOwner(userId) && request.resource.data.creatorId == request.auth.uid;
+      allow update, delete: if isExistingOwner(userId);
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+        return isSignedIn() && isOwner(userId) && resource != null;
     }
   }
 }
