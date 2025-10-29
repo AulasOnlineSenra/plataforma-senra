@@ -154,14 +154,14 @@ function ChatPageComponent() {
         const fullContactList = potentialPartners.map(partner => {
             if(partner.id === currentUser.id) return null;
             const existingContact = contactsMap.get(partner.id);
-            return existingContact || {
+            return {
                 id: partner.id,
                 name: partner.name,
                 avatarUrl: partner.avatarUrl,
                 role: partner.role,
-                lastMessage: 'Nenhuma mensagem ainda.',
-                lastMessageTimestamp: new Date(0),
-                unreadCount: 0,
+                lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
+                lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
+                unreadCount: existingContact?.unreadCount || 0,
             };
         }).filter(Boolean) as ChatContact[];
     
