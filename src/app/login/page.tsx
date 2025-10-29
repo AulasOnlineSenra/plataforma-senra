@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, DragEvent, MouseEvent } from 'react';
@@ -301,24 +302,26 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (role) {
-        const savedEmail = localStorage.getItem(`savedEmail-${role}`);
-        if (savedEmail) {
-            setEmail(savedEmail);
+        // If logging in as admin, always use the default admin email.
+        if (role === 'admin') {
+            const adminUser = initialRegularUsers.find(u => u.role === 'admin');
+            setEmail(adminUser?.email || 'admin@example.com');
         } else {
-            setEmail(''); // Clear email if no saved email for this role
+            const savedEmail = localStorage.getItem(`savedEmail-${role}`);
+            if (savedEmail) {
+                setEmail(savedEmail);
+            } else {
+                setEmail(''); // Clear email if no saved email for this role
+            }
         }
         const savedPassword = localStorage.getItem(`savedPassword-${role}`);
-        if (savedPassword) {
-            setPassword(savedPassword);
-        } else {
-            setPassword('');
-        }
+        setPassword(savedPassword || '');
     } else {
         // When returning to role selection, clear fields
         setEmail('');
         setPassword('');
     }
-  }, [role]);
+}, [role]);
 
 
   useEffect(() => {
