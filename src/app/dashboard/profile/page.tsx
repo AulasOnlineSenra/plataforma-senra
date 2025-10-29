@@ -33,6 +33,7 @@ import {
   Pencil,
   MinusCircle,
   CalendarDays,
+  Shield,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -113,6 +114,9 @@ function ProfilePageComponent() {
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>(initialAllUsers);
     const [profileUser, setProfileUser] = useState<User | Teacher | null>(null);
     const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+    const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     const updateAllUsers = useCallback(() => {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -195,6 +199,37 @@ function ProfilePageComponent() {
         const currentAddress = profileUser.address || {};
         const updatedAddress = { ...currentAddress, [field]: value };
         handleSave('address', updatedAddress);
+    };
+    
+     const handleChangePassword = () => {
+        if (newPassword !== confirmPassword) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'As senhas não coincidem.',
+            });
+            return;
+        }
+        if (newPassword.length < 6) {
+            toast({
+                variant: 'destructive',
+                title: 'Senha muito curta',
+                description: 'A nova senha deve ter pelo menos 6 caracteres.',
+            });
+            return;
+        }
+
+        // In a real app, you would make an API call to update the password
+        console.log('Password updated successfully for user:', profileUser?.email);
+
+        toast({
+            title: 'Senha Alterada!',
+            description: 'Sua senha foi atualizada com sucesso.',
+        });
+
+        setIsPasswordDialogOpen(false);
+        setNewPassword('');
+        setConfirmPassword('');
     };
 
     const handleCepSave = async (cep: string) => {
@@ -284,6 +319,7 @@ function ProfilePageComponent() {
     };
 
     return (
+      <>
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
             <div className="flex items-center">
                 <h1 className="font-headline text-2xl md:text-3xl font-bold">{pageTitle}</h1>
@@ -328,6 +364,22 @@ function ProfilePageComponent() {
                             <EditableInput label="Número" value={profileUser.address?.number || ''} placeholder="Ex: 123" onSave={(v) => handleSaveAddress('number', v)} canEdit={canEdit} />
                         </CardContent>
                     </CollapsibleContent>
+                </CollapsibleCard>
+
+                 <CollapsibleCard title="Segurança" description="Altere sua senha e gerencie a segurança da sua conta." icon={Shield}>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                                <Label>Senha</Label>
+                                <p className="text-muted-foreground">••••••••</p>
+                            </div>
+                            {canEdit && (
+                                <Button variant="outline" onClick={() => setIsPasswordDialogOpen(true)}>
+                                    Alterar Senha
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
                 </CollapsibleCard>
 
                 {profileUser.role !== 'student' && (
@@ -408,6 +460,49 @@ function ProfilePageComponent() {
                 </CollapsibleCard>
             </div>
         </div>
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Alterar Senha</DialogTitle>
+                    <DialogDescription>
+                        Digite sua nova senha abaixo. Recomendamos uma senha forte e única.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="new-password">Nova Senha</Label>
+                        <Input
+                            id="new-password"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="••••••••"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                        <Input
+                            id="confirm-password"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">
+                            Cancelar
+                        </Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleChangePassword}>
+                        Salvar Nova Senha
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+      </>
     );
 }
 
