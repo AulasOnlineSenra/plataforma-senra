@@ -397,12 +397,6 @@ export const navItems: NavItem[] = [
 
 export const adminNavItems: NavItem[] = [
   {
-    href: '/dashboard/admin/students',
-    icon: Users,
-    label: 'Alunos (Admin)',
-    roles: ['admin'],
-  },
-  {
     href: '/dashboard/admin/packages',
     icon: Package,
     label: 'Planos',
