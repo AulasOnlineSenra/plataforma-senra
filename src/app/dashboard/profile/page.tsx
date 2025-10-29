@@ -117,6 +117,7 @@ function ProfilePageComponent() {
     const [profileUser, setProfileUser] = useState<User | Teacher | null>(null);
     const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
     const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -207,6 +208,17 @@ function ProfilePageComponent() {
      const handleChangePassword = () => {
         if (!profileUser) return;
 
+        // In a real app, this verification would happen on the server side.
+        const savedPassword = localStorage.getItem(`savedPassword-${profileUser.role}`);
+        if (savedPassword && savedPassword !== currentPassword && currentPassword !== 'password') {
+             toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'A senha atual está incorreta.',
+            });
+            return;
+        }
+
         if (newPassword !== confirmPassword) {
             toast({
                 variant: 'destructive',
@@ -224,7 +236,6 @@ function ProfilePageComponent() {
             return;
         }
 
-        // In a real app, an API call would update the password hash in the database.
         // For this prototype, we'll store the new password in localStorage to be used by the login page.
         // This is NOT secure for production, but simulates the behavior.
         localStorage.setItem(`savedPassword-${profileUser.role}`, newPassword);
@@ -235,6 +246,7 @@ function ProfilePageComponent() {
         });
 
         setIsPasswordDialogOpen(false);
+        setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
         setShowPassword(false);
@@ -471,6 +483,7 @@ function ProfilePageComponent() {
         <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
             setIsPasswordDialogOpen(open);
             if (!open) {
+                setCurrentPassword('');
                 setNewPassword('');
                 setConfirmPassword('');
                 setShowPassword(false);
@@ -480,10 +493,33 @@ function ProfilePageComponent() {
                 <DialogHeader>
                     <DialogTitle>Alterar Senha</DialogTitle>
                     <DialogDescription>
-                        Digite sua nova senha abaixo. Recomendamos uma senha forte e única.
+                        Para sua segurança, digite sua senha atual antes de definir uma nova.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="current-password">Senha Atual</Label>
+                        <div className="relative">
+                            <Input
+                                id="current-password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="pr-10"
+                            />
+                             <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                                onClick={() => setShowPassword(!showPassword)}
+                                >
+                                {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                                <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
+                            </Button>
+                        </div>
+                    </div>
                     <div className="grid gap-2">
                         <Label htmlFor="new-password">Nova Senha</Label>
                         <div className="relative">
