@@ -213,7 +213,7 @@ function ChatPageComponent() {
         .filter(contact => validPartnerIds.includes(contact.id))
         .sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
 
-    }, [currentUser, schedule, allUsers]);
+    }, [currentUser, schedule, allUsers, allContacts]);
 
     useEffect(() => {
         if (viewportRef.current) {
@@ -753,3 +753,4 @@ export default function ChatPage() {
     
 
     
+
