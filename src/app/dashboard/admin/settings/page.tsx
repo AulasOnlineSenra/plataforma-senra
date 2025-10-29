@@ -22,11 +22,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Save, KeyRound, Edit, UserCircle } from 'lucide-react';
+import { Save, KeyRound, Edit, UserCircle, Trash2 } from 'lucide-react';
 import { users as initialUsers } from '@/lib/data';
 import { User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const INACTIVITY_STORAGE_KEY = 'studentInactivityDays';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
@@ -35,7 +46,8 @@ const USERS_STORAGE_KEY = 'userList';
 export default function AdminSettingsPage() {
   const [inactivityDays, setInactivityDays] = useState(90);
   const [pixKey, setPixKey] = useState('');
-  const [admins, setAdmins] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>(initialUsers);
+  const [adminToDelete, setAdminToDelete] = useState<User | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -49,9 +61,12 @@ export default function AdminSettingsPage() {
       setPixKey(storedPixKey);
     }
     const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    const allUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-    setAdmins(allUsers.filter(u => u.role === 'admin'));
+    if (storedUsers) {
+      setAllUsers(JSON.parse(storedUsers));
+    }
   }, []);
+  
+  const admins = allUsers.filter(u => u.role === 'admin');
 
   const handleSaveInactivity = () => {
     localStorage.setItem(INACTIVITY_STORAGE_KEY, String(inactivityDays));
@@ -69,7 +84,27 @@ export default function AdminSettingsPage() {
     });
   };
 
+  const handleDeleteRequest = (admin: User) => {
+    setAdminToDelete(admin);
+  };
+
+  const handleDeleteAdmin = () => {
+    if (!adminToDelete) return;
+    const updatedUsers = allUsers.filter((user) => user.id !== adminToDelete.id);
+    setAllUsers(updatedUsers);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    window.dispatchEvent(new Event('storage'));
+
+    toast({
+      title: 'Administrador Excluído',
+      description: `O perfil de ${adminToDelete.name} foi removido.`,
+    });
+    setAdminToDelete(null);
+  };
+
+
   return (
+    <>
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
@@ -128,6 +163,15 @@ export default function AdminSettingsPage() {
                     >
                       <Edit className="h-4 w-4" />
                       <span className="sr-only">Editar Perfil</span>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteRequest(admin)}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Excluir Administrador</span>
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -211,5 +255,28 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog
+        open={!!adminToDelete}
+        onOpenChange={() => setAdminToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o
+              perfil de{' '}
+              <span className="font-bold">{adminToDelete?.name}</span> e
+              removerá seus dados de nossos servidores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAdmin}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
