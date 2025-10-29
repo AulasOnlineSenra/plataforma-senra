@@ -81,10 +81,36 @@ function ChatPageComponent() {
     const [isRecording, setIsRecording] = useState(false);
 
     
-    const [allMessages, setAllMessages] = useState<ChatMessage[]>(initialChatMessages);
+    const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
     const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
-    const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
+    const [userContacts, setUserContacts] = useState<ChatContact[]>([]);
 
+
+    const updateData = useCallback(() => {
+      setAllUsers(getAllUsers());
+  
+      const storedMessages = localStorage.getItem('chatMessages');
+      setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
+  
+      if (currentUser) {
+        const userContactsKey = `chatContacts_${currentUser.id}`;
+        const storedContacts = localStorage.getItem(userContactsKey);
+        setUserContacts(storedContacts ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : []);
+      }
+    }, [currentUser]);
+
+    useEffect(() => {
+        updateData();
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'userList' || e.key === 'teacherList' || e.key === 'chatMessages' || e.key === `chatContacts_${currentUser?.id}`) {
+                updateData();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [updateData, currentUser?.id]);
+    
     const handleContactSelect = useCallback((contactId: string) => {
       const contact = allUsers.find(u => u.id === contactId);
       if (contact && currentUser) {
@@ -92,11 +118,7 @@ function ChatPageComponent() {
 
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContacts = localStorage.getItem(userContactsKey);
-        const userContacts: ChatContact[] = storedContacts
-            ? JSON.parse(storedContacts)
-            : [];
-
-        const updatedContacts = userContacts.map(c =>
+        const updatedContacts = (storedContacts ? JSON.parse(storedContacts) : []).map((c: ChatContact) =>
           c.id === contactId && c.unreadCount && c.unreadCount > 0
           ? { ...c, unreadCount: 0 } 
           : c
@@ -106,23 +128,6 @@ function ChatPageComponent() {
         window.dispatchEvent(new Event('storage')); 
       }
     }, [allUsers, currentUser]);
-
-    const updateData = useCallback(() => {
-        setAllUsers(getAllUsers());
-
-        const storedMessages = localStorage.getItem('chatMessages');
-        setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
-        
-        const storedSchedule = localStorage.getItem('scheduleEvents');
-        setSchedule(storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) : initialSchedule);
-
-    }, []);
-
-    useEffect(() => {
-        updateData();
-        window.addEventListener('storage', updateData);
-        return () => window.removeEventListener('storage', updateData);
-    }, [updateData]);
     
     useEffect(() => {
         if (contactIdParam && allUsers.length > 0) {
@@ -132,42 +137,36 @@ function ChatPageComponent() {
 
 
     const chatContacts = useMemo(() => {
-        if (!currentUser || allUsers.length === 0) return [];
-        
-        const userContactsKey = `chatContacts_${currentUser.id}`;
-        const storedContacts = localStorage.getItem(userContactsKey);
-        const parsedContacts: ChatContact[] = storedContacts
-            ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-            : [];
-        const contactsMap = new Map(parsedContacts.map(c => [c.id, c]));
+      if (!currentUser || allUsers.length === 0) return [];
+  
+      let potentialPartners: (User | Teacher)[] = [];
+  
+      if (currentUser.role === 'admin') {
+        potentialPartners = allUsers.filter(user => user.id !== currentUser.id);
+      } else if (currentUser.role === 'student') {
+        potentialPartners = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
+      } else if (currentUser.role === 'teacher') {
+        potentialPartners = allUsers.filter(u => u.role === 'student' || u.role === 'admin');
+      }
+  
+      const contactsMap = new Map(userContacts.map(c => [c.id, c]));
+  
+      const fullContactList = potentialPartners.map(partner => {
+        const existingContact = contactsMap.get(partner.id);
+        return {
+          id: partner.id,
+          name: partner.name,
+          avatarUrl: partner.avatarUrl,
+          role: partner.role,
+          lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
+          lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
+          unreadCount: existingContact?.unreadCount || 0,
+        };
+      });
+  
+      return fullContactList.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+  }, [currentUser, allUsers, userContacts]);
 
-        let potentialPartners: (User | Teacher)[] = [];
-
-        if (currentUser.role === 'admin') {
-            potentialPartners = allUsers.filter(user => user.id !== currentUser.id);
-        } else if (currentUser.role === 'student') {
-            potentialPartners = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
-        } else if (currentUser.role === 'teacher') {
-             potentialPartners = allUsers.filter(u => u.role === 'student' || u.role === 'admin');
-        }
-        
-        const fullContactList = potentialPartners.map(partner => {
-            if(partner.id === currentUser.id) return null;
-            const existingContact = contactsMap.get(partner.id);
-            return {
-                id: partner.id,
-                name: partner.name,
-                avatarUrl: partner.avatarUrl,
-                role: partner.role,
-                lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
-                lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
-                unreadCount: existingContact?.unreadCount || 0,
-            };
-        }).filter(Boolean) as ChatContact[];
-    
-        return fullContactList.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-    
-    }, [currentUser, allUsers]);
 
     useEffect(() => {
         if (viewportRef.current) {
@@ -717,3 +716,4 @@ export default function ChatPage() {
 
 
     
+
