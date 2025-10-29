@@ -75,16 +75,32 @@ function SchedulePageComponent() {
   useEffect(() => {
     const updateData = () => {
         const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+        let scheduleToProcess: ScheduleEvent[] = [];
         if (storedSchedule) {
-            const parsedSchedule = JSON.parse(storedSchedule).map((event: any) => ({
+            scheduleToProcess = JSON.parse(storedSchedule).map((event: any) => ({
                 ...event,
                 start: new Date(event.start),
                 end: new Date(event.end),
             }));
-            setEvents(parsedSchedule);
         } else {
-            setEvents(initialScheduleEvents);
+            scheduleToProcess = initialScheduleEvents;
         }
+
+        const now = new Date();
+        let hasChanges = false;
+        const updatedSchedule = scheduleToProcess.map(event => {
+            if (event.status === 'scheduled' && now > event.end) {
+                hasChanges = true;
+                return { ...event, status: 'completed' as 'completed' };
+            }
+            return event;
+        });
+
+        if (hasChanges) {
+            localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+        }
+
+        setEvents(updatedSchedule);
         
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
         if (storedUsers) {
