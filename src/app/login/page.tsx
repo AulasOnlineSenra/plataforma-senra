@@ -302,26 +302,34 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (role) {
+        const adminUser = initialRegularUsers.find(u => u.role === 'admin' && u.email.toLowerCase() === email.toLowerCase());
+        const targetUserId = adminUser ? adminUser.id : (initialUsers.find(u => u.email.toLowerCase() === email.toLowerCase())?.id);
+        
         // If logging in as admin, always use the default admin email.
         if (role === 'admin') {
-            const adminUser = initialRegularUsers.find(u => u.role === 'admin');
-            setEmail(adminUser?.email || 'admin@example.com');
-        } else {
-            const savedEmail = localStorage.getItem(`savedEmail-${role}`);
-            if (savedEmail) {
-                setEmail(savedEmail);
-            } else {
-                setEmail(''); // Clear email if no saved email for this role
+            const defaultAdmin = initialRegularUsers.find(u => u.role === 'admin');
+            if (!email && defaultAdmin) {
+              setEmail(defaultAdmin.email);
+              const adminPassword = localStorage.getItem(`savedPassword-${defaultAdmin.id}`);
+              setPassword(adminPassword || 'password');
             }
         }
-        const savedPassword = localStorage.getItem(`savedPassword-${role}`);
-        setPassword(savedPassword || '');
+        
+        if (targetUserId) {
+            const savedPassword = localStorage.getItem(`savedPassword-${targetUserId}`);
+            setPassword(savedPassword || '');
+        } else {
+             const savedEmail = localStorage.getItem(`savedEmail-${role}`);
+            if (savedEmail && !email) {
+                setEmail(savedEmail);
+            }
+        }
     } else {
         // When returning to role selection, clear fields
         setEmail('');
         setPassword('');
     }
-}, [role]);
+}, [role, email]);
 
 
   useEffect(() => {
@@ -400,7 +408,7 @@ export default function LoginPage() {
             if (foundUser.role === role) {
                 // For this prototype, we check the password stored in localStorage.
                 // In a real app, this verification would happen on the server side with a hashed password.
-                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.role}`);
+                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
                 if (storedPassword === password || password === 'password') { // 'password' as a fallback for initial users
                     userToLogin = foundUser;
                 }
@@ -449,7 +457,7 @@ export default function LoginPage() {
         localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
         // Important: We store the password used for login to persist it.
         // This ensures that a newly changed password becomes the one used for the next login.
-        localStorage.setItem(`savedPassword-${updatedUser.role}`, password);
+        localStorage.setItem(`savedPassword-${updatedUser.id}`, password);
         localStorage.setItem('userId', updatedUser.id);
         
         window.dispatchEvent(new Event('storage')); // Notify other tabs of the update

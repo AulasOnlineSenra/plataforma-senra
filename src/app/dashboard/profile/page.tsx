@@ -210,7 +210,7 @@ function ProfilePageComponent() {
         if (!profileUser) return;
 
         // In a real app, this verification would happen on the server side.
-        const savedPassword = localStorage.getItem(`savedPassword-${profileUser.role}`);
+        const savedPassword = localStorage.getItem(`savedPassword-${profileUser.id}`);
         if (savedPassword && savedPassword !== currentPassword && currentPassword !== 'password') {
              toast({
                 variant: 'destructive',
@@ -239,7 +239,7 @@ function ProfilePageComponent() {
 
         // For this prototype, we'll store the new password in localStorage to be used by the login page.
         // This is NOT secure for production, but simulates the behavior.
-        localStorage.setItem(`savedPassword-${profileUser.role}`, newPassword);
+        localStorage.setItem(`savedPassword-${profileUser.id}`, newPassword);
 
         toast({
             title: 'Senha Alterada!',
@@ -306,7 +306,7 @@ function ProfilePageComponent() {
     
     const handleOpenPasswordDialog = () => {
         if (profileUser) {
-            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.role}`) || 'password';
+            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.id}`) || 'password';
             setCurrentPassword(savedPassword);
             setShowCurrentPassword(true);
         }
