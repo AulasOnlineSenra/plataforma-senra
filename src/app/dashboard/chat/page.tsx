@@ -135,37 +135,28 @@ function ChatPageComponent() {
 
     const chatContacts = useMemo(() => {
         if (!currentUser) return [];
+
+        if (currentUser.role === 'admin') {
+            const allPossibleContacts = allUsers
+                .filter(user => user.id !== currentUser.id)
+                .map(user => ({
+                    id: user.id,
+                    name: user.name,
+                    avatarUrl: user.avatarUrl,
+                    role: user.role,
+                    lastMessage: 'Nenhuma mensagem ainda.',
+                    lastMessageTimestamp: new Date(0),
+                    unreadCount: 0,
+                }));
+             return allPossibleContacts.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        }
+        
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContacts = localStorage.getItem(userContactsKey);
         const parsedContacts: ChatContact[] = storedContacts
             ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
             : [];
-        const contactMap = new Map(parsedContacts.map(c => [c.id, c]));
-
-        if (currentUser.role === 'admin') {
-            const allPossibleContacts = allUsers
-                .filter(user => user.id !== currentUser.id)
-                .map(user => {
-                    const existingContact = contactMap.get(user.id);
-                    if (existingContact) {
-                        return {
-                            ...existingContact,
-                            role: user.role, // Ensure role is updated
-                        };
-                    }
-                    return {
-                        id: user.id,
-                        name: user.name,
-                        avatarUrl: user.avatarUrl,
-                        role: user.role,
-                        lastMessage: 'Nenhuma mensagem ainda.',
-                        lastMessageTimestamp: new Date(0),
-                        unreadCount: 0,
-                    };
-                });
-            return allPossibleContacts.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-        }
-
+        
         const now = new Date();
         const futureScheduledEvents = schedule.filter(e => e.status === 'scheduled' && e.start > now);
         
