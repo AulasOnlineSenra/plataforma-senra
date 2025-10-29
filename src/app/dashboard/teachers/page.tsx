@@ -14,7 +14,7 @@ import { teachers as initialTeachers, subjects, getMockUser } from '@/lib/data';
 import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -173,7 +173,10 @@ export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
   const { toast } = useToast();
 
   const updateTeacherList = useCallback(() => {
@@ -239,6 +242,31 @@ export default function TeachersPage() {
     setIsInviteDialogOpen(false);
   };
   
+    const handleRegisterTeacher = () => {
+    if (!registerName || !registerEmail) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos obrigatórios',
+        description: 'Por favor, preencha o nome e o email.',
+      });
+      return;
+    }
+    const newTeacher = getMockUser('teacher', { name: registerName, email: registerEmail }) as Teacher;
+    
+    const updatedList = [...teacherList, newTeacher];
+    setTeacherList(updatedList);
+    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
+
+    toast({
+      title: 'Professor Cadastrado!',
+      description: `${registerName} foi adicionado à plataforma.`,
+    });
+    setRegisterName('');
+    setRegisterEmail('');
+    setIsRegisterDialogOpen(false);
+  };
+
   const handleDeleteTeacher = (teacherId: string) => {
     const updatedList = teacherList.map(t =>
         t.id === teacherId ? { ...t, status: 'deleted' as const } : t
@@ -306,13 +334,22 @@ export default function TeachersPage() {
             Nossos Professores
           </h1>
           {currentUser?.role === 'admin' && (
-            <Button
-              onClick={() => setIsInviteDialogOpen(true)}
-              className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <UserPlus className="mr-2" />
-              Convidar Professor
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsRegisterDialogOpen(true)}
+                variant="outline"
+              >
+                <Plus className="mr-2" />
+                Cadastrar Professor
+              </Button>
+              <Button
+                onClick={() => setIsInviteDialogOpen(true)}
+                className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <UserPlus className="mr-2" />
+                Convidar Professor
+              </Button>
+            </div>
           )}
         </div>
         <ScrollArea className="flex-1 -mx-4">
@@ -446,6 +483,51 @@ export default function TeachersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+       <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Professor</DialogTitle>
+            <DialogDescription>
+              Insira os dados básicos para criar um novo perfil de professor na plataforma.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name-register">Nome Completo</Label>
+              <Input
+                id="name-register"
+                type="text"
+                placeholder="Nome do professor"
+                value={registerName}
+                onChange={(e) => setRegisterName(e.target.value)}
+              />
+            </div>
+             <div className="grid gap-2">
+              <Label htmlFor="email-register">Email do Professor</Label>
+              <Input
+                id="email-register"
+                type="email"
+                placeholder="email@exemplo.com"
+                value={registerEmail}
+                onChange={(e) => setRegisterEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleRegisterTeacher}>
+              Cadastrar Professor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
+
+    
