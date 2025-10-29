@@ -149,65 +149,71 @@ function ChatPageComponent() {
 
 
     const chatContacts = useMemo(() => {
-        if (!currentUser) return [];
+    if (!currentUser) return [];
 
-        if (currentUser.role === 'admin') {
-          const userContactsKey = `chatContacts_${currentUser.id}`;
-          const storedContacts = localStorage.getItem(userContactsKey);
-          const parsedContacts: ChatContact[] = storedContacts
-            ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-            : initialChatContacts.filter(c => c.id !== currentUser.id);
+    // Admin should see all users
+    if (currentUser.role === 'admin') {
+      const userContactsKey = `chatContacts_${currentUser.id}`;
+      const storedContacts = localStorage.getItem(userContactsKey);
+      const parsedContacts: ChatContact[] = storedContacts
+        ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+        : [];
 
-          const contactMap = new Map(parsedContacts.map(c => [c.id, c]));
+      const contactMap = new Map(parsedContacts.map(c => [c.id, c]));
 
-          const updatedContacts = allUsers
-            .filter(user => user.id !== currentUser.id)
-            .map(user => {
-              const existingContact = contactMap.get(user.id);
-              if (existingContact) {
-                return existingContact;
-              }
-              // Create a new contact entry if one doesn't exist
-              return {
-                id: user.id,
-                name: user.name,
-                avatarUrl: user.avatarUrl,
-                lastMessage: 'Nenhuma mensagem ainda.',
-                lastMessageTimestamp: new Date(0), // Put them at the bottom if no interaction
-                unreadCount: 0,
-              };
-            });
-          
-          return updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-        }
+      const allPossibleContacts = allUsers
+        .filter(user => user.id !== currentUser.id) // Exclude self
+        .map(user => {
+          const existingContact = contactMap.get(user.id);
+          if (existingContact) {
+            return existingContact;
+          }
+          // Create a new, blank contact entry if one doesn't exist.
+          return {
+            id: user.id,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            lastMessage: 'Nenhuma mensagem ainda.',
+            lastMessageTimestamp: new Date(0), // Put them at the bottom if no interaction
+            unreadCount: 0,
+          };
+        });
+      
+      return allPossibleContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+    }
 
+    // Logic for students and teachers
+    const now = new Date();
+    const futureScheduledEvents = schedule.filter(e => e.status === 'scheduled' && e.start > now);
+    
+    let validPartnerIds: string[] = [];
 
-        const now = new Date();
-        const futureScheduledEvents = schedule.filter(e => e.status === 'scheduled' && e.start > now);
-        
-        let validPartnerIds: string[] = [];
+    if (currentUser.role === 'student') {
+        const myTeacherIds = futureScheduledEvents
+            .filter(e => e.studentId === currentUser.id)
+            .map(e => e.teacherId);
+        validPartnerIds = [...new Set(myTeacherIds)];
+    } else if (currentUser.role === 'teacher') {
+        const myStudentIds = futureScheduledEvents
+            .filter(e => e.teacherId === currentUser.id)
+            .map(e => e.studentId);
+        validPartnerIds = [...new Set(myStudentIds)];
+    }
+    
+    const adminIds = allUsers.filter(u => u.role === 'admin').map(u => u.id);
+    validPartnerIds.push(...adminIds);
 
-        if (currentUser.role === 'student') {
-            const myTeacherIds = futureScheduledEvents
-                .filter(e => e.studentId === currentUser.id)
-                .map(e => e.teacherId);
-            validPartnerIds = [...new Set(myTeacherIds)];
-        } else if (currentUser.role === 'teacher') {
-            const myStudentIds = futureScheduledEvents
-                .filter(e => e.teacherId === currentUser.id)
-                .map(e => e.studentId);
-            validPartnerIds = [...new Set(myStudentIds)];
-        }
-        
-        const adminIds = allUsers.filter(u => u.role === 'admin').map(u => u.id);
-        validPartnerIds.push(...adminIds);
+    const userContactsKey = `chatContacts_${currentUser.id}`;
+    const storedContacts = localStorage.getItem(userContactsKey);
+    const userContacts: ChatContact[] = storedContacts
+      ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
+      : initialChatContacts.filter(c => c.id !== currentUser.id);
 
+    return userContacts
+        .filter(contact => validPartnerIds.includes(contact.id))
+        .sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
 
-        return allContacts
-            .filter(contact => validPartnerIds.includes(contact.id))
-            .sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-
-    }, [currentUser, schedule, allContacts, allUsers]);
+    }, [currentUser, schedule, allUsers]);
 
     useEffect(() => {
         if (viewportRef.current) {
@@ -505,7 +511,7 @@ function ChatPageComponent() {
                                             <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
                                           </div>
                                           <p className="text-xs text-muted-foreground shrink-0 pt-1">
-                                              {formatDistanceToNow(contact.lastMessageTimestamp, { locale: ptBR, addSuffix: true }).replace('cerca de ', '')}
+                                              {contact.lastMessageTimestamp > new Date(0) ? formatDistanceToNow(contact.lastMessageTimestamp, { locale: ptBR, addSuffix: true }).replace('cerca de ', '') : ''}
                                           </p>
                                       </div>
                                        {contact.unreadCount > 0 && (
@@ -743,5 +749,7 @@ export default function ChatPage() {
         </Suspense>
     )
 }
+
+    
 
     
