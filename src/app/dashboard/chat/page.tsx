@@ -134,12 +134,22 @@ function ChatPageComponent() {
 
 
     const chatContacts = useMemo(() => {
-        if (!currentUser) return [];
-
+        if (!currentUser || allUsers.length === 0) return [];
+    
+        // Admin sees everyone
         if (currentUser.role === 'admin') {
-            const allPossibleContacts = allUsers
-                .filter(user => user.id !== currentUser.id)
-                .map(user => ({
+            const allPossibleContacts = allUsers.filter(user => user.id !== currentUser.id);
+            const userContactsKey = `chatContacts_${currentUser.id}`;
+            const storedContacts = localStorage.getItem(userContactsKey);
+            const contactsMap: Map<string, ChatContact> = new Map(
+                storedContacts
+                    ? JSON.parse(storedContacts).map((c: ChatContact) => [c.id, { ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }])
+                    : []
+            );
+    
+            const combinedContacts = allPossibleContacts.map(user => {
+                const existingContact = contactsMap.get(user.id);
+                return existingContact || {
                     id: user.id,
                     name: user.name,
                     avatarUrl: user.avatarUrl,
@@ -147,41 +157,51 @@ function ChatPageComponent() {
                     lastMessage: 'Nenhuma mensagem ainda.',
                     lastMessageTimestamp: new Date(0),
                     unreadCount: 0,
-                }));
-             return allPossibleContacts.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+                };
+            });
+    
+            return combinedContacts.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
         }
-        
+    
+        // Student and Teacher logic
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContacts = localStorage.getItem(userContactsKey);
         const parsedContacts: ChatContact[] = storedContacts
             ? JSON.parse(storedContacts).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
             : [];
-        
-        const now = new Date();
-        const futureScheduledEvents = schedule.filter(e => e.status === 'scheduled' && e.start > now);
-        
+    
         let validPartnerIds: string[] = [];
-
+    
         if (currentUser.role === 'student') {
-            const myTeacherIds = futureScheduledEvents
-                .filter(e => e.studentId === currentUser.id)
-                .map(e => e.teacherId);
-            validPartnerIds = [...new Set(myTeacherIds)];
+            const allTeacherIds = allUsers.filter(u => u.role === 'teacher').map(u => u.id);
+            validPartnerIds.push(...allTeacherIds);
         } else if (currentUser.role === 'teacher') {
-            const myStudentIds = futureScheduledEvents
-                .filter(e => e.teacherId === currentUser.id)
-                .map(e => e.studentId);
-            validPartnerIds = [...new Set(myStudentIds)];
+            const allStudentIds = allUsers.filter(u => u.role === 'student').map(u => u.id);
+            validPartnerIds.push(...allStudentIds);
         }
         
         const adminIds = allUsers.filter(u => u.role === 'admin').map(u => u.id);
         validPartnerIds.push(...adminIds);
-
-        return parsedContacts
-            .filter(contact => validPartnerIds.includes(contact.id))
-            .sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-
-    }, [currentUser, schedule, allUsers]);
+    
+        const validPartners = allUsers.filter(u => validPartnerIds.includes(u.id));
+        const contactsMap = new Map(parsedContacts.map(c => [c.id, c]));
+    
+        const fullContactList = validPartners.map(partner => {
+            const existingContact = contactsMap.get(partner.id);
+            return existingContact || {
+                id: partner.id,
+                name: partner.name,
+                avatarUrl: partner.avatarUrl,
+                role: partner.role,
+                lastMessage: 'Nenhuma mensagem ainda.',
+                lastMessageTimestamp: new Date(0),
+                unreadCount: 0,
+            };
+        });
+    
+        return fullContactList.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+    
+    }, [currentUser, allUsers]);
 
     useEffect(() => {
         if (viewportRef.current) {
@@ -725,3 +745,4 @@ export default function ChatPage() {
 
 
     
+
