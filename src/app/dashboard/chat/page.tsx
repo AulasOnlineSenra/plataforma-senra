@@ -86,12 +86,8 @@ function ChatPageComponent() {
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
     const [allContacts, setAllContacts] = useState<ChatContact[]>(initialChatContacts);
 
-    const getContactDetails = useCallback((contactId: string) => {
-      return allUsers.find(u => u.id === contactId);
-    }, [allUsers]);
-
     const handleContactSelect = useCallback((contactId: string) => {
-      const contact = getContactDetails(contactId);
+      const contact = allUsers.find(u => u.id === contactId);
       if (contact && currentUser) {
         setActiveChatPartner(contact);
 
@@ -111,7 +107,7 @@ function ChatPageComponent() {
         setAllContacts(updatedContacts);
         window.dispatchEvent(new Event('storage')); 
       }
-    }, [getContactDetails, currentUser]);
+    }, [allUsers, currentUser]);
 
     const updateData = useCallback(() => {
         const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
@@ -166,7 +162,10 @@ function ChatPageComponent() {
         .map(user => {
           const existingContact = contactMap.get(user.id);
           if (existingContact) {
-            return existingContact;
+            return {
+              ...existingContact,
+              role: user.role // Ensure role is present
+            };
           }
           // Create a new, blank contact entry if one doesn't exist.
           return {
@@ -176,6 +175,7 @@ function ChatPageComponent() {
             lastMessage: 'Nenhuma mensagem ainda.',
             lastMessageTimestamp: new Date(0), // Put them at the bottom if no interaction
             unreadCount: 0,
+            role: user.role // Ensure role is present
           };
         });
       
@@ -272,7 +272,7 @@ function ChatPageComponent() {
               ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
               : initialChatContacts.filter(c => c.id !== ownerId);
 
-          const partnerDetails = getContactDetails(partnerId);
+          const partnerDetails = allUsers.find(u => u.id === partnerId);
           if (!partnerDetails) return;
 
           let contactExists = false;
@@ -308,7 +308,7 @@ function ChatPageComponent() {
       updateUserContacts(newMessage.receiverId, newMessage.senderId, true);
       
       window.dispatchEvent(new Event('storage'));
-    }, [getContactDetails]);
+    }, [allUsers]);
 
     const [messageInput, setMessageInput] = useState('');
 
@@ -489,8 +489,8 @@ function ChatPageComponent() {
                   <ScrollArea className="flex-1">
                       <div className="p-2">
                           {chatContacts.map(contact => {
-                              const contactDetails = getContactDetails(contact.id);
-                              if (!contactDetails || contact.id === currentUser?.id) return null;
+                              if (!contact || contact.id === currentUser?.id) return null;
+                              const role = (contact as any).role;
                               
                               return (
                               <button key={contact.id} onClick={() => handleContactSelect(contact.id)} className={cn(
@@ -506,7 +506,7 @@ function ChatPageComponent() {
                                           <div className="flex flex-col">
                                             <div className='flex items-center gap-2'>
                                               <p className="font-semibold truncate">{contact.name}</p>
-                                              {contactDetails.role && <Badge variant="secondary" className="text-xs">{roleLabels[contactDetails.role]}</Badge>}
+                                              {role && <Badge variant="secondary" className="text-xs">{roleLabels[role]}</Badge>}
                                             </div>
                                             <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
                                           </div>
