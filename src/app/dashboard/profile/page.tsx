@@ -121,6 +121,7 @@ function ProfilePageComponent() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(true);
 
     const updateAllUsers = useCallback(() => {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -302,6 +303,15 @@ function ProfilePageComponent() {
             console.error("Failed to fetch CEP:", error);
         }
     };
+    
+    const handleOpenPasswordDialog = () => {
+        if (profileUser) {
+            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.role}`) || 'password';
+            setCurrentPassword(savedPassword);
+            setShowCurrentPassword(true);
+        }
+        setIsPasswordDialogOpen(true);
+    };
 
     if (!profileUser) {
         return <div>Carregando perfil...</div>;
@@ -394,7 +404,7 @@ function ProfilePageComponent() {
                                 <p className="text-muted-foreground">••••••••</p>
                             </div>
                             {canEdit && (
-                                <Button variant="outline" onClick={() => setIsPasswordDialogOpen(true)}>
+                                <Button variant="outline" onClick={handleOpenPasswordDialog}>
                                     Alterar Senha
                                 </Button>
                             )}
@@ -483,10 +493,12 @@ function ProfilePageComponent() {
         <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
             setIsPasswordDialogOpen(open);
             if (!open) {
+                // Reset states when closing
                 setCurrentPassword('');
                 setNewPassword('');
                 setConfirmPassword('');
                 setShowPassword(false);
+                setShowCurrentPassword(false);
             }
         }}>
             <DialogContent className="sm:max-w-md">
@@ -502,7 +514,7 @@ function ProfilePageComponent() {
                         <div className="relative">
                             <Input
                                 id="current-password"
-                                type={showPassword ? 'text' : 'password'}
+                                type={showCurrentPassword ? 'text' : 'password'}
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
                                 placeholder="••••••••"
@@ -513,10 +525,10 @@ function ProfilePageComponent() {
                                 variant="ghost"
                                 size="icon"
                                 className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                                onClick={() => setShowPassword(!showPassword)}
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                                 >
-                                {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
-                                <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
+                                {showCurrentPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                                <span className="sr-only">{showCurrentPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
                             </Button>
                         </div>
                     </div>
