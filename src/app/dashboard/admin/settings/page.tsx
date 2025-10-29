@@ -10,19 +10,34 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Save, KeyRound } from 'lucide-react';
+import { Save, KeyRound, Edit, UserCircle } from 'lucide-react';
+import { users as initialUsers } from '@/lib/data';
+import { User } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
 
 const INACTIVITY_STORAGE_KEY = 'studentInactivityDays';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
+const USERS_STORAGE_KEY = 'userList';
 
 export default function AdminSettingsPage() {
   const [inactivityDays, setInactivityDays] = useState(90);
   const [pixKey, setPixKey] = useState('');
+  const [admins, setAdmins] = useState<User[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const storedDays = localStorage.getItem(INACTIVITY_STORAGE_KEY);
@@ -33,6 +48,9 @@ export default function AdminSettingsPage() {
     if (storedPixKey) {
       setPixKey(storedPixKey);
     }
+    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+    const allUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+    setAdmins(allUsers.filter(u => u.role === 'admin'));
   }, []);
 
   const handleSaveInactivity = () => {
@@ -68,6 +86,54 @@ export default function AdminSettingsPage() {
         </CardHeader>
         <CardContent>
           <AppLogoUploader />
+        </CardContent>
+      </Card>
+       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCircle />
+            Gerenciar Administradores
+          </CardTitle>
+          <CardDescription>
+            Visualize e gerencie os perfis de administradores da plataforma.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Administrador</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {admins.map((admin) => (
+                <TableRow key={admin.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={admin.avatarUrl} alt={admin.name} />
+                        <AvatarFallback>{admin.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{admin.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{admin.email}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => router.push(`/dashboard/profile?userId=${admin.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Editar Perfil</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
       <Card>
