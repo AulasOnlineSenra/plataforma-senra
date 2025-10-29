@@ -205,6 +205,8 @@ function ProfilePageComponent() {
     };
     
      const handleChangePassword = () => {
+        if (!profileUser) return;
+
         if (newPassword !== confirmPassword) {
             toast({
                 variant: 'destructive',
@@ -222,12 +224,14 @@ function ProfilePageComponent() {
             return;
         }
 
-        // In a real app, you would make an API call to update the password
-        console.log('Password updated successfully for user:', profileUser?.email);
+        // In a real app, an API call would update the password hash in the database.
+        // For this prototype, we'll store the new password in localStorage to be used by the login page.
+        // This is NOT secure for production, but simulates the behavior.
+        localStorage.setItem(`savedPassword-${profileUser.role}`, newPassword);
 
         toast({
             title: 'Senha Alterada!',
-            description: 'Sua senha foi atualizada com sucesso.',
+            description: 'Sua senha foi atualizada com sucesso e será usada no próximo login.',
         });
 
         setIsPasswordDialogOpen(false);

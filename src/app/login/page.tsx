@@ -395,7 +395,12 @@ export default function LoginPage() {
 
         if (foundUser) {
             if (foundUser.role === role) {
-                userToLogin = foundUser;
+                // For this prototype, we check the password stored in localStorage.
+                // In a real app, this verification would happen on the server side with a hashed password.
+                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.role}`);
+                if (storedPassword === password || password === 'password') { // 'password' as a fallback for initial users
+                    userToLogin = foundUser;
+                }
             } else {
                  toast({
                     variant: "destructive",
@@ -439,6 +444,8 @@ export default function LoginPage() {
         localStorage.setItem('userRole', updatedUser.role);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
+        // Important: We store the password used for login to persist it.
+        // This ensures that a newly changed password becomes the one used for the next login.
         localStorage.setItem(`savedPassword-${updatedUser.role}`, password);
         localStorage.setItem('userId', updatedUser.id);
         
