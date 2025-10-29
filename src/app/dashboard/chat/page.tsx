@@ -15,7 +15,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
-import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
+import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, teachers as initialTeachers, users as initialUsers, scheduleEvents as initialSchedule, getAllUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday, addDays, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -110,8 +110,7 @@ function ChatPageComponent() {
     const updateData = useCallback(() => {
         const storedUsers = localStorage.getItem('userList') || JSON.stringify(initialUsers);
         const storedTeachers = localStorage.getItem('teacherList') || JSON.stringify(initialTeachers);
-        const combinedUsers = [...JSON.parse(storedUsers), ...JSON.parse(storedTeachers)];
-        setAllUsers(combinedUsers);
+        setAllUsers(getAllUsers());
 
         const storedMessages = localStorage.getItem('chatMessages');
         setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
@@ -136,7 +135,6 @@ function ChatPageComponent() {
 
     const chatContacts = useMemo(() => {
         if (!currentUser) return [];
-
         const userContactsKey = `chatContacts_${currentUser.id}`;
         const storedContacts = localStorage.getItem(userContactsKey);
         const parsedContacts: ChatContact[] = storedContacts
@@ -152,7 +150,7 @@ function ChatPageComponent() {
                     if (existingContact) {
                         return {
                             ...existingContact,
-                            role: user.role,
+                            role: user.role, // Ensure role is updated
                         };
                     }
                     return {
@@ -469,7 +467,6 @@ function ChatPageComponent() {
                       <div className="p-2">
                           {chatContacts.map(contact => {
                               if (!contact || contact.id === currentUser?.id) return null;
-                              const role = (contact as any).role;
                               
                               return (
                               <button key={contact.id} onClick={() => handleContactSelect(contact.id)} className={cn(
@@ -485,7 +482,7 @@ function ChatPageComponent() {
                                           <div className="flex flex-col">
                                             <div className='flex items-center gap-2'>
                                               <p className="font-semibold truncate">{contact.name}</p>
-                                              {role && <Badge variant="secondary" className="text-xs">{roleLabels[role]}</Badge>}
+                                              {contact.role && <Badge variant="secondary" className="text-xs">{roleLabels[contact.role]}</Badge>}
                                             </div>
                                             <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
                                           </div>
@@ -734,3 +731,6 @@ export default function ChatPage() {
     
 
 
+
+
+    

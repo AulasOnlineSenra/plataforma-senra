@@ -166,6 +166,16 @@ export let teachers: Teacher[] = [
 
 export const allUsers: (User | Teacher)[] = [...users, ...teachers];
 
+export const getAllUsers = (): (User | Teacher)[] => {
+    const storedUsers = localStorage.getItem('userList');
+    const currentUsers = storedUsers ? JSON.parse(storedUsers) : users;
+
+    const storedTeachers = localStorage.getItem('teacherList');
+    const currentTeachers = storedTeachers ? JSON.parse(storedTeachers) : teachers;
+
+    return [...currentUsers, ...currentTeachers];
+};
+
 
 export const subjects: Subject[] = [
   { id: 'subj-1', name: 'Matemática' },
@@ -423,5 +433,8 @@ export const adminNavItems: NavItem[] = [
     roles: ['admin'],
   },
 ];
+
+    
+
 
     
