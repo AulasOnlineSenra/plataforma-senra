@@ -69,7 +69,7 @@ function ChatPageComponent() {
     const { toast } = useToast();
 
     const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const viewportRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     // State for the scheduling dialog
@@ -151,14 +151,37 @@ function ChatPageComponent() {
     const chatContacts = useMemo(() => {
         if (!currentUser) return [];
 
+        if (currentUser.role === 'admin') {
+            const allCurrentUsers = [...initialUsers, ...initialTeachers];
+            const contactMap = new Map(allContacts.map(c => [c.id, c]));
+
+            const updatedContacts = allCurrentUsers
+                .filter(user => user.id !== currentUser.id)
+                .map(user => {
+                    const existingContact = contactMap.get(user.id);
+                    if (existingContact) {
+                        return existingContact;
+                    }
+                    return {
+                        id: user.id,
+                        name: user.name,
+                        avatarUrl: user.avatarUrl,
+                        lastMessage: 'Nenhuma mensagem ainda.',
+                        lastMessageTimestamp: new Date(0),
+                        unreadCount: 0,
+                    };
+                });
+            
+            return updatedContacts.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        }
+
+
         const now = new Date();
         const futureScheduledEvents = schedule.filter(e => e.status === 'scheduled' && e.start > now);
         
         let validPartnerIds: string[] = [];
 
-        if (currentUser.role === 'admin') {
-            validPartnerIds = allUsers.map(u => u.id);
-        } else if (currentUser.role === 'student') {
+        if (currentUser.role === 'student') {
             const myTeacherIds = futureScheduledEvents
                 .filter(e => e.studentId === currentUser.id)
                 .map(e => e.teacherId);
@@ -181,11 +204,8 @@ function ChatPageComponent() {
     }, [currentUser, schedule, allContacts, allUsers]);
 
     useEffect(() => {
-        if (scrollAreaRef.current) {
-          const scrollableNode = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-          if (scrollableNode) {
-            scrollableNode.scrollTop = scrollableNode.scrollHeight;
-          }
+        if (viewportRef.current) {
+            viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
         }
     }, [activeChatPartner, allMessages]);
     
@@ -496,9 +516,9 @@ function ChatPageComponent() {
 
               { activeChatPartner ? (
                   <Card className="flex flex-col rounded-lg border bg-card max-h-[calc(100vh-8rem)]" style={{
-                      backgroundImage: "url('/chat-bg.png')",
+                      backgroundImage: "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABOUlEQVR4Ae3ToY1EMRCF0UvUf2wB3sImsQvsQ7AP2Ics2EWwBwuwC+xCGSBD5jZ5Y+Pj/yc5CZvMk49KKaXEV4/iXkCgGvA5sAV4IwsQ7wJ0fQc8oYoSnGQCbAN2eAI8EucK9xTQZwJ8ATY5wE0S53pHcAJMHeAJsMkBfCVx/sYJcALMHeAIsMkBfCdxvsYJcALMfeAIsMkBCv5KOXeMOcA+gCvAJgf4k4RznZwD7AO4wJuE8wacA+wDuMA3necMHARwD+D/e+3u4BwR7gFc4Pu88xacA/gL4MG88zYcBGRI2LwJMO8ARpiAnwJ3AON+gK0J9zVwFaDvAkyb4C/A1sT5GjgL0HcCbE24/wE2Jc4V7inAcYjsBdgK3LvAFYlzdY0dK6WU/At/AD5ZUU6Z2QJRAAAAAElFTkSuQmCC')",
                       backgroundRepeat: 'repeat',
-                      backgroundSize: '300px',
+                      backgroundSize: '200px',
                     }}>
                       <div className="flex items-center gap-4 p-4 border-b bg-card">
                           <Avatar className="h-10 w-10">
@@ -510,7 +530,7 @@ function ChatPageComponent() {
                               <p className="text-sm text-muted-foreground">Online</p>
                           </div>
                       </div>
-                      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                      <ScrollArea className="flex-1 p-4" viewportRef={viewportRef}>
                           <div className="flex flex-col gap-2">
                           {Object.keys(groupedMessages).sort().map(date => (
                               <div key={date}>
@@ -532,13 +552,23 @@ function ChatPageComponent() {
                                               </Avatar>
                                           )}
                                           <div className={cn(
-                                              "max-w-[75%] md:max-w-[60%] rounded-lg p-3 text-sm flex flex-col shadow",
-                                              message.senderId === currentUser?.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
+                                              "relative max-w-[75%] md:max-w-[60%] rounded-lg p-3 text-sm flex flex-col shadow",
+                                              message.senderId === currentUser?.id ? "bg-[#D0EFB1] text-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
                                           )}>
+                                              <div className={cn(
+                                                  'absolute w-3 h-3',
+                                                  message.senderId === currentUser?.id ? '-right-2 bottom-0 bg-[#D0EFB1] text-foreground' : '-left-2 bottom-0 bg-card'
+                                              )}
+                                               style={{
+                                                    clipPath: message.senderId === currentUser?.id
+                                                    ? 'polygon(100% 100%, 0 0, 100% 0)'
+                                                    : 'polygon(0 0, 100% 100%, 0 100%)',
+                                                }}
+                                              />
                                               {renderMessageContent(message)}
                                               <p className={cn(
                                                   "text-xs shrink-0 self-end pt-1",
-                                                  message.senderId === currentUser?.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                  message.senderId === currentUser?.id ? "text-foreground/70" : "text-muted-foreground"
                                               )}>
                                                   {format(new Date(message.timestamp), 'HH:mm')}
                                               </p>
