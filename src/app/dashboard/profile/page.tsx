@@ -34,6 +34,8 @@ import {
   MinusCircle,
   CalendarDays,
   Shield,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -117,6 +119,7 @@ function ProfilePageComponent() {
     const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const updateAllUsers = useCallback(() => {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -230,6 +233,7 @@ function ProfilePageComponent() {
         setIsPasswordDialogOpen(false);
         setNewPassword('');
         setConfirmPassword('');
+        setShowPassword(false);
     };
 
     const handleCepSave = async (cep: string) => {
@@ -460,7 +464,14 @@ function ProfilePageComponent() {
                 </CollapsibleCard>
             </div>
         </div>
-        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
+            setIsPasswordDialogOpen(open);
+            if (!open) {
+                setNewPassword('');
+                setConfirmPassword('');
+                setShowPassword(false);
+            }
+        }}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Alterar Senha</DialogTitle>
@@ -471,23 +482,49 @@ function ProfilePageComponent() {
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
                         <Label htmlFor="new-password">Nova Senha</Label>
-                        <Input
-                            id="new-password"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="••••••••"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="new-password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="pr-10"
+                            />
+                             <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                                onClick={() => setShowPassword(!showPassword)}
+                                >
+                                {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                                <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
+                            </Button>
+                        </div>
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                        <Input
-                            id="confirm-password"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••"
-                        />
+                         <div className="relative">
+                            <Input
+                                id="confirm-password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="pr-10"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                                onClick={() => setShowPassword(!showPassword)}
+                                >
+                                {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                                <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
