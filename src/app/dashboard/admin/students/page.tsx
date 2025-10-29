@@ -21,7 +21,7 @@ import {
 import { users as initialUsers } from '@/lib/data';
 import { User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { MessageSquare, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -104,11 +104,11 @@ function StudentList({
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/dashboard/student/${student.id}`);
+                          router.push(`/dashboard/chat?contactId=${student.id}`);
                         }}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Detalhes</span>
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="sr-only">Enviar Mensagem</span>
                       </Button>
                       <Button
                         variant="ghost"
