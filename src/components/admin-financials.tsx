@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ArrowUp, ArrowDown, Percent, Users, Landmark, TrendingUp, TrendingDown, Banknote } from 'lucide-react';
+import { DollarSign, ArrowUp, ArrowDown, Percent, Users, Landmark, TrendingUp, TrendingDown, Banknote, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -18,6 +18,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers } from '@/lib/data';
@@ -25,6 +36,7 @@ import { PaymentTransaction, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -37,17 +49,17 @@ export default function AdminFinancials() {
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [packageRevenue, setPackageRevenue] = useState(0);
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
+    const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
+    const { toast } = useToast();
 
     useEffect(() => {
-        const updateData = () => {
-            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
-            let history: PaymentTransaction[] = [];
-            if (storedHistory) {
-                history = JSON.parse(storedHistory).map((p: any) => ({...p, date: new Date(p.date)}));
-            } else {
-                history = initialPaymentHistory;
-            }
-            setTransactions(history.sort((a,b) => b.date.getTime() - a.date.getTime()));
+        const updateData = (currentTransactions?: PaymentTransaction[]) => {
+            const history = currentTransactions || (() => {
+                const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+                return storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
+            })();
+            
+            setTransactions(history.sort((a, b) => b.date.getTime() - a.date.getTime()));
 
             const revenue = history.reduce((acc, t) => acc + t.amount, 0);
             setTotalRevenue(revenue);
@@ -70,17 +82,50 @@ export default function AdminFinancials() {
             }
         };
 
-        updateData();
-        window.addEventListener('storage', updateData);
-        return () => window.removeEventListener('storage', updateData);
+        const initialLoad = () => {
+            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+            const history = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
+            updateData(history);
+        };
+
+        initialLoad();
+        
+        const handleStorageChange = () => initialLoad();
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     const getUserById = (id: string): User | undefined => {
         return users.find(u => u.id === id);
     }
+    
+    const handleDeleteTransaction = () => {
+        if (!transactionToDelete) return;
+
+        const updatedTransactions = transactions.filter(t => t.id !== transactionToDelete.id);
+        
+        setTransactions(updatedTransactions);
+        localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedTransactions));
+        
+        // Recalculate financial KPIs
+        const revenue = updatedTransactions.reduce((acc, t) => acc + t.amount, 0);
+        setTotalRevenue(revenue);
+        const pkgRevenue = updatedTransactions.filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
+        setPackageRevenue(pkgRevenue);
+        const singleRevenue = updatedTransactions.filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
+        setSingleClassRevenue(singleRevenue);
+
+        toast({
+            title: 'Transação Excluída',
+            description: 'A transação foi removida com sucesso.',
+        });
+        setTransactionToDelete(null);
+    }
 
 
   return (
+    <>
     <div className="grid gap-6">
         {/* KPIs */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -115,9 +160,9 @@ export default function AdminFinancials() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold text-green-600">R$ 16.998,39</div>
+                <div className="text-2xl font-bold text-green-600">R$ {totalRevenue - 28233.50 > 0 ? (totalRevenue - 28233.50).toFixed(2).replace('.',',') : '0,00'}</div>
                 <p className="text-xs text-muted-foreground">
-                    Margem de lucro: 37.6%
+                    Margem de lucro: {totalRevenue > 0 ? ((totalRevenue - 28233.50) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
                 </CardContent>
             </Card>
@@ -240,6 +285,7 @@ export default function AdminFinancials() {
                             <TableHead>Pacote</TableHead>
                             <TableHead>Data</TableHead>
                             <TableHead className="text-right">Valor</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -259,12 +305,18 @@ export default function AdminFinancials() {
                                     <TableCell>{transaction.packageName}</TableCell>
                                     <TableCell>{format(transaction.date, 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
                                     <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">Excluir</span>
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             )
                         })}
                          {transactions.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
+                                <TableCell colSpan={5} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
@@ -272,6 +324,23 @@ export default function AdminFinancials() {
             </CardContent>
         </Card>
     </div>
+    <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente a transação de <span className="font-bold">{getUserById(transactionToDelete?.studentId || '')?.name}</span> no valor de R$ {transactionToDelete?.amount.toFixed(2).replace('.',',')}.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteTransaction}>
+                    Excluir
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
