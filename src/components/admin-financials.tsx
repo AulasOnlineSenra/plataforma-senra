@@ -49,7 +49,6 @@ const marketingCosts = {
   team: 8750.00,
   commissions: 4890.50,
 };
-const platformInfraCost = 1500.00;
 const teacherPaymentsCost = 11150.00;
 
 
@@ -64,7 +63,7 @@ export default function AdminFinancials() {
     const { toast } = useToast();
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team;
-    const totalExpenses = totalMarketingExpenses + teacherPaymentsCost + platformInfraCost + marketingCosts.commissions;
+    const totalExpenses = totalMarketingExpenses + teacherPaymentsCost;
 
 
     useEffect(() => {
@@ -239,14 +238,6 @@ export default function AdminFinancials() {
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Marketing e Anúncios</span>
                         <span className="font-bold">R$ {totalMarketingExpenses.toFixed(2).replace('.',',')}</span>
-                    </div>
-                     <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Plataforma e Infra</span>
-                        <span className="font-bold">R$ {platformInfraCost.toFixed(2).replace('.',',')}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Comissões</span>
-                        <span className="font-bold">R$ {marketingCosts.commissions.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
                  <CardContent className="mt-auto">
