@@ -31,8 +31,8 @@ import {
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts } from '@/lib/data';
-import { PaymentTransaction, User, MarketingCosts } from '@/lib/types';
+import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents } from '@/lib/data';
+import { PaymentTransaction, User, MarketingCosts, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -43,9 +43,8 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 const USERS_STORAGE_KEY = 'userList';
 const MARKETING_COSTS_STORAGE_KEY = 'marketingCosts';
-
-const teacherPaymentsCost = 11150.00;
-
+const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
 export default function AdminFinancials() {
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
@@ -57,6 +56,7 @@ export default function AdminFinancials() {
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
     const { toast } = useToast();
+    const [teacherPaymentsCost, setTeacherPaymentsCost] = useState(0);
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
     const totalExpenses = totalMarketingExpenses + teacherPaymentsCost;
@@ -95,6 +95,15 @@ export default function AdminFinancials() {
             } else {
                 setMarketingCosts(initialMarketingCosts);
             }
+
+            const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+            const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule) : initialScheduleEvents;
+            const completedClasses = schedule.filter(e => e.status === 'completed').length;
+
+            const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
+            const paymentRate = storedRate ? parseFloat(storedRate) : 50;
+
+            setTeacherPaymentsCost(completedClasses * paymentRate);
         };
 
         updateData();
@@ -352,5 +361,3 @@ export default function AdminFinancials() {
     </>
   );
 }
-
-    
