@@ -107,6 +107,7 @@ export default function RegisterPage() {
             education: [],
             availability: {},
             status: 'active',
+            classCredits: 0, // Start with 0 completed classes
         } as Teacher;
 
         const updatedTeachers = [...currentTeachers, newUser];

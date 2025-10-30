@@ -33,7 +33,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
-import { format, subMonths, eachMonthOfInterval } from 'date-fns';
+import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState, useMemo } from 'react';
 import { UserRole, User, Teacher, ScheduleEvent } from '@/lib/types';
@@ -212,6 +212,18 @@ export default function DashboardPage() {
     ).length;
   }, [user, scheduleEvents]);
     
+  const teacherCompletedClassesThisMonth = useMemo(() => {
+    if (!user || user.role !== 'teacher') return 0;
+    const now = new Date();
+    const monthInterval = { start: startOfMonth(now), end: endOfMonth(now) };
+    return scheduleEvents.filter(
+      (e) =>
+        e.teacherId === user.id &&
+        e.status === 'completed' &&
+        isWithinInterval(e.start, monthInterval)
+    ).length;
+  }, [user, scheduleEvents]);
+
   if (!user) {
     return null; // Or a loading spinner
   }
@@ -467,7 +479,9 @@ export default function DashboardPage() {
                 <BookCopy className="h-6 w-6 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{user.classCredits ?? 0}</div>
+                <div className="text-2xl font-bold">
+                  {user.role === 'student' ? (user.classCredits ?? 0) : teacherCompletedClassesThisMonth}
+                </div>
                 <p className="text-xs text-muted-foreground">{user.activePackage ?? 'Nenhum pacote ativo'}</p>
               </CardContent>
             </Card>
