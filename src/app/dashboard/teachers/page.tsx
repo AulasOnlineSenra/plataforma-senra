@@ -364,7 +364,7 @@ export default function TeachersPage() {
                 />
             ))}
             </div>
-            {currentUser?.role === 'admin' && deletedTeachers.length > 0 && (
+            {currentUser?.role === 'admin' && (
                 <div className="px-4 mt-8">
                     <Card>
                         <CardHeader>
@@ -383,60 +383,68 @@ export default function TeachersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {deletedTeachers.map(teacher => (
-                                        <TableRow key={teacher.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="h-10 w-10">
-                                                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                                                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="font-medium">{teacher.name}</div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">{teacher.email}</TableCell>
-                                            <TableCell className="text-right">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                             <Button variant="ghost" size="icon" onClick={() => handleRestoreTeacher(teacher.id)}>
-                                                                <RotateCcw className="h-4 w-4" />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent><p>Restaurar Professor</p></TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                                <AlertDialog>
+                                    {deletedTeachers.length > 0 ? (
+                                        deletedTeachers.map(teacher => (
+                                            <TableRow key={teacher.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-10 w-10">
+                                                            <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                                            <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="font-medium">{teacher.name}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="hidden sm:table-cell">{teacher.email}</TableCell>
+                                                <TableCell className="text-right">
                                                     <TooltipProvider>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
+                                                                <Button variant="ghost" size="icon" onClick={() => handleRestoreTeacher(teacher.id)}>
+                                                                    <RotateCcw className="h-4 w-4" />
+                                                                </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Excluir Permanentemente</p></TooltipContent>
+                                                            <TooltipContent><p>Restaurar Professor</p></TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handlePermanentDeleteTeacher(teacher.id)}>
-                                                                Excluir Permanentemente
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                    <AlertDialog>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>Excluir Permanentemente</p></TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handlePermanentDeleteTeacher(teacher.id)}>
+                                                                    Excluir Permanentemente
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                                                Nenhum professor na lista de excluídos.
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
