@@ -33,7 +33,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
-import { format } from 'date-fns';
+import { format, subMonths, eachMonthOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState, useMemo } from 'react';
 import { UserRole, User, Teacher, ScheduleEvent } from '@/lib/types';
@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
@@ -67,6 +68,16 @@ export default function DashboardPage() {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
   const router = useRouter();
+  const [subjectsMonthFilter, setSubjectsMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
+
+
+  const monthOptions = useMemo(() => eachMonthOfInterval({
+    start: subMonths(new Date(), 12),
+    end: new Date(),
+  }).map(date => ({
+    value: format(date, 'yyyy-MM'),
+    label: format(date, "MMMM 'de' yyyy", { locale: ptBR }),
+  })).reverse(), []);
 
 
   useEffect(() => {
@@ -291,11 +302,27 @@ export default function DashboardPage() {
             <CarouselItem>
               <Card>
                 <CardHeader>
-                  <CardTitle>Aulas por Disciplina</CardTitle>
-                  <CardDescription>Distribuição das aulas agendadas.</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Aulas por Disciplina</CardTitle>
+                      <CardDescription>Distribuição das aulas agendadas.</CardDescription>
+                    </div>
+                    <Select value={subjectsMonthFilter} onValueChange={setSubjectsMonthFilter}>
+                      <SelectTrigger className="w-full sm:w-[220px]">
+                        <SelectValue placeholder="Selecione um mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
                 <CardContent className="h-[350px]">
-                  <SubjectsChart />
+                  <SubjectsChart selectedMonth={subjectsMonthFilter} />
                 </CardContent>
               </Card>
             </CarouselItem>
