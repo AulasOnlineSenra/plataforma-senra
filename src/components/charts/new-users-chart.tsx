@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -11,32 +11,18 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
-  startOfWeek,
   startOfMonth,
-  startOfYear,
-  endOfWeek,
   endOfMonth,
-  endOfYear,
   eachDayOfInterval,
-  eachWeekOfInterval,
-  eachMonthOfInterval,
-  eachYearOfInterval,
   format,
-  isWithinInterval,
   parse,
 } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { User, Teacher } from '@/lib/types';
+import { users as initialUsers, teachers as initialTeachers } from '@/lib/data';
 
-const allData = Array.from({ length: 365 * 5 }).map((_, i) => {
-  const date = new Date(2022, 0, 1);
-  date.setDate(date.getDate() + i);
-  return {
-    date: date,
-    Alunos: Math.floor(Math.random() * 5),
-    Professores: Math.floor(Math.random() * 2),
-  };
-});
+const USERS_STORAGE_KEY = 'userList';
+const TEACHERS_STORAGE_KEY = 'teacherList';
 
 interface NewUsersChartProps {
   selectedMonth: string;
@@ -51,28 +37,65 @@ const chartConfig = {
     label: 'Professores',
     color: 'hsl(var(--chart-2))',
   },
+  Admins: {
+    label: 'Admins',
+    color: 'hsl(var(--chart-3))',
+  },
 } satisfies ChartConfig;
 
 
 export function NewUsersChart({ selectedMonth }: NewUsersChartProps) {
-    const chartData = useMemo(() => {
-    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
-    const interval = {
-      start: startOfMonth(monthDate),
-      end: endOfMonth(monthDate),
-    };
-    const days = eachDayOfInterval(interval);
+    const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
 
-    return days.map(day => {
-      const dayUsers = allData
-        .filter(d => format(d.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
-        .reduce((acc, curr) => ({
-          Alunos: acc.Alunos + curr.Alunos,
-          Professores: acc.Professores + curr.Professores,
-        }), { Alunos: 0, Professores: 0 });
-      return { name: format(day, 'dd/MM'), ...dayUsers };
-    });
-  }, [selectedMonth]);
+    useEffect(() => {
+        const updateUsers = () => {
+            const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+            const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+            
+            const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+            const currentTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+            
+            setAllUsers([...currentUsers, ...currentTeachers]);
+        };
+
+        updateUsers();
+        window.addEventListener('storage', updateUsers);
+        return () => window.removeEventListener('storage', updateUsers);
+    }, []);
+
+    const chartData = useMemo(() => {
+        const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+        const interval = {
+            start: startOfMonth(monthDate),
+            end: endOfMonth(monthDate),
+        };
+        const days = eachDayOfInterval(interval);
+
+        return days.map(day => {
+            const dayStr = format(day, 'yyyy-MM-dd');
+            
+            const dailyCounts = allUsers.reduce((acc, user) => {
+                const idParts = user.id.split('-');
+                const timestamp = parseInt(idParts[idParts.length - 1], 10);
+                
+                if (!isNaN(timestamp)) {
+                    const registrationDate = new Date(timestamp);
+                    if (format(registrationDate, 'yyyy-MM-dd') === dayStr) {
+                        if (user.role === 'student') {
+                            acc.Alunos += 1;
+                        } else if (user.role === 'teacher') {
+                            acc.Professores += 1;
+                        } else if (user.role === 'admin') {
+                            acc.Admins += 1;
+                        }
+                    }
+                }
+                return acc;
+            }, { Alunos: 0, Professores: 0, Admins: 0 });
+
+            return { name: format(day, 'dd/MM'), ...dailyCounts };
+        });
+    }, [selectedMonth, allUsers]);
 
 
   return (
@@ -113,6 +136,13 @@ export function NewUsersChart({ selectedMonth }: NewUsersChartProps) {
           dataKey="Professores"
           type="natural"
           stroke="var(--color-Professores)"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          dataKey="Admins"
+          type="natural"
+          stroke="var(--color-Admins)"
           strokeWidth={2}
           dot={false}
         />
