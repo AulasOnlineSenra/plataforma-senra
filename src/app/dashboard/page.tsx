@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
   const router = useRouter();
   const [subjectsMonthFilter, setSubjectsMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
+  const [newUsersMonthFilter, setNewUsersMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
 
 
   const monthOptions = useMemo(() => eachMonthOfInterval({
@@ -332,20 +333,24 @@ export default function DashboardPage() {
                    <div className="flex justify-between items-center">
                       <div>
                         <CardTitle>Aquisição de Novos Usuários</CardTitle>
-                        <CardDescription>Novos usuários por período.</CardDescription>
+                        <CardDescription>Novos usuários por dia no mês selecionado.</CardDescription>
                       </div>
-                      <Tabs defaultValue="day" value={filter} onValueChange={setFilter} className="hidden sm:block">
-                        <TabsList>
-                          <TabsTrigger value="day">Dia</TabsTrigger>
-                          <TabsTrigger value="week">Semana</TabsTrigger>
-                          <TabsTrigger value="month">Mês</TabsTrigger>
-                          <TabsTrigger value="year">Ano</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
+                      <Select value={newUsersMonthFilter} onValueChange={setNewUsersMonthFilter}>
+                        <SelectTrigger className="w-full sm:w-[220px]">
+                          <SelectValue placeholder="Selecione um mês" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {monthOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                 </CardHeader>
                 <CardContent className="h-[350px]">
-                  <NewUsersChart filter={filter} />
+                  <NewUsersChart selectedMonth={newUsersMonthFilter} />
                 </CardContent>
               </Card>
             </CarouselItem>

@@ -22,6 +22,8 @@ import {
   eachMonthOfInterval,
   eachYearOfInterval,
   format,
+  isWithinInterval,
+  parse,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
@@ -36,10 +38,8 @@ const allData = Array.from({ length: 365 * 5 }).map((_, i) => {
   };
 });
 
-type FilterType = 'day' | 'week' | 'month' | 'year';
-
 interface NewUsersChartProps {
-  filter: FilterType;
+  selectedMonth: string;
 }
 
 const chartConfig = {
@@ -54,73 +54,25 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-export function NewUsersChart({ filter }: NewUsersChartProps) {
+export function NewUsersChart({ selectedMonth }: NewUsersChartProps) {
     const chartData = useMemo(() => {
-    const now = new Date();
-    switch (filter) {
-      case 'day': {
-        const interval = { start: new Date(2025, 0, 1), end: now };
-        const days = eachDayOfInterval(interval);
-        return days.map(day => {
-          const dayUsers = allData
-            .filter(d => d.date.toDateString() === day.toDateString())
-            .reduce((acc, curr) => ({
-              Alunos: acc.Alunos + curr.Alunos,
-              Professores: acc.Professores + curr.Professores,
-            }), { Alunos: 0, Professores: 0 });
-          return { name: format(day, 'dd/MM'), ...dayUsers };
-        });
-      }
-      case 'week': {
-        const start = startOfYear(now);
-        const end = endOfYear(now);
-        const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 });
-        return weeks.map(weekStart => {
-          const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-          const weekUsers = allData
-            .filter(d => d.date >= weekStart && d.date <= weekEnd)
-            .reduce((acc, curr) => ({
-              Alunos: acc.Alunos + curr.Alunos,
-              Professores: acc.Professores + curr.Professores,
-            }), { Alunos: 0, Professores: 0 });
-          return {
-            name: `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM')}`,
-            ...weekUsers
-          };
-        });
-      }
-      case 'month': {
-        const interval = { start: startOfYear(now), end: endOfYear(now) };
-        const months = eachMonthOfInterval(interval);
-        return months.map(month => {
-          const monthUsers = allData
-            .filter(d => d.date.getMonth() === month.getMonth() && d.date.getFullYear() === month.getFullYear())
-            .reduce((acc, curr) => ({
-              Alunos: acc.Alunos + curr.Alunos,
-              Professores: acc.Professores + curr.Professores,
-            }), { Alunos: 0, Professores: 0 });
-          return { name: format(month, 'MMM', { locale: ptBR }), ...monthUsers };
-        });
-      }
-      case 'year': {
-        const years = eachYearOfInterval({
-          start: new Date(2022, 0, 1),
-          end: now,
-        });
-        return years.map(year => {
-          const yearUsers = allData
-            .filter(d => d.date.getFullYear() === year.getFullYear())
-            .reduce((acc, curr) => ({
-              Alunos: acc.Alunos + curr.Alunos,
-              Professores: acc.Professores + curr.Professores,
-            }), { Alunos: 0, Professores: 0 });
-          return { name: format(year, 'yyyy'), ...yearUsers };
-        });
-      }
-      default:
-        return [];
-    }
-  }, [filter]);
+    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+    const interval = {
+      start: startOfMonth(monthDate),
+      end: endOfMonth(monthDate),
+    };
+    const days = eachDayOfInterval(interval);
+
+    return days.map(day => {
+      const dayUsers = allData
+        .filter(d => format(d.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
+        .reduce((acc, curr) => ({
+          Alunos: acc.Alunos + curr.Alunos,
+          Professores: acc.Professores + curr.Professores,
+        }), { Alunos: 0, Professores: 0 });
+      return { name: format(day, 'dd/MM'), ...dayUsers };
+    });
+  }, [selectedMonth]);
 
 
   return (
