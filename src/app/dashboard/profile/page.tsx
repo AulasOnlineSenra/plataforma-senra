@@ -431,13 +431,13 @@ function ProfilePageComponent() {
                                 {subjects.map(subject => (
                                     <div key={subject.id} className="flex items-center space-x-2">
                                         <Checkbox
-                                            id={`subj-${'\'\''}${subject.id}`}
+                                            id={`subj-${subject.id}`}
                                             checked={teacherProfile.subjects?.includes(subject.id)}
                                             onCheckedChange={(checked) => handleSubjectsChange(subject.id, !!checked)}
                                             disabled={!canEdit}
                                         />
                                         <label
-                                            htmlFor={`subj-${'\'\''}${subject.id}`}
+                                            htmlFor={`subj-${subject.id}`}
                                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                         >
                                             {subject.name}
