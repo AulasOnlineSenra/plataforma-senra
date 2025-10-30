@@ -54,6 +54,7 @@ export default function AdminFinancials() {
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
+    const [isExpensesOpen, setIsExpensesOpen] = useState(true);
     const { toast } = useToast();
     const [teacherPaymentsCost, setTeacherPaymentsCost] = useState(0);
 
@@ -192,92 +193,6 @@ export default function AdminFinancials() {
             </Card>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-            {/* Receitas */}
-            <Card className="flex flex-col">
-                <CardHeader>
-                    <div className="flex items-center gap-2">
-                        <TrendingUp className="h-6 w-6 text-green-500" />
-                        <CardTitle>Receitas</CardTitle>
-                    </div>
-                    <CardDescription>Origem do faturamento mensal.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 flex-1">
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Venda de pacotes de aulas</span>
-                        <span className="font-bold">R$ {packageRevenue.toFixed(2).replace('.',',')}</span>
-                    </div>
-                     <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Aulas avulsas</span>
-                        <span className="font-bold">R$ {singleClassRevenue.toFixed(2).replace('.',',')}</span>
-                    </div>
-                </CardContent>
-                <CardContent className="mt-auto">
-                    <Separator className="my-4" />
-                    <div className="flex items-center justify-between font-bold">
-                        <span>Total de Receitas</span>
-                        <span className="text-green-600">R$ {totalRevenue.toFixed(2).replace('.',',')}</span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Despesas */}
-            <Card className="flex flex-col">
-                <CardHeader>
-                    <div className="flex items-center gap-2">
-                        <TrendingDown className="h-6 w-6 text-red-500" />
-                        <CardTitle>Despesas</CardTitle>
-                    </div>
-                    <CardDescription>Distribuição dos custos operacionais.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 flex-1">
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Pagamentos (Professores)</span>
-                        <span className="font-bold">R$ {teacherPaymentsCost.toFixed(2).replace('.',',')}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Custo Total de Marketing</span>
-                        <span className="font-bold">R$ {totalMarketingExpenses.toFixed(2).replace('.',',')}</span>
-                    </div>
-                </CardContent>
-                 <CardContent className="mt-auto">
-                    <Separator className="my-4" />
-                    <div className="flex items-center justify-between font-bold">
-                        <span>Total de Despesas</span>
-                        <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Patrimônio Líquido */}
-             <Card className="flex flex-col">
-                <CardHeader>
-                     <div className="flex items-center gap-2">
-                        <Landmark className="h-6 w-6 text-blue-500" />
-                        <CardTitle>Patrimônio Líquido</CardTitle>
-                    </div>
-                    <CardDescription>Visão geral dos ativos e passivos.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 flex-1">
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total de Receitas</span>
-                        <span className="font-bold text-green-600">R$ {totalRevenue.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                     <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total de Despesas</span>
-                        <span className="font-bold text-red-600">- R$ {totalExpenses.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                </CardContent>
-                <CardContent className="mt-auto">
-                    <Separator className="my-4" />
-                    <div className="flex items-center justify-between font-bold">
-                        <span>Patrimônio Líquido</span>
-                        <span className="text-blue-600">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.', ',')}</span>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-
         <Collapsible open={isReceiptsOpen} onOpenChange={setIsReceiptsOpen}>
             <Card>
                 <CollapsibleTrigger asChild>
@@ -336,6 +251,62 @@ export default function AdminFinancials() {
                                 )}
                             </TableBody>
                         </Table>
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
+
+         <Collapsible open={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
+            <Card>
+                <CollapsibleTrigger asChild>
+                    <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
+                        <div>
+                            <CardTitle>Despesas</CardTitle>
+                            <CardDescription>Detalhes dos custos operacionais.</CardDescription>
+                        </div>
+                        <Button variant="ghost" size="icon">
+                            {isExpensesOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </Button>
+                    </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Categoria</TableHead>
+                                    <TableHead>Sub-Categoria</TableHead>
+                                    <TableHead className="text-right">Valor</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell rowSpan={2} className="font-medium align-top">Pagamentos</TableCell>
+                                    <TableCell>Professores (aulas concluídas)</TableCell>
+                                    <TableCell className="text-right font-mono">R$ {teacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
+                                </TableRow>
+                                 <TableRow>
+                                    <TableCell>Comissões (Marketing)</TableCell>
+                                    <TableCell className="text-right font-mono">R$ {(marketingCosts.organicCommissions + marketingCosts.paidCommissions).toFixed(2).replace('.', ',')}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell rowSpan={2} className="font-medium align-top">Custos de Marketing</TableCell>
+                                    <TableCell>Anúncios</TableCell>
+                                    <TableCell className="text-right font-mono">R$ {marketingCosts.ads.toFixed(2).replace('.', ',')}</TableCell>
+                                </TableRow>
+                                 <TableRow>
+                                    <TableCell>Equipe</TableCell>
+                                    <TableCell className="text-right font-mono">R$ {marketingCosts.team.toFixed(2).replace('.', ',')}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                     <CardContent className="mt-auto">
+                        <Separator className="my-4" />
+                        <div className="flex items-center justify-between font-bold">
+                            <span>Total de Despesas</span>
+                            <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                        </div>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
