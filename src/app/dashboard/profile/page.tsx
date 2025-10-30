@@ -716,100 +716,102 @@ const timeSlots = [
 
 type TimeRange = { start: string; end: string };
 
-function AvailabilityDialog({ 
-    isOpen, 
-    onOpenChange, 
-    onSave,
-    initialRanges,
-    applyToAll,
-    onApplyToAll,
-}: { 
-    isOpen: boolean; 
-    onOpenChange: (open: boolean) => void;
-    onSave: (ranges: TimeRange[]) => void;
-    initialRanges: TimeRange[];
-    applyToAll: boolean;
-    onApplyToAll: (checked: boolean) => void;
+function AvailabilityDialog({
+  isOpen,
+  onOpenChange,
+  onSave,
+  initialRanges,
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (ranges: TimeRange[], applyToAll: boolean) => void;
+  initialRanges: TimeRange[];
 }) {
-    const [ranges, setRanges] = useState<TimeRange[]>(initialRanges.length > 0 ? initialRanges : [{ start: '09:00', end: '17:00' }]);
+  const [ranges, setRanges] = useState<TimeRange[]>([]);
+  const [applyToAll, setApplyToAll] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
+    // Only reset ranges when the dialog opens with new initialRanges
+    if (isOpen) {
         setRanges(initialRanges.length > 0 ? initialRanges : [{ start: '09:00', end: '17:00' }]);
-    }, [initialRanges]);
-
-    const handleAddRange = () => {
-        setRanges([...ranges, { start: '09:00', end: '17:00' }]);
-    };
-
-    const handleRemoveRange = (index: number) => {
-        setRanges(ranges.filter((_, i) => i !== index));
-    };
-
-    const handleTimeChange = (index: number, type: 'start' | 'end', value: string) => {
-        const newRanges = [...ranges];
-        newRanges[index][type] = value;
-        setRanges(newRanges);
-    };
-
-    const handleSaveClick = () => {
-        onSave(ranges);
-        onOpenChange(false);
     }
+  }, [isOpen, initialRanges]);
 
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Editar Disponibilidade</DialogTitle>
-                    <DialogDescription>
-                        Adicione ou remova os intervalos de tempo em que você está disponível.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    {ranges.map((range, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            <Select value={range.start} onValueChange={(v) => handleTimeChange(index, 'start', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <span>-</span>
-                            <Select value={range.end} onValueChange={(v) => handleTimeChange(index, 'end', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveRange(index)}>
-                                <MinusCircle className="h-5 w-5 text-destructive" />
-                            </Button>
-                        </div>
-                    ))}
-                    <Button variant="outline" onClick={handleAddRange}>
-                        <Plus className="mr-2" /> Adicionar Intervalo
-                    </Button>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <Checkbox id="apply-to-all" checked={applyToAll} onCheckedChange={(checked) => onApplyToAll(!!checked)} />
-                    <Label htmlFor="apply-to-all">Aplicar para todos os dias</Label>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancelar</Button>
-                    </DialogClose>
-                    <Button onClick={handleSaveClick}>Salvar</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+  const handleAddRange = () => {
+    setRanges([...ranges, { start: '09:00', end: '17:00' }]);
+  };
+
+  const handleRemoveRange = (index: number) => {
+    setRanges(ranges.filter((_, i) => i !== index));
+  };
+
+  const handleTimeChange = (index: number, type: 'start' | 'end', value: string) => {
+    const newRanges = [...ranges];
+    newRanges[index][type] = value;
+    setRanges(newRanges);
+  };
+
+  const handleSaveClick = () => {
+    onSave(ranges, applyToAll);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) setApplyToAll(false); // Reset checkbox on close
+        onOpenChange(open);
+    }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Disponibilidade</DialogTitle>
+          <DialogDescription>
+            Adicione ou remova os intervalos de tempo em que você está disponível.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
+          {ranges.map((range, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Select value={range.start} onValueChange={(v) => handleTimeChange(index, 'start', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <span>-</span>
+              <Select value={range.end} onValueChange={(v) => handleTimeChange(index, 'end', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button variant="ghost" size="icon" onClick={() => handleRemoveRange(index)}>
+                <MinusCircle className="h-5 w-5 text-destructive" />
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" onClick={handleAddRange}>
+            <Plus className="mr-2" /> Adicionar Intervalo
+          </Button>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox id="apply-to-all" checked={applyToAll} onCheckedChange={(checked) => setApplyToAll(!!checked)} />
+          <Label htmlFor="apply-to-all">Aplicar para todos os dias</Label>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Cancelar</Button>
+          </DialogClose>
+          <Button onClick={handleSaveClick}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function AvailabilityManager({ availability, onSave, canEdit }: { availability: Availability, onSave: (newAvailability: Availability) => void, canEdit: boolean }) {
     const [currentAvailability, setCurrentAvailability] = useState(availability);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDay, setEditingDay] = useState<string | null>(null);
-    const [applyToAll, setApplyToAll] = useState(false);
     
     useEffect(() => {
         setCurrentAvailability(availability);
@@ -837,7 +839,7 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
         onSave(newAvailability);
     }
     
-    const handleSaveDialog = (ranges: TimeRange[]) => {
+    const handleSaveDialog = (ranges: TimeRange[], applyToAll: boolean) => {
         if (!editingDay) return;
 
         let newAvailability = { ...currentAvailability };
@@ -852,7 +854,6 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
 
         setCurrentAvailability(newAvailability);
         onSave(newAvailability);
-        setApplyToAll(false);
         setEditingDay(null);
     };
 
@@ -892,8 +893,6 @@ function AvailabilityManager({ availability, onSave, canEdit }: { availability: 
                     onOpenChange={setIsDialogOpen}
                     initialRanges={getDayRanges(editingDay)}
                     onSave={handleSaveDialog}
-                    applyToAll={applyToAll}
-                    onApplyToAll={setApplyToAll}
                 />
             )}
         </div>
@@ -909,4 +908,5 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
+
 
