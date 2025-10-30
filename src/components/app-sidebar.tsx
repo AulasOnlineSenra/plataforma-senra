@@ -315,7 +315,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
           </div>
         </Link>
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4", isMobile ? 'py-4' : '')}>
+                <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4 py-4", isMobile ? 'py-4' : '')}>
                     {filteredNavItems.map(item => renderLink(item, false, 'main'))}
                     {filteredAdminNavItems.length > 0 && (
                         <>
