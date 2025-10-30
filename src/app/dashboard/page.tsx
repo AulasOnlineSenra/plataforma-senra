@@ -89,7 +89,9 @@ export default function DashboardPage() {
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         } else {
-          setUser(getMockUser(role));
+          const mockUser = getMockUser('student');
+          setUser(mockUser);
+          localStorage.setItem('currentUser', JSON.stringify(mockUser));
         }
       } else {
         router.push('/login');
@@ -569,7 +571,7 @@ export default function DashboardPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Bem-vindo(a) de volta, {user.name.split(' ')[0]}!
+          Bem-vindo(a) de volta, {user.nickname || user.name.split(' ')[0]}!
         </h1>
       </div>
       {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
