@@ -344,7 +344,7 @@ export default function TeachersPage() {
               </Button>
               <Button
                 onClick={() => setIsInviteDialogOpen(true)}
-                className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:bg-sidebar-accent-foreground"
               >
                 <UserPlus className="mr-2" />
                 Convidar
