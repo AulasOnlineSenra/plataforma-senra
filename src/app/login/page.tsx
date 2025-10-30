@@ -386,10 +386,10 @@ export default function LoginPage() {
     if (newUserDataString) {
         try {
             const newUser = JSON.parse(newUserDataString);
-            if (newUser.email === email && newUser.role === role) {
+            if (newUser.email.toLowerCase() === email.toLowerCase() && newUser.role === role) {
                 userToLogin = combinedUsers.find(u => u.id === newUser.id) || null;
                 isNewRegistration = true;
-            } else if (newUser.email === email && newUser.role !== role) {
+            } else if (newUser.email.toLowerCase() === email.toLowerCase() && newUser.role !== role) {
                  toast({
                     variant: "destructive",
                     title: "Perfil Incorreto",
@@ -411,7 +411,7 @@ export default function LoginPage() {
                 const storedPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
                 if (storedPassword === password || (storedPassword === null && password === 'password')) {
                     userToLogin = foundUser;
-                } else if (storedPassword !== password) {
+                } else {
                      toast({
                         variant: "destructive",
                         title: "Credenciais Inválidas",
@@ -436,6 +436,7 @@ export default function LoginPage() {
         localStorage.setItem('userRole', visitorRole);
         const user = getMockUser(visitorRole);
         localStorage.setItem('currentUser', JSON.stringify(user));
+        localStorage.setItem('userId', user.id);
         toast({
             title: "Acesso de Visitante",
             description: `Você está acessando como ${user.name.split(' ')[0]}.`,
