@@ -196,7 +196,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold text-green-600">R$ {totalRevenue - totalExpenses > 0 ? (totalRevenue - totalExpenses).toFixed(2).replace('.',',') : '0,00'}</div>
+                <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground">
                     Margem de lucro: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
@@ -309,6 +309,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                     <TableHead>Aluno</TableHead>
                                     <TableHead>Pacote</TableHead>
                                     <TableHead>Data</TableHead>
+                                    <TableHead className="text-center">Créditos</TableHead>
                                     <TableHead className="text-right">Valor</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
@@ -329,6 +330,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                             </TableCell>
                                             <TableCell>{transaction.packageName}</TableCell>
                                             <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
+                                            <TableCell className="text-center font-medium">+{transaction.creditsAdded}</TableCell>
                                             <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
@@ -341,7 +343,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                 })}
                                 {transactions.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
+                                        <TableCell colSpan={6} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
