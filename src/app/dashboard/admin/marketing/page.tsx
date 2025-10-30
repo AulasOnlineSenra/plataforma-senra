@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { DollarSign, Target, Users, Percent, Save } from 'lucide-react';
-import { initialMarketingCosts } from '@/lib/data';
+import { marketingCosts as initialMarketingCosts } from '@/lib/data';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -248,5 +248,4 @@ export default function MarketingPage() {
     </div>
   );
 }
-
     
