@@ -255,7 +255,7 @@ export default function AdminFinancials() {
                 <CardHeader>
                      <div className="flex items-center gap-2">
                         <Landmark className="h-6 w-6 text-blue-500" />
-                        <CardTitle>Patrimônio</CardTitle>
+                        <CardTitle>Patrimônio Líquido</CardTitle>
                     </div>
                     <CardDescription>Visão geral dos ativos e passivos.</CardDescription>
                 </CardHeader>
