@@ -18,7 +18,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <ResizablePanelGroup
       direction="horizontal"
-      className="h-screen min-h-screen w-full"
+      className="h-full min-h-screen w-full"
       onLayout={(sizes: number[]) => {
         document.cookie = `react-resizable-panels:layout=${JSON.stringify(
           sizes
@@ -42,7 +42,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       </ResizablePanel>
       <ResizableHandle withHandle className="hidden md:flex" />
       <ResizablePanel defaultSize={80}>
-        <div className="flex h-full flex-col">
+        <div className="flex h-screen flex-col">
           <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background overflow-auto">
             {children}
