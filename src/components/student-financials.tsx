@@ -82,7 +82,7 @@ export default function StudentFinancials() {
                   <TableCell>
                     <Badge variant="outline">{transaction.paymentMethod}</Badge>
                   </TableCell>
-                  <TableCell className="text-center font-medium text-primary">
+                  <TableCell className="text-center font-medium text-brand-yellow">
                     +{transaction.creditsAdded}
                   </TableCell>
                   <TableCell className="text-right font-mono">
