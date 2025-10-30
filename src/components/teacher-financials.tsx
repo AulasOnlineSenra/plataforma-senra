@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getMockUser, scheduleEvents as initialSchedule, teacherPayments } from '@/lib/data';
+import { getMockUser, scheduleEvents as initialSchedule, teacherPayments as initialTeacherPayments } from '@/lib/data';
 import { ScheduleEvent, Teacher, PaymentTransaction } from '@/lib/types';
 import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
@@ -36,6 +36,7 @@ export default function TeacherFinancials() {
   const [paymentRate, setPaymentRate] = useState(50); // Default value
   const [paymentDay, setPaymentDay] = useState('friday');
   const [paymentFrequency, setPaymentFrequency] = useState('weekly');
+  const [teacherPayments, setTeacherPayments] = useState(initialTeacherPayments);
 
 
   useEffect(() => {
@@ -45,6 +46,10 @@ export default function TeacherFinancials() {
         const user = JSON.parse(userStr);
         if (user.role === 'teacher') {
           setCurrentUser(user);
+          // For new teachers, there might be no payment history yet.
+          if (!user.lastAccess || new Date().getTime() - new Date(user.lastAccess).getTime() < 5 * 60 * 1000) {
+            setTeacherPayments([]);
+          }
         }
       }
 
@@ -206,20 +211,28 @@ export default function TeacherFinancials() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teacherPayments.map((payment, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{payment.period}</TableCell>
-                  <TableCell className="text-center">{payment.classesDone}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge className={payment.status === 'Pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                        {payment.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    R$ {payment.amount.toFixed(2).replace('.', ',')}
-                  </TableCell>
+              {teacherPayments.length > 0 ? (
+                teacherPayments.map((payment, index) => (
+                    <TableRow key={index}>
+                    <TableCell className="font-medium">{payment.period}</TableCell>
+                    <TableCell className="text-center">{payment.classesDone}</TableCell>
+                    <TableCell className="text-center">
+                        <Badge className={payment.status === 'Pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            {payment.status}
+                        </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                        R$ {payment.amount.toFixed(2).replace('.', ',')}
+                    </TableCell>
+                    </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                        Nenhum histórico de pagamento encontrado.
+                    </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
