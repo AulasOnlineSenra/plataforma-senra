@@ -117,6 +117,8 @@ function SchedulePageComponent() {
                 localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(currentUsers));
                 localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(currentTeachers));
                 window.dispatchEvent(new Event('storage'));
+            } else {
+                window.dispatchEvent(new Event('storage'));
             }
         }
 
@@ -688,7 +690,3 @@ export default function SchedulePage() {
         </Suspense>
     )
 }
-
-    
-
-    
