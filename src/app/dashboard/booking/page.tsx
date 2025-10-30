@@ -21,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers, chatContacts as initialChatContacts, chatMessages as initialChatMessages } from '@/lib/data';
+import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers, chatContacts as initialChatContacts, chatMessages as initialChatMessages, logActivity } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -417,6 +417,8 @@ function BookingPageComponent() {
         sendNotification(adminUser.id, event.teacherId, `Olá, ${teacher?.name}. Uma nova aula de ${event.subject} com ${student?.name} foi agendada para ${dateStr}.`);
 
         sendNotification(adminUser.id, event.studentId, `Olá, ${student?.name}. Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
+
+        logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);
     });
 
     window.dispatchEvent(new Event('storage'));

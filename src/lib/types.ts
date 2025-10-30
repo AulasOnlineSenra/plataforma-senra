@@ -140,3 +140,8 @@ export interface MarketingCosts {
   organicCommissions: number;
   paidCommissions: number;
 }
+
+export interface Activity {
+  action: string;
+  date: Date;
+}

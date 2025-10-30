@@ -19,23 +19,31 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Activity } from '@/lib/types';
 
-interface Activity {
-  action: string;
-  date: Date;
-}
+const ACTIVITY_LOG_STORAGE_KEY = 'activityLog';
 
 export default function ActivityHistoryPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
-    // These will only run on the client, after initial hydration
-    setActivities([
-      { action: 'Agendou uma aula de Matemática', date: new Date() },
-      { action: 'Enviou uma mensagem para Ana Silva', date: new Date(Date.now() - 2 * 60 * 60 * 1000) },
-      { action: 'Atualizou o perfil', date: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-    ]);
-  }, []); // Empty dependency array ensures this runs once on mount
+    const updateActivities = () => {
+      const storedLog = localStorage.getItem(ACTIVITY_LOG_STORAGE_KEY);
+      if (storedLog) {
+        // Parse and ensure dates are Date objects
+        const parsedLog = JSON.parse(storedLog).map((item: any) => ({
+            ...item,
+            date: new Date(item.date)
+        }));
+        setActivities(parsedLog);
+      }
+    };
+    
+    updateActivities();
+
+    window.addEventListener('storage', updateActivities);
+    return () => window.removeEventListener('storage', updateActivities);
+  }, []);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -60,16 +68,24 @@ export default function ActivityHistoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activities.map((activity, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{activity.action}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {format(activity.date, "dd/MM/yyyy 'às' HH:mm", {
-                      locale: ptBR,
-                    })}
-                  </TableCell>
+              {activities.length > 0 ? (
+                activities.map((activity, index) => (
+                    <TableRow key={index}>
+                    <TableCell className="font-medium">{activity.action}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                        {format(activity.date, "dd/MM/yyyy 'às' HH:mm", {
+                        locale: ptBR,
+                        })}
+                    </TableCell>
+                    </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
+                        Nenhuma atividade registrada ainda.
+                    </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -77,5 +93,3 @@ export default function ActivityHistoryPage() {
     </div>
   );
 }
-
-    

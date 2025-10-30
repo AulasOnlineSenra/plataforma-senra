@@ -15,7 +15,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
-import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, users as initialRegularUsers, teachers as initialTeachers } from '@/lib/data';
+import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, users as initialRegularUsers, teachers as initialTeachers, logActivity } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -274,6 +274,11 @@ function ChatPageComponent() {
       updateUserContacts(newMessage.senderId, newMessage.receiverId, false);
       updateUserContacts(newMessage.receiverId, newMessage.senderId, true);
       
+      const receiver = allUsers.find(u => u.id === receiverId);
+      if (receiver) {
+        logActivity(`Enviou uma mensagem para ${receiver.name}`);
+      }
+
       window.dispatchEvent(new Event('storage'));
     }, [allUsers]);
 

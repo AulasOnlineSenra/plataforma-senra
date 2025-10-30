@@ -1,6 +1,6 @@
 
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -495,4 +495,24 @@ export const marketingCosts: MarketingCosts = {
   team: 8750.00,
   organicCommissions: 2150.00,
   paidCommissions: 2740.50,
+};
+
+const ACTIVITY_LOG_STORAGE_KEY = 'activityLog';
+export const logActivity = (action: string) => {
+    if (typeof window === 'undefined') return;
+    
+    const newActivity: Activity = {
+        action,
+        date: new Date(),
+    };
+
+    const storedLog = localStorage.getItem(ACTIVITY_LOG_STORAGE_KEY);
+    const currentLog: Activity[] = storedLog ? JSON.parse(storedLog) : [];
+
+    // Keep the log to a reasonable size, e.g., 50 entries
+    const updatedLog = [newActivity, ...currentLog].slice(0, 50);
+
+    localStorage.setItem(ACTIVITY_LOG_STORAGE_KEY, JSON.stringify(updatedLog));
+    // Dispatch a storage event to notify other tabs/components like the history page
+    window.dispatchEvent(new Event('storage'));
 };
