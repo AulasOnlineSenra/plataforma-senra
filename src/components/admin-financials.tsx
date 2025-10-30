@@ -41,9 +41,12 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 const USERS_STORAGE_KEY = 'userList';
-const MARKETING_COSTS_STORAGE_KEY = 'marketingCosts';
+const MONTHLY_MARKETING_COSTS_STORAGE_KEY = 'monthlyMarketingCosts';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
+
+const DEFAULT_COSTS = { ads: 0, team: 0, organicCommissions: 0, paidCommissions: 0 };
+
 
 interface AdminFinancialsProps {
   selectedMonth: string;
@@ -52,7 +55,7 @@ interface AdminFinancialsProps {
 export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps) {
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
     const [users, setUsers] = useState<User[]>([]);
-    const [marketingCosts, setMarketingCosts] = useState<MarketingCosts>(initialMarketingCosts);
+    const [marketingCosts, setMarketingCosts] = useState<MarketingCosts>(DEFAULT_COSTS);
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [packageRevenue, setPackageRevenue] = useState(0);
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
@@ -100,12 +103,15 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             } else {
                 setUsers(initialUsers);
             }
-
-            const storedMarketingCosts = localStorage.getItem(MARKETING_COSTS_STORAGE_KEY);
-            if (storedMarketingCosts) {
-                setMarketingCosts(JSON.parse(storedMarketingCosts));
+            
+            const storedMonthlyCosts = localStorage.getItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY);
+            if (storedMonthlyCosts) {
+                const allCosts = JSON.parse(storedMonthlyCosts);
+                setMarketingCosts(allCosts[selectedMonth] || DEFAULT_COSTS);
             } else {
-                setMarketingCosts(initialMarketingCosts);
+                const initialData = { [format(new Date(), 'yyyy-MM')]: initialMarketingCosts };
+                localStorage.setItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY, JSON.stringify(initialData));
+                setMarketingCosts(selectedMonth === format(new Date(), 'yyyy-MM') ? initialMarketingCosts : DEFAULT_COSTS);
             }
 
             const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
