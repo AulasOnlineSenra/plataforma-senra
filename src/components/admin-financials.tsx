@@ -115,7 +115,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             }
 
             const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-            const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule) : initialScheduleEvents;
+            const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})) : initialScheduleEvents;
             const completedClasses = schedule.filter(e => e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval)).length;
 
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
@@ -135,29 +135,45 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     }
     
     const handleDeleteTransaction = () => {
-        if (!transactionToDelete) return;
-        
-        const allHistory = JSON.parse(localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY) || '[]');
-        const updatedAllHistory = allHistory.filter((t: PaymentTransaction) => t.id !== transactionToDelete.id);
-        localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedAllHistory));
-        
-        // Now update the state for the current view
-        const updatedMonthTransactions = transactions.filter(t => t.id !== transactionToDelete.id);
-        setTransactions(updatedMonthTransactions);
+      if (!transactionToDelete) return;
 
-        const revenue = updatedMonthTransactions.reduce((acc, t) => acc + t.amount, 0);
-        setTotalRevenue(revenue);
-        const pkgRevenue = updatedMonthTransactions.filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
-        setPackageRevenue(pkgRevenue);
-        const singleRevenue = updatedMonthTransactions.filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
-        setSingleClassRevenue(singleRevenue);
+      // Update payment history
+      const allHistoryStr = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+      const allHistory = allHistoryStr ? JSON.parse(allHistoryStr) : [];
+      const updatedAllHistory = allHistory.filter(
+        (t: PaymentTransaction) => t.id !== transactionToDelete.id
+      );
+      localStorage.setItem(
+        PAYMENT_HISTORY_STORAGE_KEY,
+        JSON.stringify(updatedAllHistory)
+      );
 
-        toast({
-            title: 'Transação Excluída',
-            description: 'A transação foi removida com sucesso.',
-        });
-        setTransactionToDelete(null);
-    }
+      // Update user credits
+      const allUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
+      const allUsers: User[] = allUsersStr
+        ? JSON.parse(allUsersStr)
+        : initialUsers;
+      const userIndex = allUsers.findIndex(
+        (u) => u.id === transactionToDelete.studentId
+      );
+      if (userIndex !== -1) {
+        allUsers[userIndex].classCredits = Math.max(
+          0,
+          (allUsers[userIndex].classCredits || 0) -
+            transactionToDelete.creditsAdded
+        );
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(allUsers));
+      }
+
+      // Dispatch storage event to notify other components (like sidebar)
+      window.dispatchEvent(new Event('storage'));
+
+      toast({
+        title: 'Transação Excluída',
+        description: 'A transação e os créditos correspondentes foram removidos.',
+      });
+      setTransactionToDelete(null);
+    };
 
 
   return (
@@ -414,7 +430,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             <AlertDialogHeader>
                 <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente a transação de <span className="font-bold">{getUserById(transactionToDelete?.studentId || '')?.name}</span> no valor de R$ {transactionToDelete?.amount.toFixed(2).replace('.',',')}.
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente a transação de <span className="font-bold">{getUserById(transactionToDelete?.studentId || '')?.name}</span> no valor de R$ {transactionToDelete?.amount.toFixed(2).replace('.',',')} e removerá os créditos de aula correspondentes da conta do aluno.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
