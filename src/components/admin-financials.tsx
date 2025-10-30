@@ -187,8 +187,8 @@ export default function AdminFinancials() {
                 <Banknote className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ 152.879,20</div>
-                <p className="text-xs text-muted-foreground">Total acumulado</p>
+                <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
+                <p className="text-xs text-muted-foreground">Receitas - Despesas</p>
                 </CardContent>
             </Card>
         </div>
