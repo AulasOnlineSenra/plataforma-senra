@@ -358,25 +358,26 @@ function ProfilePageComponent() {
             <div className="grid gap-6">
                 <CollapsibleCard title="Informações Pessoais" description="Seus dados de perfil, contato e endereço." icon={UserIcon} defaultOpen={true}>
                     <CardHeader>
-                        <div className="flex flex-col md:flex-row items-center gap-6">
-                            <ProfileAvatarUploader user={profileUser} onSave={(url) => handleSave('avatarUrl', url)} canEdit={canEdit} />
-                            <div className="text-center md:text-left">
-                                <CardTitle className="text-2xl font-headline">{profileUser.name}</CardTitle>
-                                <CardDescription className="flex items-center gap-2 justify-center md:justify-start">
-                                    <Badge variant="secondary">{roleLabels[profileUser.role]}</Badge> • Entrou em 2023
-                                </CardDescription>
+                        <div className="grid md:grid-cols-2 gap-6 items-start">
+                            <div className="flex flex-col md:flex-row items-center gap-6">
+                                <ProfileAvatarUploader user={profileUser} onSave={(url) => handleSave('avatarUrl', url)} canEdit={canEdit} />
+                                <div className="text-center md:text-left">
+                                    <CardTitle className="text-2xl font-headline">{profileUser.name}</CardTitle>
+                                    <CardDescription className="flex items-center gap-2 justify-center md:justify-start">
+                                        <Badge variant="secondary">{roleLabels[profileUser.role]}</Badge> • Entrou em 2023
+                                    </CardDescription>
+                                </div>
                             </div>
+                            <EditableTextarea
+                                label="Biografia"
+                                value={profileUser.bio || ''}
+                                onSave={(value) => handleSave('bio', value)}
+                                placeholder="Conte um pouco sobre você..."
+                                canEdit={canEdit}
+                                className="h-full"
+                            />
                         </div>
                     </CardHeader>
-                     <CardContent>
-                        <EditableTextarea
-                            label="Biografia"
-                            value={profileUser.bio || ''}
-                            onSave={(value) => handleSave('bio', value)}
-                            placeholder="Conte um pouco sobre você..."
-                            canEdit={canEdit}
-                         />
-                    </CardContent>
                     <CollapsibleContent>
                         <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 border-t pt-6">
                             <EditableInput label="Nome Completo" value={profileUser.name} onSave={(v) => handleSave('name', v)} canEdit={canEdit} />
