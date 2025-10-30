@@ -88,20 +88,28 @@ function SchedulePageComponent() {
         
         const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
         let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialUsers;
+        
+        const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
+        let currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
 
         const now = new Date();
         let hasChanges = false;
-        let creditsDebited = false;
+        let creditsUpdated = false;
         
         const updatedSchedule = scheduleToProcess.map(event => {
             if (event.status === 'scheduled' && now > event.end) {
                 hasChanges = true;
                 
-                // Debit class credit from the student
                 const studentIndex = currentUsers.findIndex(u => u.id === event.studentId);
                 if (studentIndex > -1 && currentUsers[studentIndex].classCredits && currentUsers[studentIndex].classCredits! > 0) {
                     currentUsers[studentIndex].classCredits! -= 1;
-                    creditsDebited = true;
+                    creditsUpdated = true;
+                }
+                
+                const teacherIndex = currentTeachers.findIndex(t => t.id === event.teacherId);
+                if (teacherIndex > -1) {
+                    currentTeachers[teacherIndex].classCredits = (currentTeachers[teacherIndex].classCredits || 0) + 1;
+                    creditsUpdated = true;
                 }
                 
                 return { ...event, status: 'completed' as 'completed' };
@@ -111,8 +119,9 @@ function SchedulePageComponent() {
 
         if (hasChanges) {
             localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
-            if(creditsDebited) {
+            if(creditsUpdated) {
                 localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(currentUsers));
+                localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(currentTeachers));
                 window.dispatchEvent(new Event('storage'));
             }
         }

@@ -434,7 +434,9 @@ export default function DashboardPage() {
           <Link href="/dashboard/packages">
             <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Créditos de Aulas</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  {user.role === 'student' ? 'Créditos de Aulas' : 'Aulas Realizadas no Mês'}
+                </CardTitle>
                 <BookCopy className="h-6 w-6 text-muted-foreground" />
               </CardHeader>
               <CardContent>
