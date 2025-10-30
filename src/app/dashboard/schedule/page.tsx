@@ -42,6 +42,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const USERS_STORAGE_KEY = 'userList';
@@ -162,8 +164,9 @@ function SchedulePageComponent() {
   }, []);
 
   useEffect(() => {
+    // These will only run on the client, after initial hydration
     setDate(new Date());
-  }, []);
+  }, []); // Empty dependency array ensures this runs once on mount
 
   const filteredEvents = useMemo(() => {
     let relevantEvents = events.filter(e => e.status === 'scheduled');
@@ -685,5 +688,7 @@ export default function SchedulePage() {
         </Suspense>
     )
 }
+
+    
 
     
