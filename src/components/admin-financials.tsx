@@ -250,7 +250,7 @@ export default function AdminFinancials() {
                 </CardContent>
             </Card>
             
-            {/* Patrimônio */}
+            {/* Patrimônio Líquido */}
              <Card className="flex flex-col">
                 <CardHeader>
                      <div className="flex items-center gap-2">
@@ -261,19 +261,19 @@ export default function AdminFinancials() {
                 </CardHeader>
                 <CardContent className="grid gap-4 flex-1">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Caixa e Equivalentes</span>
-                        <span className="font-bold text-green-600">R$ 180.429,20</span>
+                        <span className="text-muted-foreground">Total de Receitas</span>
+                        <span className="font-bold text-green-600">R$ {totalRevenue.toFixed(2).replace('.', ',')}</span>
                     </div>
                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Pagamentos a realizar</span>
-                        <span className="font-bold text-red-600">- R$ 27.550,00</span>
+                        <span className="text-muted-foreground">Total de Despesas</span>
+                        <span className="font-bold text-red-600">- R$ {totalExpenses.toFixed(2).replace('.', ',')}</span>
                     </div>
                 </CardContent>
                 <CardContent className="mt-auto">
                     <Separator className="my-4" />
                     <div className="flex items-center justify-between font-bold">
                         <span>Patrimônio Líquido</span>
-                        <span className="text-blue-600">R$ 152.879,20</span>
+                        <span className="text-blue-600">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.', ',')}</span>
                     </div>
                 </CardContent>
             </Card>
