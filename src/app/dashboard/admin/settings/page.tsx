@@ -37,12 +37,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const INACTIVITY_STORAGE_KEY = 'studentInactivityDays';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 const USERS_STORAGE_KEY = 'userList';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
+const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
+const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
 
 
 export default function AdminSettingsPage() {
@@ -51,6 +54,8 @@ export default function AdminSettingsPage() {
   const [allUsers, setAllUsers] = useState<User[]>(initialUsers);
   const [adminToDelete, setAdminToDelete] = useState<User | null>(null);
   const [teacherPaymentRate, setTeacherPaymentRate] = useState(50);
+  const [paymentDay, setPaymentDay] = useState('friday');
+  const [paymentFrequency, setPaymentFrequency] = useState('weekly');
   const { toast } = useToast();
   const router = useRouter();
 
@@ -70,6 +75,14 @@ export default function AdminSettingsPage() {
     const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
     if (storedRate) {
         setTeacherPaymentRate(parseFloat(storedRate));
+    }
+    const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
+    if (storedPaymentDay) {
+        setPaymentDay(storedPaymentDay);
+    }
+    const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
+    if (storedPaymentFrequency) {
+        setPaymentFrequency(storedPaymentFrequency);
     }
   }, []);
   
@@ -109,11 +122,13 @@ export default function AdminSettingsPage() {
     setAdminToDelete(null);
   };
   
-  const handleSaveTeacherPaymentRate = () => {
+  const handleSaveTeacherPaymentSettings = () => {
     localStorage.setItem(TEACHER_PAYMENT_RATE_KEY, String(teacherPaymentRate));
+    localStorage.setItem(TEACHER_PAYMENT_DAY_KEY, paymentDay);
+    localStorage.setItem(TEACHER_PAYMENT_FREQUENCY_KEY, paymentFrequency);
     toast({
-      title: 'Configuração Salva!',
-      description: 'O valor de pagamento por aula para professores foi atualizado.',
+      title: 'Configurações Salvas!',
+      description: 'As configurações de pagamento dos professores foram atualizadas.',
     });
   };
 
@@ -229,29 +244,65 @@ export default function AdminSettingsPage() {
           <CardHeader>
               <CardTitle>Pagamentos aos Professores</CardTitle>
               <CardDescription>
-                  Defina o valor padrão a ser pago para os professores por cada aula concluída.
+                  Defina o valor e a frequência dos pagamentos para os professores.
               </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4">
-              <div className="grid gap-2 max-w-sm">
-                  <Label htmlFor="teacher-payment-rate">Valor por Aula (R$)</Label>
-                  <Input
-                      id="teacher-payment-rate"
-                      type="number"
-                      value={teacherPaymentRate}
-                      onChange={(e) => setTeacherPaymentRate(parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                      placeholder='Ex: 50.00'
-                  />
-                  <p className="text-sm text-muted-foreground">
-                      Este valor será usado como base para calcular os pagamentos semanais.
-                  </p>
+          <CardContent className="grid gap-6">
+              <div className='grid md:grid-cols-3 gap-4'>
+                <div className="grid gap-2">
+                    <Label htmlFor="teacher-payment-rate">Valor por Aula (R$)</Label>
+                    <Input
+                        id="teacher-payment-rate"
+                        type="number"
+                        value={teacherPaymentRate}
+                        onChange={(e) => setTeacherPaymentRate(parseFloat(e.target.value) || 0)}
+                        min="0"
+                        step="0.01"
+                        placeholder='Ex: 50.00'
+                    />
+                    <p className="text-sm text-muted-foreground">
+                        Este valor será usado como base para calcular os pagamentos.
+                    </p>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="payment-frequency">Frequência</Label>
+                    <Select value={paymentFrequency} onValueChange={setPaymentFrequency}>
+                        <SelectTrigger id="payment-frequency">
+                            <SelectValue placeholder="Selecione a frequência" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="weekly">Semanal</SelectItem>
+                            <SelectItem value="biweekly">Quinzenal</SelectItem>
+                            <SelectItem value="monthly">Mensal</SelectItem>
+                        </SelectContent>
+                    </Select>
+                     <p className="text-sm text-muted-foreground">
+                        Com que frequência os pagamentos são processados.
+                    </p>
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="payment-day">Dia do Pagamento</Label>
+                    <Select value={paymentDay} onValueChange={setPaymentDay}>
+                        <SelectTrigger id="payment-day">
+                            <SelectValue placeholder="Selecione o dia" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="monday">Segunda-feira</SelectItem>
+                            <SelectItem value="tuesday">Terça-feira</SelectItem>
+                            <SelectItem value="wednesday">Quarta-feira</SelectItem>
+                            <SelectItem value="thursday">Quinta-feira</SelectItem>
+                            <SelectItem value="friday">Sexta-feira</SelectItem>
+                        </SelectContent>
+                    </Select>
+                     <p className="text-sm text-muted-foreground">
+                        Dia da semana para processar os pagamentos.
+                    </p>
+                </div>
               </div>
               <div className="flex">
-                  <Button onClick={handleSaveTeacherPaymentRate}>
+                  <Button onClick={handleSaveTeacherPaymentSettings}>
                       <DollarSign className="mr-2 h-4 w-4" />
-                      Salvar Valor por Aula
+                      Salvar Configurações de Pagamento
                   </Button>
               </div>
           </CardContent>
