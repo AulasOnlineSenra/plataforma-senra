@@ -95,9 +95,12 @@ function SchedulePageComponent() {
                 hasChanges = true;
                 
                 const studentIndex = currentUsers.findIndex(u => u.id === event.studentId);
-                if (studentIndex > -1 && currentUsers[studentIndex].classCredits && currentUsers[studentIndex].classCredits! > 0) {
-                    currentUsers[studentIndex].classCredits! -= 1;
-                    creditsUpdated = true;
+                if (studentIndex > -1) {
+                    const student = currentUsers[studentIndex];
+                    if (student.classCredits && student.classCredits > 0) {
+                        student.classCredits -= 1;
+                        creditsUpdated = true;
+                    }
                 }
                 
                 const teacherIndex = currentTeachers.findIndex(t => t.id === event.teacherId);
