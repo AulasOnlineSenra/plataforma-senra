@@ -301,7 +301,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
         isCollapsed && 'is-collapsed'
     )}>
         <Link href="/dashboard/profile" className={cn("block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors", isCollapsed && "py-4")}>
-          <div className="flex h-auto items-center p-4 lg:h-auto justify-center">
+          <div className={cn("flex h-auto items-center p-4 lg:h-auto", isCollapsed && "justify-center")}>
               <div className={cn("flex items-center gap-3", isCollapsed && 'flex-col')}>
                   <Avatar className={cn("h-12 w-12 border-2 border-primary", isCollapsed && "h-10 w-10")}>
                       <AvatarImage src={user.avatarUrl} alt={user.name} />
