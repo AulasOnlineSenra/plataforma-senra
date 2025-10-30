@@ -21,11 +21,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { classPackages as defaultClassPackages, users as initialUsers, getMockUser } from '@/lib/data';
+import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Check, CreditCard, Landmark, ShoppingCart, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { ClassPackage, User } from '@/lib/types';
+import { ClassPackage, User, PaymentTransaction } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -34,6 +34,7 @@ const PACKAGES_STORAGE_KEY = 'classPackages';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 const DEFAULT_PIX_KEY = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540550.005802BR5913NOME_COMPLETO6009SAO_PAULO62070503***6304E2B1';
 const USERS_STORAGE_KEY = 'userList';
+const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 
 
 function PaymentPageComponent() {
@@ -101,11 +102,11 @@ function PaymentPageComponent() {
   const total = selectedPackage.total || (selectedPackage.numClasses * selectedPackage.pricePerClass);
 
   const handlePayment = (method: string) => {
-    if (!currentUser) {
+    if (!currentUser || !selectedPackage) {
         toast({
             variant: "destructive",
             title: "Erro",
-            description: "Usuário não encontrado. Faça login novamente.",
+            description: "Usuário ou pacote não encontrado. Faça login novamente.",
         });
         return;
     }
@@ -116,12 +117,13 @@ function PaymentPageComponent() {
     });
 
     setTimeout(() => {
+        // Update user credits
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
         const users: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
         
         const userIndex = users.findIndex(u => u.id === currentUser.id);
 
-        if (userIndex !== -1 && selectedPackage) {
+        if (userIndex !== -1) {
             const updatedUser = { ...users[userIndex] };
             updatedUser.classCredits = (updatedUser.classCredits || 0) + selectedPackage.numClasses;
             updatedUser.activePackage = selectedPackage.name;
@@ -129,9 +131,28 @@ function PaymentPageComponent() {
             users[userIndex] = updatedUser;
             
             localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-            localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Update current user in storage
-            window.dispatchEvent(new Event('storage')); // Notify other tabs
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         }
+
+        // Add to payment history
+        const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+        const history: PaymentTransaction[] = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({...p, date: new Date(p.date)})) : initialPaymentHistory;
+        
+        const newTransaction: PaymentTransaction = {
+            id: `pay-${Date.now()}`,
+            studentId: currentUser.id,
+            packageName: selectedPackage.name,
+            creditsAdded: selectedPackage.numClasses,
+            amount: total,
+            date: new Date(),
+            paymentMethod: method,
+        };
+        
+        const updatedHistory = [...history, newTransaction];
+        localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedHistory));
+        
+        // Notify other components of the changes
+        window.dispatchEvent(new Event('storage'));
 
         toast({
             title: "Pagamento Aprovado!",
@@ -201,7 +222,7 @@ function PaymentPageComponent() {
             <div>
                 <h3 className="font-semibold text-lg mb-4">Escolha o Método de Pagamento</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handlePayment('Cartão')}>
+                    <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handlePayment('Cartão de Crédito')}>
                         <CreditCard className="h-6 w-6" />
                         <span>Cartão de Crédito/Débito</span>
                     </Button>

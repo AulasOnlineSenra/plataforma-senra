@@ -1,4 +1,7 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -14,15 +17,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { paymentHistory } from '@/lib/data';
+import { paymentHistory as initialPaymentHistory } from '@/lib/data';
+import { PaymentTransaction } from '@/lib/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from './ui/badge';
 
+const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
+
 export default function StudentFinancials() {
-  const transactions = paymentHistory.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
+  
+  useEffect(() => {
+    const updateHistory = () => {
+      const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+      let history: PaymentTransaction[] = [];
+      if (storedHistory) {
+        history = JSON.parse(storedHistory).map((p: any) => ({...p, date: new Date(p.date)}));
+      } else {
+        history = initialPaymentHistory;
+      }
+      const sortedHistory = history.sort((a,b) => b.date.getTime() - a.date.getTime());
+      setTransactions(sortedHistory);
+    };
+
+    updateHistory();
+    window.addEventListener('storage', updateHistory);
+    return () => window.removeEventListener('storage', updateHistory);
+  }, []);
+
 
   return (
     <Card>
