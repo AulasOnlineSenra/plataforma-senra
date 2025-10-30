@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,11 +51,20 @@ const TEACHERS_STORAGE_KEY = 'teacherList';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get('role');
+
   const [role, setRole] = useState<UserRole | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (roleParam && ['student', 'teacher', 'admin'].includes(roleParam)) {
+      setRole(roleParam as UserRole);
+    }
+  }, [roleParam]);
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,7 +238,7 @@ export default function RegisterPage() {
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
           <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
-            <Link href="/home" aria-label="Voltar para a página inicial">
+            <Link href="/login" aria-label="Voltar para a página de login">
                 <ArrowLeft />
             </Link>
           </Button>

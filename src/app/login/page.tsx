@@ -149,7 +149,7 @@ const LoginForm = ({
       </div>
       <div className="mt-6 text-center text-sm">
         Não tem uma conta?{' '}
-        <Link href="/register" className="underline font-semibold">
+        <Link href={`/register?role=${role}`} className="underline font-semibold">
           Cadastrar-se
         </Link>
       </div>
