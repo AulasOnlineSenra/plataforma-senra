@@ -77,7 +77,7 @@ function TeacherCard({
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/profile?userId=${'\'\''}${teacher.id}`}>
+                                <Link href={`/dashboard/profile?userId=${teacher.id}`}>
                                     <Edit className="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -159,7 +159,7 @@ function TeacherCard({
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
           <Button asChild className="w-full">
-            <Link href={`/dashboard/booking?teacherId=${'\'\''}${teacher.id}`}>Agendar</Link>
+            <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
           </Button>
         )}
       </CardFooter>
@@ -321,7 +321,7 @@ export default function TeachersPage() {
             />
           ))}
         </div>
-        {currentUser?.role === 'admin' && deletedTeachers.length > 0 && (
+        {currentUser?.role === 'admin' && (
             <div className="mt-8">
                 <Card>
                     <CardHeader>
@@ -340,7 +340,8 @@ export default function TeachersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {deletedTeachers.map(teacher => (
+                                {deletedTeachers.length > 0 ? (
+                                    deletedTeachers.map(teacher => (
                                         <TableRow key={teacher.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
@@ -394,7 +395,13 @@ export default function TeachersPage() {
                                             </TableCell>
                                         </TableRow>
                                     ))
-                                }
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                                            Nenhum professor na lista de excluídos.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
