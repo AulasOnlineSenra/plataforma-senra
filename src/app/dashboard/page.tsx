@@ -83,25 +83,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const updateData = () => {
-      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-      const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-      setUsers(currentUsers);
-      
-      const userId = localStorage.getItem('userId');
-      const currentUserFromStorage = currentUsers.find((u: User) => u.id === userId);
-
-      if (currentUserFromStorage) {
-        setUser(currentUserFromStorage);
-        localStorage.setItem('currentUser', JSON.stringify(currentUserFromStorage));
-      } else {
-        const role = localStorage.getItem('userRole') as UserRole | null;
-        if (role) {
-          const mockUser = getMockUser(role);
-          setUser(mockUser);
-          localStorage.setItem('currentUser', JSON.stringify(mockUser));
+      const role = localStorage.getItem('userRole') as UserRole | null;
+      if (role) {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
         } else {
-          router.push('/login');
+          setUser(getMockUser(role));
         }
+      } else {
+        router.push('/login');
       }
 
       const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
@@ -137,6 +128,9 @@ export default function DashboardPage() {
       } else {
         setScheduleEvents(initialScheduleEvents);
       }
+      
+      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+      setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
     };
     
     updateData();
