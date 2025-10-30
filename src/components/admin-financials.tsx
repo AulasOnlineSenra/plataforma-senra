@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ArrowUp, ArrowDown, Percent, Users, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -29,7 +29,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents } from '@/lib/data';
 import { PaymentTransaction, User, MarketingCosts, ScheduleEvent } from '@/lib/types';
@@ -223,7 +222,7 @@ export default function AdminFinancials() {
             </Card>
 
             {/* Despesas */}
-             <Card className="flex flex-col">
+            <Card className="flex flex-col">
                 <CardHeader>
                     <div className="flex items-center gap-2">
                         <TrendingDown className="h-6 w-6 text-red-500" />
@@ -249,7 +248,7 @@ export default function AdminFinancials() {
                     </div>
                 </CardContent>
             </Card>
-            
+
             {/* Patrimônio Líquido */}
              <Card className="flex flex-col">
                 <CardHeader>
