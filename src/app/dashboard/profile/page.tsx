@@ -57,19 +57,20 @@ const CollapsibleCard = ({
     description,
     icon,
     children,
-    defaultOpen = false,
+    isOpen,
+    onOpenChange,
 } : {
     title: string,
     description: string,
     icon: React.ElementType,
     children: React.ReactNode,
-    defaultOpen?: boolean
+    isOpen: boolean,
+    onOpenChange: (isOpen: boolean) => void;
 }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
     const Icon = icon;
     
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <Collapsible open={isOpen} onOpenChange={onOpenChange}>
             <Card>
                 <CollapsibleTrigger asChild className="w-full">
                     <CardHeader className="flex flex-row items-start justify-between cursor-pointer hover:bg-accent/50 rounded-t-lg">
@@ -122,6 +123,8 @@ function ProfilePageComponent() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [openAccordion, setOpenAccordion] = useState<string | null>('personal');
+
 
     const updateAllUsers = useCallback(() => {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -348,6 +351,10 @@ function ProfilePageComponent() {
       teacher: 'Professor',
     };
 
+    const handleAccordionToggle = (value: string) => {
+        setOpenAccordion(openAccordion === value ? null : value);
+    };
+
     return (
       <>
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -356,7 +363,13 @@ function ProfilePageComponent() {
             </div>
             
             <div className="grid gap-6">
-                <CollapsibleCard title="Informações Pessoais" description="Seus dados de perfil, contato e endereço." icon={UserIcon} defaultOpen={true}>
+                <CollapsibleCard 
+                    title="Informações Pessoais" 
+                    description="Seus dados de perfil, contato e endereço." 
+                    icon={UserIcon} 
+                    isOpen={openAccordion === 'personal'}
+                    onOpenChange={() => handleAccordionToggle('personal')}
+                >
                     <CardHeader>
                         <div className="grid md:grid-cols-2 gap-6 items-start">
                             <div className="flex flex-col md:flex-row items-center gap-6">
@@ -397,7 +410,13 @@ function ProfilePageComponent() {
                     </CollapsibleContent>
                 </CollapsibleCard>
 
-                 <CollapsibleCard title="Segurança" description="Altere sua senha e gerencie a segurança da sua conta." icon={Shield}>
+                 <CollapsibleCard 
+                    title="Segurança" 
+                    description="Altere sua senha e gerencie a segurança da sua conta." 
+                    icon={Shield}
+                    isOpen={openAccordion === 'security'}
+                    onOpenChange={() => handleAccordionToggle('security')}
+                 >
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between p-4 border rounded-lg">
                             <div>
@@ -414,7 +433,13 @@ function ProfilePageComponent() {
                 </CollapsibleCard>
 
                 {profileUser.role !== 'student' && (
-                    <CollapsibleCard title="Formação Acadêmica" description="Seu histórico educacional e qualificações." icon={BookUser}>
+                    <CollapsibleCard 
+                        title="Formação Acadêmica" 
+                        description="Seu histórico educacional e qualificações." 
+                        icon={BookUser}
+                        isOpen={openAccordion === 'education'}
+                        onOpenChange={() => handleAccordionToggle('education')}
+                    >
                         <EducationManager
                             initialEntries={profileUser.education || []}
                             onSave={handleSaveEducation}
@@ -425,8 +450,14 @@ function ProfilePageComponent() {
 
                 {isTeacher && teacherProfile && (
                      <>
-                        <CollapsibleCard title="Disciplinas Lecionadas" description="Quais disciplinas você está apto(a) a lecionar." icon={Briefcase}>
-                           <CardContent className="grid gap-6">
+                        <CollapsibleCard 
+                            title="Disciplinas Lecionadas" 
+                            description="Quais disciplinas você está apto(a) a lecionar." 
+                            icon={Briefcase}
+                            isOpen={openAccordion === 'subjects'}
+                            onOpenChange={() => handleAccordionToggle('subjects')}
+                        >
+                           <CardContent className="grid gap-6 pt-6">
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {subjects.map(subject => (
                                     <div key={subject.id} className="flex items-center space-x-2">
@@ -447,7 +478,13 @@ function ProfilePageComponent() {
                                 </div>
                             </CardContent>
                         </CollapsibleCard>
-                         <CollapsibleCard title="Disponibilidade Semanal" description="Seus horários disponíveis para aulas." icon={CalendarDays}>
+                         <CollapsibleCard 
+                            title="Disponibilidade Semanal" 
+                            description="Seus horários disponíveis para aulas." 
+                            icon={CalendarDays}
+                            isOpen={openAccordion === 'availability'}
+                            onOpenChange={() => handleAccordionToggle('availability')}
+                         >
                              <CardContent className="grid gap-6 pt-6">
                                 { teacherProfile &&
                                     <AvailabilityManager
@@ -461,8 +498,14 @@ function ProfilePageComponent() {
                     </>
                 )}
                 
-                <CollapsibleCard title="Integrações" description="Conecte seu perfil com outras ferramentas." icon={Webhook}>
-                    <CardContent className="grid md:grid-cols-2 gap-4">
+                <CollapsibleCard 
+                    title="Integrações" 
+                    description="Conecte seu perfil com outras ferramentas." 
+                    icon={Webhook}
+                    isOpen={openAccordion === 'integrations'}
+                    onOpenChange={() => handleAccordionToggle('integrations')}
+                >
+                    <CardContent className="grid md:grid-cols-2 gap-4 pt-6">
                         <Card>
                              <CardHeader className="flex flex-row items-center justify-between">
                                <div className="flex items-center gap-3">
@@ -621,7 +664,7 @@ function EducationManager({ initialEntries, onSave, canEdit }: { initialEntries:
     const educationTypes: EducationType[] = ['Licenciatura', 'Bacharelado', 'Mestrado', 'Doutorado', 'Pós-graduação'];
 
     return (
-        <CardContent className="grid gap-6">
+        <CardContent className="grid gap-6 pt-6">
             {entries.map((entry, index) => (
                 <div key={entry.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg relative">
                     {canEdit && (
@@ -866,3 +909,4 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
+
