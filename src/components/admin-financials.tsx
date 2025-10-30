@@ -1,4 +1,7 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -17,27 +20,61 @@ import {
 } from '@/components/ui/table';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { paymentHistory as initialPaymentHistory } from '@/lib/data';
+import { PaymentTransaction } from '@/lib/types';
 
-const teacherPayments = [
-    { name: 'Ana Silva', amount: 'R$ 3.800,00', status: 'pago', date: '05/07/2024' },
-    { name: 'Carlos Lima', amount: 'R$ 4.250,00', status: 'pago', date: '05/07/2024' },
-    { name: 'Beatriz Costa', amount: 'R$ 3.100,00', status: 'pendente', date: 'A pagar' },
-];
+
+const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 
 export default function AdminFinancials() {
+    const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
+    const [totalRevenue, setTotalRevenue] = useState(0);
+    const [packageRevenue, setPackageRevenue] = useState(0);
+    const [singleClassRevenue, setSingleClassRevenue] = useState(0);
+
+    useEffect(() => {
+        const updateHistory = () => {
+            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+            let history: PaymentTransaction[] = [];
+            if (storedHistory) {
+                history = JSON.parse(storedHistory).map((p: any) => ({...p, date: new Date(p.date)}));
+            } else {
+                history = initialPaymentHistory;
+            }
+            setTransactions(history);
+
+            const revenue = history.reduce((acc, t) => acc + t.amount, 0);
+            setTotalRevenue(revenue);
+            
+            const pkgRevenue = history
+                .filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
+                .reduce((acc, t) => acc + t.amount, 0);
+            setPackageRevenue(pkgRevenue);
+
+            const singleRevenue = history
+                .filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
+                .reduce((acc, t) => acc + t.amount, 0);
+            setSingleClassRevenue(singleRevenue);
+        };
+
+        updateHistory();
+        window.addEventListener('storage', updateHistory);
+        return () => window.removeEventListener('storage', updateHistory);
+    }, []);
+
+
   return (
     <div className="grid gap-6">
         {/* KPIs */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento Mensal</CardTitle>
+                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ 45.231,89</div>
+                <div className="text-2xl font-bold">R$ {totalRevenue.toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground flex items-center">
-                    <ArrowUp className="h-4 w-4 text-green-500" />
                     +20.1% vs. mês anterior
                 </p>
                 </CardContent>
@@ -92,18 +129,18 @@ export default function AdminFinancials() {
                 <CardContent className="grid gap-4 flex-1">
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Venda de pacotes de aulas</span>
-                        <span className="font-bold">R$ 42.180,00</span>
+                        <span className="font-bold">R$ {packageRevenue.toFixed(2).replace('.',',')}</span>
                     </div>
                      <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Aulas avulsas</span>
-                        <span className="font-bold">R$ 3.051,89</span>
+                        <span className="font-bold">R$ {singleClassRevenue.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
                 <CardContent className="mt-auto">
                     <Separator className="my-4" />
                     <div className="flex items-center justify-between font-bold">
                         <span>Total de Receitas</span>
-                        <span className="text-green-600">R$ 45.231,89</span>
+                        <span className="text-green-600">R$ {totalRevenue.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
             </Card>
