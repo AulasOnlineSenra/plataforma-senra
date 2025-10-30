@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { cn } from '@/lib/utils';
 
 interface EditableInputProps {
   label: string;
@@ -12,6 +13,7 @@ interface EditableInputProps {
   placeholder?: string;
   canEdit?: boolean;
   type?: string;
+  className?: string;
 }
 
 export function EditableInput({
@@ -21,6 +23,7 @@ export function EditableInput({
   placeholder,
   canEdit = true,
   type = 'text',
+  className
 }: EditableInputProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
@@ -42,7 +45,7 @@ export function EditableInput({
   };
 
   return (
-    <div className="grid gap-2">
+    <div className={cn("grid gap-2", className)}>
       <Label htmlFor={`editable-${label}`}>{label}</Label>
       {isEditing ? (
         <Input
