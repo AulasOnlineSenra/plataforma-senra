@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Save, KeyRound, Edit, UserCircle, Trash2 } from 'lucide-react';
+import { Save, KeyRound, Edit, UserCircle, Trash2, DollarSign } from 'lucide-react';
 import { users as initialUsers } from '@/lib/data';
 import { User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,12 +42,15 @@ import {
 const INACTIVITY_STORAGE_KEY = 'studentInactivityDays';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 const USERS_STORAGE_KEY = 'userList';
+const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
+
 
 export default function AdminSettingsPage() {
   const [inactivityDays, setInactivityDays] = useState(90);
   const [pixKey, setPixKey] = useState('');
   const [allUsers, setAllUsers] = useState<User[]>(initialUsers);
   const [adminToDelete, setAdminToDelete] = useState<User | null>(null);
+  const [teacherPaymentRate, setTeacherPaymentRate] = useState(50);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,6 +66,10 @@ export default function AdminSettingsPage() {
     const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
     if (storedUsers) {
       setAllUsers(JSON.parse(storedUsers));
+    }
+    const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
+    if (storedRate) {
+        setTeacherPaymentRate(parseFloat(storedRate));
     }
   }, []);
   
@@ -100,6 +107,14 @@ export default function AdminSettingsPage() {
       description: `O perfil de ${adminToDelete.name} foi removido.`,
     });
     setAdminToDelete(null);
+  };
+  
+  const handleSaveTeacherPaymentRate = () => {
+    localStorage.setItem(TEACHER_PAYMENT_RATE_KEY, String(teacherPaymentRate));
+    toast({
+      title: 'Configuração Salva!',
+      description: 'O valor de pagamento por aula para professores foi atualizado.',
+    });
   };
 
 
@@ -209,6 +224,37 @@ export default function AdminSettingsPage() {
                 </Button>
             </div>
         </CardContent>
+      </Card>
+      <Card>
+          <CardHeader>
+              <CardTitle>Pagamentos aos Professores</CardTitle>
+              <CardDescription>
+                  Defina o valor padrão a ser pago para os professores por cada aula concluída.
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+              <div className="grid gap-2 max-w-sm">
+                  <Label htmlFor="teacher-payment-rate">Valor por Aula (R$)</Label>
+                  <Input
+                      id="teacher-payment-rate"
+                      type="number"
+                      value={teacherPaymentRate}
+                      onChange={(e) => setTeacherPaymentRate(parseFloat(e.target.value) || 0)}
+                      min="0"
+                      step="0.01"
+                      placeholder='Ex: 50.00'
+                  />
+                  <p className="text-sm text-muted-foreground">
+                      Este valor será usado como base para calcular os pagamentos semanais.
+                  </p>
+              </div>
+              <div className="flex">
+                  <Button onClick={handleSaveTeacherPaymentRate}>
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Salvar Valor por Aula
+                  </Button>
+              </div>
+          </CardContent>
       </Card>
        <Card>
         <CardHeader>

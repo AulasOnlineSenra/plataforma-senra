@@ -134,6 +134,7 @@ export let teachers: Teacher[] = [
         number: '456'
     },
     lastAccess: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+    classCredits: 22,
   },
   {
     id: 'teacher-2',
@@ -148,6 +149,7 @@ export let teachers: Teacher[] = [
     timezone: 'America/Sao_Paulo',
     status: 'active',
     lastAccess: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    classCredits: 18,
   },
   {
     id: 'teacher-3',
@@ -168,6 +170,7 @@ export let teachers: Teacher[] = [
     timezone: 'America/Noronha',
     status: 'active',
     lastAccess: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    classCredits: 15,
   },
 ];
 
@@ -478,4 +481,10 @@ export const paymentHistory: PaymentTransaction[] = [
   { id: 'pay-1', studentId: 'user-1', packageName: 'Pacote 12 Aulas', creditsAdded: 12, amount: 1020.00, date: new Date(now.getFullYear(), now.getMonth() - 1, 15, 10, 30), paymentMethod: 'Cartão de Crédito' },
   { id: 'pay-2', studentId: 'user-1', packageName: 'Pacote 4 Aulas', creditsAdded: 4, amount: 380.00, date: new Date(now.getFullYear(), now.getMonth() - 2, 20, 14, 0), paymentMethod: 'Pix' },
   { id: 'pay-3', studentId: 'user-2', packageName: 'Pacote 4 Aulas', creditsAdded: 4, amount: 380.00, date: new Date(now.getFullYear(), now.getMonth(), 2, 18, 45), paymentMethod: 'Cartão de Crédito' },
+];
+
+export const teacherPayments = [
+  { period: '01/07/2024 - 07/07/2024', classesDone: 8, amount: 400.00, status: 'Pago' },
+  { period: '24/06/2024 - 30/06/2024', classesDone: 10, amount: 500.00, status: 'Pago' },
+  { period: '17/06/2024 - 23/06/2024', classesDone: 7, amount: 350.00, status: 'Pago' },
 ];
