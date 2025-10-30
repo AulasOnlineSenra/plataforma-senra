@@ -232,12 +232,13 @@ export const subjects: Subject[] = [
   { id: 'subj-3', name: 'Física' },
   { id: 'subj-4', name: 'Redação' },
   { id: 'subj-5', name: 'História' },
-  { id: 'subj-6', name: 'Ciências' },
+  { id: 'subj-6', name: 'Química' },
   { id: 'subj-7', name: 'Espanhol' },
   { id: 'subj-8', name: 'Filosofia' },
   { id: 'subj-9', name: 'Geografia' },
   { id: 'subj-10', name: 'Inglês' },
   { id: 'subj-11', name: 'Sociologia' },
+  { id: 'subj-12', name: 'Biologia' },
 ];
 
 export let classPackages: ClassPackage[] = [
