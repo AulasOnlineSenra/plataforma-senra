@@ -77,7 +77,7 @@ function TeacherCard({
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/profile?userId=${'\'\''}${teacher.id}`}>
+                                <Link href={`/dashboard/profile?userId=${teacher.id}`}>
                                     <Edit className="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -158,8 +158,8 @@ function TeacherCard({
       </CardContent>
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
-          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-            <Link href={`/dashboard/booking?teacherId=${'\'\''}${teacher.id}`}>Agendar</Link>
+          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:bg-sidebar-accent-foreground">
+            <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
           </Button>
         )}
       </CardFooter>
@@ -233,10 +233,10 @@ export default function TeachersPage() {
       return;
     }
     // In a real app, you would send an invitation email via a backend service.
-    console.log(`Sending invite to: ${'\'\''}${inviteEmail}`);
+    console.log(`Sending invite to: ${inviteEmail}`);
     toast({
       title: 'Convite Enviado!',
-      description: `Um convite foi enviado para ${'\'\''}${inviteEmail}.`,
+      description: `Um convite foi enviado para ${inviteEmail}.`,
     });
     setInviteEmail('');
     setIsInviteDialogOpen(false);
@@ -260,7 +260,7 @@ export default function TeachersPage() {
 
     toast({
       title: 'Professor Cadastrado!',
-      description: `${'\'\''}${registerName} foi adicionado à plataforma.`,
+      description: `${registerName} foi adicionado à plataforma.`,
     });
     setRegisterName('');
     setRegisterEmail('');
