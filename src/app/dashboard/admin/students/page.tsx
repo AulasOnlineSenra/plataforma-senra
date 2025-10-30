@@ -18,10 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { users as initialUsers } from '@/lib/data';
-import { User } from '@/lib/types';
+import { users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
+import { User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -40,19 +40,28 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const USERS_STORAGE_KEY = 'userList';
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
 function StudentList({
   id,
   title,
   students,
+  scheduleEvents,
   onDeleteStudent,
 }: {
   id?: string;
   title: string;
   students: User[];
+  scheduleEvents: ScheduleEvent[];
   onDeleteStudent: (student: User) => void;
 }) {
   const router = useRouter();
+
+  const getScheduledClassesCount = (studentId: string) => {
+    return scheduleEvents.filter(
+      (event) => event.studentId === studentId && event.status === 'scheduled'
+    ).length;
+  };
 
   return (
     <Card id={id}>
@@ -66,6 +75,7 @@ function StudentList({
               <TableHead>Aluno</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
+              <TableHead className="text-center hidden lg:table-cell">Aulas Agendadas</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -98,6 +108,12 @@ function StudentList({
                     >
                       {student.lastAccess ? format(new Date(student.lastAccess), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Nunca'}
                     </TableCell>
+                    <TableCell className="text-center hidden lg:table-cell">
+                      <div className="flex items-center justify-center gap-2">
+                        <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{getScheduledClassesCount(student.id)}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -127,7 +143,7 @@ function StudentList({
                 ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         Nenhum aluno nesta categoria.
                     </TableCell>
                 </TableRow>
@@ -141,6 +157,7 @@ function StudentList({
 
 export default function AdminStudentsPage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -149,6 +166,13 @@ export default function AdminStudentsPage() {
       setAllUsers(JSON.parse(storedUsers));
     } else {
       setAllUsers(initialUsers);
+    }
+    
+    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    if (storedSchedule) {
+      setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
+    } else {
+      setScheduleEvents(initialSchedule);
     }
   }, []);
 
@@ -192,11 +216,13 @@ export default function AdminStudentsPage() {
           id="active-students"
           title="Alunos Ativos"
           students={activeStudents}
+          scheduleEvents={scheduleEvents}
           onDeleteStudent={handleDeleteRequest}
         />
         <StudentList
           title="Alunos Inativos"
           students={inactiveStudents}
+          scheduleEvents={scheduleEvents}
           onDeleteStudent={handleDeleteRequest}
         />
       </div>
