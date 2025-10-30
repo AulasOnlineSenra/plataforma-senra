@@ -271,29 +271,41 @@ export default function TeachersPage() {
   const handleFileImport = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Simulate file processing
+  
     toast({
       title: 'Processando arquivo...',
       description: `Lendo ${file.name}.`,
     });
-
+  
     setTimeout(() => {
-      // In a real app, you'd parse the CSV/Excel file here.
-      // For this prototype, we'll just add a few mock teachers.
-      const mockNewTeachers = [
-        getMockUser('teacher', { name: 'Carlos Exemplo', email: 'carlos.ex@example.com' }),
-        getMockUser('teacher', { name: 'Fernanda Exemplo', email: 'fernanda.ex@example.com' }),
-      ] as Teacher[];
-
-      const updatedList = [...teacherList, ...mockNewTeachers];
+      const mockNewTeachersData = [
+        { name: 'Carlos Exemplo', email: 'carlos.ex@example.com' },
+        { name: 'Fernanda Exemplo', email: 'fernanda.ex@example.com' },
+      ];
+  
+      const existingEmails = new Set(teacherList.map(t => t.email.toLowerCase()));
+      
+      const newTeachersToAdd = mockNewTeachersData
+        .filter(data => !existingEmails.has(data.email.toLowerCase()))
+        .map(data => getMockUser('teacher', { name: data.name, email: data.email }) as Teacher);
+  
+      if (newTeachersToAdd.length === 0) {
+        toast({
+          title: 'Importação Concluída',
+          description: 'Nenhum professor novo foi adicionado, pois todos já estavam na plataforma.',
+        });
+        setIsImportDialogOpen(false);
+        return;
+      }
+  
+      const updatedList = [...teacherList, ...newTeachersToAdd];
       setTeacherList(updatedList);
       localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
       window.dispatchEvent(new Event('storage'));
       
       toast({
         title: 'Importação Concluída!',
-        description: `${mockNewTeachers.length} novos professores foram adicionados.`,
+        description: `${newTeachersToAdd.length} novos professores foram adicionados.`,
       });
       setIsImportDialogOpen(false);
     }, 2000);
@@ -619,5 +631,3 @@ export default function TeachersPage() {
     </>
   );
 }
-
-    
