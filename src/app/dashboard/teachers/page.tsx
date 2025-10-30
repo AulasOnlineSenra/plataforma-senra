@@ -364,7 +364,7 @@ export default function TeachersPage() {
                 />
             ))}
             </div>
-            {currentUser?.role === 'admin' && (
+            {currentUser?.role === 'admin' && deletedTeachers.length > 0 && (
                 <div className="px-4 mt-8">
                     <Card>
                         <CardHeader>
@@ -383,8 +383,7 @@ export default function TeachersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {deletedTeachers.length > 0 ? (
-                                        deletedTeachers.map(teacher => (
+                                    {deletedTeachers.map(teacher => (
                                             <TableRow key={teacher.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
@@ -438,13 +437,7 @@ export default function TeachersPage() {
                                                 </TableCell>
                                             </TableRow>
                                         ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                                                Nenhum professor na lista de excluídos.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
+                                    }
                                 </TableBody>
                             </Table>
                         </CardContent>
