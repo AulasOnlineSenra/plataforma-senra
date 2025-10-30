@@ -193,6 +193,80 @@ export default function AdminFinancials() {
             </Card>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp className="text-green-500" />Receitas</CardTitle>
+                    <CardDescription>Distribuição do faturamento.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 flex-1">
+                    <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Venda de Pacotes</span>
+                        <span className="font-bold">R$ {packageRevenue.toFixed(2).replace('.',',')}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Aulas Avulsas</span>
+                        <span className="font-bold">R$ {singleClassRevenue.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </CardContent>
+                <CardContent className="mt-auto">
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between font-bold text-lg">
+                        <span>Total de Receitas</span>
+                        <span className="text-green-600">R$ {totalRevenue.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><TrendingDown className="text-red-500" />Despesas</CardTitle>
+                    <CardDescription>Distribuição dos custos operacionais.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 flex-1">
+                     <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Pagamentos (Professores)</span>
+                        <span className="font-bold">R$ {teacherPaymentsCost.toFixed(2).replace('.',',')}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Marketing e Anúncios</span>
+                        <span className="font-bold">R$ {totalMarketingExpenses.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </CardContent>
+                 <CardContent className="mt-auto">
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between font-bold text-lg">
+                        <span>Total de Despesas</span>
+                        <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><DollarSign />Patrimônio Líquido</CardTitle>
+                    <CardDescription>Demonstração do resultado.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 flex-1">
+                    <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Total de Receitas</span>
+                        <span className="font-bold text-green-600">R$ {totalRevenue.toFixed(2).replace('.',',')}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Total de Despesas</span>
+                        <span className="font-bold text-red-600">- R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </CardContent>
+                <CardContent className="mt-auto">
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between font-bold text-lg">
+                        <span>Resultado Líquido</span>
+                        <span className={(totalRevenue - totalExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}
+                        </span>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
         <Collapsible open={isReceiptsOpen} onOpenChange={setIsReceiptsOpen}>
             <Card>
                 <CollapsibleTrigger asChild>
