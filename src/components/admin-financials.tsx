@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ArrowUp, ArrowDown, Percent, Users, Landmark, TrendingUp, TrendingDown, Banknote, Trash2 } from 'lucide-react';
+import { DollarSign, ArrowUp, ArrowDown, Percent, Users, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -37,6 +37,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -50,6 +51,7 @@ export default function AdminFinancials() {
     const [packageRevenue, setPackageRevenue] = useState(0);
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
+    const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -272,57 +274,68 @@ export default function AdminFinancials() {
             </Card>
         </div>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Últimas Transações</CardTitle>
-                <CardDescription>Lista das últimas vendas de pacotes de aulas.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Aluno</TableHead>
-                            <TableHead>Pacote</TableHead>
-                            <TableHead>Data</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {transactions.slice(0, 5).map(transaction => {
-                            const user = getUserById(transaction.studentId);
-                            return (
-                                <TableRow key={transaction.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10">
-                                                <AvatarImage src={user?.avatarUrl} alt={user?.name} />
-                                                <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="font-medium">{user?.name || 'Aluno não encontrado'}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{transaction.packageName}</TableCell>
-                                    <TableCell>{format(transaction.date, 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
-                                    <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
-                                            <Trash2 className="h-4 w-4" />
-                                            <span className="sr-only">Excluir</span>
-                                        </Button>
-                                    </TableCell>
+        <Collapsible open={isReceiptsOpen} onOpenChange={setIsReceiptsOpen}>
+            <Card>
+                <CollapsibleTrigger asChild>
+                    <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
+                        <div>
+                            <CardTitle>Receitas</CardTitle>
+                            <CardDescription>Lista das últimas vendas de pacotes de aulas.</CardDescription>
+                        </div>
+                        <Button variant="ghost" size="icon">
+                            {isReceiptsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </Button>
+                    </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Aluno</TableHead>
+                                    <TableHead>Pacote</TableHead>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead className="text-right">Valor</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
-                            )
-                        })}
-                         {transactions.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {transactions.slice(0, 5).map(transaction => {
+                                    const user = getUserById(transaction.studentId);
+                                    return (
+                                        <TableRow key={transaction.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={user?.avatarUrl} alt={user?.name} />
+                                                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="font-medium">{user?.name || 'Aluno não encontrado'}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{transaction.packageName}</TableCell>
+                                            <TableCell>{format(transaction.date, 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
+                                            <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                    <span className="sr-only">Excluir</span>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                                {transactions.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
     </div>
     <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
         <AlertDialogContent>
@@ -343,5 +356,3 @@ export default function AdminFinancials() {
     </>
   );
 }
-
-    
