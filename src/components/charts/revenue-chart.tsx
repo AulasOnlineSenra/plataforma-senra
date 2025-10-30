@@ -125,51 +125,49 @@ export function RevenueChart({ filter }: RevenueChartProps) {
   }, [filter, allData]);
 
   return (
-    <div className="w-full h-full overflow-x-auto">
-      <ChartContainer config={chartConfig} className="min-w-[500px] h-full">
-        <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-            accessibilityLayer
-            data={chartData}
-            margin={{
-                top: 20,
-                right: 20,
-                left: 20,
-                bottom: 5,
-            }}
-            >
-            <CartesianGrid vertical={false} />
-            <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                interval={filter === 'week' ? 4 : 'auto'} // Show fewer labels for weeks
-            />
-            <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value) => `R$${Number(value) / 1000}k`}
-            />
-            <ChartTooltip
-                cursor={false}
-                content={
-                <ChartTooltipContent
-                    formatter={(value) =>
-                    new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                    }).format(Number(value))
-                    }
-                    indicator="dot"
-                />
+    <ChartContainer config={chartConfig} className="w-full h-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          accessibilityLayer
+          data={chartData}
+          margin={{
+            top: 20,
+            right: 20,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            interval={filter === 'week' ? 4 : 'auto'} // Show fewer labels for weeks
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tickFormatter={(value) => `R$${Number(value) / 1000}k`}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                formatter={(value) =>
+                  new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(Number(value))
                 }
-            />
-            <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-            </BarChart>
-        </ResponsiveContainer>
-      </ChartContainer>
-    </div>
+                indicator="dot"
+              />
+            }
+          />
+          <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartContainer>
   );
 }
