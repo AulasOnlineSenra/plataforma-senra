@@ -43,6 +43,15 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 const USERS_STORAGE_KEY = 'userList';
 
+// Mock data, in a real app this would come from a service or state management
+const marketingCosts = {
+  ads: 12543.00,
+  team: 8750.00,
+  commissions: 4890.50,
+};
+const platformInfraCost = 1500.00;
+const teacherPaymentsCost = 11150.00;
+
 
 export default function AdminFinancials() {
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
@@ -54,6 +63,10 @@ export default function AdminFinancials() {
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
     const { toast } = useToast();
 
+    const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team;
+    const totalExpenses = totalMarketingExpenses + teacherPaymentsCost + platformInfraCost + marketingCosts.commissions;
+
+
     useEffect(() => {
         const updateData = (currentTransactions?: PaymentTransaction[]) => {
             const history = currentTransactions || (() => {
@@ -61,7 +74,7 @@ export default function AdminFinancials() {
                 return storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
             })();
             
-            setTransactions(history.sort((a, b) => b.date.getTime() - a.date.getTime()));
+            setTransactions(history.sort((a: PaymentTransaction, b: PaymentTransaction) => new Date(b.date).getTime() - new Date(a.date).getTime()));
 
             const revenue = history.reduce((acc, t) => acc + t.amount, 0);
             setTotalRevenue(revenue);
@@ -149,7 +162,7 @@ export default function AdminFinancials() {
                 <Landmark className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ 28.233,50</div>
+                <div className="text-2xl font-bold">R$ {totalExpenses.toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground flex items-center">
                     <ArrowDown className="h-4 w-4 text-red-500" />
                      -5.2% vs. mês anterior
@@ -162,9 +175,9 @@ export default function AdminFinancials() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold text-green-600">R$ {totalRevenue - 28233.50 > 0 ? (totalRevenue - 28233.50).toFixed(2).replace('.',',') : '0,00'}</div>
+                <div className="text-2xl font-bold text-green-600">R$ {totalRevenue - totalExpenses > 0 ? (totalRevenue - totalExpenses).toFixed(2).replace('.',',') : '0,00'}</div>
                 <p className="text-xs text-muted-foreground">
-                    Margem de lucro: {totalRevenue > 0 ? ((totalRevenue - 28233.50) / totalRevenue * 100).toFixed(1) : 0}%
+                    Margem de lucro: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
                 </CardContent>
             </Card>
@@ -221,26 +234,26 @@ export default function AdminFinancials() {
                 <CardContent className="grid gap-4 flex-1">
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Pagamentos (Professores)</span>
-                        <span className="font-bold">R$ 11.150,00</span>
+                        <span className="font-bold">R$ {teacherPaymentsCost.toFixed(2).replace('.',',')}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Marketing e Anúncios</span>
-                        <span className="font-bold">R$ 21.293,00</span>
+                        <span className="font-bold">R$ {totalMarketingExpenses.toFixed(2).replace('.',',')}</span>
                     </div>
                      <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Plataforma e Infra</span>
-                        <span className="font-bold">R$ 1.500,00</span>
+                        <span className="font-bold">R$ {platformInfraCost.toFixed(2).replace('.',',')}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Comissões</span>
-                        <span className="font-bold">R$ 4.890,50</span>
+                        <span className="font-bold">R$ {marketingCosts.commissions.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
                  <CardContent className="mt-auto">
                     <Separator className="my-4" />
                     <div className="flex items-center justify-between font-bold">
                         <span>Total de Despesas</span>
-                        <span className="text-red-600">R$ 38.833,50</span>
+                        <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -314,7 +327,7 @@ export default function AdminFinancials() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{transaction.packageName}</TableCell>
-                                            <TableCell>{format(transaction.date, 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
+                                            <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
                                             <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
