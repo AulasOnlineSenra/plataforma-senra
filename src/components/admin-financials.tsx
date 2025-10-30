@@ -33,7 +33,7 @@ import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents } from '@/lib/data';
 import { PaymentTransaction, User, MarketingCosts, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { format } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
@@ -45,7 +45,11 @@ const MARKETING_COSTS_STORAGE_KEY = 'marketingCosts';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
-export default function AdminFinancials() {
+interface AdminFinancialsProps {
+  selectedMonth: string;
+}
+
+export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps) {
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [marketingCosts, setMarketingCosts] = useState<MarketingCosts>(initialMarketingCosts);
@@ -64,20 +68,28 @@ export default function AdminFinancials() {
 
     useEffect(() => {
         const updateData = () => {
-            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
-            const history = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
-            
-            setTransactions(history.sort((a: PaymentTransaction, b: PaymentTransaction) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+            const monthInterval = {
+              start: startOfMonth(monthDate),
+              end: endOfMonth(monthDate),
+            };
 
-            const revenue = history.reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
+            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+            const allHistory: PaymentTransaction[] = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
+            
+            const monthHistory = allHistory.filter(t => isWithinInterval(t.date, monthInterval));
+
+            setTransactions(monthHistory.sort((a, b) => b.date.getTime() - a.date.getTime()));
+
+            const revenue = monthHistory.reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
             setTotalRevenue(revenue);
             
-            const pkgRevenue = history
+            const pkgRevenue = monthHistory
                 .filter((t: PaymentTransaction) => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
                 .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
             setPackageRevenue(pkgRevenue);
 
-            const singleRevenue = history
+            const singleRevenue = monthHistory
                 .filter((t: PaymentTransaction) => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
                 .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
             setSingleClassRevenue(singleRevenue);
@@ -98,7 +110,7 @@ export default function AdminFinancials() {
 
             const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
             const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule) : initialScheduleEvents;
-            const completedClasses = schedule.filter(e => e.status === 'completed').length;
+            const completedClasses = schedule.filter(e => e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval)).length;
 
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
@@ -110,7 +122,7 @@ export default function AdminFinancials() {
         
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, []);
+    }, [selectedMonth]);
 
     const getUserById = (id: string): User | undefined => {
         return users.find(u => u.id === id);
@@ -118,17 +130,20 @@ export default function AdminFinancials() {
     
     const handleDeleteTransaction = () => {
         if (!transactionToDelete) return;
+        
+        const allHistory = JSON.parse(localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY) || '[]');
+        const updatedAllHistory = allHistory.filter((t: PaymentTransaction) => t.id !== transactionToDelete.id);
+        localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedAllHistory));
+        
+        // Now update the state for the current view
+        const updatedMonthTransactions = transactions.filter(t => t.id !== transactionToDelete.id);
+        setTransactions(updatedMonthTransactions);
 
-        const updatedTransactions = transactions.filter(t => t.id !== transactionToDelete.id);
-        
-        setTransactions(updatedTransactions);
-        localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedTransactions));
-        
-        const revenue = updatedTransactions.reduce((acc, t) => acc + t.amount, 0);
+        const revenue = updatedMonthTransactions.reduce((acc, t) => acc + t.amount, 0);
         setTotalRevenue(revenue);
-        const pkgRevenue = updatedTransactions.filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
+        const pkgRevenue = updatedMonthTransactions.filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
         setPackageRevenue(pkgRevenue);
-        const singleRevenue = updatedTransactions.filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
+        const singleRevenue = updatedMonthTransactions.filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
         setSingleClassRevenue(singleRevenue);
 
         toast({
@@ -293,7 +308,7 @@ export default function AdminFinancials() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {transactions.slice(0, 5).map(transaction => {
+                                {transactions.map(transaction => {
                                     const user = getUserById(transaction.studentId);
                                     return (
                                         <TableRow key={transaction.id}>
