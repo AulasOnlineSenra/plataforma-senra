@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ import { teachers as initialTeachers, subjects, getMockUser } from '@/lib/data';
 import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, Plus } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, Plus, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -174,6 +174,7 @@ export default function TeachersPage() {
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
@@ -267,6 +268,37 @@ export default function TeachersPage() {
     setIsRegisterDialogOpen(false);
   };
 
+  const handleFileImport = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Simulate file processing
+    toast({
+      title: 'Processando arquivo...',
+      description: `Lendo ${file.name}.`,
+    });
+
+    setTimeout(() => {
+      // In a real app, you'd parse the CSV/Excel file here.
+      // For this prototype, we'll just add a few mock teachers.
+      const mockNewTeachers = [
+        getMockUser('teacher', { name: 'Carlos Exemplo', email: 'carlos.ex@example.com' }),
+        getMockUser('teacher', { name: 'Fernanda Exemplo', email: 'fernanda.ex@example.com' }),
+      ] as Teacher[];
+
+      const updatedList = [...teacherList, ...mockNewTeachers];
+      setTeacherList(updatedList);
+      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('storage'));
+      
+      toast({
+        title: 'Importação Concluída!',
+        description: `${mockNewTeachers.length} novos professores foram adicionados.`,
+      });
+      setIsImportDialogOpen(false);
+    }, 2000);
+  };
+
   const handleDeleteTeacher = (teacherId: string) => {
     const updatedList = teacherList.map(t =>
         t.id === teacherId ? { ...t, status: 'deleted' as const } : t
@@ -334,20 +366,27 @@ export default function TeachersPage() {
             Nossos Professores
           </h1>
           {currentUser?.role === 'admin' && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => setIsImportDialogOpen(true)}
+                variant="outline"
+              >
+                <Upload className="mr-2" />
+                Importar
+              </Button>
               <Button
                 onClick={() => setIsRegisterDialogOpen(true)}
                 variant="outline"
               >
                 <Plus className="mr-2" />
-                Cadastrar Professor
+                Cadastrar
               </Button>
               <Button
                 onClick={() => setIsInviteDialogOpen(true)}
                 className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <UserPlus className="mr-2" />
-                Convidar Professor
+                Convidar
               </Button>
             </div>
           )}
@@ -532,6 +571,49 @@ export default function TeachersPage() {
               Cadastrar Professor
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>Importar Professores de Planilha</DialogTitle>
+                <DialogDescription>
+                    Faça o upload de um arquivo .csv ou .xlsx para adicionar múltiplos professores de uma só vez.
+                    Certifique-se de que sua planilha tenha as colunas "Nome Completo" e "Email".
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <div className="flex items-center justify-center w-full">
+                    <Label
+                        htmlFor="dropzone-file"
+                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/50"
+                    >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                            <p className="mb-2 text-sm text-muted-foreground">
+                                <span className="font-semibold">Clique para fazer upload</span> ou arraste e solte
+                            </p>
+                            <p className="text-xs text-muted-foreground">CSV, XLSX (MAX. 2MB)</p>
+                        </div>
+                        <Input id="dropzone-file" type="file" className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileImport} />
+                    </Label>
+                </div>
+                 <div className="mt-4 text-center">
+                    <Button variant="link" asChild>
+                        <a href="/templates/modelo_professores.csv" download>
+                            Baixar planilha modelo (.csv)
+                        </a>
+                    </Button>
+                </div>
+            </div>
+             <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline">
+                        Fechar
+                    </Button>
+                </DialogClose>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
