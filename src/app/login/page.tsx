@@ -129,7 +129,7 @@ const LoginForm = ({
             <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
           </Button>
         </div>
-        <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+        <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow">
           Entrar
         </Button>
       </form>
