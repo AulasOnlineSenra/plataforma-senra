@@ -10,24 +10,45 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { DollarSign, Target, Users, Percent, Save } from 'lucide-react';
-import { marketingCosts as initialMarketingCosts } from '@/lib/data';
+import { initialMarketingCosts } from '@/lib/data';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, subMonths, eachMonthOfInterval } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-const MARKETING_COSTS_STORAGE_KEY = 'marketingCosts';
+const MONTHLY_MARKETING_COSTS_STORAGE_KEY = 'monthlyMarketingCosts';
+const DEFAULT_COSTS = { ads: 0, team: 0, organicCommissions: 0, paidCommissions: 0 };
+
 
 export default function MarketingPage() {
-  const [costs, setCosts] = useState(initialMarketingCosts);
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [costs, setCosts] = useState(DEFAULT_COSTS);
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedCosts = localStorage.getItem(MARKETING_COSTS_STORAGE_KEY);
-    if (storedCosts) {
-      setCosts(JSON.parse(storedCosts));
+    const storedMonthlyCosts = localStorage.getItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY);
+    if (storedMonthlyCosts) {
+      const allCosts = JSON.parse(storedMonthlyCosts);
+      setCosts(allCosts[selectedMonth] || DEFAULT_COSTS);
+    } else {
+      // Set initial costs for the current month if nothing is stored
+      const initialData = { [format(new Date(), 'yyyy-MM')]: initialMarketingCosts };
+      localStorage.setItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY, JSON.stringify(initialData));
+      setCosts(selectedMonth === format(new Date(), 'yyyy-MM') ? initialMarketingCosts : DEFAULT_COSTS);
     }
-  }, []);
+  }, [selectedMonth]);
+
+  const monthOptions = eachMonthOfInterval({
+    start: subMonths(new Date(), 12),
+    end: new Date(),
+  }).map(date => ({
+    value: format(date, 'yyyy-MM'),
+    label: format(date, "MMMM 'de' yyyy", { locale: ptBR }),
+  })).reverse();
+
 
   const handleCostChange = (
     category: 'ads' | 'team' | 'organicCommissions' | 'paidCommissions',
@@ -48,23 +69,44 @@ export default function MarketingPage() {
   }, [costs, totalCommissions]);
 
   const handleSaveChanges = () => {
-    localStorage.setItem(MARKETING_COSTS_STORAGE_KEY, JSON.stringify(costs));
+    const storedMonthlyCosts = localStorage.getItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY);
+    const allCosts = storedMonthlyCosts ? JSON.parse(storedMonthlyCosts) : {};
+    allCosts[selectedMonth] = costs;
+    localStorage.setItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY, JSON.stringify(allCosts));
+    
+    // This is important to notify other components like the financial dashboard
+    window.dispatchEvent(new Event('storage'));
+
     toast({
       title: 'Custos Salvos!',
-      description: 'As alterações nos custos de marketing foram salvas.',
+      description: `As alterações nos custos de marketing para ${format(new Date(selectedMonth + '-02'), 'MMMM/yyyy', { locale: ptBR })} foram salvas.`,
     });
   };
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           Marketing
         </h1>
-        <Button onClick={handleSaveChanges}>
-          <Save className="mr-2" />
-          Salvar Alterações
-        </Button>
+        <div className="flex w-full sm:w-auto gap-2">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Selecione um mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleSaveChanges}>
+              <Save className="mr-2" />
+              Salvar
+            </Button>
+        </div>
       </div>
       <div className="grid gap-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -89,7 +131,7 @@ export default function MarketingPage() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                +20.1% em relação ao mês passado
+                +20.1% em relação ao mês anterior
               </p>
             </CardContent>
           </Card>
@@ -206,3 +248,5 @@ export default function MarketingPage() {
     </div>
   );
 }
+
+    
