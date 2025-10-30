@@ -19,18 +19,24 @@ import {
 } from '@/components/ui/table';
 import { getMockUser, scheduleEvents as initialSchedule, teacherPayments } from '@/lib/data';
 import { ScheduleEvent, Teacher, PaymentTransaction } from '@/lib/types';
-import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from './ui/badge';
 import { DollarSign, BookOpen, Calendar, TrendingUp } from 'lucide-react';
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
+const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
+const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
 
 export default function TeacherFinancials() {
   const [currentUser, setCurrentUser] = useState<Teacher | null>(null);
   const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
   const [paymentRate, setPaymentRate] = useState(50); // Default value
+  const [paymentDay, setPaymentDay] = useState('friday');
+  const [paymentFrequency, setPaymentFrequency] = useState('weekly');
+
 
   useEffect(() => {
     const updateData = () => {
@@ -50,6 +56,16 @@ export default function TeacherFinancials() {
       const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
       if (storedRate) {
         setPaymentRate(parseFloat(storedRate));
+      }
+      
+      const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
+      if (storedPaymentDay) {
+        setPaymentDay(storedPaymentDay);
+      }
+      
+      const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
+      if (storedPaymentFrequency) {
+        setPaymentFrequency(storedPaymentFrequency);
       }
     };
 
@@ -75,6 +91,43 @@ export default function TeacherFinancials() {
       earnings: weeklyClasses.length * paymentRate,
     };
   }, [currentUser, schedule, paymentRate]);
+
+  const nextPaymentDate = useMemo(() => {
+    const now = new Date();
+    const userTimezone = currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const zonedNow = toZonedTime(now, userTimezone);
+
+    const dayMap = {
+        monday: nextMonday,
+        tuesday: nextTuesday,
+        wednesday: nextWednesday,
+        thursday: nextThursday,
+        friday: nextFriday,
+    };
+
+    const getNextPaymentDay = dayMap[paymentDay as keyof typeof dayMap] || nextFriday;
+    
+    let nextDate = getNextPaymentDay(zonedNow);
+
+    if (paymentFrequency === 'biweekly') {
+        const weekNumber = Math.ceil(zonedNow.getDate() / 7);
+        if(weekNumber % 2 !== 0) { // If it's an odd week, add another week
+            nextDate = addWeeks(nextDate, 1);
+        }
+    } else if (paymentFrequency === 'monthly') {
+        // Find the first payment day of the current month
+        let firstPaymentDayOfMonth = getNextPaymentDay(startOfMonth(zonedNow));
+        if (firstPaymentDayOfMonth < zonedNow) {
+            // If it has passed, find the next one in the next month
+            nextDate = getNextPaymentDay(startOfMonth(addMonths(zonedNow, 1)));
+        } else {
+            nextDate = firstPaymentDayOfMonth;
+        }
+    }
+    
+    return nextDate;
+
+  }, [paymentDay, paymentFrequency, currentUser]);
 
 
   if (!currentUser) {
@@ -129,8 +182,8 @@ export default function TeacherFinancials() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{format(endOfWeek(new Date(), { locale: ptBR }), 'dd/MM/yyyy')}</div>
-            <p className="text-xs text-muted-foreground">Pagamentos são processados semanalmente</p>
+            <div className="text-2xl font-bold">{format(nextPaymentDate, 'dd/MM/yyyy')}</div>
+            <p className="text-xs text-muted-foreground">Frequência {paymentFrequency}</p>
           </CardContent>
         </Card>
       </div>
