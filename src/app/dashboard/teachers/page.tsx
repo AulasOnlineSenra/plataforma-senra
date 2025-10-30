@@ -77,7 +77,7 @@ function TeacherCard({
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/profile?userId=${teacher.id}`}>
+                                <Link href={`/dashboard/profile?userId=${'\'\''}${teacher.id}`}>
                                     <Edit className="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -159,7 +159,7 @@ function TeacherCard({
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
           <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-            <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
+            <Link href={`/dashboard/booking?teacherId=${'\'\''}${teacher.id}`}>Agendar</Link>
           </Button>
         )}
       </CardFooter>
@@ -174,7 +174,6 @@ export default function TeachersPage() {
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
@@ -234,10 +233,10 @@ export default function TeachersPage() {
       return;
     }
     // In a real app, you would send an invitation email via a backend service.
-    console.log(`Sending invite to: ${inviteEmail}`);
+    console.log(`Sending invite to: ${'\'\''}${inviteEmail}`);
     toast({
       title: 'Convite Enviado!',
-      description: `Um convite foi enviado para ${inviteEmail}.`,
+      description: `Um convite foi enviado para ${'\'\''}${inviteEmail}.`,
     });
     setInviteEmail('');
     setIsInviteDialogOpen(false);
@@ -261,54 +260,11 @@ export default function TeachersPage() {
 
     toast({
       title: 'Professor Cadastrado!',
-      description: `${registerName} foi adicionado à plataforma.`,
+      description: `${'\'\''}${registerName} foi adicionado à plataforma.`,
     });
     setRegisterName('');
     setRegisterEmail('');
     setIsRegisterDialogOpen(false);
-  };
-
-  const handleFileImport = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-  
-    toast({
-      title: 'Processando arquivo...',
-      description: `Lendo ${file.name}.`,
-    });
-  
-    setTimeout(() => {
-      const mockNewTeachersData = [
-        { name: 'Carlos Exemplo', email: 'carlos.ex@example.com' },
-        { name: 'Fernanda Exemplo', email: 'fernanda.ex@example.com' },
-      ];
-  
-      const existingEmails = new Set(teacherList.map(t => t.email.toLowerCase()));
-      
-      const newTeachersToAdd = mockNewTeachersData
-        .filter(data => !existingEmails.has(data.email.toLowerCase()))
-        .map(data => getMockUser('teacher', { name: data.name, email: data.email }) as Teacher);
-  
-      if (newTeachersToAdd.length === 0) {
-        toast({
-          title: 'Importação Concluída',
-          description: 'Nenhum professor novo foi adicionado, pois todos já estavam na plataforma.',
-        });
-        setIsImportDialogOpen(false);
-        return;
-      }
-  
-      const updatedList = [...teacherList, ...newTeachersToAdd];
-      setTeacherList(updatedList);
-      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-      window.dispatchEvent(new Event('storage'));
-      
-      toast({
-        title: 'Importação Concluída!',
-        description: `${newTeachersToAdd.length} novos professores foram adicionados.`,
-      });
-      setIsImportDialogOpen(false);
-    }, 2000);
   };
 
   const handleDeleteTeacher = (teacherId: string) => {
@@ -379,13 +335,6 @@ export default function TeachersPage() {
           </h1>
           {currentUser?.role === 'admin' && (
             <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => setIsImportDialogOpen(true)}
-                variant="outline"
-              >
-                <Upload className="mr-2" />
-                Importar
-              </Button>
               <Button
                 onClick={() => setIsRegisterDialogOpen(true)}
                 variant="outline"
@@ -583,49 +532,6 @@ export default function TeachersPage() {
               Cadastrar Professor
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-                <DialogTitle>Importar Professores de Planilha</DialogTitle>
-                <DialogDescription>
-                    Faça o upload de um arquivo .csv ou .xlsx para adicionar múltiplos professores de uma só vez.
-                    Certifique-se de que sua planilha tenha as colunas "Nome Completo" e "Email".
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <div className="flex items-center justify-center w-full">
-                    <Label
-                        htmlFor="dropzone-file"
-                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/50"
-                    >
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                            <p className="mb-2 text-sm text-muted-foreground">
-                                <span className="font-semibold">Clique para fazer upload</span> ou arraste e solte
-                            </p>
-                            <p className="text-xs text-muted-foreground">CSV, XLSX (MAX. 2MB)</p>
-                        </div>
-                        <Input id="dropzone-file" type="file" className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileImport} />
-                    </Label>
-                </div>
-                 <div className="mt-4 text-center">
-                    <Button variant="link" asChild>
-                        <a href="/templates/modelo_professores.csv" download>
-                            Baixar planilha modelo (.csv)
-                        </a>
-                    </Button>
-                </div>
-            </div>
-             <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="outline">
-                        Fechar
-                    </Button>
-                </DialogClose>
-            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
