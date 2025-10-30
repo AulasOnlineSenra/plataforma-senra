@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -5,15 +9,66 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, Target, Users, Percent } from 'lucide-react';
+import { DollarSign, Target, Users, Percent, Save } from 'lucide-react';
+import { marketingCosts as initialMarketingCosts } from '@/lib/data';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+
+const MARKETING_COSTS_STORAGE_KEY = 'marketingCosts';
 
 export default function MarketingPage() {
+  const [costs, setCosts] = useState(initialMarketingCosts);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const storedCosts = localStorage.getItem(MARKETING_COSTS_STORAGE_KEY);
+    if (storedCosts) {
+      setCosts(JSON.parse(storedCosts));
+    }
+  }, []);
+
+  const handleCostChange = (
+    category: 'ads' | 'team' | 'organicCommissions' | 'paidCommissions',
+    value: string
+  ) => {
+    setCosts((prev) => ({
+      ...prev,
+      [category]: parseFloat(value) || 0,
+    }));
+  };
+
+  const totalCommissions = useMemo(() => {
+    return costs.organicCommissions + costs.paidCommissions;
+  }, [costs.organicCommissions, costs.paidCommissions]);
+
+  const roi = useMemo(() => {
+    const totalInvestment = costs.ads + costs.team + totalCommissions;
+    // Assuming a mock revenue for ROI calculation, as revenue is not available here.
+    const mockRevenue = 50000;
+    if (totalInvestment === 0) return 0;
+    return ((mockRevenue - totalInvestment) / totalInvestment) * 100;
+  }, [costs, totalCommissions]);
+
+  const handleSaveChanges = () => {
+    localStorage.setItem(MARKETING_COSTS_STORAGE_KEY, JSON.stringify(costs));
+    toast({
+      title: 'Custos Salvos!',
+      description: 'As alterações nos custos de marketing foram salvas.',
+    });
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           Marketing
         </h1>
+        <Button onClick={handleSaveChanges}>
+          <Save className="mr-2" />
+          Salvar Alterações
+        </Button>
       </div>
       <div className="grid gap-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -25,7 +80,18 @@ export default function MarketingPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ 12.543,00</div>
+              <div className="grid gap-2">
+                <Label htmlFor="ads-cost" className="sr-only">
+                  Custo com Anúncios
+                </Label>
+                <Input
+                  id="ads-cost"
+                  type="number"
+                  value={costs.ads}
+                  onChange={(e) => handleCostChange('ads', e.target.value)}
+                  className="text-2xl font-bold h-auto p-0 border-0"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 +20.1% em relação ao mês passado
               </p>
@@ -39,7 +105,18 @@ export default function MarketingPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ 8.750,00</div>
+              <div className="grid gap-2">
+                <Label htmlFor="team-cost" className="sr-only">
+                  Custo com Equipe
+                </Label>
+                <Input
+                  id="team-cost"
+                  type="number"
+                  value={costs.team}
+                  onChange={(e) => handleCostChange('team', e.target.value)}
+                  className="text-2xl font-bold h-auto p-0 border-0"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Salários e ferramentas
               </p>
@@ -53,7 +130,9 @@ export default function MarketingPage() {
               <Percent className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ 4.890,50</div>
+              <div className="text-2xl font-bold">
+                R$ {totalCommissions.toFixed(2).replace('.', ',')}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Equipes orgânico e pago
               </p>
@@ -67,7 +146,7 @@ export default function MarketingPage() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">350%</div>
+              <div className="text-2xl font-bold">{roi.toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">
                 Retorno sobre o investimento
               </p>
@@ -84,14 +163,43 @@ export default function MarketingPage() {
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div>
               <h3 className="font-semibold">Equipe de Marketing Orgânico</h3>
-              <p className="text-2xl font-bold mt-1">R$ 2.150,00</p>
+              <div className="grid gap-2 mt-1">
+                <Label
+                  htmlFor="organic-commissions"
+                  className="sr-only"
+                >
+                  Comissões Orgânicas
+                </Label>
+                <Input
+                  id="organic-commissions"
+                  type="number"
+                  value={costs.organicCommissions}
+                  onChange={(e) =>
+                    handleCostChange('organicCommissions', e.target.value)
+                  }
+                  className="text-2xl font-bold h-auto p-0 border-0"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Baseado em performance e metas atingidas.
               </p>
             </div>
             <div>
               <h3 className="font-semibold">Equipe de Marketing Pago</h3>
-              <p className="text-2xl font-bold mt-1">R$ 2.740,50</p>
+              <div className="grid gap-2 mt-1">
+                <Label htmlFor="paid-commissions" className="sr-only">
+                  Comissões Marketing Pago
+                </Label>
+                <Input
+                  id="paid-commissions"
+                  type="number"
+                  value={costs.paidCommissions}
+                  onChange={(e) =>
+                    handleCostChange('paidCommissions', e.target.value)
+                  }
+                  className="text-2xl font-bold h-auto p-0 border-0"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Comissões sobre o resultado das campanhas.
               </p>

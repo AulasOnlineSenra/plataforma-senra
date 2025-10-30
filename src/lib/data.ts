@@ -1,6 +1,6 @@
 
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -488,3 +488,10 @@ export const teacherPayments = [
   { period: '24/06/2024 - 30/06/2024', classesDone: 10, amount: 500.00, status: 'Pago' },
   { period: '17/06/2024 - 23/06/2024', classesDone: 7, amount: 350.00, status: 'Pago' },
 ];
+
+export const marketingCosts: MarketingCosts = {
+  ads: 12543.00,
+  team: 8750.00,
+  organicCommissions: 2150.00,
+  paidCommissions: 2740.50,
+};

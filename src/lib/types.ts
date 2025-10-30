@@ -133,3 +133,10 @@ export interface PaymentTransaction {
   date: Date;
   paymentMethod: string;
 }
+
+export interface MarketingCosts {
+  ads: number;
+  team: number;
+  organicCommissions: number;
+  paidCommissions: number;
+}
