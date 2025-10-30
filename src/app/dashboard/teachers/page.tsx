@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ import { teachers as initialTeachers, subjects, getMockUser } from '@/lib/data';
 import { Teacher, UserRole, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, Plus, Upload, FileUp } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -77,7 +77,7 @@ function TeacherCard({
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/profile?userId=${teacher.id}`}>
+                                <Link href={`/dashboard/profile?userId=${'\'\''}${teacher.id}`}>
                                     <Edit className="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -112,8 +112,8 @@ function TeacherCard({
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">Cancelar</AlertDialogCancel>
-                            <AlertDialogAction className="bg-brand-yellow text-black hover:bg-brand-yellow/90" onClick={() => onDelete(teacher.id)}>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(teacher.id)}>
                                 Mover para Excluídos
                             </AlertDialogAction>
                             </AlertDialogFooter>
@@ -158,8 +158,8 @@ function TeacherCard({
       </CardContent>
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
-          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:bg-sidebar-accent-foreground">
-            <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
+          <Button asChild className="w-full">
+            <Link href={`/dashboard/booking?teacherId=${'\'\''}${teacher.id}`}>Agendar</Link>
           </Button>
         )}
       </CardFooter>
@@ -173,10 +173,7 @@ export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [registerName, setRegisterName] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
   const { toast } = useToast();
 
   const updateTeacherList = useCallback(() => {
@@ -241,31 +238,6 @@ export default function TeachersPage() {
     setInviteEmail('');
     setIsInviteDialogOpen(false);
   };
-  
-    const handleRegisterTeacher = () => {
-    if (!registerName || !registerEmail) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha o nome e o email.',
-      });
-      return;
-    }
-    const newTeacher = getMockUser('teacher', { name: registerName, email: registerEmail }) as Teacher;
-    
-    const updatedList = [...teacherList, newTeacher];
-    setTeacherList(updatedList);
-    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
-
-    toast({
-      title: 'Professor Cadastrado!',
-      description: `${registerName} foi adicionado à plataforma.`,
-    });
-    setRegisterName('');
-    setRegisterEmail('');
-    setIsRegisterDialogOpen(false);
-  };
 
   const handleDeleteTeacher = (teacherId: string) => {
     const updatedList = teacherList.map(t =>
@@ -273,7 +245,6 @@ export default function TeachersPage() {
     );
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
     toast({
       title: 'Professor Movido para Excluídos',
       description: 'O perfil do professor foi movido para a lista de excluídos.',
@@ -288,7 +259,6 @@ export default function TeachersPage() {
       );
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
   };
 
   const handleRestoreTeacher = (teacherId: string) => {
@@ -297,7 +267,6 @@ export default function TeachersPage() {
     );
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
     toast({
       title: 'Professor Restaurado',
       description: 'O perfil do professor está ativo novamente.',
@@ -308,7 +277,6 @@ export default function TeachersPage() {
     const updatedList = teacherList.filter(t => t.id !== teacherId);
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
     toast({
       variant: 'destructive',
       title: 'Professor Excluído Permanentemente',
@@ -328,123 +296,111 @@ export default function TeachersPage() {
 
   return (
     <>
-      <div id="teacher-list" className="flex flex-1 flex-col gap-4 md:gap-8 overflow-hidden">
+      <div id="teacher-list" className="flex flex-1 flex-col gap-4 md:gap-8">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-2xl md:text-3xl font-bold">
             Nossos Professores
           </h1>
           {currentUser?.role === 'admin' && (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => setIsRegisterDialogOpen(true)}
-                variant="outline"
-              >
-                <Plus className="mr-2" />
-                Cadastrar
-              </Button>
-              <Button
-                onClick={() => setIsInviteDialogOpen(true)}
-                className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:bg-sidebar-accent-foreground"
-              >
-                <UserPlus className="mr-2" />
-                Convidar
-              </Button>
-            </div>
+            <Button
+              onClick={() => setIsInviteDialogOpen(true)}
+            >
+              <UserPlus className="mr-2" />
+              Convidar Professor
+            </Button>
           )}
         </div>
-        <ScrollArea className="flex-1 -mx-4">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 px-4">
-            {visibleTeachers.map((teacher) => (
-                <TeacherCard
-                key={teacher.id}
-                teacher={teacher}
-                currentUser={currentUser}
-                onDelete={handleDeleteTeacher}
-                onToggleVisibility={handleToggleVisibility}
-                />
-            ))}
-            </div>
-            {currentUser?.role === 'admin' && deletedTeachers.length > 0 && (
-                <div className="px-4 mt-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Professores Excluídos</CardTitle>
-                            <CardDescription>
-                                Professores que foram removidos da plataforma. Você pode restaurá-los ou excluí-los permanentemente.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Professor</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Email</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {deletedTeachers.map(teacher => (
-                                            <TableRow key={teacher.id}>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className="h-10 w-10">
-                                                            <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                                                            <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="font-medium">{teacher.name}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="hidden sm:table-cell">{teacher.email}</TableCell>
-                                                <TableCell className="text-right">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {visibleTeachers.map((teacher) => (
+            <TeacherCard
+              key={teacher.id}
+              teacher={teacher}
+              currentUser={currentUser}
+              onDelete={handleDeleteTeacher}
+              onToggleVisibility={handleToggleVisibility}
+            />
+          ))}
+        </div>
+        {currentUser?.role === 'admin' && deletedTeachers.length > 0 && (
+            <div className="mt-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Professores Excluídos</CardTitle>
+                        <CardDescription>
+                            Professores que foram removidos da plataforma. Você pode restaurá-los ou excluí-los permanentemente.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Professor</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Email</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {deletedTeachers.map(teacher => (
+                                        <TableRow key={teacher.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="font-medium">{teacher.name}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="hidden sm:table-cell">{teacher.email}</TableCell>
+                                            <TableCell className="text-right">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="icon" onClick={() => handleRestoreTeacher(teacher.id)}>
+                                                                <RotateCcw className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Restaurar Professor</p></TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                                <AlertDialog>
                                                     <TooltipProvider>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" onClick={() => handleRestoreTeacher(teacher.id)}>
-                                                                    <RotateCcw className="h-4 w-4" />
-                                                                </Button>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Restaurar Professor</p></TooltipContent>
+                                                            <TooltipContent><p>Excluir Permanentemente</p></TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
-                                                    <AlertDialog>
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <AlertDialogTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </AlertDialogTrigger>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>Excluir Permanentemente</p></TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handlePermanentDeleteTeacher(teacher.id)}>
-                                                                    Excluir Permanentemente
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    }
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-        </ScrollArea>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handlePermanentDeleteTeacher(teacher.id)}>
+                                                                Excluir Permanentemente
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                }
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        )}
       </div>
 
       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
@@ -480,49 +436,6 @@ export default function TeachersPage() {
             </DialogClose>
             <Button type="button" onClick={handleSendInvite}>
               Enviar Convite
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-       <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Cadastrar Novo Professor</DialogTitle>
-            <DialogDescription>
-              Insira os dados básicos para criar um novo perfil de professor na plataforma.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name-register">Nome Completo</Label>
-              <Input
-                id="name-register"
-                type="text"
-                placeholder="Nome do professor"
-                value={registerName}
-                onChange={(e) => setRegisterName(e.target.value)}
-              />
-            </div>
-             <div className="grid gap-2">
-              <Label htmlFor="email-register">Email do Professor</Label>
-              <Input
-                id="email-register"
-                type="email"
-                placeholder="email@exemplo.com"
-                value={registerEmail}
-                onChange={(e) => setRegisterEmail(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button type="button" onClick={handleRegisterTeacher}>
-              Cadastrar Professor
             </Button>
           </DialogFooter>
         </DialogContent>
