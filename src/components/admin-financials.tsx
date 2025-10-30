@@ -31,8 +31,8 @@ import {
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { paymentHistory as initialPaymentHistory, users as initialUsers } from '@/lib/data';
-import { PaymentTransaction, User } from '@/lib/types';
+import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts } from '@/lib/data';
+import { PaymentTransaction, User, MarketingCosts } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -42,19 +42,15 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 const USERS_STORAGE_KEY = 'userList';
+const MARKETING_COSTS_STORAGE_KEY = 'marketingCosts';
 
-// Mock data, in a real app this would come from a service or state management
-const marketingCosts = {
-  ads: 12543.00,
-  team: 8750.00,
-  commissions: 4890.50,
-};
 const teacherPaymentsCost = 11150.00;
 
 
 export default function AdminFinancials() {
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [marketingCosts, setMarketingCosts] = useState<MarketingCosts>(initialMarketingCosts);
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [packageRevenue, setPackageRevenue] = useState(0);
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
@@ -62,30 +58,28 @@ export default function AdminFinancials() {
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
     const { toast } = useToast();
 
-    const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team;
+    const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
     const totalExpenses = totalMarketingExpenses + teacherPaymentsCost;
 
 
     useEffect(() => {
-        const updateData = (currentTransactions?: PaymentTransaction[]) => {
-            const history = currentTransactions || (() => {
-                const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
-                return storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
-            })();
+        const updateData = () => {
+            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+            const history = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
             
             setTransactions(history.sort((a: PaymentTransaction, b: PaymentTransaction) => new Date(b.date).getTime() - new Date(a.date).getTime()));
 
-            const revenue = history.reduce((acc, t) => acc + t.amount, 0);
+            const revenue = history.reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
             setTotalRevenue(revenue);
             
             const pkgRevenue = history
-                .filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
-                .reduce((acc, t) => acc + t.amount, 0);
+                .filter((t: PaymentTransaction) => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
+                .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
             setPackageRevenue(pkgRevenue);
 
             const singleRevenue = history
-                .filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
-                .reduce((acc, t) => acc + t.amount, 0);
+                .filter((t: PaymentTransaction) => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
+                .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
             setSingleClassRevenue(singleRevenue);
 
             const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -94,20 +88,19 @@ export default function AdminFinancials() {
             } else {
                 setUsers(initialUsers);
             }
+
+            const storedMarketingCosts = localStorage.getItem(MARKETING_COSTS_STORAGE_KEY);
+            if (storedMarketingCosts) {
+                setMarketingCosts(JSON.parse(storedMarketingCosts));
+            } else {
+                setMarketingCosts(initialMarketingCosts);
+            }
         };
 
-        const initialLoad = () => {
-            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
-            const history = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
-            updateData(history);
-        };
-
-        initialLoad();
+        updateData();
         
-        const handleStorageChange = () => initialLoad();
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener('storage', updateData);
+        return () => window.removeEventListener('storage', updateData);
     }, []);
 
     const getUserById = (id: string): User | undefined => {
@@ -122,7 +115,6 @@ export default function AdminFinancials() {
         setTransactions(updatedTransactions);
         localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedTransactions));
         
-        // Recalculate financial KPIs
         const revenue = updatedTransactions.reduce((acc, t) => acc + t.amount, 0);
         setTotalRevenue(revenue);
         const pkgRevenue = updatedTransactions.filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa')).reduce((acc, t) => acc + t.amount, 0);
@@ -236,7 +228,7 @@ export default function AdminFinancials() {
                         <span className="font-bold">R$ {teacherPaymentsCost.toFixed(2).replace('.',',')}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Marketing e Anúncios</span>
+                        <span className="text-muted-foreground">Custo Total de Marketing</span>
                         <span className="font-bold">R$ {totalMarketingExpenses.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
@@ -360,3 +352,5 @@ export default function AdminFinancials() {
     </>
   );
 }
+
+    
