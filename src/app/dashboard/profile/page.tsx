@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -72,8 +71,8 @@ const CollapsibleCard = ({
     return (
         <Collapsible open={isOpen} onOpenChange={onOpenChange}>
             <Card>
-                <CollapsibleTrigger asChild className="w-full">
-                    <CardHeader className="flex flex-row items-start justify-between cursor-pointer hover:bg-accent/50 rounded-t-lg">
+                <CollapsibleTrigger asChild>
+                    <div className="w-full flex flex-row items-start justify-between cursor-pointer hover:bg-accent/50 rounded-t-lg p-6">
                         <div className="flex items-center gap-4 text-left">
                             <Icon className="h-6 w-6 text-muted-foreground" />
                             <div className="grid gap-1">
@@ -85,7 +84,7 @@ const CollapsibleCard = ({
                             {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                             <span className="sr-only">{isOpen ? "Recolher" : "Expandir"}</span>
                         </div>
-                    </CardHeader>
+                    </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     {children}
@@ -391,23 +390,21 @@ function ProfilePageComponent() {
                             />
                         </div>
                     </CardHeader>
-                    <CollapsibleContent>
-                        <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 border-t pt-6">
-                            <EditableInput label="Nome Completo" value={profileUser.name} onSave={(v) => handleSave('name', v)} canEdit={canEdit} />
-                            <EditableInput label="Apelido" value={profileUser.nickname || ''} placeholder="Como prefere ser chamado(a)?" onSave={(v) => handleSave('nickname', v)} canEdit={canEdit} />
-                            <EditableInput label="Email" value={profileUser.email} onSave={(v) => handleSave('email', v)} canEdit={canEdit} type="email" />
-                            <EditableInput label="Telefone" value={profileUser.phone || ''} placeholder="(00) 00000-0000" onSave={(v) => handleSave('phone', v)} canEdit={canEdit} type="tel" />
-                            <EditableInput label="CPF" value={profileUser.cpf || ''} placeholder="000.000.000-00" onSave={(v) => handleSave('cpf', v)} canEdit={canEdit} />
-                            <EditableInput label="Data de Nascimento" value={profileUser.birthDate || ''} onSave={(v) => handleSave('birthDate', v)} canEdit={canEdit} type="date"/>
-                        </CardContent>
-                        <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 border-t pt-6">
-                            <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} placeholder="00000-000" onSave={(v) => handleCepSave(v)} canEdit={canEdit} />
-                            <EditableInput label="Estado" value={profileUser.address?.state || ''} placeholder="Ex: SP" onSave={(v) => handleSaveAddress('state', v)} canEdit={canEdit} />
-                            <EditableInput label="Bairro" value={profileUser.address?.neighborhood || ''} placeholder="Ex: Centro" onSave={(v) => handleSaveAddress('neighborhood', v)} canEdit={canEdit} />
-                            <EditableInput label="Rua" value={profileUser.address?.street || ''} placeholder="Ex: Rua Principal" onSave={(v) => handleSaveAddress('street', v)} canEdit={canEdit} className="lg:col-span-2" />
-                            <EditableInput label="Número" value={profileUser.address?.number || ''} placeholder="Ex: 123" onSave={(v) => handleSaveAddress('number', v)} canEdit={canEdit} />
-                        </CardContent>
-                    </CollapsibleContent>
+                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 border-t pt-6">
+                        <EditableInput label="Nome Completo" value={profileUser.name} onSave={(v) => handleSave('name', v)} canEdit={canEdit} />
+                        <EditableInput label="Apelido" value={profileUser.nickname || ''} placeholder="Como prefere ser chamado(a)?" onSave={(v) => handleSave('nickname', v)} canEdit={canEdit} />
+                        <EditableInput label="Email" value={profileUser.email} onSave={(v) => handleSave('email', v)} canEdit={canEdit} type="email" />
+                        <EditableInput label="Telefone" value={profileUser.phone || ''} placeholder="(00) 00000-0000" onSave={(v) => handleSave('phone', v)} canEdit={canEdit} type="tel" />
+                        <EditableInput label="CPF" value={profileUser.cpf || ''} placeholder="000.000.000-00" onSave={(v) => handleSave('cpf', v)} canEdit={canEdit} />
+                        <EditableInput label="Data de Nascimento" value={profileUser.birthDate || ''} onSave={(v) => handleSave('birthDate', v)} canEdit={canEdit} type="date"/>
+                    </CardContent>
+                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 border-t pt-6">
+                        <EditableInput label="CEP" value={profileUser.address?.zipCode || ''} placeholder="00000-000" onSave={(v) => handleCepSave(v)} canEdit={canEdit} />
+                        <EditableInput label="Estado" value={profileUser.address?.state || ''} placeholder="Ex: SP" onSave={(v) => handleSaveAddress('state', v)} canEdit={canEdit} />
+                        <EditableInput label="Bairro" value={profileUser.address?.neighborhood || ''} placeholder="Ex: Centro" onSave={(v) => handleSaveAddress('neighborhood', v)} canEdit={canEdit} />
+                        <EditableInput label="Rua" value={profileUser.address?.street || ''} placeholder="Ex: Rua Principal" onSave={(v) => handleSaveAddress('street', v)} canEdit={canEdit} className="lg:col-span-2" />
+                        <EditableInput label="Número" value={profileUser.address?.number || ''} placeholder="Ex: 123" onSave={(v) => handleSaveAddress('number', v)} canEdit={canEdit} />
+                    </CardContent>
                 </CollapsibleCard>
 
                  <CollapsibleCard 
@@ -909,4 +906,4 @@ export default function ProfilePage() {
     )
 }
 
-
+    
