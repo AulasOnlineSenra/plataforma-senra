@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function TeacherCard({
   teacher,
@@ -175,6 +176,8 @@ export default function TeachersPage() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const { toast } = useToast();
+  const [selectedSubject, setSelectedSubject] = useState('all');
+
 
   const updateTeacherList = useCallback(() => {
     const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
@@ -284,10 +287,17 @@ export default function TeachersPage() {
     });
   };
   
-  const visibleTeachers =
-    currentUser?.role === 'admin'
-      ? teacherList.filter(t => t.status !== 'deleted')
-      : teacherList.filter(t => t.status === 'active');
+  const visibleTeachers = useMemo(() => {
+    const baseList = currentUser?.role === 'admin'
+        ? teacherList.filter(t => t.status !== 'deleted')
+        : teacherList.filter(t => t.status === 'active');
+        
+    if (selectedSubject === 'all') {
+        return baseList;
+    }
+    
+    return baseList.filter(teacher => teacher.subjects.includes(selectedSubject));
+  }, [currentUser, teacherList, selectedSubject]);
   
   const deletedTeachers =
     currentUser?.role === 'admin'
@@ -297,18 +307,31 @@ export default function TeachersPage() {
   return (
     <>
       <div id="teacher-list" className="flex flex-1 flex-col gap-4 md:gap-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <h1 className="font-headline text-2xl md:text-3xl font-bold">
             Nossos Professores
           </h1>
-          {currentUser?.role === 'admin' && (
-            <Button
-              onClick={() => setIsInviteDialogOpen(true)}
-            >
-              <UserPlus className="mr-2" />
-              Convidar Professor
-            </Button>
-          )}
+          <div className="flex gap-2 items-center">
+            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por matéria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Matérias</SelectItem>
+                {subjects.map(subject => (
+                  <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {currentUser?.role === 'admin' && (
+              <Button
+                onClick={() => setIsInviteDialogOpen(true)}
+              >
+                <UserPlus className="mr-2" />
+                Convidar
+              </Button>
+            )}
+          </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {visibleTeachers.map((teacher) => (
