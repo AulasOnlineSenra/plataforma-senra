@@ -207,7 +207,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent">
+          <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-brand-yellow">
             Criar Conta
           </Button>
         </form>
