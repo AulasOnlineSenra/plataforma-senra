@@ -167,6 +167,10 @@ export default function RegisterPage() {
 
   const renderRegistrationForm = () => (
      <>
+        <Button variant="ghost" size="icon" className="absolute top-6 left-6" onClick={() => setRole(null)}>
+            <ArrowLeft />
+            <span className="sr-only">Voltar</span>
+        </Button>
         <h1 className="text-2xl font-bold font-headline text-center mb-4">
             Crie sua Conta de {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor' : 'Administrador'}
         </h1>
@@ -226,9 +230,10 @@ export default function RegisterPage() {
           </Button>
         </div>
         <div className="mt-6 text-center text-sm">
-          <button onClick={() => setRole(null)} className="underline font-semibold">
-            Voltar para seleção de perfil
-          </button>
+          Já tem uma conta?{' '}
+          <Link href="/login" className="underline font-semibold">
+            Faça login
+          </Link>
         </div>
      </>
   );
@@ -237,11 +242,6 @@ export default function RegisterPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-card">
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
-          <Button asChild variant="ghost" size="icon" className="absolute top-6 left-6">
-            <Link href="/login" aria-label="Voltar para a página de login">
-                <ArrowLeft />
-            </Link>
-          </Button>
           <div className="w-full max-w-sm">
             <div className="mb-8">
                 <SenraLogo className="mx-auto" />
