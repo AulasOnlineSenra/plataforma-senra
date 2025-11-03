@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers, getMockUser } from '@/lib/data';
+import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers, getMockUser, logNotification } from '@/lib/data';
 import type { ScheduleEvent, User, Teacher } from '@/lib/types';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -246,6 +247,17 @@ function SchedulePageComponent() {
     window.dispatchEvent(new Event('storage'));
 
     const event = events.find(e => e.id === eventId);
+    if(event) {
+        const student = getStudentById(event.studentId);
+        const teacher = getTeacherById(event.teacherId);
+        logNotification({
+            type: 'class_cancelled',
+            title: 'Aula Cancelada',
+            description: `${student?.name || 'Aluno'} cancelou a aula de ${event.subject} com ${teacher?.name || 'Professor'}.`,
+            userId: event.studentId,
+        });
+    }
+
     toast({
         title: "Aula Cancelada",
         description: `A aula de ${event?.subject} foi cancelada.`,
@@ -356,6 +368,15 @@ function SchedulePageComponent() {
     setEvents(updatedEvents);
     localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
     window.dispatchEvent(new Event('storage'));
+
+    const student = getStudentById(editingEvent.studentId);
+    const teacher = getTeacherById(editingEvent.teacherId);
+    logNotification({
+        type: 'class_rescheduled',
+        title: 'Aula Remarcada',
+        description: `A aula de ${editingEvent.subject} entre ${student?.name} e ${teacher?.name} foi remarcada para ${format(updatedStartDate, "dd/MM/yyyy 'às' HH:mm")}.`,
+        userId: editingEvent.studentId,
+    });
 
 
     toast({

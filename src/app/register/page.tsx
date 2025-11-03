@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import { ArrowLeft } from 'lucide-react';
 import { User, UserRole, Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { teachers as initialTeachers, users as initialUsers } from '@/lib/data';
+import { teachers as initialTeachers, users as initialUsers, logNotification } from '@/lib/data';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -127,6 +128,14 @@ export default function RegisterPage() {
         const updatedUsers = [...currentUsers, newUser];
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
     }
+    
+    logNotification({
+        type: 'new_user_registered',
+        title: `Novo ${role === 'student' ? 'Aluno' : 'Professor'} Cadastrado`,
+        description: `${newUser.name} acabou de se cadastrar na plataforma como ${role}.`,
+        userId: newUser.id,
+    });
+
 
     window.dispatchEvent(new Event('storage'));
     

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory } from '@/lib/data';
+import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory, logNotification } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Check, CreditCard, Landmark, ShoppingCart, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -150,6 +151,13 @@ function PaymentPageComponent() {
         
         const updatedHistory = [...history, newTransaction];
         localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(updatedHistory));
+        
+        logNotification({
+            type: 'package_purchased',
+            title: 'Compra de Pacote Realizada',
+            description: `${currentUser.name} comprou o "${selectedPackage.name}" por R$ ${total.toFixed(2).replace('.', ',')}.`,
+            userId: currentUser.id,
+        });
         
         // Notify other components of the changes
         window.dispatchEvent(new Event('storage'));

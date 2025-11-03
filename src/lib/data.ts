@@ -1,6 +1,6 @@
 
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity, Notification } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity, Notification, NotificationType } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -524,6 +524,7 @@ export const logActivity = (action: string) => {
     window.dispatchEvent(new Event('storage'));
 };
 
+const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
 export const notifications: Notification[] = [
     {
         id: 'notif-1',
@@ -563,3 +564,21 @@ export const notifications: Notification[] = [
     }
 ];
 
+export const logNotification = (notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    if (typeof window === 'undefined') return;
+
+    const newNotification: Notification = {
+        ...notificationData,
+        id: `notif-${Date.now()}`,
+        timestamp: new Date(),
+        read: false,
+    };
+
+    const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    const currentNotifications: Notification[] = storedNotifications ? JSON.parse(storedNotifications) : notifications;
+    
+    const updatedNotifications = [newNotification, ...currentNotifications];
+
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('storage'));
+};
