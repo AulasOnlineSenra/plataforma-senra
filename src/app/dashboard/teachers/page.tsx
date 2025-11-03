@@ -170,6 +170,17 @@ function TeacherCard({
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 
+// Função para embaralhar um array
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
+
 export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
@@ -255,13 +266,26 @@ export default function TeachersPage() {
   };
 
   const handleToggleVisibility = (teacherId: string) => {
-    const updatedList = teacherList.map(t =>
-        t.id === teacherId
-          ? { ...t, status: t.status === 'active' ? 'hidden' : 'active' }
-          : t
-      );
-    setTeacherList(updatedList);
-    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    let toggledTeacher: Teacher | undefined;
+    let otherTeachers: Teacher[] = [];
+
+    const listWithUpdatedStatus = teacherList.map(t => {
+      if (t.id === teacherId) {
+        toggledTeacher = { ...t, status: t.status === 'active' ? 'hidden' : 'active' };
+        return toggledTeacher;
+      }
+      otherTeachers.push(t);
+      return t;
+    });
+    
+    if (toggledTeacher) {
+        const remainingTeachers = listWithUpdatedStatus.filter(t => t.id !== teacherId);
+        const shuffledRemaining = shuffleArray(remainingTeachers);
+        const finalList = [...shuffledRemaining, toggledTeacher];
+        
+        setTeacherList(finalList);
+        localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(finalList));
+    }
   };
 
   const handleRestoreTeacher = (teacherId: string) => {
