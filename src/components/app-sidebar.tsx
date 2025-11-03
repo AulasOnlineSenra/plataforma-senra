@@ -325,7 +325,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
                     )}
                 </nav>
         </div>
-        <div className="mt-auto p-4 pt-2 border-t border-sidebar-border" style={{ paddingBottom: '10px' }}>
+        <div className="mt-auto border-t border-sidebar-border" style={{ padding: '8px 4px 10px 4px' }}>
                 <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
                     {renderLink(settingsLink)}
                     {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: []}, true)}
