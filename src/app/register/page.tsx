@@ -167,10 +167,6 @@ export default function RegisterPage() {
 
   const renderRegistrationForm = () => (
      <>
-        <Button variant="ghost" size="icon" className="absolute top-6 left-6" onClick={() => setRole(null)}>
-            <ArrowLeft />
-            <span className="sr-only">Voltar</span>
-        </Button>
         <h1 className="text-2xl font-bold font-headline text-center mb-4">
             Crie sua Conta de {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor' : 'Administrador'}
         </h1>
@@ -235,6 +231,9 @@ export default function RegisterPage() {
             Faça login
           </Link>
         </div>
+        <Button variant="link" className="mt-4 text-sm" onClick={() => setRole(null)}>
+            Voltar para seleção de perfil
+        </Button>
      </>
   );
 
