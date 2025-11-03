@@ -145,3 +145,21 @@ export interface Activity {
   action: string;
   date: Date;
 }
+
+export type NotificationType = 
+  | 'class_scheduled' 
+  | 'class_cancelled' 
+  | 'class_rescheduled'
+  | 'package_purchased' 
+  | 'new_user_registered';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  timestamp: Date;
+  read: boolean;
+  userId?: string; // ID of the user related to the notification (e.g., who scheduled a class)
+}
+

@@ -28,6 +28,7 @@ import {
   Gift,
   GripVertical,
   User as UserIcon,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion } from '@/lib/types';
@@ -325,11 +326,11 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
                     )}
                 </nav>
         </div>
-        <div className="border-t border-sidebar-border py-2">
-                <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
-                    {renderLink(settingsLink)}
-                    {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: []}, true)}
-                </nav>
+        <div className="mt-auto border-t border-sidebar-border py-2">
+            <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
+                {renderLink(settingsLink)}
+                {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: []}, true)}
+            </nav>
         </div>
     </aside>
   );

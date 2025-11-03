@@ -1,6 +1,6 @@
 
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity, Notification } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -20,6 +20,7 @@ import {
   Lightbulb,
   Gift,
   History,
+  Bell,
 } from 'lucide-react';
 
 
@@ -372,6 +373,12 @@ export const navItems: NavItem[] = [
     roles: ['student', 'teacher', 'admin'],
   },
   {
+    href: '/dashboard/notifications',
+    icon: Bell,
+    label: 'Notificações',
+    roles: ['admin'],
+  },
+  {
     href: '/dashboard/schedule',
     icon: CalendarDays,
     label: 'Agenda',
@@ -516,3 +523,43 @@ export const logActivity = (action: string) => {
     // Dispatch a storage event to notify other tabs/components like the history page
     window.dispatchEvent(new Event('storage'));
 };
+
+export const notifications: Notification[] = [
+    {
+        id: 'notif-1',
+        type: 'new_user_registered',
+        title: 'Novo Aluno Cadastrado',
+        description: 'Mariana Santos acabou de se cadastrar na plataforma.',
+        timestamp: new Date(now.getTime() - 10 * 60 * 1000), // 10 minutes ago
+        read: false,
+        userId: 'user-2',
+    },
+    {
+        id: 'notif-2',
+        type: 'class_scheduled',
+        title: 'Nova Aula Agendada',
+        description: 'Mariana Santos agendou uma aula de Física com Ana Silva.',
+        timestamp: new Date(now.getTime() - 30 * 60 * 1000), // 30 minutes ago
+        read: false,
+        userId: 'user-2',
+    },
+    {
+        id: 'notif-3',
+        type: 'package_purchased',
+        title: 'Compra de Pacote',
+        description: 'João Aluno comprou o "Pacote 4 Aulas".',
+        timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+        read: true,
+        userId: 'user-1',
+    },
+    {
+        id: 'notif-4',
+        type: 'class_cancelled',
+        title: 'Aula Cancelada',
+        description: 'Pedro Oliveira cancelou a aula de História.',
+        timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000), // 5 hours ago
+        read: true,
+        userId: 'user-3',
+    }
+];
+
