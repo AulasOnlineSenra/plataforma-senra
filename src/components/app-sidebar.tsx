@@ -314,7 +314,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
               </div>
           </div>
         </Link>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4 py-4", isMobile ? 'py-4' : '')}>
                     {filteredNavItems.map(item => renderLink(item, false, 'main'))}
                     {filteredAdminNavItems.length > 0 && (
@@ -325,7 +325,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
                     )}
                 </nav>
         </div>
-        <div className="mt-auto border-t border-sidebar-border" style={{ padding: '8px 4px 10px 4px' }}>
+        <div className="border-t border-sidebar-border py-2">
                 <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
                     {renderLink(settingsLink)}
                     {renderLink({ href: '/login', icon: LogOut, label: 'Sair', roles: []}, true)}
