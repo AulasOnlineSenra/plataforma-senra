@@ -38,7 +38,7 @@ interface RevenueChartProps {
 const chartConfig = {
   revenue: {
     label: 'Receita',
-    color: 'hsl(var(--brand-yellow))',
+    color: 'hsl(var(--sidebar-primary))',
   },
 } satisfies ChartConfig;
 
@@ -125,7 +125,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
   }, [filter, allData]);
 
   return (
-    <ChartContainer config={chartConfig} className="w-full h-full">
+    <ChartContainer config={chartConfig} className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           accessibilityLayer

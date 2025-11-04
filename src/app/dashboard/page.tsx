@@ -241,7 +241,7 @@ export default function DashboardPage() {
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Link href="/dashboard/schedule#scheduled-classes">
-          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+          <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
               <CalendarCheck className="h-6 w-6 text-muted-foreground" />
@@ -253,7 +253,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/schedule#cancelled-history">
-          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+          <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
               <XCircle className="h-6 w-6 text-muted-foreground" />
@@ -265,7 +265,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/teachers#teacher-list">
-          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+          <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Professores</CardTitle>
               <Briefcase className="h-6 w-6 text-muted-foreground" />
@@ -277,7 +277,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/students#active-students">
-          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+          <Card className="hover:ring-2 hover:ring-primary transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Alunos Ativos</CardTitle>
               <Users className="h-6 w-6 text-muted-foreground" />
@@ -444,7 +444,7 @@ export default function DashboardPage() {
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
           <Link href="/dashboard/schedule#scheduled-classes">
-            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+            <Card className="hover:ring-2 hover:ring-primary transition-all">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
                 <CalendarCheck className="h-6 w-6 text-muted-foreground" />
@@ -456,7 +456,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
            <Link href="/dashboard/schedule#completed-history">
-            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+            <Card className="hover:ring-2 hover:ring-primary transition-all">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Aulas Realizadas</CardTitle>
                 <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
@@ -468,7 +468,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
           <Link href="/dashboard/schedule#cancelled-history">
-            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+            <Card className="hover:ring-2 hover:ring-primary transition-all">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
                 <XCircle className="h-6 w-6 text-muted-foreground" />
@@ -480,7 +480,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
           <Link href="/dashboard/financial">
-            <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+            <Card className="hover:ring-2 hover:ring-primary transition-all">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {user.role === 'student' ? 'Créditos de Aulas' : 'Aulas Realizadas no Mês'}

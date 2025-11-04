@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { PieChart, Pie, Cell, Sector } from 'recharts';
+import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -115,32 +115,34 @@ export function SubjectsChart({ selectedMonth }: SubjectsChartProps) {
       className="mx-auto aspect-square h-full w-full"
     >
       {data.length > 0 ? (
-        <PieChart>
-          <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent hideLabel />}
-          />
-          <Pie
-            activeIndex={activeIndex}
-            activeShape={renderActiveShape}
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            innerRadius={80}
-            outerRadius={110}
-            strokeWidth={5}
-            onMouseEnter={onPieEnter}
-            onMouseLeave={onPieLeave}
-          >
-             {data.map((entry) => (
-              <Cell key={`cell-${entry.name}`} fill={entry.color} />
-            ))}
-          </Pie>
-           <ChartLegend
-            content={<ChartLegendContent nameKey="name" className="text-base" />}
-            className="-mt-4 flex-wrap items-center justify-center gap-2 sm:gap-4"
-          />
-        </PieChart>
+        <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+                <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                />
+                <Pie
+                    activeIndex={activeIndex}
+                    activeShape={renderActiveShape}
+                    data={data}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius="60%"
+                    outerRadius="80%"
+                    strokeWidth={5}
+                    onMouseEnter={onPieEnter}
+                    onMouseLeave={onPieLeave}
+                >
+                    {data.map((entry) => (
+                    <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                    ))}
+                </Pie>
+                <ChartLegend
+                    content={<ChartLegendContent nameKey="name" className="text-base" />}
+                    className="-mt-4 flex-wrap items-center justify-center gap-2 sm:gap-4"
+                />
+            </PieChart>
+        </ResponsiveContainer>
       ) : (
         <div className="flex h-full w-full items-center justify-center text-muted-foreground">
           Nenhuma aula encontrada para este mês.
