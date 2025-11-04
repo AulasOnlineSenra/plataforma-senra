@@ -50,6 +50,7 @@ function BookingPageComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentIdParam = searchParams.get('studentId');
+  const teacherIdParam = searchParams.get('teacherId');
   const studentName = searchParams.get('studentName');
   const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
   
@@ -202,7 +203,7 @@ function BookingPageComponent() {
         const startDate = new Date(date);
         startDate.setHours(hours, minutes, 0, 0);
 
-        if (isBefore(startDate, startOfToday())) {
+        if (isBefore(startDate, new Date())) {
             toast({
                 variant: 'destructive',
                 title: 'Data/Horário Inválido',
@@ -809,3 +810,5 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
+    
