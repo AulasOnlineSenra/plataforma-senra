@@ -8,7 +8,7 @@ import { Teacher, ScheduleEvent, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle } from 'lucide-react';
+import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle, Star, StarHalf } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -87,6 +87,20 @@ function TeacherDetailPageComponent() {
         ),
         });
     };
+    
+    const averageFeedback = useMemo(() => {
+        if (!teacher || !teacher.ratings) {
+          return { score: 5.0, count: 0, text: 'Aguardando 5 avaliações' };
+        }
+        
+        const { ratings } = teacher;
+        if (ratings.length < 5) {
+          return { score: 5.0, count: ratings.length, text: `Aguardando ${5 - ratings.length} ${5 - ratings.length > 1 ? 'avaliações' : 'avaliação'}` };
+        }
+        const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+        return { score: avg, count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
+      }, [teacher]);
+
 
     if (!teacher) {
         return (
@@ -124,12 +138,26 @@ function TeacherDetailPageComponent() {
                     <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
                     <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div>
+                <div className="space-y-2">
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">{teacher.name}</h1>
-                     <div className="flex flex-wrap items-center gap-2 mt-2">
+                     <div className="flex flex-wrap items-center gap-2">
                         {teacherSubjects.map((subject) => (
                             <Badge key={subject} variant="secondary">{subject}</Badge>
                         ))}
+                    </div>
+                     <div className="flex items-center gap-1 pt-1">
+                        {Array(5).fill(0).map((_, i) => {
+                            const ratingValue = i + 1;
+                            if (averageFeedback.score >= ratingValue) {
+                                return <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
+                            }
+                            if (averageFeedback.score > i && averageFeedback.score < ratingValue) {
+                                return <StarHalf key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
+                            }
+                            return <Star key={i} className="h-5 w-5 text-gray-300" />;
+                        })}
+                        <span className="text-sm font-bold ml-2">{averageFeedback.score.toFixed(1)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">({averageFeedback.text})</span>
                     </div>
                 </div>
             </header>
