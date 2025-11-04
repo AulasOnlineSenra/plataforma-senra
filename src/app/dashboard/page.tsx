@@ -500,7 +500,7 @@ export default function DashboardPage() {
                           {users.find(u => u.id === event.studentId)?.name || 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
+                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -618,7 +618,7 @@ export default function DashboardPage() {
                           }
                         </TableCell>
                         <TableCell className="text-right">
-                          {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
+                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
                         </TableCell>
                       </TableRow>
                     ))}

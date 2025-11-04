@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -192,7 +193,7 @@ function TeacherDetailPageComponent() {
                                 <div>
                                     <p className="font-semibold">{c.subject}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {format(c.start, "EEEE, dd/MM", { locale: ptBR })} às {format(c.start, "HH:mm")} - {format(c.end, "HH:mm")}
+                                        {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">

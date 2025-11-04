@@ -411,7 +411,6 @@ function SchedulePageComponent() {
                     root: 'w-full',
                     months: 'w-full',
                     month: 'w-full',
-                    table: 'w-full',
                     caption_label: 'font-headline text-lg mb-2',
                     head_row: 'w-full flex',
                     head_cell: 'flex-1',
@@ -474,7 +473,7 @@ function SchedulePageComponent() {
                               <div className="grid gap-1">
                                 <p className="font-semibold">{personToShow?.name}</p>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span>{format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}</span>
+                                  <span>{format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}</span>
                                 </div>
                               </div>
                           </div>
