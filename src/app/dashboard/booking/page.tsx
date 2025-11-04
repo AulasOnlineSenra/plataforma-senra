@@ -63,6 +63,11 @@ function BookingPageComponent() {
   const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
 
   const { toast } = useToast();
@@ -197,7 +202,7 @@ function BookingPageComponent() {
         const startDate = new Date(date);
         startDate.setHours(hours, minutes, 0, 0);
 
-        if (isBefore(startDate, startOfToday())) {
+        if (isBefore(startDate, new Date())) {
             toast({
                 variant: 'destructive',
                 title: 'Data/Horário Inválido',
@@ -603,25 +608,31 @@ function BookingPageComponent() {
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-6 items-start">
             <div className="flex justify-center">
-              <Calendar
-                mode="multiple"
-                selected={selectedDates}
-                onSelect={setSelectedDates}
-                className="rounded-md border p-0 sm:p-3"
-                locale={ptBR}
-                disabled={{ before: startOfToday() }}
-                 classNames={{
-                  root: 'w-full',
-                  months: 'w-full',
-                  month: 'w-full',
-                  table: 'w-full',
-                  caption_label: 'font-headline text-lg mb-2',
-                  head_row: 'w-full flex',
-                  head_cell: 'flex-1',
-                  row: 'w-full flex mt-2',
-                  cell: 'flex-1',
-                }}
-              />
+              {isClient ? (
+                <Calendar
+                  mode="multiple"
+                  selected={selectedDates}
+                  onSelect={setSelectedDates}
+                  className="rounded-md border p-0 sm:p-3"
+                  locale={ptBR}
+                  disabled={{ before: startOfToday() }}
+                  classNames={{
+                    root: 'w-full',
+                    months: 'w-full',
+                    month: 'w-full',
+                    table: 'w-full',
+                    caption_label: 'font-headline text-lg mb-2',
+                    head_row: 'w-full flex',
+                    head_cell: 'flex-1',
+                    row: 'w-full flex mt-2',
+                    cell: 'flex-1',
+                  }}
+                />
+              ) : (
+                <div className="rounded-md border p-0 sm:p-3 w-full h-[345px] flex items-center justify-center bg-muted/50">
+                  Carregando calendário...
+                </div>
+              )}
             </div>
             <div className="grid gap-4 self-start">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

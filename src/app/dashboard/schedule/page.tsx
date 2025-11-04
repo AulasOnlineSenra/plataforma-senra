@@ -59,6 +59,11 @@ function SchedulePageComponent() {
   const [users, setUsers] = useState<User[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('week');
@@ -407,30 +412,36 @@ function SchedulePageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex justify-center items-center p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={handleDateSelect}
-                className="p-0 sm:p-3"
-                classNames={{
-                  root: 'w-full',
-                  months: 'w-full',
-                  month: 'w-full',
-                  table: 'w-full',
-                  caption_label: 'font-headline text-lg mb-2',
-                  head_row: 'w-full flex',
-                  head_cell: 'flex-1',
-                  row: 'w-full flex mt-2',
-                  cell: 'flex-1',
-                }}
-                locale={ptBR}
-                modifiers={{
-                  scheduled: events.filter(e => e.status === 'scheduled').map((e) => e.start),
-                }}
-                modifiersClassNames={{
-                  scheduled: 'bg-brand-yellow text-black',
-                }}
-              />
+              {isClient ? (
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={handleDateSelect}
+                  className="p-0 sm:p-3"
+                  classNames={{
+                    root: 'w-full',
+                    months: 'w-full',
+                    month: 'w-full',
+                    table: 'w-full',
+                    caption_label: 'font-headline text-lg mb-2',
+                    head_row: 'w-full flex',
+                    head_cell: 'flex-1',
+                    row: 'w-full flex mt-2',
+                    cell: 'flex-1',
+                  }}
+                  locale={ptBR}
+                  modifiers={{
+                    scheduled: events.filter(e => e.status === 'scheduled').map((e) => e.start),
+                  }}
+                  modifiersClassNames={{
+                    scheduled: 'bg-brand-yellow text-black',
+                  }}
+                />
+              ) : (
+                <div className="p-0 sm:p-3 w-full h-[345px] flex items-center justify-center bg-muted/50 rounded-md">
+                  Carregando calendário...
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card className="lg:col-span-4 flex flex-col" id="scheduled-classes">
