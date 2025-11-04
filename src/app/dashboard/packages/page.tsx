@@ -234,7 +234,7 @@ export default function PackagesPage() {
               </ul>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-              <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <Button asChild className="w-full">
                 <Link href={`/dashboard/payment?packageId=${pkg.id}`}>Comprar agora</Link>
               </Button>
               <Button variant="outline" className="w-full">
@@ -315,7 +315,7 @@ export default function PackagesPage() {
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-2 pt-6">
-            <Button asChild size="lg" className="w-full max-w-xs mx-auto bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <Button asChild size="lg" className="w-full max-w-xs mx-auto">
               <Link href={getCalculatorURL()}>Comprar agora</Link>
             </Button>
           </CardFooter>

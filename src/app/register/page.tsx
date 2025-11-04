@@ -162,13 +162,13 @@ export default function RegisterPage() {
         Como você usará a plataforma?
       </h1>
       <div className="grid gap-4">
-        <Button onClick={() => setRole('teacher')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
+        <Button onClick={() => setRole('teacher')} className="h-12 text-base">
           Sou Professor
         </Button>
-        <Button onClick={() => setRole('student')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
+        <Button onClick={() => setRole('student')} className="h-12 text-base">
           Sou Aluno
         </Button>
-         <Button onClick={() => setRole('admin')} className="h-12 text-base bg-brand-yellow text-black hover:bg-brand-yellow/90">
+         <Button onClick={() => setRole('admin')} className="h-12 text-base">
           Sou Administrador
         </Button>
       </div>
@@ -234,7 +234,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" className="h-11 mt-2 bg-sidebar text-sidebar-foreground hover:bg-brand-yellow">
+          <Button type="submit" className="h-11 mt-2">
             Criar Conta
           </Button>
         </form>

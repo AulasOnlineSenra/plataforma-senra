@@ -87,11 +87,11 @@ export default function AdminPackagesPage() {
           Gerenciar Planos e Preços
         </h1>
         <div className="flex gap-2">
-            <Button onClick={handleAddNewPackage}>
+            <Button onClick={handleAddNewPackage} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Plano
             </Button>
-            <Button onClick={handleSaveChanges} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <Button onClick={handleSaveChanges}>
                 <Save className="mr-2 h-4 w-4" />
                 Salvar Alterações
             </Button>

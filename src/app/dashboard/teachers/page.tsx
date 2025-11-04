@@ -163,7 +163,7 @@ function TeacherCard({
       </CardContent>
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
-          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
+          <Button asChild className="w-full">
             <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
           </Button>
         )}
@@ -382,6 +382,7 @@ export default function TeachersPage() {
             {currentUser?.role === 'admin' && (
               <Button
                 onClick={() => setIsInviteDialogOpen(true)}
+                className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <UserPlus className="mr-2" />
                 Convidar

@@ -45,7 +45,7 @@ export default function HomePage() {
               <EditableText storageKey="home-subheadline">Aulas 100% personalizadas com os melhores especialistas. Do reforço escolar ao vestibular, encontre o tutor ideal para transformar dúvidas em conquistas.</EditableText>
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6">
+              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6">
                 <ChevronRight className="mr-2 h-5 w-5" /> <EditableText storageKey="home-cta-primary">Encontre Seu Tutor Ideal</EditableText>
               </Button>
               <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 py-6 border-2 border-white text-white hover:bg-white hover:text-black">

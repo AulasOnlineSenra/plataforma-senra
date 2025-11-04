@@ -701,7 +701,7 @@ function ChatPageComponent() {
                             <DialogClose asChild>
                                 <Button type="button" variant="outline">Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">
+                            <Button type="submit">
                                 Criar
                             </Button>
                         </DialogFooter>

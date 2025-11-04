@@ -209,13 +209,13 @@ function ProfilePageComponent() {
     };
     
      const handleChangePassword = () => {
-        if (!profileUser) return;
+        if (!profileUser || !profileUser.email) return;
 
         // In a real app, this verification would happen on the server side.
-        const emailKey = `savedPassword-${profileUser.email}`;
-        const idKey = `savedPassword-${profileUser.id}`; // For backward compatibility
-        const savedPassword = localStorage.getItem(emailKey) || localStorage.getItem(idKey);
+        const passwordKey = `savedPassword-${profileUser.email}`;
+        const savedPassword = localStorage.getItem(passwordKey);
         
+        // This allows 'password' as a default password or if no password is set
         if (savedPassword && savedPassword !== currentPassword && currentPassword !== 'password') {
              toast({
                 variant: 'destructive',
@@ -242,9 +242,7 @@ function ProfilePageComponent() {
             return;
         }
 
-        localStorage.setItem(`savedPassword-${profileUser.email}`, newPassword);
-        // Clean up old key if it exists
-        localStorage.removeItem(`savedPassword-${profileUser.id}`);
+        localStorage.setItem(passwordKey, newPassword);
 
         toast({
             title: 'Senha Alterada!',
@@ -311,7 +309,7 @@ function ProfilePageComponent() {
     
     const handleOpenPasswordDialog = () => {
         if (profileUser) {
-            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.email}`) || localStorage.getItem(`savedPassword-${profileUser.id}`) || 'password';
+            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.email}`) || 'password';
             setCurrentPassword(savedPassword);
             setShowCurrentPassword(false);
         }
@@ -702,7 +700,7 @@ function EducationManager({ initialEntries, onSave, canEdit }: { initialEntries:
                      <Button variant="outline" onClick={handleAddNew}>
                         <Plus className="mr-2 h-4 w-4"/> Adicionar Formação
                     </Button>
-                     <Button onClick={handleSaveChanges}>Salvar Alterações na Formação</Button>
+                     <Button onClick={handleSaveChanges} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">Salvar Alterações na Formação</Button>
                 </div>
             )}
         </CardContent>

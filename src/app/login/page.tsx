@@ -146,7 +146,7 @@ const LoginForm = ({
             <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
           </Button>
         </div>
-        <Button type="submit" className="h-11 w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow">
+        <Button type="submit" className="h-11 w-full">
           Entrar
         </Button>
       </form>
@@ -264,7 +264,7 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
         >
           <GripVertical className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
           {item.role ? (
-            <Button onClick={() => onSelectRole(item.role)} className="h-12 text-base w-full bg-brand-yellow text-black hover:bg-brand-yellow/90 pl-10">
+            <Button onClick={() => onSelectRole(item.role)} className="h-12 text-base w-full pl-10">
               {item.label}
             </Button>
           ) : (
@@ -386,10 +386,8 @@ export default function LoginPage() {
         if (foundUser) {
             if (foundUser.role === role) {
                 const storedPassword = localStorage.getItem(`savedPassword-${foundUser.email}`);
-                // Fallback for old users: check ID-based password or default password
-                const oldStoredPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
                 
-                if (storedPassword === password || oldStoredPassword === password || (storedPassword === null && oldStoredPassword === null && password === 'password')) {
+                if (storedPassword === password || (storedPassword === null && password === 'password')) {
                     userToLogin = foundUser;
                 } else {
                      toast({
@@ -441,9 +439,6 @@ export default function LoginPage() {
         localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
         localStorage.setItem(`savedPassword-${email}`, password);
         localStorage.setItem('userId', updatedUser.id);
-        
-        // Clean up old password storage if it exists
-        localStorage.removeItem(`savedPassword-${userToLogin.id}`);
 
         window.dispatchEvent(new Event('storage'));
 
