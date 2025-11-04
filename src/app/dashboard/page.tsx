@@ -54,6 +54,7 @@ import { SubjectsChart } from '@/components/charts/subjects-chart';
 import { NewUsersChart } from '@/components/charts/new-users-chart';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -231,7 +232,7 @@ export default function DashboardPage() {
     
     const { ratings } = user;
     if (ratings.length < 5) {
-      return { score: 5.0, count: ratings.length, text: 'Aguardando 5 avaliações' };
+      return { score: 5.0, count: ratings.length, text: `Aguardando ${5 - ratings.length} ${5 - ratings.length > 1 ? 'avaliações' : 'avaliação'}` };
     }
     const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
     return { score: avg, count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
@@ -482,30 +483,32 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Professor(a)</TableHead>
-                  <TableHead>Aluno(a)</TableHead>
-                  <TableHead className="text-right">Data e Horário</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allUpcomingEvents.map((event) => (
-                  <TableRow key={event.id}>
-                     <TableCell>
-                      {teachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {users.find(u => u.id === event.studentId)?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+             <ScrollArea className="h-72">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Professor(a)</TableHead>
+                      <TableHead>Aluno(a)</TableHead>
+                      <TableHead className="text-right">Data e Horário</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allUpcomingEvents.map((event) => (
+                      <TableRow key={event.id}>
+                         <TableCell>
+                          {teachers.find(t => t.id === event.teacherId)?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {users.find(u => u.id === event.studentId)?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
@@ -593,35 +596,37 @@ export default function DashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Disciplina</TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      {user.role === 'student' ? 'Professor(a)' : 'Aluno(a)'}
-                    </TableHead>
-                    <TableHead className="text-right">Data e Horário</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {upcomingEvents.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell>
-                        <div className="font-medium">{event.subject}</div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {user.role === 'student' ? 
-                          (teachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
-                          (users.find(u => u.id === event.studentId)?.name || 'N/A')
-                        }
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
-                      </TableCell>
+              <ScrollArea className="h-72">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Disciplina</TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        {user.role === 'student' ? 'Professor(a)' : 'Aluno(a)'}
+                      </TableHead>
+                      <TableHead className="text-right">Data e Horário</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {upcomingEvents.map((event) => (
+                      <TableRow key={event.id}>
+                        <TableCell>
+                          <div className="font-medium">{event.subject}</div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {user.role === 'student' ? 
+                            (teachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
+                            (users.find(u => u.id === event.studentId)?.name || 'N/A')
+                          }
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {format(event.start, "dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </CardContent>
           </Card>
           <Card>
