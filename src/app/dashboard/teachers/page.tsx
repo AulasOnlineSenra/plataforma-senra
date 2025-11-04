@@ -150,7 +150,11 @@ function TeacherCard({
             ({rating.toFixed(1)})
           </span>
         </div>
-        <CardDescription className="pt-1">{teacher.education && Array.isArray(teacher.education) ? teacher.education[0]?.course : ''}</CardDescription>
+        <CardDescription className="pt-1 h-5">
+            {teacher.education && teacher.education.length > 0 && 
+                `${teacher.education[0].course} - ${teacher.education[0].university}`
+            }
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 text-center pt-0">
         <p className="text-sm text-muted-foreground line-clamp-3">
@@ -279,7 +283,17 @@ export default function TeachersPage() {
     if (toggledTeacher) {
         const remainingTeachers = listWithUpdatedStatus.filter(t => t.id !== teacherId);
         const shuffledRemaining = shuffleArray(remainingTeachers);
-        const finalList = [...shuffledRemaining, toggledTeacher];
+        
+        let finalList;
+        if (toggledTeacher.status === 'hidden') {
+             // Move hidden teacher to the end
+            finalList = [...shuffledRemaining, toggledTeacher];
+        } else {
+            // Randomly insert active teacher back
+            const randomIndex = Math.floor(Math.random() * (shuffledRemaining.length + 1));
+            shuffledRemaining.splice(randomIndex, 0, toggledTeacher);
+            finalList = shuffledRemaining;
+        }
         
         setTeacherList(finalList);
         localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(finalList));
