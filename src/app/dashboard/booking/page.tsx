@@ -203,10 +203,10 @@ function BookingPageComponent() {
         const startDate = new Date(date);
         startDate.setHours(hours, minutes, 0, 0);
 
-        if (isBefore(startDate, new Date())) {
+        if (isBefore(startDate, startOfToday())) {
             toast({
                 variant: 'destructive',
-                title: 'Data/Horário Inválido',
+                title: 'Data Inválida',
                 description: `Não é possível agendar aulas em datas passadas.`,
             });
             conflictFound = true;
@@ -749,10 +749,10 @@ function BookingPageComponent() {
                           <div>
                             <Label>Data e Horário</Label>
                             <p className="font-semibold">
-                              {format(booking.start, 'dd/MM/yyyy', {
+                              {format(booking.start, "dd/MM/yyyy 'às' HH:mm", {
                                 locale: ptBR,
                               })}{' '}
-                              às {format(booking.start, 'HH:mm')}
+                              - {format(booking.end, 'HH:mm')}
                             </p>
                           </div>
                         </div>
