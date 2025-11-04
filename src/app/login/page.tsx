@@ -300,42 +300,6 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (role) {
-        const usersStr = localStorage.getItem(USERS_STORAGE_KEY);
-        const teachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
-        const allUsers = [
-            ...(usersStr ? JSON.parse(usersStr) : initialRegularUsers),
-            ...(teachersStr ? JSON.parse(teachersStr) : initialTeachers)
-        ];
-
-        let defaultUser: User | Teacher | undefined;
-        if (role === 'admin') {
-            defaultUser = allUsers.find(u => u.role === 'admin');
-        } else if (role === 'teacher') {
-            defaultUser = allUsers.find(u => u.role === 'teacher');
-        } else {
-            defaultUser = allUsers.find(u => u.role === 'student');
-        }
-
-        if (!email && defaultUser) {
-            setEmail(defaultUser.email);
-            const savedPassword = localStorage.getItem(`savedPassword-${defaultUser.id}`);
-            setPassword(savedPassword || 'password');
-        } else {
-            const targetUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-            if (targetUser) {
-                const savedPassword = localStorage.getItem(`savedPassword-${targetUser.id}`);
-                setPassword(savedPassword || 'password');
-            }
-        }
-    } else {
-        setEmail('');
-        setPassword('');
-    }
-}, [role, email]);
-
-
-  useEffect(() => {
     const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
     if (savedPos) {
         try {
