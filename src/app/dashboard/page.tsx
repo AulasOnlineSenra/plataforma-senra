@@ -176,15 +176,13 @@ export default function DashboardPage() {
 
     return scheduleEvents
     .filter((e) => e.status === 'scheduled' && e.start > new Date() && e[filterField] === user.id)
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-    .slice(0, 3);
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [scheduleEvents, user]);
   
   const allUpcomingEvents = useMemo(() => {
     return scheduleEvents
     .filter((e) => e.status === 'scheduled' && e.start > new Date())
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-    .slice(0, 3);
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [scheduleEvents]);
 
   const userScheduledClasses = useMemo(() => {
