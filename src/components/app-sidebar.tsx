@@ -208,8 +208,6 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('currentUser');
-    localStorage.removeItem('navOrder');
-    localStorage.removeItem('adminNavOrder');
     localStorage.removeItem('userId');
     router.push('/login');
   };
