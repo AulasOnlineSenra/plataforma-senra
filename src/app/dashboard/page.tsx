@@ -289,7 +289,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
       </div>
-      <div>
+      <div className="px-5">
         <Carousel
           setApi={setCarouselApi}
           opts={{
