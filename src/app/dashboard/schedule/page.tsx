@@ -410,7 +410,7 @@ function SchedulePageComponent() {
                   }}
                   locale={ptBR}
                   modifiers={{
-                    scheduled: events.filter(e => e.status === 'scheduled').map((e) => e.start),
+                    scheduled: filteredEvents.map((e) => e.start),
                   }}
                   modifiersClassNames={{
                     scheduled: "relative !bg-transparent border-2 border-brand-yellow !text-primary-foreground shadow-[0_0_15px_rgba(245,176,0,0.5)]",
