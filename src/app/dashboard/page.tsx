@@ -402,7 +402,7 @@ export default function DashboardPage() {
                 Aulas agendadas para os próximos dias em toda a plataforma.
               </CardDescription>
             </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
+            <Button asChild size="sm" className="ml-auto gap-1 bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
               <Link href="/dashboard/schedule">
                 Ver Todas
                 <ArrowUpRight className="h-4 w-4" />
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                   Suas aulas agendadas para os próximos dias.
                 </CardDescription>
               </div>
-              <Button asChild size="sm" className="ml-auto gap-1">
+              <Button asChild size="sm" className="ml-auto gap-1 bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
                  <Link href="/dashboard/schedule">
                     Ver Todas
                     <ArrowUpRight className="h-4 w-4" />
