@@ -46,7 +46,7 @@ const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
 const LAST_NOTIFICATIONS_VIEW_KEY = 'lastNotificationsViewTimestamp';
 
 
-export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile?: boolean, isCollapsed?: boolean }) {
+export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -245,7 +245,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
 
   const renderLink = (item: NavItem, isLogout = false, itemType?: 'main' | 'admin') => {
     const isActive = pathname === item.href;
-    const isDraggable = userRole === 'admin' && itemType && !isMobile && !isCollapsed;
+    const isDraggable = userRole === 'admin' && itemType && !isMobile;
     const isChat = item.href === '/dashboard/chat';
     const isSuggestions = item.href === '/dashboard/suggestions';
     const isNotifications = item.href === '/dashboard/notifications';
@@ -276,11 +276,10 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
             : 'text-sidebar-foreground/80 hover:text-brand-yellow hover:bg-sidebar-accent',
-          isCollapsed && 'justify-center'
         )}
       >
         <item.icon className="h-5 w-5 shrink-0" />
-        <span className={cn('font-medium', isCollapsed && 'sr-only')}>{item.label}</span>
+        <span className={cn('font-medium')}>{item.label}</span>
         {isChat && hasNewMessages && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
         )}
@@ -323,16 +322,15 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     <aside className={cn(
         "flex h-full max-h-screen flex-col w-full group", 
         isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground',
-        isCollapsed && 'is-collapsed'
     )}>
-        <Link href="/dashboard/profile" className={cn("block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors", isCollapsed && "py-4")}>
-          <div className={cn("flex h-auto items-center p-4 lg:h-auto", isCollapsed && "justify-center")}>
-              <div className={cn("flex items-center gap-3", isCollapsed && 'flex-col')}>
-                  <Avatar className={cn("h-12 w-12 border-2 border-primary", isCollapsed && "h-10 w-10")}>
+        <Link href="/dashboard/profile" className={cn("block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors")}>
+          <div className={cn("flex h-auto items-center p-4 lg:h-auto")}>
+              <div className={cn("flex items-center gap-3")}>
+                  <Avatar className={cn("h-12 w-12 border-2 border-primary")}>
                       <AvatarImage src={user.avatarUrl} alt={user.name} />
                       <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <div className={cn('flex flex-col', isCollapsed && 'hidden')}>
+                  <div className={cn('flex flex-col')}>
                       <span className="font-semibold text-lg text-sidebar-foreground">{user.name}</span>
                       <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role]}</span>
                   </div>

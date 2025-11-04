@@ -2,11 +2,6 @@
 'use client';
 
 import React from 'react';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Header } from '@/components/header';
 import { useResizablePanel, ResizablePanelProvider } from '@/components/resizable-panel-provider';
@@ -16,40 +11,17 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, toggleCollapse } = useResizablePanel();
 
   return (
-    <ResizablePanelGroup
-      direction="horizontal"
-      className="h-full min-h-screen w-full"
-      onLayout={(sizes: number[]) => {
-        document.cookie = `react-resizable-panels:layout=${JSON.stringify(
-          sizes
-        )}`;
-      }}
-    >
-      <ResizablePanel
-        defaultSize={20}
-        collapsedSize={4}
-        collapsible={true}
-        minSize={15}
-        maxSize={20}
-        className={cn(
-          'hidden md:block transition-all duration-300 ease-in-out min-w-[50px]',
-          !isCollapsed && 'md:min-w-[120px] lg:min-w-[180px]'
-        )}
-      >
-        <div className="h-full border-r bg-sidebar">
-          <AppSidebar isCollapsed={isCollapsed} />
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <div className="hidden border-r bg-sidebar md:block">
+            <AppSidebar />
         </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle className="hidden md:flex" />
-      <ResizablePanel defaultSize={80}>
-        <div className="flex h-full flex-col">
-          <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
-          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background overflow-auto">
-            {children}
-          </main>
+        <div className="flex flex-col">
+            <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background overflow-auto">
+                {children}
+            </main>
         </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+    </div>
   );
 }
 
