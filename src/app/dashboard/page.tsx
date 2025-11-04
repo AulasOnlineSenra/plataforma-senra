@@ -222,15 +222,15 @@ export default function DashboardPage() {
   }, [user, scheduleEvents]);
 
   const averageFeedback = useMemo(() => {
-    if (!user || !user.ratings) {
-      return { score: '5.0', count: 0, text: 'Aguardando 5 avaliações' };
+    if (!user || !user.ratings || user.ratings.length === 0) {
+      return { score: 0, count: 0, text: 'Nenhuma avaliação recebida' };
     }
     const { ratings } = user;
-    if (ratings.length < 5) {
-      return { score: '5.0', count: ratings.length, text: 'Aguardando 5 avaliações' };
+    if (ratings.length < 5 && user.role === 'teacher') {
+      return { score: 5.0, count: ratings.length, text: 'Aguardando 5 avaliações' };
     }
     const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-    return { score: avg.toFixed(1), count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
+    return { score: avg, count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
   }, [user]);
 
   if (!user) {
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                       </Tabs>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[350px]">
                   <RevenueChart filter={filter} />
                 </CardContent>
               </Card>
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                     </Select>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[350px]">
                   <SubjectsChart selectedMonth={subjectsMonthFilter} />
                 </CardContent>
               </Card>
@@ -370,7 +370,7 @@ export default function DashboardPage() {
                       </Select>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[350px]">
                   <NewUsersChart selectedMonth={newUsersMonthFilter} />
                 </CardContent>
               </Card>
@@ -440,6 +440,7 @@ export default function DashboardPage() {
   );
 
   const renderStudentTeacherDashboard = () => {
+    const score = averageFeedback.score;
     return (
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
@@ -501,8 +502,19 @@ export default function DashboardPage() {
               <Star className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{averageFeedback.score}/5.0</div>
-              <p className="text-xs text-muted-foreground">{averageFeedback.text}</p>
+               <div className="flex items-center gap-1">
+                  {Array(5).fill(0).map((_, i) => (
+                      <Star
+                      key={i}
+                      className={cn(
+                          'h-5 w-5',
+                          score > i ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                      )}
+                      />
+                  ))}
+                  <span className="text-xl font-bold ml-2">{score.toFixed(1)}</span>
+                </div>
+              <p className="text-xs text-muted-foreground mt-1">{averageFeedback.text}</p>
             </CardContent>
           </Card>
         </div>
@@ -582,12 +594,12 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Bem-vindo(a) de volta, {user.nickname || user.name.split(' ')[0]}!
-        </h1>
-      </div>
-      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
+        <div className="flex items-center justify-between">
+            <h1 className="font-headline text-2xl md:text-3xl font-bold">
+            Bem-vindo(a) de volta, {user.nickname || user.name.split(' ')[0]}!
+            </h1>
+        </div>
+        {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
     </div>
   );
 }
