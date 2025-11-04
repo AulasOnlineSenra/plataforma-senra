@@ -73,7 +73,7 @@ export default function ActivityHistoryPage() {
                     <TableRow key={index}>
                     <TableCell className="font-medium">{activity.action}</TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                        {format(activity.date, "dd/MM/yyyy 'às' HH:mm", {
+                        {format(activity.date, "EEEE, dd/MM/yyyy 'às' HH:mm", {
                         locale: ptBR,
                         })}
                     </TableCell>
