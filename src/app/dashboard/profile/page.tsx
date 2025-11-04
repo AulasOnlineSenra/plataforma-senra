@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -35,6 +35,7 @@ import {
   Shield,
   Eye,
   EyeOff,
+  ChevronRight,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import Link from 'next/link';
 
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -212,8 +214,7 @@ function ProfilePageComponent() {
         if (!profileUser || !profileUser.email) return;
 
         // In a real app, this verification would happen on the server side.
-        const passwordKey = `savedPassword-${profileUser.email}`;
-        const savedPassword = localStorage.getItem(passwordKey);
+        const savedPassword = localStorage.getItem(`savedPassword-${profileUser.email}`);
         
         // This allows 'password' as a default password or if no password is set
         if (savedPassword && savedPassword !== currentPassword && currentPassword !== 'password') {
@@ -242,7 +243,7 @@ function ProfilePageComponent() {
             return;
         }
 
-        localStorage.setItem(passwordKey, newPassword);
+        localStorage.setItem(`savedPassword-${profileUser.email}`, newPassword);
 
         toast({
             title: 'Senha Alterada!',
@@ -355,9 +356,34 @@ function ProfilePageComponent() {
         setOpenAccordion(openAccordion === value ? null : value);
     };
 
+    const getBreadcrumbPath = () => {
+      if (!userIdParam || !profileUser) return null;
+      switch (profileUser.role) {
+        case 'teacher':
+          return { name: 'Professores', path: '/dashboard/teachers' };
+        case 'student':
+          return { name: 'Alunos', path: '/dashboard/students' };
+        case 'admin':
+          return { name: 'Administradores', path: '/dashboard/admin/settings' };
+        default:
+          return null;
+      }
+    }
+    const breadcrumbPath = getBreadcrumbPath();
+
+
     return (
       <>
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
+            {breadcrumbPath && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Link href={breadcrumbPath.path} className="hover:underline">
+                        {breadcrumbPath.name}
+                    </Link>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="font-medium text-foreground">{profileUser.name}</span>
+                </div>
+            )}
             <div className="flex items-center">
                 <h1 className="font-headline text-2xl md:text-3xl font-bold">{pageTitle}</h1>
             </div>
