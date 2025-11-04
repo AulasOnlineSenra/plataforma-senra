@@ -289,7 +289,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
       </div>
-      <div className="mx-auto w-full max-w-[calc(100%-100px)]">
+      <div>
         <Carousel
           setApi={setCarouselApi}
           opts={{
