@@ -835,6 +835,7 @@ function BookingPageComponent() {
             size="lg"
             onClick={handleConfirmAllBookings}
             disabled={bookings.length === 0}
+            className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black"
           >
             Confirmar Todos os Agendamentos ({bookings.length})
           </Button>
