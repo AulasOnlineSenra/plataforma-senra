@@ -112,7 +112,7 @@ export function SubjectsChart({ selectedMonth }: SubjectsChartProps) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square h-full w-full"
+      className="mx-auto h-full w-full"
     >
       {data.length > 0 ? (
         <ResponsiveContainer width="100%" height="100%">
