@@ -221,6 +221,16 @@ function SchedulePageComponent() {
     return relevantEvents.sort((a, b) => b.start.getTime() - a.start.getTime());
   }, [events, currentUser]);
 
+  const calendarMarkedDays = useMemo(() => {
+    let relevantEvents = events.filter(e => e.status === 'scheduled' || e.status === 'completed');
+     if (currentUser?.role === 'student') {
+      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
+    } else if (currentUser?.role === 'teacher') {
+      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
+    }
+    return relevantEvents.map(e => e.start);
+  }, [events, currentUser]);
+
 
   const handleConfirmCancel = (eventId: string) => {
     const updatedEvents = events.map(e => 
@@ -410,7 +420,7 @@ function SchedulePageComponent() {
                   }}
                   locale={ptBR}
                   modifiers={{
-                    scheduled: filteredEvents.map((e) => e.start),
+                    scheduled: calendarMarkedDays,
                   }}
                   modifiersClassNames={{
                     scheduled: "relative border-2 border-brand-yellow shadow-[0_0_15px_rgba(245,176,0,0.5)]",
