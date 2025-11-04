@@ -55,6 +55,7 @@ import { NewUsersChart } from '@/components/charts/new-users-chart';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -636,6 +637,10 @@ export default function DashboardPage() {
                    <div className="flex flex-col items-center justify-center text-center gap-4 border-r-0 md:border-r md:pr-6">
                         {lastUnratedClass && personToRate ? (
                             <>
+                                <Avatar className="w-16 h-16 mb-2">
+                                  <AvatarImage src={personToRate.avatarUrl} alt={personToRate.name} />
+                                  <AvatarFallback>{personToRate.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
                                 <p className="font-medium">
                                     Avalie sua última aula de {lastUnratedClass.subject} com {personToRate.name}
                                 </p>
