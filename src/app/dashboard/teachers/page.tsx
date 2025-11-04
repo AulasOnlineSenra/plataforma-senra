@@ -159,7 +159,7 @@ function TeacherCard({
       </CardContent>
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
-          <Button asChild className="w-full">
+          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
             <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
           </Button>
         )}
