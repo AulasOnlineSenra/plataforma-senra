@@ -120,12 +120,27 @@ function BookingPageComponent() {
                 setSelectedSubject(teacherFromParam.subjects[0]);
             }
         }
+        
+        const savedBookings = localStorage.getItem(PENDING_BOOKINGS_STORAGE_KEY);
+        if (savedBookings) {
+            setBookings(JSON.parse(savedBookings).map((b: any) => ({...b, start: new Date(b.start), end: new Date(b.end)})));
+        }
+
     };
 
     updateData();
     window.addEventListener('storage', updateData);
     return () => window.removeEventListener('storage', updateData);
   }, [studentIdParam, teacherIdParam]);
+  
+  useEffect(() => {
+    if (bookings.length > 0) {
+        localStorage.setItem(PENDING_BOOKINGS_STORAGE_KEY, JSON.stringify(bookings));
+    } else {
+        localStorage.removeItem(PENDING_BOOKINGS_STORAGE_KEY);
+    }
+  }, [bookings]);
+
 
   const availableTeachers = useMemo(() => {
     if (!selectedSubject) {
@@ -153,6 +168,7 @@ function BookingPageComponent() {
     setSelectedDates([]);
     setSelectedTime(undefined);
     setRecurrence('none');
+    setBookings([]);
   };
 
   const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
