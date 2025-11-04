@@ -10,8 +10,8 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import { teachers as initialTeachers, subjects, getMockUser } from '@/lib/data';
-import { Teacher, UserRole, User } from '@/lib/types';
+import { teachers as initialTeachers, subjects, getMockUser, scheduleEvents as initialSchedule } from '@/lib/data';
+import { Teacher, UserRole, User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
@@ -109,7 +109,7 @@ function TeacherCard({
                             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                             <AlertDialogDescription>
                                 Esta ação moverá o professor para a lista de excluídos. Ele poderá ser restaurado ou excluído permanentemente mais tarde.
-                                O professor <span className="font-bold">{teacher.name}</span> não será mais visível para os alunos.
+                                O professor <span className="font-bold">{teacher.name}</span> não será mais visível para os alunos e suas aulas futuras serão canceladas.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -173,6 +173,7 @@ function TeacherCard({
 }
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
 // Função para embaralhar um array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -188,6 +189,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const { toast } = useToast();
@@ -206,6 +208,9 @@ export default function TeachersPage() {
     } else {
       setTeacherList(initialTeachers);
     }
+
+    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    setScheduleEvents(storedSchedule ? JSON.parse(storedSchedule) : initialSchedule);
   }, []);
 
 
@@ -257,15 +262,28 @@ export default function TeachersPage() {
     setIsInviteDialogOpen(false);
   };
 
+  const cancelTeacherClasses = (teacherId: string) => {
+    const updatedSchedule = scheduleEvents.map(event => {
+      if (event.teacherId === teacherId && event.status === 'scheduled') {
+        return { ...event, status: 'cancelled' as const };
+      }
+      return event;
+    });
+    setScheduleEvents(updatedSchedule);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+  }
+
   const handleDeleteTeacher = (teacherId: string) => {
+    cancelTeacherClasses(teacherId);
     const updatedList = teacherList.map(t =>
         t.id === teacherId ? { ...t, status: 'deleted' as const } : t
     );
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
     toast({
       title: 'Professor Movido para Excluídos',
-      description: 'O perfil do professor foi movido para a lista de excluídos.',
+      description: 'O perfil do professor foi movido e suas aulas futuras foram canceladas.',
     });
   };
 
@@ -313,13 +331,15 @@ export default function TeachersPage() {
   };
   
   const handlePermanentDeleteTeacher = (teacherId: string) => {
+    cancelTeacherClasses(teacherId);
     const updatedList = teacherList.filter(t => t.id !== teacherId);
     setTeacherList(updatedList);
     localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('storage'));
     toast({
       variant: 'destructive',
       title: 'Professor Excluído Permanentemente',
-      description: 'O perfil do professor foi removido para sempre.',
+      description: 'O perfil do professor e suas aulas foram removidos.',
     });
   };
   
@@ -440,7 +460,7 @@ export default function TeachersPage() {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre.
+                                                                Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre. Todas as suas aulas futuras também serão canceladas.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>

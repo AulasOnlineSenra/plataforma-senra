@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -18,8 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
-import { User, ScheduleEvent } from '@/lib/types';
+import { users as initialUsers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
+import { User, ScheduleEvent, UserRole } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -159,29 +159,54 @@ export default function AdminStudentsPage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   useEffect(() => {
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    if (storedUsers) {
-      setAllUsers(JSON.parse(storedUsers));
-    } else {
-      setAllUsers(initialUsers);
-    }
-    
-    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-    if (storedSchedule) {
-      setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
-    } else {
-      setScheduleEvents(initialSchedule);
-    }
+    const updateData = () => {
+        const role = localStorage.getItem('userRole') as UserRole | null;
+        if (role) {
+            const storedUser = localStorage.getItem('currentUser');
+            setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
+        }
+
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        setAllUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
+        
+        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+        setScheduleEvents(storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) : initialSchedule);
+    };
+
+    updateData();
+
+    window.addEventListener('storage', updateData);
+    return () => window.removeEventListener('storage', updateData);
   }, []);
 
-  const activeStudents = allUsers.filter(
-    (u) => u.role === 'student' && u.status === 'active'
-  );
-  const inactiveStudents = allUsers.filter(
-    (u) => u.role === 'student' && u.status === 'inactive'
-  );
+  const { activeStudents, inactiveStudents, pageTitle } = useMemo(() => {
+    if (currentUser?.role === 'teacher') {
+      const myStudentIds = new Set(
+        scheduleEvents
+          .filter(event => event.teacherId === currentUser.id)
+          .map(event => event.studentId)
+      );
+
+      const myStudents = allUsers.filter(user => user.role === 'student' && myStudentIds.has(user.id));
+      
+      return {
+        activeStudents: myStudents.filter(s => s.status === 'active'),
+        inactiveStudents: myStudents.filter(s => s.status === 'inactive'),
+        pageTitle: 'Meus Alunos',
+      };
+    }
+
+    // Default admin view
+    return {
+      activeStudents: allUsers.filter(u => u.role === 'student' && u.status === 'active'),
+      inactiveStudents: allUsers.filter(u => u.role === 'student' && u.status === 'inactive'),
+      pageTitle: 'Gerenciar Alunos',
+    };
+  }, [currentUser, allUsers, scheduleEvents]);
+
 
   const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
   
@@ -192,14 +217,27 @@ export default function AdminStudentsPage() {
 
   const handleDeleteStudent = () => {
     if (!studentToDelete) return;
+    
+    // Cancel future classes for the student being deleted
+    const updatedSchedule = scheduleEvents.map(event => {
+      if (event.studentId === studentToDelete.id && event.status === 'scheduled') {
+        return { ...event, status: 'cancelled' as const };
+      }
+      return event;
+    });
+    setScheduleEvents(updatedSchedule);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+    
+    // Remove user
     const updatedUsers = allUsers.filter((user) => user.id !== studentToDelete.id);
     setAllUsers(updatedUsers);
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    
     window.dispatchEvent(new Event('storage'));
 
     toast({
       title: 'Aluno Excluído',
-      description: `O perfil de ${studentToDelete.name} foi removido.`,
+      description: `O perfil de ${studentToDelete.name} foi removido e suas aulas futuras foram canceladas.`,
     });
     setStudentToDelete(null);
   };
@@ -208,7 +246,7 @@ export default function AdminStudentsPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Gerenciar Alunos
+          {pageTitle}
         </h1>
       </div>
       <div className="grid gap-6">
@@ -238,7 +276,7 @@ export default function AdminStudentsPage() {
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
               perfil de{' '}
               <span className="font-bold">{studentToDelete?.name}</span> e
-              removerá seus dados de nossos servidores.
+              removerá seus dados de nossos servidores. Todas as suas aulas futuras serão canceladas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

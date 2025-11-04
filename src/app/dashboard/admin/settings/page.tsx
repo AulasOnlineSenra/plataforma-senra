@@ -23,8 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save, KeyRound, Edit, UserCircle, Trash2, DollarSign } from 'lucide-react';
-import { users as initialUsers } from '@/lib/data';
-import { User } from '@/lib/types';
+import { users as initialUsers, scheduleEvents as initialSchedule } from '@/lib/data';
+import { User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import {
@@ -43,6 +43,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const INACTIVITY_STORAGE_KEY = 'studentInactivityDays';
 const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 const USERS_STORAGE_KEY = 'userList';
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
 const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
@@ -52,6 +53,7 @@ export default function AdminSettingsPage() {
   const [inactivityDays, setInactivityDays] = useState(90);
   const [pixKey, setPixKey] = useState('');
   const [allUsers, setAllUsers] = useState<User[]>(initialUsers);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialSchedule);
   const [adminToDelete, setAdminToDelete] = useState<User | null>(null);
   const [teacherPaymentRate, setTeacherPaymentRate] = useState(50);
   const [paymentDay, setPaymentDay] = useState('friday');
@@ -60,30 +62,39 @@ export default function AdminSettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const storedDays = localStorage.getItem(INACTIVITY_STORAGE_KEY);
-    if (storedDays) {
-      setInactivityDays(parseInt(storedDays, 10));
+    const updateData = () => {
+        const storedDays = localStorage.getItem(INACTIVITY_STORAGE_KEY);
+        if (storedDays) {
+        setInactivityDays(parseInt(storedDays, 10));
+        }
+        const storedPixKey = localStorage.getItem(PIX_KEY_STORAGE_KEY);
+        if (storedPixKey) {
+        setPixKey(storedPixKey);
+        }
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        if (storedUsers) {
+        setAllUsers(JSON.parse(storedUsers));
+        }
+        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+        if (storedSchedule) {
+        setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start), end: new Date(e.end)})));
+        }
+        const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
+        if (storedRate) {
+            setTeacherPaymentRate(parseFloat(storedRate));
+        }
+        const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
+        if (storedPaymentDay) {
+            setPaymentDay(storedPaymentDay);
+        }
+        const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
+        if (storedPaymentFrequency) {
+            setPaymentFrequency(storedPaymentFrequency);
+        }
     }
-    const storedPixKey = localStorage.getItem(PIX_KEY_STORAGE_KEY);
-    if (storedPixKey) {
-      setPixKey(storedPixKey);
-    }
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    if (storedUsers) {
-      setAllUsers(JSON.parse(storedUsers));
-    }
-    const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
-    if (storedRate) {
-        setTeacherPaymentRate(parseFloat(storedRate));
-    }
-    const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
-    if (storedPaymentDay) {
-        setPaymentDay(storedPaymentDay);
-    }
-    const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
-    if (storedPaymentFrequency) {
-        setPaymentFrequency(storedPaymentFrequency);
-    }
+    updateData();
+    window.addEventListener('storage', updateData);
+    return () => window.removeEventListener('storage', updateData);
   }, []);
   
   const admins = allUsers.filter(u => u.role === 'admin');
@@ -110,6 +121,18 @@ export default function AdminSettingsPage() {
 
   const handleDeleteAdmin = () => {
     if (!adminToDelete) return;
+
+    // Cancel all future classes associated with this admin if they also act as a teacher/student
+    const updatedSchedule = scheduleEvents.map(event => {
+      if ((event.studentId === adminToDelete.id || event.teacherId === adminToDelete.id) && event.status === 'scheduled') {
+        return { ...event, status: 'cancelled' as const };
+      }
+      return event;
+    });
+    setScheduleEvents(updatedSchedule);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+
+
     const updatedUsers = allUsers.filter((user) => user.id !== adminToDelete.id);
     setAllUsers(updatedUsers);
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
@@ -117,7 +140,7 @@ export default function AdminSettingsPage() {
 
     toast({
       title: 'Administrador Excluído',
-      description: `O perfil de ${adminToDelete.name} foi removido.`,
+      description: `O perfil de ${adminToDelete.name} foi removido e suas aulas futuras foram canceladas.`,
     });
     setAdminToDelete(null);
   };
@@ -362,8 +385,8 @@ export default function AdminSettingsPage() {
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
               perfil de{' '}
-              <span className="font-bold">{adminToDelete?.name}</span> e
-              removerá seus dados de nossos servidores.
+              <span className="font-bold">{adminToDelete?.name}</span>,
+              removerá seus dados de nossos servidores e cancelará todas as suas aulas futuras.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
