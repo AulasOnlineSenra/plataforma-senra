@@ -68,7 +68,7 @@ function TeacherCard({
 
   return (
     <Card className={cn(
-        "flex flex-col transition-opacity",
+        "flex flex-col transition-all hover:ring-2 hover:ring-brand-yellow",
         teacher.status === 'hidden' && 'opacity-60 bg-muted/50'
     )}>
       <CardHeader className="items-center text-center relative">
