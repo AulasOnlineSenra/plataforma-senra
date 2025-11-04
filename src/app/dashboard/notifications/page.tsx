@@ -42,9 +42,30 @@ export default function NotificationsPage() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   useEffect(() => {
-    const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    const notificationsData = storedNotifications ? JSON.parse(storedNotifications) : initialNotifications;
-    setNotifications(notificationsData.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) })));
+    const updateNotifications = () => {
+      const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+      const notificationsData = storedNotifications ? JSON.parse(storedNotifications) : initialNotifications;
+      setNotifications(notificationsData.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) })));
+    };
+    
+    updateNotifications();
+
+    // Mark all as read on component mount
+    const markAllAsReadOnLoad = () => {
+        const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        if (storedNotifications) {
+            const currentNotifications: Notification[] = JSON.parse(storedNotifications);
+            const readNotifications = currentNotifications.map(n => ({...n, read: true}));
+            localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
+            setNotifications(readNotifications.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) })));
+            window.dispatchEvent(new Event('storage')); // Notify sidebar
+        }
+    };
+    
+    markAllAsReadOnLoad();
+
+    window.addEventListener('storage', updateNotifications);
+    return () => window.removeEventListener('storage', updateNotifications);
   }, []);
 
   const handleToggleRead = (id: string) => {
@@ -53,18 +74,21 @@ export default function NotificationsPage() {
     );
     setNotifications(updatedNotifications);
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('storage'));
   };
   
   const handleMarkAllAsRead = () => {
     const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
     setNotifications(updatedNotifications);
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('storage'));
   };
   
   const handleDeleteNotification = (id: string) => {
     const updatedNotifications = notifications.filter(n => n.id !== id);
     setNotifications(updatedNotifications);
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const filteredNotifications = useMemo(() => {
@@ -160,4 +184,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-

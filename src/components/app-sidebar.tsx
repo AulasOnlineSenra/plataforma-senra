@@ -31,8 +31,8 @@ import {
   Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion } from '@/lib/types';
-import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts, suggestions as initialSuggestions } from '@/lib/data';
+import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion, Notification } from '@/lib/types';
+import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts, suggestions as initialSuggestions, notifications as initialNotifications } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
@@ -42,6 +42,8 @@ const TEACHERS_STORAGE_KEY = 'teacherList';
 const CHAT_CONTACTS_STORAGE_KEY = 'chatContacts';
 const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 const LAST_SUGGESTIONS_VIEW_KEY = 'lastSuggestionsViewTimestamp';
+const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
+const LAST_NOTIFICATIONS_VIEW_KEY = 'lastNotificationsViewTimestamp';
 
 
 export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile?: boolean, isCollapsed?: boolean }) {
@@ -53,6 +55,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
   const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [hasNewSuggestions, setHasNewSuggestions] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
 
   const updateUserAndNotifications = useCallback(() => {
@@ -83,6 +86,13 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
       const unread = contacts.some(c => c.unreadCount > 0);
       setHasNewMessages(unread);
 
+      // Handle general notifications
+      const storedNotificationsStr = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+      const notifications: Notification[] = storedNotificationsStr ? JSON.parse(storedNotificationsStr).map((n:any) => ({...n, timestamp: new Date(n.timestamp)})) : initialNotifications;
+      const unreadNotifications = notifications.some(n => !n.read);
+      setHasUnreadNotifications(unreadNotifications);
+
+
       if (role === 'admin') {
         const storedSuggestionsStr = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
         const suggestions: Suggestion[] = storedSuggestionsStr ? JSON.parse(storedSuggestionsStr).map((s: any) => ({...s, timestamp: new Date(s.timestamp)})) : initialSuggestions;
@@ -105,7 +115,7 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY) {
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY || e.key === NOTIFICATIONS_STORAGE_KEY) {
             updateUserAndNotifications();
         }
     };
@@ -209,6 +219,8 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     localStorage.removeItem('userRole');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userId');
+    // NOTE: navOrder and adminNavOrder are NOT cleared on logout
+    // to preserve user's preference across sessions.
     router.push('/login');
   };
 
@@ -236,11 +248,22 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
     const isDraggable = userRole === 'admin' && itemType && !isMobile && !isCollapsed;
     const isChat = item.href === '/dashboard/chat';
     const isSuggestions = item.href === '/dashboard/suggestions';
+    const isNotifications = item.href === '/dashboard/notifications';
 
     const handleLinkClick = () => {
       if (isSuggestions && userRole === 'admin') {
         localStorage.setItem(LAST_SUGGESTIONS_VIEW_KEY, Date.now().toString());
         setHasNewSuggestions(false);
+      }
+      if (isNotifications) {
+        setHasUnreadNotifications(false);
+        // This is optimistic. In a real app, you might wait for page load to confirm.
+        const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        if (storedNotifications) {
+            const currentNotifications = JSON.parse(storedNotifications);
+            const readNotifications = currentNotifications.map((n:any) => ({...n, read: true}));
+            localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
+        }
       }
     };
     
@@ -262,6 +285,9 @@ export function AppSidebar({ isMobile = false, isCollapsed = false }: { isMobile
           <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
         )}
         {isSuggestions && hasNewSuggestions && userRole === 'admin' && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
+        )}
+        {isNotifications && hasUnreadNotifications && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
         )}
       </div>
