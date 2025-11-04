@@ -539,7 +539,7 @@ function SchedulePageComponent() {
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell>{event.title}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
-                          {format(event.start, 'dd/MM/yyyy', { locale: ptBR })}
+                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}
                         </TableCell>
                         {currentUser?.role === 'admin' && (
                             <TableCell className="text-right">
