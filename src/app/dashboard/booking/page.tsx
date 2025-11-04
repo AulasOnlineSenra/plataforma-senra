@@ -407,14 +407,18 @@ function BookingPageComponent() {
       return;
     }
 
+    const storedSubjectsStr = localStorage.getItem('subjects');
+    const currentSubjects: Subject[] = storedSubjectsStr ? JSON.parse(storedSubjectsStr) : initialSubjects;
+
+
     const newScheduleEvents = bookings.map(b => ({
       id: b.id,
-      title: `Aula de ${subjects.find(s => s.id === b.subjectId)?.name}`,
+      title: `Aula de ${currentSubjects.find(s => s.id === b.subjectId)?.name}`,
       start: b.start,
       end: b.end,
       studentId: studentToBook!.id,
       teacherId: b.teacherId,
-      subject: subjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
+      subject: currentSubjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
       status: 'scheduled' as 'scheduled',
     }));
     
@@ -435,8 +439,17 @@ function BookingPageComponent() {
     newScheduleEvents.forEach(event => {
         const teacher = teachers.find(t => t.id === event.teacherId);
         const student = users.find(u => u.id === event.studentId);
-        const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
 
+        const description = `${student?.name} agendou uma nova aula de ${event.subject} com o professor(a) ${teacher?.name}.`;
+
+        logNotification({
+            type: 'class_scheduled',
+            title: 'Nova Aula Agendada',
+            description: description,
+            userId: student?.id,
+        });
+
+        const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
         const adminMessageContent = `Nova aula agendada: ${event.subject} com ${teacher?.name} e ${student?.name} em ${dateStr}.`;
         
         sendNotification('system', adminUser.id, adminMessageContent);
@@ -446,13 +459,6 @@ function BookingPageComponent() {
         sendNotification(adminUser.id, event.studentId, `Olá, ${student?.name}. Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
 
         logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);
-        
-        logNotification({
-            type: 'class_scheduled',
-            title: 'Nova Aula Agendada',
-            description: `Aula de ${event.subject} com ${teacher?.name} para ${student?.name} em ${dateStr}.`,
-            userId: student?.id,
-        });
     });
 
     window.dispatchEvent(new Event('storage'));
@@ -462,7 +468,7 @@ function BookingPageComponent() {
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
     setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router, subjects]);
+  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router]);
 
   const availableTimes = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;

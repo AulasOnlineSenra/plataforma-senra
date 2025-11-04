@@ -133,17 +133,19 @@ function PaymentPageComponent() {
     }
 
     newScheduleEvents.forEach((event: ScheduleEvent) => {
-      const teacher = teachers.find(t => t.id === event.teacherId);
-      const student = users.find(u => u.id === event.studentId);
-      const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-      
-      logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);
-      logNotification({
-          type: 'class_scheduled',
-          title: 'Nova Aula Agendada',
-          description: `Aula de ${event.subject} com ${teacher?.name} para ${student?.name} em ${dateStr}.`,
-          userId: student?.id,
-      });
+        const teacher = teachers.find(t => t.id === event.teacherId);
+        const student = users.find(u => u.id === event.studentId);
+        
+        const description = `${student?.name} agendou uma nova aula de ${event.subject} com o professor(a) ${teacher?.name}.`;
+        
+        logNotification({
+            type: 'class_scheduled',
+            title: 'Nova Aula Agendada',
+            description: description,
+            userId: student?.id,
+        });
+
+        logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);
     });
 
     localStorage.removeItem(PENDING_BOOKINGS_STORAGE_KEY);
