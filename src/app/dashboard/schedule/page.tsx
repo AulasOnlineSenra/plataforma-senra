@@ -413,7 +413,7 @@ function SchedulePageComponent() {
                     scheduled: filteredEvents.map((e) => e.start),
                   }}
                   modifiersClassNames={{
-                    scheduled: "relative !bg-transparent border-2 border-brand-yellow !text-primary-foreground shadow-[0_0_15px_rgba(245,176,0,0.5)]",
+                    scheduled: "relative bg-transparent border-2 border-brand-yellow shadow-[0_0_15px_rgba(245,176,0,0.5)]",
                     today: 'bg-sidebar text-sidebar-foreground'
                   }}
                 />
