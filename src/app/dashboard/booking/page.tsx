@@ -729,7 +729,7 @@ function BookingPageComponent() {
               <X className="mr-2" />
               Limpar
             </Button>
-            <Button onClick={handleAddBooking}>
+            <Button onClick={handleAddBooking} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
               Adicionar aula <Plus className="ml-2" />
             </Button>
           </CardContent>
