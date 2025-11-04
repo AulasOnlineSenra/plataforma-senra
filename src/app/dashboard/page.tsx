@@ -241,7 +241,7 @@ export default function DashboardPage() {
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Link href="/dashboard/schedule#scheduled-classes">
-          <Card className="hover:ring-2 hover:ring-primary transition-all">
+          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Agendadas</CardTitle>
               <CalendarCheck className="h-6 w-6 text-muted-foreground" />
@@ -253,7 +253,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/schedule#cancelled-history">
-          <Card className="hover:ring-2 hover:ring-primary transition-all">
+          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aulas Canceladas</CardTitle>
               <XCircle className="h-6 w-6 text-muted-foreground" />
@@ -265,7 +265,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/teachers#teacher-list">
-          <Card className="hover:ring-2 hover:ring-primary transition-all">
+          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Professores</CardTitle>
               <Briefcase className="h-6 w-6 text-muted-foreground" />
@@ -277,7 +277,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/students#active-students">
-          <Card className="hover:ring-2 hover:ring-primary transition-all">
+          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Alunos Ativos</CardTitle>
               <Users className="h-6 w-6 text-muted-foreground" />
@@ -401,11 +401,11 @@ export default function DashboardPage() {
                 Aulas agendadas para os próximos dias em toda a plataforma.
               </CardDescription>
             </div>
-            <Button asChild size="sm" className="ml-auto gap-1" onClick={() => router.push('/dashboard/schedule')}>
-              <div className="cursor-pointer">
+            <Button asChild size="sm" className="ml-auto gap-1">
+              <Link href="/dashboard/schedule">
                 Ver Todas
                 <ArrowUpRight className="h-4 w-4" />
-              </div>
+              </Link>
             </Button>
           </CardHeader>
           <CardContent>
@@ -515,11 +515,11 @@ export default function DashboardPage() {
                   Suas aulas agendadas para os próximos dias.
                 </CardDescription>
               </div>
-              <Button asChild size="sm" className="ml-auto gap-1" onClick={() => router.push('/dashboard/schedule')}>
-                 <div className="cursor-pointer">
+              <Button asChild size="sm" className="ml-auto gap-1">
+                 <Link href="/dashboard/schedule">
                     Ver Todas
                     <ArrowUpRight className="h-4 w-4" />
-                </div>
+                </Link>
               </Button>
             </CardHeader>
             <CardContent>
