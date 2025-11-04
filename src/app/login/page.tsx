@@ -73,6 +73,20 @@ const LoginForm = ({
   };
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(`savedEmail-${role}`);
+    if (savedEmail) {
+      setEmail(savedEmail);
+      const savedPassword = localStorage.getItem(`savedPassword-${savedEmail}`);
+      if (savedPassword) {
+        setPassword(savedPassword);
+      }
+    } else {
+        setEmail('');
+        setPassword('');
+    }
+  }, [role, setEmail, setPassword]);
+
   return (
     <div className="w-full relative">
       <Button
@@ -292,7 +306,6 @@ export default function LoginPage() {
             const newUser: User = JSON.parse(newUserDataString);
             setEmail(newUser.email);
             setRole(newUser.role);
-            // Do NOT remove the item here. It will be removed after successful login.
         } catch (e) {
             console.error("Failed to parse newly registered user data", e);
         }
@@ -335,7 +348,6 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Always get the most up-to-date user lists from localStorage
     const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
     const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
     const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
@@ -346,7 +358,6 @@ export default function LoginPage() {
     let isNewRegistration = false;
     const newUserDataString = localStorage.getItem('newlyRegisteredUser');
 
-    // Case 1: Handle newly registered user
     if (newUserDataString) {
         try {
             const newUser = JSON.parse(newUserDataString);
@@ -366,13 +377,12 @@ export default function LoginPage() {
         }
     }
     
-    // Case 2: Handle existing user
     if (!userToLogin) {
         const foundUser = combinedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
         if (foundUser) {
             if (foundUser.role === role) {
-                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
+                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.email}`);
                 if (storedPassword === password || (storedPassword === null && password === 'password')) {
                     userToLogin = foundUser;
                 } else {
@@ -394,7 +404,6 @@ export default function LoginPage() {
         }
     }
 
-    // Case 3: Handle visitor login
     if (!role && !userToLogin) {
         const visitorRole = 'student';
         localStorage.setItem('userRole', visitorRole);
@@ -409,7 +418,6 @@ export default function LoginPage() {
         return;
     }
     
-    // Proceed with login if a user was found and validated
     if (userToLogin) {
         const now = new Date().toISOString();
         const updatedUser = { ...userToLogin, lastAccess: now };
@@ -425,13 +433,13 @@ export default function LoginPage() {
         localStorage.setItem('userRole', updatedUser.role);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
+        localStorage.setItem(`savedPassword-${email}`, password);
         localStorage.setItem('userId', updatedUser.id);
         
         window.dispatchEvent(new Event('storage'));
 
         if (isNewRegistration) {
             localStorage.removeItem('newlyRegisteredUser');
-            localStorage.setItem(`savedPassword-${updatedUser.id}`, password);
         }
         
         toast({
