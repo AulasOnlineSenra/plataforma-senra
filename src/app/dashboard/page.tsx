@@ -444,7 +444,7 @@ export default function DashboardPage() {
     const score = averageFeedback.score;
     return (
       <>
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <Link href="/dashboard/schedule#scheduled-classes">
             <Card className="hover:ring-2 hover:ring-primary transition-all">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -497,28 +497,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </Link>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Feedback Médio</CardTitle>
-              <Star className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-               <div className="flex items-center gap-1">
-                  {Array(5).fill(0).map((_, i) => {
-                      const ratingValue = i + 1;
-                      if (score >= ratingValue) {
-                          return <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
-                      }
-                      if (score > i && score < ratingValue) {
-                          return <StarHalf key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
-                      }
-                      return <Star key={i} className="h-5 w-5 text-gray-300" />;
-                  })}
-                  <span className="text-xl font-bold ml-2">{score.toFixed(1)}</span>
-                </div>
-              <p className="text-xs text-muted-foreground mt-1">{averageFeedback.text}</p>
-            </CardContent>
-          </Card>
         </div>
         <div className="grid gap-4 md:gap-8">
           <Card>
@@ -570,19 +548,38 @@ export default function DashboardPage() {
           </Card>
           <Card>
               <CardHeader>
-                  <CardTitle>Feedback da Última Aula</CardTitle>
-                  <CardDescription>Avalie sua última aula para nos ajudar a melhorar.</CardDescription>
+                  <CardTitle>Feedback</CardTitle>
+                  <CardDescription>Avalie sua última aula e veja seu desempenho.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center text-center gap-4">
-                  <p className="font-medium">Aula de Matemática com Ana Silva</p>
-                   <div className="flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                          <Button key={rating} variant="outline" size="icon" className="h-12 w-12 rounded-full text-lg hover:bg-accent">
-                              {rating}
-                          </Button>
-                      ))}
-                  </div>
-                   <p className="text-xs text-muted-foreground">1 (Ruim) a 5 (Excelente)</p>
+              <CardContent className="grid md:grid-cols-2 items-center gap-6">
+                   <div className="flex flex-col items-center justify-center text-center gap-4 border-r-0 md:border-r md:pr-6">
+                        <p className="font-medium">Avalie sua última aula (Matemática com Ana Silva)</p>
+                        <div className="flex items-center gap-2">
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                                <Button key={rating} variant="outline" size="icon" className="h-12 w-12 rounded-full text-lg hover:bg-accent">
+                                    {rating}
+                                </Button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">1 (Ruim) a 5 (Excelente)</p>
+                   </div>
+                    <div className="flex flex-col items-center justify-center text-center gap-2">
+                        <p className="font-medium">Seu Feedback Médio</p>
+                        <div className="flex items-center gap-1">
+                          {Array(5).fill(0).map((_, i) => {
+                              const ratingValue = i + 1;
+                              if (score >= ratingValue) {
+                                  return <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
+                              }
+                              if (score > i && score < ratingValue) {
+                                  return <StarHalf key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
+                              }
+                              return <Star key={i} className="h-5 w-5 text-gray-300" />;
+                          })}
+                          <span className="text-xl font-bold ml-2">{score.toFixed(1)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{averageFeedback.text}</p>
+                    </div>
               </CardContent>
               <CardFooter>
                    <Button className="w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">Enviar Feedback</Button>
