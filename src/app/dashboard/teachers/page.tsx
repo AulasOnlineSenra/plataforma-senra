@@ -61,8 +61,14 @@ function TeacherCard({
     .map((subjectId) => subjects.find((s) => s.id === subjectId)?.name)
     .filter(Boolean);
 
-  // Mock rating for demonstration
-  const rating = 4.5 + (parseInt(teacher.id.slice(-1), 16) % 5) / 10;
+  const averageRating = useMemo(() => {
+    if (!teacher.ratings || teacher.ratings.length === 0) {
+      return 0;
+    }
+    const sum = teacher.ratings.reduce((a, b) => a + b, 0);
+    return sum / teacher.ratings.length;
+  }, [teacher.ratings]);
+
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -141,13 +147,14 @@ function TeacherCard({
             .map((_, i) => (
               <Star
                 key={i}
-                className={`h-4 w-4 ${
-                  rating > i ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                }`}
+                className={cn(
+                  'h-4 w-4',
+                  averageRating > i ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                )}
               />
             ))}
           <span className="text-sm text-muted-foreground ml-1">
-            ({rating.toFixed(1)})
+            ({averageRating.toFixed(1)})
           </span>
         </div>
         <CardDescription className="pt-1 h-5">
