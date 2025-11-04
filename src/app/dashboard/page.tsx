@@ -32,6 +32,7 @@ import {
   Activity,
   CheckCircle2,
   XCircle,
+  StarHalf,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
 import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
@@ -503,15 +504,16 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                <div className="flex items-center gap-1">
-                  {Array(5).fill(0).map((_, i) => (
-                      <Star
-                      key={i}
-                      className={cn(
-                          'h-5 w-5',
-                          score > i ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                      )}
-                      />
-                  ))}
+                  {Array(5).fill(0).map((_, i) => {
+                      const ratingValue = i + 1;
+                      if (score >= ratingValue) {
+                          return <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
+                      }
+                      if (score > i && score < ratingValue) {
+                          return <StarHalf key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
+                      }
+                      return <Star key={i} className="h-5 w-5 text-gray-300" />;
+                  })}
                   <span className="text-xl font-bold ml-2">{score.toFixed(1)}</span>
                 </div>
               <p className="text-xs text-muted-foreground mt-1">{averageFeedback.text}</p>
@@ -583,7 +585,7 @@ export default function DashboardPage() {
                    <p className="text-xs text-muted-foreground">1 (Ruim) a 5 (Excelente)</p>
               </CardContent>
               <CardFooter>
-                   <Button className="w-full">Enviar Feedback</Button>
+                   <Button className="w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">Enviar Feedback</Button>
               </CardFooter>
           </Card>
         </div>
