@@ -517,7 +517,7 @@ export default function TeachersPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="secondary">
                 Cancelar
               </Button>
             </DialogClose>

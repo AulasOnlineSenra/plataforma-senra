@@ -699,7 +699,7 @@ function ChatPageComponent() {
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline">Cancelar</Button>
+                                <Button type="button" variant="secondary">Cancelar</Button>
                             </DialogClose>
                             <Button type="submit">
                                 Criar

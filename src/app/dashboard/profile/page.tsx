@@ -623,7 +623,7 @@ function ProfilePageComponent() {
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button" variant="outline">
+                        <Button type="button" variant="secondary">
                             Cancelar
                         </Button>
                     </DialogClose>
@@ -797,7 +797,7 @@ function AvailabilityDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
+            <Button variant="secondary">Cancelar</Button>
           </DialogClose>
           <Button onClick={handleSaveClick}>Salvar</Button>
         </DialogFooter>

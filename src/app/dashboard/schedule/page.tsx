@@ -690,7 +690,7 @@ function SchedulePageComponent() {
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancelar</Button>
+                <Button variant="secondary">Cancelar</Button>
               </DialogClose>
               <Button onClick={handleUpdateEvent}>Salvar Alterações</Button>
             </DialogFooter>
