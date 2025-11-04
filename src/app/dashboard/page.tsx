@@ -227,7 +227,7 @@ export default function DashboardPage() {
       return { score: 0, count: 0, text: 'Nenhuma avaliação recebida' };
     }
     const { ratings } = user;
-    if (ratings.length < 5 && user.role === 'teacher') {
+    if (ratings.length < 5) {
       return { score: 5.0, count: ratings.length, text: 'Aguardando 5 avaliações' };
     }
     const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
