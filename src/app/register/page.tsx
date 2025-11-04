@@ -130,9 +130,15 @@ export default function RegisterPage() {
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
     }
     
+    const roleLabels: Record<UserRole, string> = {
+        student: 'Aluno',
+        teacher: 'Professor',
+        admin: 'Administrador'
+    };
+
     logNotification({
         type: 'new_user_registered',
-        title: `Novo ${role === 'student' ? 'Aluno' : 'Professor'} Cadastrado`,
+        title: `Novo ${roleLabels[role]} Cadastrado`,
         description: `${newUser.name} acabou de se cadastrar na plataforma como ${role}.`,
         userId: newUser.id,
     });
