@@ -80,12 +80,15 @@ const LoginForm = ({
       const savedPassword = localStorage.getItem(`savedPassword-${savedEmail}`);
       if (savedPassword) {
         setPassword(savedPassword);
+      } else {
+        setPassword('');
       }
     } else {
         setEmail('');
         setPassword('');
     }
   }, [role, setEmail, setPassword]);
+
 
   return (
     <div className="w-full relative">
@@ -383,7 +386,10 @@ export default function LoginPage() {
         if (foundUser) {
             if (foundUser.role === role) {
                 const storedPassword = localStorage.getItem(`savedPassword-${foundUser.email}`);
-                if (storedPassword === password || (storedPassword === null && password === 'password')) {
+                // Fallback for old users: check ID-based password or default password
+                const oldStoredPassword = localStorage.getItem(`savedPassword-${foundUser.id}`);
+                
+                if (storedPassword === password || oldStoredPassword === password || (storedPassword === null && oldStoredPassword === null && password === 'password')) {
                     userToLogin = foundUser;
                 } else {
                      toast({
@@ -436,6 +442,9 @@ export default function LoginPage() {
         localStorage.setItem(`savedPassword-${email}`, password);
         localStorage.setItem('userId', updatedUser.id);
         
+        // Clean up old password storage if it exists
+        localStorage.removeItem(`savedPassword-${userToLogin.id}`);
+
         window.dispatchEvent(new Event('storage'));
 
         if (isNewRegistration) {

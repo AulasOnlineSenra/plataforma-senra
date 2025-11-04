@@ -212,7 +212,10 @@ function ProfilePageComponent() {
         if (!profileUser) return;
 
         // In a real app, this verification would happen on the server side.
-        const savedPassword = localStorage.getItem(`savedPassword-${profileUser.id}`);
+        const emailKey = `savedPassword-${profileUser.email}`;
+        const idKey = `savedPassword-${profileUser.id}`; // For backward compatibility
+        const savedPassword = localStorage.getItem(emailKey) || localStorage.getItem(idKey);
+        
         if (savedPassword && savedPassword !== currentPassword && currentPassword !== 'password') {
              toast({
                 variant: 'destructive',
@@ -239,9 +242,9 @@ function ProfilePageComponent() {
             return;
         }
 
-        // For this prototype, we'll store the new password in localStorage to be used by the login page.
-        // This is NOT secure for production, but simulates the behavior.
-        localStorage.setItem(`savedPassword-${profileUser.id}`, newPassword);
+        localStorage.setItem(`savedPassword-${profileUser.email}`, newPassword);
+        // Clean up old key if it exists
+        localStorage.removeItem(`savedPassword-${profileUser.id}`);
 
         toast({
             title: 'Senha Alterada!',
@@ -308,7 +311,7 @@ function ProfilePageComponent() {
     
     const handleOpenPasswordDialog = () => {
         if (profileUser) {
-            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.id}`) || 'password';
+            const savedPassword = localStorage.getItem(`savedPassword-${profileUser.email}`) || localStorage.getItem(`savedPassword-${profileUser.id}`) || 'password';
             setCurrentPassword(savedPassword);
             setShowCurrentPassword(false);
         }
@@ -532,7 +535,6 @@ function ProfilePageComponent() {
             </div>
         </div>
         <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
-            setIsPasswordDialogOpen(open);
             if (!open) {
                 // Reset states when closing
                 setCurrentPassword('');
@@ -541,6 +543,7 @@ function ProfilePageComponent() {
                 setShowPassword(false);
                 setShowCurrentPassword(false);
             }
+            setIsPasswordDialogOpen(open);
         }}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -905,5 +908,3 @@ export default function ProfilePage() {
         </Suspense>
     )
 }
-
-    
