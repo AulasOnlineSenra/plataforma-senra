@@ -62,11 +62,8 @@ function TeacherCard({
     .filter(Boolean);
 
   const averageRating = useMemo(() => {
-    if (!teacher.ratings || teacher.ratings.length === 0) {
-        return 5.0; // Assume 5.0 if no ratings yet, same as dashboard logic
-    }
-    if (teacher.ratings.length < 5) {
-        return 5.0; // Return 5.0 until 5 ratings are received
+    if (!teacher.ratings || teacher.ratings.length < 5) {
+        return 5.0; // Assume 5.0 if less than 5 ratings, same as dashboard logic
     }
     const sum = teacher.ratings.reduce((a, b) => a + b, 0);
     return sum / teacher.ratings.length;
@@ -172,7 +169,7 @@ function TeacherCard({
       </CardContent>
       <CardFooter className="flex-col gap-2">
         {!isAdmin && (
-          <Button asChild className="w-full">
+          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
             <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar</Link>
           </Button>
         )}
