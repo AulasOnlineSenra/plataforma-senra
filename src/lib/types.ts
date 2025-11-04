@@ -79,6 +79,8 @@ export interface ScheduleEvent {
   teacherId: string;
   subject: string;
   status: 'completed' | 'scheduled' | 'cancelled';
+  studentHasRated?: boolean;
+  teacherHasRated?: boolean;
 }
 
 export interface ChatMessage {
@@ -163,5 +165,3 @@ export interface Notification {
   read: boolean;
   userId?: string; // ID of the user related to the notification (e.g., who scheduled a class)
 }
-
-

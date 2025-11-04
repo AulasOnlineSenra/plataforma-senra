@@ -53,6 +53,7 @@ import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SubjectsChart } from '@/components/charts/subjects-chart';
 import { NewUsersChart } from '@/components/charts/new-users-chart';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -72,6 +73,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [subjectsMonthFilter, setSubjectsMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
   const [newUsersMonthFilter, setNewUsersMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
+  const { toast } = useToast();
 
 
   const monthOptions = useMemo(() => eachMonthOfInterval({
@@ -223,9 +225,10 @@ export default function DashboardPage() {
   }, [user, scheduleEvents]);
 
   const averageFeedback = useMemo(() => {
-    if (!user || !user.ratings || user.ratings.length === 0) {
+    if (!user || !user.ratings) {
       return { score: 0, count: 0, text: 'Nenhuma avaliação recebida' };
     }
+    
     const { ratings } = user;
     if (ratings.length < 5) {
       return { score: 5.0, count: ratings.length, text: 'Aguardando 5 avaliações' };
@@ -233,6 +236,75 @@ export default function DashboardPage() {
     const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
     return { score: avg, count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
   }, [user]);
+
+  const lastUnratedClass = useMemo(() => {
+    if (!user) return null;
+  
+    const completedClasses = scheduleEvents
+      .filter(e => e.status === 'completed')
+      .sort((a, b) => b.end.getTime() - a.end.getTime());
+  
+    if (user.role === 'student') {
+      return completedClasses.find(e => e.studentId === user.id && !e.studentHasRated);
+    }
+    if (user.role === 'teacher') {
+      return completedClasses.find(e => e.teacherId === user.id && !e.teacherHasRated);
+    }
+  
+    return null;
+  }, [user, scheduleEvents]);
+
+  const handleRating = (rating: number) => {
+    if (!user || !lastUnratedClass) return;
+
+    let userToUpdateId: string;
+    let userToUpdateRole: UserRole;
+    let userToUpdateStorageKey: string;
+    let eventUpdateField: 'studentHasRated' | 'teacherHasRated';
+
+    if (user.role === 'student') {
+      userToUpdateId = lastUnratedClass.teacherId;
+      userToUpdateRole = 'teacher';
+      userToUpdateStorageKey = TEACHERS_STORAGE_KEY;
+      eventUpdateField = 'studentHasRated';
+    } else { // teacher
+      userToUpdateId = lastUnratedClass.studentId;
+      userToUpdateRole = 'student';
+      userToUpdateStorageKey = USERS_STORAGE_KEY;
+      eventUpdateField = 'teacherHasRated';
+    }
+
+    // Update user/teacher ratings
+    const storedUsers = localStorage.getItem(userToUpdateStorageKey);
+    const userList: (User | Teacher)[] = storedUsers ? JSON.parse(storedUsers) : (userToUpdateRole === 'student' ? initialUsers : initialTeachers);
+    
+    const updatedUserList = userList.map(u => {
+      if (u.id === userToUpdateId) {
+        const newRatings = [...(u.ratings || []), rating];
+        return { ...u, ratings: newRatings };
+      }
+      return u;
+    });
+
+    localStorage.setItem(userToUpdateStorageKey, JSON.stringify(updatedUserList));
+
+    // Update schedule event to mark as rated
+    const updatedSchedule = scheduleEvents.map(e => {
+      if (e.id === lastUnratedClass.id) {
+        return { ...e, [eventUpdateField]: true };
+      }
+      return e;
+    });
+    setScheduleEvents(updatedSchedule);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+    
+    window.dispatchEvent(new Event('storage'));
+
+    toast({
+        title: "Avaliação Enviada!",
+        description: `Obrigado pelo seu feedback de ${rating} estrelas.`,
+    });
+  };
 
   if (!user) {
     return null; // Or a loading spinner
@@ -442,6 +514,12 @@ export default function DashboardPage() {
 
   const renderStudentTeacherDashboard = () => {
     const score = averageFeedback.score;
+    const personToRate = lastUnratedClass
+      ? user.role === 'student'
+        ? teachers.find(t => t.id === lastUnratedClass.teacherId)
+        : users.find(s => s.id === lastUnratedClass.studentId)
+      : null;
+
     return (
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -549,19 +627,30 @@ export default function DashboardPage() {
           <Card>
               <CardHeader>
                   <CardTitle>Feedback</CardTitle>
-                  <CardDescription>Avalie sua última aula e veja seu desempenho.</CardDescription>
+                  <CardDescription>Avalie suas aulas e veja seu desempenho.</CardDescription>
               </CardHeader>
               <CardContent className="grid md:grid-cols-2 items-center gap-6">
                    <div className="flex flex-col items-center justify-center text-center gap-4 border-r-0 md:border-r md:pr-6">
-                        <p className="font-medium">Avalie sua última aula (Matemática com Ana Silva)</p>
-                        <div className="flex items-center gap-2">
-                            {[1, 2, 3, 4, 5].map((rating) => (
-                                <Button key={rating} variant="outline" size="icon" className="h-12 w-12 rounded-full text-lg hover:bg-accent">
-                                    {rating}
-                                </Button>
-                            ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">1 (Ruim) a 5 (Excelente)</p>
+                        {lastUnratedClass && personToRate ? (
+                            <>
+                                <p className="font-medium">
+                                    Avalie sua última aula de {lastUnratedClass.subject} com {personToRate.name}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    {[1, 2, 3, 4, 5].map((rating) => (
+                                        <Button key={rating} variant="outline" size="icon" className="h-12 w-12 rounded-full text-lg hover:bg-accent" onClick={() => handleRating(rating)}>
+                                            {rating}
+                                        </Button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-muted-foreground">1 (Ruim) a 5 (Excelente)</p>
+                            </>
+                        ) : (
+                            <div className="text-muted-foreground text-center h-full flex flex-col justify-center items-center">
+                                <CheckCircle2 className="h-8 w-8 text-green-500 mb-2" />
+                                <p>Você não tem aulas para avaliar no momento.</p>
+                            </div>
+                        )}
                    </div>
                     <div className="flex flex-col items-center justify-center text-center gap-2">
                         <p className="font-medium">Seu Feedback Médio</p>
@@ -581,9 +670,6 @@ export default function DashboardPage() {
                         <p className="text-xs text-muted-foreground mt-1">{averageFeedback.text}</p>
                     </div>
               </CardContent>
-              <CardFooter>
-                   <Button className="w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">Enviar Feedback</Button>
-              </CardFooter>
           </Card>
         </div>
       </>

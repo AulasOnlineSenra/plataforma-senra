@@ -93,41 +93,18 @@ function SchedulePageComponent() {
 
     const now = new Date();
     let hasChanges = false;
-    let creditsUpdated = false;
     
     const updatedSchedule = scheduleToProcess.map(event => {
         if (event.status === 'scheduled' && now > event.end) {
             hasChanges = true;
-            
-            const studentIndex = currentUsers.findIndex(u => u.id === event.studentId);
-            if (studentIndex > -1) {
-                const student = currentUsers[studentIndex];
-                if (student.classCredits && student.classCredits > 0) {
-                    student.classCredits -= 1;
-                    creditsUpdated = true;
-                }
-            }
-            
-            const teacherIndex = currentTeachers.findIndex(t => t.id === event.teacherId);
-            if (teacherIndex > -1) {
-                currentTeachers[teacherIndex].classCredits = (currentTeachers[teacherIndex].classCredits || 0) + 1;
-                creditsUpdated = true;
-            }
-            
-            return { ...event, status: 'completed' as 'completed' };
+            return { ...event, status: 'completed' as 'completed', studentHasRated: false, teacherHasRated: false };
         }
         return event;
     });
 
     if (hasChanges) {
         localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
-        if(creditsUpdated) {
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(currentUsers));
-            localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(currentTeachers));
-            window.dispatchEvent(new Event('storage'));
-        } else {
-            window.dispatchEvent(new Event('storage'));
-        }
+        window.dispatchEvent(new Event('storage'));
     }
 
     setEvents(updatedSchedule);
