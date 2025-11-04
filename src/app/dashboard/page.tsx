@@ -316,7 +316,7 @@ export default function DashboardPage() {
                       </Tabs>
                   </div>
                 </CardHeader>
-                <CardContent className="h-[350px]">
+                <CardContent>
                   <RevenueChart filter={filter} />
                 </CardContent>
               </Card>
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                     </Select>
                   </div>
                 </CardHeader>
-                <CardContent className="h-[350px]">
+                <CardContent>
                   <SubjectsChart selectedMonth={subjectsMonthFilter} />
                 </CardContent>
               </Card>
@@ -370,7 +370,7 @@ export default function DashboardPage() {
                       </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="h-[350px]">
+                <CardContent>
                   <NewUsersChart selectedMonth={newUsersMonthFilter} />
                 </CardContent>
               </Card>
@@ -401,11 +401,11 @@ export default function DashboardPage() {
                 Aulas agendadas para os próximos dias em toda a plataforma.
               </CardDescription>
             </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/dashboard/schedule">
+            <Button asChild size="sm" className="ml-auto gap-1" onClick={() => router.push('/dashboard/schedule')}>
+              <div className="cursor-pointer">
                 Ver Todas
                 <ArrowUpRight className="h-4 w-4" />
-              </Link>
+              </div>
             </Button>
           </CardHeader>
           <CardContent>
@@ -515,11 +515,11 @@ export default function DashboardPage() {
                   Suas aulas agendadas para os próximos dias.
                 </CardDescription>
               </div>
-              <Button asChild size="sm" className="ml-auto gap-1">
-                <Link href="/dashboard/schedule">
-                  Ver Todas
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
+              <Button asChild size="sm" className="ml-auto gap-1" onClick={() => router.push('/dashboard/schedule')}>
+                 <div className="cursor-pointer">
+                    Ver Todas
+                    <ArrowUpRight className="h-4 w-4" />
+                </div>
               </Button>
             </CardHeader>
             <CardContent>

@@ -1,7 +1,7 @@
 
 
 'use client';
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -72,89 +72,89 @@ function SchedulePageComponent() {
   const [newDate, setNewDate] = useState<Date | undefined>();
   const [newTime, setNewTime] = useState<string | undefined>();
 
-  useEffect(() => {
-    const updateData = () => {
-        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-        let scheduleToProcess: ScheduleEvent[] = [];
-        if (storedSchedule) {
-            scheduleToProcess = JSON.parse(storedSchedule).map((event: any) => ({
-                ...event,
-                start: new Date(event.start),
-                end: new Date(event.end),
-            }));
-        } else {
-            scheduleToProcess = initialScheduleEvents;
-        }
-        
-        const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-        let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialUsers;
-        
-        const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
-        let currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
+  const updateData = useCallback(() => {
+    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    let scheduleToProcess: ScheduleEvent[] = [];
+    if (storedSchedule) {
+        scheduleToProcess = JSON.parse(storedSchedule).map((event: any) => ({
+            ...event,
+            start: new Date(event.start),
+            end: new Date(event.end),
+        }));
+    } else {
+        scheduleToProcess = initialScheduleEvents;
+    }
+    
+    const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
+    let currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialUsers;
+    
+    const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
+    let currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
 
-        const now = new Date();
-        let hasChanges = false;
-        let creditsUpdated = false;
-        
-        const updatedSchedule = scheduleToProcess.map(event => {
-            if (event.status === 'scheduled' && now > event.end) {
-                hasChanges = true;
-                
-                const studentIndex = currentUsers.findIndex(u => u.id === event.studentId);
-                if (studentIndex > -1) {
-                    const student = currentUsers[studentIndex];
-                    if (student.classCredits && student.classCredits > 0) {
-                        student.classCredits -= 1;
-                        creditsUpdated = true;
-                    }
-                }
-                
-                const teacherIndex = currentTeachers.findIndex(t => t.id === event.teacherId);
-                if (teacherIndex > -1) {
-                    currentTeachers[teacherIndex].classCredits = (currentTeachers[teacherIndex].classCredits || 0) + 1;
+    const now = new Date();
+    let hasChanges = false;
+    let creditsUpdated = false;
+    
+    const updatedSchedule = scheduleToProcess.map(event => {
+        if (event.status === 'scheduled' && now > event.end) {
+            hasChanges = true;
+            
+            const studentIndex = currentUsers.findIndex(u => u.id === event.studentId);
+            if (studentIndex > -1) {
+                const student = currentUsers[studentIndex];
+                if (student.classCredits && student.classCredits > 0) {
+                    student.classCredits -= 1;
                     creditsUpdated = true;
                 }
-                
-                return { ...event, status: 'completed' as 'completed' };
             }
-            return event;
-        });
-
-        if (hasChanges) {
-            localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
-            if(creditsUpdated) {
-                localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(currentUsers));
-                localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(currentTeachers));
-                window.dispatchEvent(new Event('storage'));
-            } else {
-                window.dispatchEvent(new Event('storage'));
+            
+            const teacherIndex = currentTeachers.findIndex(t => t.id === event.teacherId);
+            if (teacherIndex > -1) {
+                currentTeachers[teacherIndex].classCredits = (currentTeachers[teacherIndex].classCredits || 0) + 1;
+                creditsUpdated = true;
             }
+            
+            return { ...event, status: 'completed' as 'completed' };
         }
+        return event;
+    });
 
-        setEvents(updatedSchedule);
-        
-        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        if (storedUsers) {
-            setUsers(JSON.parse(storedUsers));
+    if (hasChanges) {
+        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+        if(creditsUpdated) {
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(currentUsers));
+            localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(currentTeachers));
+            window.dispatchEvent(new Event('storage'));
         } else {
-            setUsers(initialUsers);
+            window.dispatchEvent(new Event('storage'));
         }
-        
-        const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-        if (storedTeachers) {
-            setTeachers(JSON.parse(storedTeachers));
-        } else {
-            setTeachers(initialTeachers);
-        }
+    }
 
-        const storedCurrentUser = localStorage.getItem('currentUser');
-        if (storedCurrentUser) {
-            setCurrentUser(JSON.parse(storedCurrentUser));
-        } else {
-            setCurrentUser(getMockUser('student'));
-        }
-    };
+    setEvents(updatedSchedule);
+    
+    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+    if (storedUsers) {
+        setUsers(JSON.parse(storedUsers));
+    } else {
+        setUsers(initialUsers);
+    }
+    
+    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+    if (storedTeachers) {
+        setTeachers(JSON.parse(storedTeachers));
+    } else {
+        setTeachers(initialTeachers);
+    }
 
+    const storedCurrentUser = localStorage.getItem('currentUser');
+    if (storedCurrentUser) {
+        setCurrentUser(JSON.parse(storedCurrentUser));
+    } else {
+        setCurrentUser(getMockUser('student'));
+    }
+  }, []);
+
+  useEffect(() => {
     updateData();
     window.addEventListener('storage', updateData);
 
@@ -162,17 +162,19 @@ function SchedulePageComponent() {
     if (hash === '#cancelled-history' || hash === '#scheduled-classes' || hash === '#completed-history') {
       const element = document.getElementById(hash.substring(1));
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        element.classList.add('animate-highlight');
         setTimeout(() => {
-          element.classList.remove('animate-highlight');
-        }, 2000);
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('animate-highlight');
+            setTimeout(() => {
+                element.classList.remove('animate-highlight');
+            }, 2000);
+        }, 100);
       }
     }
      return () => {
       window.removeEventListener('storage', updateData);
     };
-  }, []);
+  }, [updateData]);
 
   useEffect(() => {
     // These will only run on the client, after initial hydration
