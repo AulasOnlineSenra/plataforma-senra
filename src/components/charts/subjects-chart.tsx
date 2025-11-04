@@ -1,5 +1,5 @@
 
-'use client';
+"use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, Sector } from 'recharts';
@@ -112,7 +112,7 @@ export function SubjectsChart({ selectedMonth }: SubjectsChartProps) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square h-full"
+      className="mx-auto aspect-square h-full w-full"
     >
       {data.length > 0 ? (
         <PieChart>

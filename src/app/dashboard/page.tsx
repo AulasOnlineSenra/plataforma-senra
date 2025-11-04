@@ -316,7 +316,7 @@ export default function DashboardPage() {
                       </Tabs>
                   </div>
                 </CardHeader>
-                <CardContent className="h-[350px] w-full">
+                <CardContent className="h-[350px]">
                   <RevenueChart filter={filter} />
                 </CardContent>
               </Card>

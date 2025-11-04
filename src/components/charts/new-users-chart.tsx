@@ -1,5 +1,5 @@
 
-'use client';
+"use client";
 
 import { useMemo, useState, useEffect } from 'react';
 import {
@@ -100,53 +100,55 @@ export function NewUsersChart({ selectedMonth }: NewUsersChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
-      <LineChart
-        accessibilityLayer
-        data={chartData}
-        margin={{
-          top: 20,
-          right: 20,
-          left: 20,
-          bottom: 5,
-        }}
-      >
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="name"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          interval="auto"
-        />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          allowDecimals={false}
-        />
-        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-        <Line
-          dataKey="Alunos"
-          type="natural"
-          stroke="var(--color-Alunos)"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          dataKey="Professores"
-          type="natural"
-          stroke="var(--color-Professores)"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          dataKey="Admins"
-          type="natural"
-          stroke="var(--color-Admins)"
-          strokeWidth={2}
-          dot={false}
-        />
-      </LineChart>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          accessibilityLayer
+          data={chartData}
+          margin={{
+            top: 20,
+            right: 20,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            interval="auto"
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            allowDecimals={false}
+          />
+          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+          <Line
+            dataKey="Alunos"
+            type="natural"
+            stroke="var(--color-Alunos)"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            dataKey="Professores"
+            type="natural"
+            stroke="var(--color-Professores)"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            dataKey="Admins"
+            type="natural"
+            stroke="var(--color-Admins)"
+            strokeWidth={2}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </ChartContainer>
   );
 }

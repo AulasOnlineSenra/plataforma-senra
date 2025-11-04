@@ -1,5 +1,5 @@
 
-'use client';
+"use client";
 
 import { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
@@ -38,7 +38,7 @@ interface RevenueChartProps {
 const chartConfig = {
   revenue: {
     label: 'Receita',
-    color: 'hsl(var(--sidebar-primary))',
+    color: 'hsl(var(--brand-yellow))',
   },
 } satisfies ChartConfig;
 
