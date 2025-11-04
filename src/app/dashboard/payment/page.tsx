@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Card,
@@ -22,13 +22,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory, logNotification } from '@/lib/data';
+import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory, logNotification, scheduleEvents as initialSchedule, teachers as initialTeachers, logActivity } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Check, CreditCard, Landmark, ShoppingCart, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { ClassPackage, User, PaymentTransaction } from '@/lib/types';
+import { ClassPackage, User, PaymentTransaction, ScheduleEvent } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 
 const PACKAGES_STORAGE_KEY = 'classPackages';
@@ -36,6 +38,7 @@ const PIX_KEY_STORAGE_KEY = 'pixPaymentKey';
 const DEFAULT_PIX_KEY = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540550.005802BR5913NOME_COMPLETO6009SAO_PAULO62070503***6304E2B1';
 const USERS_STORAGE_KEY = 'userList';
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
+const PENDING_BOOKINGS_STORAGE_KEY = 'pendingBookings';
 
 
 function PaymentPageComponent() {
@@ -85,6 +88,73 @@ function PaymentPageComponent() {
       total: parseFloat(customTotal)
     };
   }
+
+  const confirmPendingBookings = useCallback(async () => {
+    const pendingBookingsRaw = localStorage.getItem(PENDING_BOOKINGS_STORAGE_KEY);
+    if (!pendingBookingsRaw) return;
+
+    const pendingBookings = JSON.parse(pendingBookingsRaw);
+    if (!Array.isArray(pendingBookings) || pendingBookings.length === 0) return;
+    
+    // This logic is duplicated from booking page, consider refactoring to a shared service in a real app
+    const storedSchedule = localStorage.getItem('scheduleEvents');
+    const scheduleEvents: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule) : initialSchedule;
+    
+    const storedUsers = localStorage.getItem('userList');
+    const users: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+    
+    const storedTeachers = localStorage.getItem('teacherList');
+    const teachers: User[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+    
+    const storedSubjects = localStorage.getItem('subjects');
+    const subjects = storedSubjects ? JSON.parse(storedSubjects) : [];
+
+
+    const newScheduleEvents = pendingBookings.map((b: any) => ({
+      id: b.id,
+      title: `Aula de ${subjects.find((s: any) => s.id === b.subjectId)?.name || 'Desconhecida'}`,
+      start: new Date(b.start),
+      end: new Date(b.end),
+      studentId: b.studentId,
+      teacherId: b.teacherId,
+      subject: subjects.find((s: any) => s.id === b.subjectId)?.name || 'Desconhecida',
+      status: 'scheduled' as 'scheduled',
+    }));
+    
+    const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
+    localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
+    
+    // Decrement credits for the new bookings
+    const student = users.find(u => u.id === pendingBookings[0].studentId);
+    if (student) {
+        const updatedUsers = users.map(u => u.id === student.id ? { ...u, classCredits: (u.classCredits || 0) - pendingBookings.length } : u);
+        localStorage.setItem('userList', JSON.stringify(updatedUsers));
+        localStorage.setItem('currentUser', JSON.stringify(updatedUsers.find(u => u.id === student.id)));
+    }
+
+    newScheduleEvents.forEach((event: ScheduleEvent) => {
+      const teacher = teachers.find(t => t.id === event.teacherId);
+      const student = users.find(u => u.id === event.studentId);
+      const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      
+      logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);
+      logNotification({
+          type: 'class_scheduled',
+          title: 'Nova Aula Agendada',
+          description: `Aula de ${event.subject} com ${teacher?.name} para ${student?.name} em ${dateStr}.`,
+          userId: student?.id,
+      });
+    });
+
+    localStorage.removeItem(PENDING_BOOKINGS_STORAGE_KEY);
+
+    toast({
+      title: 'Agendamentos Pendentes Confirmados!',
+      description: `${pendingBookings.length} aulas foram agendadas com sucesso.`,
+    });
+
+  }, [toast]);
+
 
   if (!selectedPackage) {
     return (
@@ -166,6 +236,9 @@ function PaymentPageComponent() {
             title: "Pagamento Aprovado!",
             description: "Seus créditos de aula foram adicionados à sua conta.",
         });
+        
+        confirmPendingBookings();
+
         router.push('/dashboard');
     }, 3000);
   }

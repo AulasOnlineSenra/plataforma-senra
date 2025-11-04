@@ -1,6 +1,7 @@
 
 'use client';
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -35,6 +36,9 @@ const packageFeatures = [
 ];
 
 export default function PackagesPage() {
+  const searchParams = useSearchParams();
+  const neededCredits = searchParams.get('needed');
+  
   const [classesPerWeek, setClassesPerWeek] = useState<number>(1);
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
   const [classPackages, setClassPackages] = useState<ClassPackage[]>(defaultClassPackages);
@@ -56,6 +60,23 @@ export default function PackagesPage() {
       window.removeEventListener('storage', updatePackages);
     };
   }, []);
+
+  useEffect(() => {
+    if (neededCredits) {
+      const credits = parseInt(neededCredits, 10);
+      if (credits > 0) {
+        // A simple logic: assume 1 class per week and find the number of weeks needed.
+        // A more complex logic could try to match a package.
+        setClassesPerWeek(1);
+        setNumberOfWeeks(credits);
+        const calculator = document.getElementById('calculator');
+        if (calculator) {
+            setTimeout(() => calculator.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+      }
+    }
+  }, [neededCredits]);
+
 
   const tiers = useMemo(() => {
     const sortedPackages = [...classPackages].sort(
@@ -224,7 +245,7 @@ export default function PackagesPage() {
         ))}
       </div>
 
-      <div className="mt-12">
+      <div className="mt-12" id="calculator">
         <Card className="max-w-4xl mx-auto">
           <CardHeader className="text-center">
             <CardTitle className="font-headline text-2xl">

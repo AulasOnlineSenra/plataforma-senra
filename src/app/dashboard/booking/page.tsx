@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -43,17 +43,19 @@ interface Booking {
 type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
 
 const CLASS_DURATION_MINUTES = 90;
+const PENDING_BOOKINGS_STORAGE_KEY = 'pendingBookings';
+
 
 function BookingPageComponent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const studentIdParam = searchParams.get('studentId');
   const studentName = searchParams.get('studentName');
-  const teacherIdParam = searchParams.get('teacherId');
   const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
-  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(teacherIdParam ?? undefined);
+  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(undefined);
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
@@ -104,12 +106,10 @@ function BookingPageComponent() {
         } else {
             loggedInUser = getMockUser('student');
         }
-        setCurrentUser(loggedInUser);
+        
+        const studentToBook = studentIdParam ? currentUsers.find((u: User) => u.id === studentIdParam) : loggedInUser;
+        setCurrentUser(studentToBook || getMockUser('student'));
 
-        if (studentIdParam) {
-            const studentUser = currentUsers.find((u: User) => u.id === studentIdParam);
-            setCurrentUser(studentUser || getMockUser('student'));
-        }
 
         if (teacherIdParam) {
             const teacherFromParam = currentTeachers.find(t => t.id === teacherIdParam);
@@ -202,11 +202,11 @@ function BookingPageComponent() {
         const startDate = new Date(date);
         startDate.setHours(hours, minutes, 0, 0);
 
-        if (isBefore(startDate, new Date())) {
+        if (isBefore(startDate, startOfToday())) {
             toast({
                 variant: 'destructive',
                 title: 'Data/Horário Inválido',
-                description: `Não é possível agendar aulas em horários passados. (${format(startDate, 'dd/MM/yyyy HH:mm')})`,
+                description: `Não é possível agendar aulas em datas passadas.`,
             });
             conflictFound = true;
             return;
@@ -391,6 +391,20 @@ function BookingPageComponent() {
       });
       return;
     }
+
+    const currentCredits = studentToBook.classCredits || 0;
+    if (currentCredits < bookings.length) {
+      const creditsNeeded = bookings.length - currentCredits;
+      toast({
+        variant: 'destructive',
+        title: 'Créditos Insuficientes',
+        description: `Você precisa de mais ${creditsNeeded} crédito(s) de aula. Estamos te redirecionando para a compra de pacotes.`,
+      });
+      localStorage.setItem(PENDING_BOOKINGS_STORAGE_KEY, JSON.stringify(bookings));
+      router.push(`/dashboard/packages?needed=${creditsNeeded}`);
+      return;
+    }
+
     const newScheduleEvents = bookings.map(b => ({
       id: b.id,
       title: `Aula de ${subjects.find(s => s.id === b.subjectId)?.name}`,
@@ -404,6 +418,11 @@ function BookingPageComponent() {
     
     const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
     localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
+    
+    const updatedUsers = users.map(u => u.id === studentToBook.id ? { ...u, classCredits: currentCredits - bookings.length } : u);
+    localStorage.setItem('userList', JSON.stringify(updatedUsers));
+    localStorage.setItem('currentUser', JSON.stringify(updatedUsers.find(u => u.id === studentToBook.id)));
+
 
     const adminUser = allUsers.find(u => u.role === 'admin');
     if (!adminUser) {
@@ -441,7 +460,7 @@ function BookingPageComponent() {
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
     setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam]);
+  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router]);
 
   const availableTimes = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
