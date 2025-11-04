@@ -435,27 +435,45 @@ function BookingPageComponent() {
         console.error("Admin user not found for notifications");
         return;
     }
+    
+    if (newScheduleEvents.length > 1) {
+        const student = users.find(u => u.id === newScheduleEvents[0].studentId);
+        const eventDetails = newScheduleEvents.map(event => {
+            const teacher = teachers.find(t => t.id === event.teacherId);
+            return {
+                subject: event.subject,
+                teacher: teacher?.name || 'N/A',
+                date: event.start,
+            };
+        });
+        logNotification({
+            type: 'group_class_scheduled',
+            title: 'Novo grupo de aulas agendado',
+            description: `${student?.name} agendou ${newScheduleEvents.length} novas aulas.`,
+            userId: student?.id,
+            events: eventDetails,
+        });
 
-    newScheduleEvents.forEach(event => {
+    } else if (newScheduleEvents.length === 1) {
+        const event = newScheduleEvents[0];
         const teacher = teachers.find(t => t.id === event.teacherId);
         const student = users.find(u => u.id === event.studentId);
-
         const description = `${student?.name} agendou uma nova aula de ${event.subject} com o professor(a) ${teacher?.name}.`;
-
         logNotification({
             type: 'class_scheduled',
             title: 'Nova Aula Agendada',
             description: description,
             userId: student?.id,
         });
+    }
 
+
+    newScheduleEvents.forEach(event => {
+        const teacher = teachers.find(t => t.id === event.teacherId);
+        const student = users.find(u => u.id === event.studentId);
         const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-        const adminMessageContent = `Nova aula agendada: ${event.subject} com ${teacher?.name} e ${student?.name} em ${dateStr}.`;
-        
-        sendNotification('system', adminUser.id, adminMessageContent);
         
         sendNotification(adminUser.id, event.teacherId, `Olá, ${teacher?.name}. Uma nova aula de ${event.subject} com ${student?.name} foi agendada para ${dateStr}.`);
-
         sendNotification(adminUser.id, event.studentId, `Olá, ${student?.name}. Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
 
         logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);

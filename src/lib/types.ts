@@ -154,7 +154,8 @@ export type NotificationType =
   | 'class_cancelled' 
   | 'class_rescheduled'
   | 'package_purchased' 
-  | 'new_user_registered';
+  | 'new_user_registered'
+  | 'group_class_scheduled';
 
 export interface Notification {
   id: string;
@@ -164,4 +165,5 @@ export interface Notification {
   timestamp: Date;
   read: boolean;
   userId?: string; // ID of the user related to the notification (e.g., who scheduled a class)
+  events?: { subject: string; teacher: string; date: Date }[];
 }

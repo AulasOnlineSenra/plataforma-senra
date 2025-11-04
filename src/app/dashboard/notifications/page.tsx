@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -11,12 +12,13 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, UserPlus, CalendarCheck, Package, XCircle, Trash2, Eye, EyeOff } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Bell, UserPlus, CalendarCheck, Package, XCircle, Trash2, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Notification, NotificationType } from '@/lib/types';
 import { notifications as initialNotifications } from '@/lib/data';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
 
@@ -26,11 +28,13 @@ const notificationIcons: Record<NotificationType, React.ElementType> = {
   class_rescheduled: CalendarCheck,
   package_purchased: Package,
   new_user_registered: UserPlus,
+  group_class_scheduled: CalendarCheck,
 };
 
 const notificationColors: Record<NotificationType, string> = {
     new_user_registered: 'border-blue-500/80 bg-blue-500/10',
     class_scheduled: 'border-green-500/80 bg-green-500/10',
+    group_class_scheduled: 'border-green-500/80 bg-green-500/10',
     package_purchased: 'border-purple-500/80 bg-purple-500/10',
     class_cancelled: 'border-red-500/80 bg-red-500/10',
     class_rescheduled: 'border-yellow-500/80 bg-yellow-500/10',
@@ -40,12 +44,13 @@ const notificationColors: Record<NotificationType, string> = {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
 
   useEffect(() => {
     const updateNotifications = () => {
       const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
       const notificationsData = storedNotifications ? JSON.parse(storedNotifications) : initialNotifications;
-      setNotifications(notificationsData.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) })));
+      setNotifications(notificationsData.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp), events: n.events?.map((e:any) => ({...e, date: new Date(e.date)})) })));
     };
     
     updateNotifications();
@@ -57,7 +62,7 @@ export default function NotificationsPage() {
             const currentNotifications: Notification[] = JSON.parse(storedNotifications);
             const readNotifications = currentNotifications.map(n => ({...n, read: true}));
             localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
-            setNotifications(readNotifications.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) })));
+            setNotifications(readNotifications.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp), events: n.events?.map((e:any) => ({...e, date: new Date(e.date)})) })));
             window.dispatchEvent(new Event('storage')); // Notify sidebar
         }
     };
@@ -125,51 +130,78 @@ export default function NotificationsPage() {
             {filteredNotifications.length > 0 ? (
               filteredNotifications.map((notification, index) => {
                 const Icon = notificationIcons[notification.type] || Bell;
+                const isGrouped = notification.type === 'group_class_scheduled' && notification.events && notification.events.length > 0;
+
                 return (
-                  <div
-                    key={notification.id}
+                  <Collapsible 
+                    key={notification.id} 
+                    open={openCollapsible === notification.id}
+                    onOpenChange={(isOpen) => setOpenCollapsible(isOpen ? notification.id : null)}
                     className={cn(
-                      'flex flex-col sm:flex-row items-start gap-4 p-4 transition-colors hover:bg-accent/50',
+                      'flex flex-col items-start gap-4 transition-colors hover:bg-accent/50',
                       !notification.read && 'bg-primary/5',
                       index < filteredNotifications.length - 1 && 'border-b'
                     )}
                   >
-                    <div className={cn(
-                        'hidden sm:flex items-center justify-center h-12 w-12 rounded-full border',
-                        notificationColors[notification.type]
-                    )}>
-                        <Icon className="h-6 w-6" />
+                    <div className="flex w-full items-start p-4">
+                      <div className={cn(
+                          'hidden sm:flex items-center justify-center h-12 w-12 rounded-full border',
+                          notificationColors[notification.type]
+                      )}>
+                          <Icon className="h-6 w-6" />
+                      </div>
+                      <div className="flex-1 ml-4">
+                        <p className="font-semibold">{notification.title}</p>
+                        <p className="text-sm text-muted-foreground">{notification.description}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 text-right self-stretch justify-between">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDistanceToNow(notification.timestamp, { addSuffix: true, locale: ptBR })}
+                        </span>
+                        <div className="flex gap-1">
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  title={notification.read ? 'Marcar como não lida' : 'Marcar como lida'}
+                                  onClick={(e) => { e.stopPropagation(); handleToggleRead(notification.id); }}
+                              >
+                                  {notification.read ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  title="Excluir notificação"
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteNotification(notification.id); }}
+                              >
+                                  <Trash2 className="h-4 w-4" />
+                              </Button>
+                              {isGrouped && (
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        {openCollapsible === notification.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </Button>
+                                </CollapsibleTrigger>
+                              )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold">{notification.title}</p>
-                      <p className="text-sm text-muted-foreground">{notification.description}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 text-right self-stretch justify-between">
-                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                         {formatDistanceToNow(notification.timestamp, { addSuffix: true, locale: ptBR })}
-                       </span>
-                       <div className="flex gap-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                title={notification.read ? 'Marcar como não lida' : 'Marcar como lida'}
-                                onClick={() => handleToggleRead(notification.id)}
-                            >
-                                {notification.read ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                title="Excluir notificação"
-                                onClick={() => handleDeleteNotification(notification.id)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                       </div>
-                    </div>
-                  </div>
+                    {isGrouped && (
+                      <CollapsibleContent className="w-full px-4 pb-4 pl-20">
+                          <div className="border-t pt-3 mt-2 space-y-2">
+                             <h4 className="font-semibold text-sm">Aulas Agendadas no Grupo:</h4>
+                             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                {notification.events?.map((event, i) => (
+                                    <li key={i}>
+                                        <span className="font-medium text-foreground">{event.subject}</span> com {event.teacher} em {format(event.date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                    </li>
+                                ))}
+                             </ul>
+                          </div>
+                      </CollapsibleContent>
+                    )}
+                  </Collapsible>
                 );
               })
             ) : (
