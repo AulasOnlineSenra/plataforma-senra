@@ -22,11 +22,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory, logNotification, scheduleEvents as initialSchedule, teachers as initialTeachers, logActivity } from '@/lib/data';
+import { classPackages as defaultClassPackages, users as initialUsers, getMockUser, paymentHistory as initialPaymentHistory, logNotification, scheduleEvents as initialSchedule, teachers as initialTeachers, logActivity, subjects as initialSubjects } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Check, CreditCard, Landmark, ShoppingCart, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { ClassPackage, User, PaymentTransaction, ScheduleEvent } from '@/lib/types';
+import { ClassPackage, User, PaymentTransaction, ScheduleEvent, Subject } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
@@ -107,7 +107,7 @@ function PaymentPageComponent() {
     const teachers: User[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
     
     const storedSubjects = localStorage.getItem('subjects');
-    const subjects = storedSubjects ? JSON.parse(storedSubjects) : [];
+    const subjects: Subject[] = storedSubjects ? JSON.parse(storedSubjects) : initialSubjects;
 
 
     const newScheduleEvents = pendingBookings.map((b: any) => ({

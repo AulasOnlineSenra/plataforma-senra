@@ -22,7 +22,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
-import { subjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers, chatContacts as initialChatContacts, chatMessages as initialChatMessages, logActivity, logNotification } from '@/lib/data';
+import { subjects as initialSubjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers, chatContacts as initialChatContacts, chatMessages as initialChatMessages, logActivity, logNotification } from '@/lib/data';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -55,6 +55,7 @@ function BookingPageComponent() {
   const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
   const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(undefined);
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
@@ -461,7 +462,7 @@ function BookingPageComponent() {
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
     setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router]);
+  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router, subjects]);
 
   const availableTimes = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
