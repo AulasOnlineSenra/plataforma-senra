@@ -14,7 +14,7 @@ import { teachers as initialTeachers, subjects, getMockUser, scheduleEvents as i
 import { Teacher, UserRole, User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, StarHalf } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -63,7 +63,10 @@ function TeacherCard({
 
   const averageRating = useMemo(() => {
     if (!teacher.ratings || teacher.ratings.length === 0) {
-      return 0;
+        return 5.0; // Assume 5.0 if no ratings yet, same as dashboard logic
+    }
+    if (teacher.ratings.length < 5) {
+        return 5.0; // Return 5.0 until 5 ratings are received
     }
     const sum = teacher.ratings.reduce((a, b) => a + b, 0);
     return sum / teacher.ratings.length;
@@ -142,20 +145,19 @@ function TeacherCard({
           ))}
         </div>
         <div className="flex items-center gap-1 pt-3">
-          {Array(5)
-            .fill(0)
-            .map((_, i) => (
-              <Star
-                key={i}
-                className={cn(
-                  'h-4 w-4',
-                  averageRating > i ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                )}
-              />
-            ))}
-          <span className="text-sm text-muted-foreground ml-1">
-            ({averageRating.toFixed(1)})
-          </span>
+          {Array(5).fill(0).map((_, i) => {
+                const ratingValue = i + 1;
+                if (averageRating >= ratingValue) {
+                    return <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />;
+                }
+                if (averageRating > i && averageRating < ratingValue) {
+                    return <StarHalf key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />;
+                }
+                return <Star key={i} className="h-4 w-4 text-gray-300" />;
+            })}
+            <span className="text-sm text-muted-foreground ml-1">
+                ({averageRating.toFixed(1)})
+            </span>
         </div>
         <CardDescription className="pt-1 h-5">
             {teacher.education && teacher.education.length > 0 && 
