@@ -581,13 +581,15 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Bem-vindo(a) de volta, {user.nickname || user.name.split(' ')[0]}!
-        </h1>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex flex-1 flex-col gap-4 md:gap-8">
+        <div className="flex items-center justify-between">
+          <h1 className="font-headline text-2xl md:text-3xl font-bold">
+            Bem-vindo(a) de volta, {user.nickname || user.name.split(' ')[0]}!
+          </h1>
+        </div>
+        {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
       </div>
-      {user.role === 'admin' ? renderAdminDashboard() : renderStudentTeacherDashboard()}
     </div>
   );
 }
