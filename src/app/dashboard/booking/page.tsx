@@ -197,7 +197,7 @@ function BookingPageComponent() {
         const startDate = new Date(date);
         startDate.setHours(hours, minutes, 0, 0);
 
-        if (isBefore(startDate, new Date())) {
+        if (isBefore(startDate, startOfToday())) {
             toast({
                 variant: 'destructive',
                 title: 'Data/Horário Inválido',
