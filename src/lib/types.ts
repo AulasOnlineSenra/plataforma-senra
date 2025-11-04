@@ -45,6 +45,7 @@ export interface User {
   lastAccess?: string;
   classCredits?: number;
   activePackage?: string;
+  ratings?: number[];
 }
 
 export interface Subject {
@@ -162,4 +163,5 @@ export interface Notification {
   read: boolean;
   userId?: string; // ID of the user related to the notification (e.g., who scheduled a class)
 }
+
 

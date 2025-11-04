@@ -105,6 +105,7 @@ export default function RegisterPage() {
         role: role,
         status: 'active' as 'active',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ratings: [],
     };
 
     if (role === 'teacher') {
@@ -176,9 +177,20 @@ export default function RegisterPage() {
 
   const renderRegistrationForm = () => (
      <>
-        <h1 className="text-2xl font-bold font-headline text-center mb-4">
-            Crie sua Conta de {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor' : 'Administrador'}
-        </h1>
+        <div className="relative mb-4">
+            <Button
+                onClick={() => setRole(null)}
+                variant="ghost"
+                size="icon"
+                className="absolute -left-4 -top-2"
+            >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+            </Button>
+            <h1 className="text-2xl font-bold font-headline text-center">
+                Crie sua Conta de {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor' : 'Administrador'}
+            </h1>
+        </div>
         <form onSubmit={handleRegister} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Nome Completo</Label>
@@ -240,9 +252,6 @@ export default function RegisterPage() {
             Faça login
           </Link>
         </div>
-        <Button variant="link" className="mt-4 text-sm" onClick={() => setRole(null)}>
-            Voltar para seleção de perfil
-        </Button>
      </>
   );
 

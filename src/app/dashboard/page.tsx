@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -219,6 +220,18 @@ export default function DashboardPage() {
         isWithinInterval(e.start, monthInterval)
     ).length;
   }, [user, scheduleEvents]);
+
+  const averageFeedback = useMemo(() => {
+    if (!user || !user.ratings) {
+      return { score: '5.0', count: 0, text: 'Aguardando 5 avaliações' };
+    }
+    const { ratings } = user;
+    if (ratings.length < 5) {
+      return { score: '5.0', count: ratings.length, text: 'Aguardando 5 avaliações' };
+    }
+    const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+    return { score: avg.toFixed(1), count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
+  }, [user]);
 
   if (!user) {
     return null; // Or a loading spinner
@@ -488,8 +501,8 @@ export default function DashboardPage() {
               <Star className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4.8/5.0</div>
-              <p className="text-xs text-muted-foreground">Baseado nas últimas 5 aulas</p>
+              <div className="text-2xl font-bold">{averageFeedback.score}/5.0</div>
+              <p className="text-xs text-muted-foreground">{averageFeedback.text}</p>
             </CardContent>
           </Card>
         </div>
