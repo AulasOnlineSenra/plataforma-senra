@@ -226,7 +226,7 @@ export default function DashboardPage() {
 
   const averageFeedback = useMemo(() => {
     if (!user || !user.ratings) {
-      return { score: 0, count: 0, text: 'Nenhuma avaliação recebida' };
+      return { score: 5.0, count: 0, text: 'Aguardando 5 avaliações' };
     }
     
     const { ratings } = user;
