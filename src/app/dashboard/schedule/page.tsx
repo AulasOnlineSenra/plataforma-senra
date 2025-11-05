@@ -222,7 +222,7 @@ function SchedulePageComponent() {
   }, [events, currentUser]);
 
   const calendarMarkedDays = useMemo(() => {
-    let relevantEvents = events.filter(e => e.status === 'scheduled' || e.status === 'completed');
+    let relevantEvents = events.filter(e => e.status === 'scheduled');
      if (currentUser?.role === 'student') {
       relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
     } else if (currentUser?.role === 'teacher') {
