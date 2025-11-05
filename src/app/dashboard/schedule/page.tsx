@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers, getMockUser, logNotification } from '@/lib/data';
 import type { ScheduleEvent, User, Teacher } from '@/lib/types';
-import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
@@ -383,6 +382,13 @@ function SchedulePageComponent() {
     setNewTime(undefined);
   };
   
+  const formatScheduledDate = (start: Date, end: Date) => {
+    if (isToday(start)) {
+      return `Hoje, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, "HH:mm", { locale: ptBR })}`;
+  };
+  
   const availableTimes = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
 
   return (
@@ -473,7 +479,7 @@ function SchedulePageComponent() {
                               <div className="grid gap-1">
                                 <p className="font-semibold">{personToShow?.name}</p>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span>{format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm", { locale: ptBR })}</span>
+                                  <span>{formatScheduledDate(event.start, event.end)}</span>
                                 </div>
                               </div>
                           </div>
