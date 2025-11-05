@@ -57,7 +57,7 @@ export default function NotificationsPage() {
     if (currentUser.role === 'admin') {
       return notifications;
     }
-    return notifications.filter(n => n.userId === currentUser.id);
+    return notifications.filter(n => n.userId === currentUser.id || !n.userId);
   }, [currentUser, notifications]);
 
 
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
   const handleMarkAllAsRead = () => {
     if (!currentUser) return;
     const updatedNotifications = notifications.map(n => {
-        if (currentUser.role === 'admin' || n.userId === currentUser.id) {
+        if (currentUser.role === 'admin' || n.userId === currentUser.id || !n.userId) {
             return { ...n, read: true };
         }
         return n;
@@ -129,6 +129,11 @@ export default function NotificationsPage() {
     setNotifications(updatedNotifications);
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
     window.dispatchEvent(new Event('storage'));
+  };
+  
+  const formatDescription = (description: string) => {
+    if (!currentUser || !description) return description;
+    return description.replace(currentUser.name, 'Você');
   };
 
   const filteredNotifications = useMemo(() => {
@@ -187,7 +192,7 @@ export default function NotificationsPage() {
                       </div>
                       <div className="flex-1 ml-4">
                         <p className="font-semibold">{notification.title}</p>
-                        <p className="text-sm text-muted-foreground">{notification.description}</p>
+                        <p className="text-sm text-muted-foreground">{formatDescription(notification.description)}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2 text-right self-stretch justify-between">
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
