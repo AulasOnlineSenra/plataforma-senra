@@ -31,11 +31,12 @@ import {
   Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion, Notification } from '@/lib/types';
-import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts, suggestions as initialSuggestions, notifications as initialNotifications } from '@/lib/data';
+import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion, Notification, ScheduleEvent } from '@/lib/types';
+import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts, suggestions as initialSuggestions, notifications as initialNotifications, logNotification, scheduleEvents as initialScheduleEvents } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
+import { isToday, format } from 'date-fns';
 
 const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
@@ -44,6 +45,41 @@ const SUGGESTIONS_STORAGE_KEY = 'suggestionsList';
 const LAST_SUGGESTIONS_VIEW_KEY = 'lastSuggestionsViewTimestamp';
 const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
 const LAST_NOTIFICATIONS_VIEW_KEY = 'lastNotificationsViewTimestamp';
+const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
+const DAILY_REMINDER_STORAGE_KEY = 'dailyReminderSent';
+
+
+const checkAndSendDailyReminder = (user: User | Teacher) => {
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const reminderKey = `${DAILY_REMINDER_STORAGE_KEY}_${user.id}_${todayStr}`;
+
+    if (localStorage.getItem(reminderKey)) {
+        return; // Reminder for today already sent
+    }
+
+    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    const schedule: ScheduleEvent[] = storedSchedule
+        ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start) }))
+        : initialScheduleEvents;
+    
+    const userField = user.role === 'teacher' ? 'teacherId' : 'studentId';
+
+    const todaysClasses = schedule.filter(e => 
+        e[userField] === user.id && 
+        e.status === 'scheduled' && 
+        isToday(e.start)
+    );
+
+    if (todaysClasses.length > 0) {
+        logNotification({
+            type: 'class_scheduled',
+            title: 'Lembrete de Aula(s) Hoje!',
+            description: `Você tem ${todaysClasses.length} ${todaysClasses.length > 1 ? 'aulas agendadas' : 'aula agendada'} para hoje. Não se esqueça!`,
+            userId: user.id,
+        });
+        localStorage.setItem(reminderKey, 'true');
+    }
+};
 
 
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
@@ -74,6 +110,8 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       if (foundUser) {
         setUser(foundUser);
         localStorage.setItem('currentUser', JSON.stringify(foundUser));
+        // Run daily reminder check
+        checkAndSendDailyReminder(foundUser);
       } else {
         const mockUser = getMockUser(role);
         setUser(mockUser);
@@ -89,7 +127,12 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       // Handle general notifications
       const storedNotificationsStr = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
       const notifications: Notification[] = storedNotificationsStr ? JSON.parse(storedNotificationsStr).map((n:any) => ({...n, timestamp: new Date(n.timestamp)})) : initialNotifications;
-      const unreadNotifications = notifications.some(n => !n.read);
+      
+      let relevantNotifications = notifications;
+      if (role !== 'admin') {
+          relevantNotifications = notifications.filter(n => n.userId === userId || !n.userId);
+      }
+      const unreadNotifications = relevantNotifications.some(n => !n.read);
       setHasUnreadNotifications(unreadNotifications);
 
 
@@ -115,7 +158,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY || e.key === NOTIFICATIONS_STORAGE_KEY) {
+        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY || e.key === NOTIFICATIONS_STORAGE_KEY || e.key === SCHEDULE_STORAGE_KEY) {
             updateUserAndNotifications();
         }
     };
@@ -258,10 +301,15 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       if (isNotifications) {
         setHasUnreadNotifications(false);
         // This is optimistic. In a real app, you might wait for page load to confirm.
-        const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-        if (storedNotifications) {
-            const currentNotifications = JSON.parse(storedNotifications);
-            const readNotifications = currentNotifications.map((n:any) => ({...n, read: true}));
+        const storedNotificationsStr = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        if (storedNotificationsStr && user) {
+            let currentNotifications: Notification[] = JSON.parse(storedNotificationsStr);
+            const readNotifications = currentNotifications.map(n => {
+                if(user.role === 'admin' || n.userId === user.id || !n.userId) {
+                    return {...n, read: true };
+                }
+                return n;
+            });
             localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
         }
       }
