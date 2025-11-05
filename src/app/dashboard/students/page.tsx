@@ -217,14 +217,27 @@ export default function AdminStudentsPage() {
 
   const handleDeleteStudent = () => {
     if (!studentToDelete) return;
+    
+    // Cancel future classes for the student being deleted
+    const updatedSchedule = scheduleEvents.map(event => {
+      if (event.studentId === studentToDelete.id && event.status === 'scheduled') {
+        return { ...event, status: 'cancelled' as const };
+      }
+      return event;
+    });
+    setScheduleEvents(updatedSchedule);
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+    
+    // Remove user
     const updatedUsers = allUsers.filter((user) => user.id !== studentToDelete.id);
     setAllUsers(updatedUsers);
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    
     window.dispatchEvent(new Event('storage'));
 
     toast({
       title: 'Aluno Excluído',
-      description: `O perfil de ${studentToDelete.name} foi removido.`,
+      description: `O perfil de ${studentToDelete.name} foi removido e suas aulas futuras foram canceladas.`,
     });
     setStudentToDelete(null);
   };
@@ -263,7 +276,7 @@ export default function AdminStudentsPage() {
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
               perfil de{' '}
               <span className="font-bold">{studentToDelete?.name}</span> e
-              removerá seus dados de nossos servidores.
+              removerá seus dados de nossos servidores. Todas as suas aulas futuras serão canceladas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

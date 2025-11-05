@@ -236,6 +236,29 @@ function SchedulePageComponent() {
 
 
   const handleConfirmCancel = (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    // Add 1 credit back to the student
+    const student = users.find(u => u.id === event.studentId);
+    if (student) {
+        const updatedUsers = users.map(u => 
+            u.id === student.id 
+                ? { ...u, classCredits: (u.classCredits || 0) + 1 } 
+                : u
+        );
+        setUsers(updatedUsers);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+        
+        // If the current user is the student, update their currentUser object
+        if (currentUser && currentUser.id === student.id) {
+            const updatedCurrentUser = { ...currentUser, classCredits: (currentUser.classCredits || 0) + 1 };
+            setCurrentUser(updatedCurrentUser);
+            localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
+        }
+    }
+    
+    // Mark the event as cancelled
     const updatedEvents = events.map(e => 
       e.id === eventId ? { ...e, status: 'cancelled' as 'cancelled' } : e
     );
@@ -243,21 +266,20 @@ function SchedulePageComponent() {
     localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedEvents));
     window.dispatchEvent(new Event('storage'));
 
-    const event = events.find(e => e.id === eventId);
-    if(event) {
-        const student = getStudentById(event.studentId);
-        const teacher = getTeacherById(event.teacherId);
-        logNotification({
-            type: 'class_cancelled',
-            title: 'Aula Cancelada',
-            description: `${student?.name || 'Aluno'} cancelou a aula de ${event.subject} com ${teacher?.name || 'Professor'}.`,
-            userId: event.studentId,
-        });
-    }
+    
+    const studentFromEvent = getStudentById(event.studentId);
+    const teacher = getTeacherById(event.teacherId);
+    logNotification({
+        type: 'class_cancelled',
+        title: 'Aula Cancelada',
+        description: `${studentFromEvent?.name || 'Aluno'} cancelou a aula de ${event.subject} com ${teacher?.name || 'Professor'}.`,
+        userId: event.studentId,
+    });
+    
 
     toast({
         title: "Aula Cancelada",
-        description: `A aula de ${event?.subject} foi cancelada.`,
+        description: `A aula de ${event?.subject} foi cancelada. 1 crédito foi devolvido ao aluno.`,
     });
   };
 
@@ -544,8 +566,8 @@ function SchedulePageComponent() {
                           personToShow = teacher;
                           personDetail = (
                               <>
-                                <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
                                 <p className="font-semibold">{student?.name || 'N/A'}</p>
+                                <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span>{formatScheduledDate(event.start, event.end)}</span>
                                 </div>
