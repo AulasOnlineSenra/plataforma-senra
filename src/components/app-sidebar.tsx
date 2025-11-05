@@ -71,10 +71,26 @@ const checkAndSendDailyReminder = (user: User | Teacher) => {
     );
 
     if (todaysClasses.length > 0) {
+        let description = `Você tem ${todaysClasses.length} ${todaysClasses.length > 1 ? 'aulas agendadas' : 'aula agendada'} para hoje. Não se esqueça!`;
+        
+        if (user.role === 'teacher') {
+            const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
+            const allStudents: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialUsers;
+            
+            const studentIds = new Set(todaysClasses.map(c => c.studentId));
+            const studentNames = Array.from(studentIds)
+                .map(id => allStudents.find(s => s.id === id)?.name)
+                .filter(Boolean);
+            
+            if (studentNames.length > 0) {
+                description = `Você tem ${todaysClasses.length} ${todaysClasses.length > 1 ? 'aulas agendadas' : 'aula agendada'} hoje com: ${studentNames.join(', ')}.`;
+            }
+        }
+
         logNotification({
             type: 'class_scheduled',
             title: 'Lembrete de Aula(s) Hoje!',
-            description: `Você tem ${todaysClasses.length} ${todaysClasses.length > 1 ? 'aulas agendadas' : 'aula agendada'} para hoje. Não se esqueça!`,
+            description: description,
             userId: user.id,
         });
         localStorage.setItem(reminderKey, 'true');
