@@ -51,7 +51,7 @@ const TEACHERS_STORAGE_KEY = 'teacherList';
 
 function SchedulePageComponent() {
   const searchParams = useSearchParams();
-  const teacherIdFilter = searchParams.get('teacherId');
+  const teacherIdFilterParam = searchParams.get('teacherId');
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
@@ -59,6 +59,8 @@ function SchedulePageComponent() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [userIdFilter, setUserIdFilter] = useState<string>('all');
+
 
   useEffect(() => {
     setIsClient(true);
@@ -156,18 +158,35 @@ function SchedulePageComponent() {
     // These will only run on the client, after initial hydration
     setDate(new Date());
   }, []); // Empty dependency array ensures this runs once on mount
+  
+  const allAppUsers = useMemo(() => [...users, ...teachers], [users, teachers]);
+
+
+  const filterEventsByUser = useCallback((eventsToFilter: ScheduleEvent[]) => {
+    if (currentUser?.role === 'student') {
+        return eventsToFilter.filter(e => e.studentId === currentUser.id);
+    }
+    if (currentUser?.role === 'teacher') {
+        return eventsToFilter.filter(e => e.teacherId === currentUser.id);
+    }
+    // Admin view
+    if (userIdFilter !== 'all') {
+        const selectedUser = allAppUsers.find(u => u.id === userIdFilter);
+        if (selectedUser?.role === 'teacher') {
+            return eventsToFilter.filter(e => e.teacherId === userIdFilter);
+        } else { // student or admin (if they can have classes)
+            return eventsToFilter.filter(e => e.studentId === userIdFilter);
+        }
+    }
+    return eventsToFilter;
+  }, [currentUser, userIdFilter, allAppUsers]);
+
 
   const filteredEvents = useMemo(() => {
-    let relevantEvents = events.filter(e => e.status === 'scheduled');
+    let relevantEvents = filterEventsByUser(events.filter(e => e.status === 'scheduled'));
 
-    if (currentUser?.role === 'student') {
-      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
-    } else if (currentUser?.role === 'teacher') {
-      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
-    }
-    
-    if (teacherIdFilter) {
-      relevantEvents = relevantEvents.filter(e => e.teacherId === teacherIdFilter);
+    if (teacherIdFilterParam) {
+      relevantEvents = relevantEvents.filter(e => e.teacherId === teacherIdFilterParam);
     }
 
     if (!date) return relevantEvents.sort((a,b) => a.start.getTime() - b.start.getTime());
@@ -198,37 +217,22 @@ function SchedulePageComponent() {
         .filter(e => isWithinInterval(e.start, interval))
         .sort((a,b) => a.start.getTime() - b.start.getTime());
 
-  }, [date, filterType, events, currentUser, teacherIdFilter]);
+  }, [date, filterType, events, teacherIdFilterParam, filterEventsByUser]);
   
   const completedEvents = useMemo(() => {
-    let relevantEvents = events.filter(e => e.status === 'completed');
-    if (currentUser?.role === 'student') {
-      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
-    } else if (currentUser?.role === 'teacher') {
-      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
-    }
+    const relevantEvents = filterEventsByUser(events.filter(e => e.status === 'completed'));
     return relevantEvents.sort((a, b) => b.start.getTime() - a.start.getTime());
-  }, [events, currentUser]);
+  }, [events, filterEventsByUser]);
 
   const cancelledEvents = useMemo(() => {
-    let relevantEvents = events.filter(e => e.status === 'cancelled');
-    if (currentUser?.role === 'student') {
-      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
-    } else if (currentUser?.role === 'teacher') {
-      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
-    }
+    const relevantEvents = filterEventsByUser(events.filter(e => e.status === 'cancelled'));
     return relevantEvents.sort((a, b) => b.start.getTime() - a.start.getTime());
-  }, [events, currentUser]);
+  }, [events, filterEventsByUser]);
 
   const calendarMarkedDays = useMemo(() => {
-    let relevantEvents = events.filter(e => e.status === 'scheduled');
-     if (currentUser?.role === 'student') {
-      relevantEvents = relevantEvents.filter(e => e.studentId === currentUser.id);
-    } else if (currentUser?.role === 'teacher') {
-      relevantEvents = relevantEvents.filter(e => e.teacherId === currentUser.id);
-    }
+    const relevantEvents = filterEventsByUser(events.filter(e => e.status === 'scheduled'));
     return relevantEvents.map(e => e.start);
-  }, [events, currentUser]);
+  }, [events, filterEventsByUser]);
 
 
   const handleConfirmCancel = (eventId: string) => {
@@ -312,9 +316,13 @@ function SchedulePageComponent() {
   }
 
   const getCardDescription = () => {
-    if (teacherIdFilter) {
-        const teacher = getTeacherById(teacherIdFilter);
+    if (teacherIdFilterParam) {
+        const teacher = getTeacherById(teacherIdFilterParam);
         return teacher ? `Mostrando apenas aulas com ${teacher.name}.` : 'Filtrando aulas por professor.';
+    }
+     if (userIdFilter !== 'all') {
+        const user = allAppUsers.find(u => u.id === userIdFilter);
+        return user ? `Mostrando agenda de ${user.name}.` : 'Filtrando por usuário.';
     }
     if (!date) return 'Resumo das suas aulas para o período selecionado.';
     const classCount = filteredEvents.length;
@@ -394,9 +402,34 @@ function SchedulePageComponent() {
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 md:gap-8">
-        <div className="flex items-center">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="font-headline text-2xl md:text-3xl font-bold">Agenda de Aulas</h1>
+          {currentUser?.role === 'admin' && (
+            <div className="w-full sm:w-auto">
+              <Label htmlFor="user-filter" className="sr-only">Filtrar por usuário</Label>
+              <Select value={userIdFilter} onValueChange={setUserIdFilter}>
+                <SelectTrigger id="user-filter" className="w-full sm:w-[280px]">
+                  <SelectValue placeholder="Filtrar por usuário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Usuários</SelectItem>
+                  {allAppUsers.sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                    <SelectItem key={user.id} value={user.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                            <AvatarImage src={user.avatarUrl} />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{user.name} ({user.role})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
+
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="lg:col-span-3 flex flex-col justify-center">
@@ -573,7 +606,7 @@ function SchedulePageComponent() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={currentUser?.role === 'admin' ? 6 : (currentUser?.role !== 'teacher' ? 5 : 4)} className="h-24 text-center">
+                    <TableCell colSpan={currentUser?.role === 'admin' ? 6 : (currentUser?.role === 'teacher' ? 4 : 5)} className="h-24 text-center">
                       Nenhuma aula concluída ainda.
                     </TableCell>
                   </TableRow>
