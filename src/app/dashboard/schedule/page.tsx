@@ -40,7 +40,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -399,6 +399,17 @@ function SchedulePageComponent() {
   
   const availableTimes = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
 
+  const groupedUsers = useMemo(() => {
+    return allAppUsers.reduce((acc, user) => {
+        const role = user.role;
+        if (!acc[role]) {
+            acc[role] = [];
+        }
+        acc[role].push(user);
+        return acc;
+    }, {} as Record<string, (User | Teacher)[]>);
+  }, [allAppUsers]);
+
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -412,18 +423,46 @@ function SchedulePageComponent() {
                   <SelectValue placeholder="Filtrar por usuário" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Usuários</SelectItem>
-                  {allAppUsers.sort((a,b) => a.name.localeCompare(b.name)).map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                            <AvatarImage src={user.avatarUrl} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span>{user.name} ({user.role})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                    <SelectItem value="all">Todos os Usuários</SelectItem>
+                    {groupedUsers['teacher'] && (
+                        <SelectGroup>
+                            <SelectLabel>Professores</SelectLabel>
+                            {groupedUsers['teacher'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                    <span>{user.name}</span>
+                                </div>
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    )}
+                    {groupedUsers['student'] && (
+                        <SelectGroup>
+                            <SelectLabel>Alunos</SelectLabel>
+                            {groupedUsers['student'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                    <span>{user.name}</span>
+                                </div>
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    )}
+                    {groupedUsers['admin'] && (
+                        <SelectGroup>
+                            <SelectLabel>Admins</SelectLabel>
+                            {groupedUsers['admin'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                    <span>{user.name}</span>
+                                </div>
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    )}
                 </SelectContent>
               </Select>
             </div>
@@ -498,7 +537,7 @@ function SchedulePageComponent() {
                     filteredEvents.map((event) => {
                       const teacher = getTeacherById(event.teacherId);
                       const student = getStudentById(event.studentId);
-                      const personToShow = currentUser?.role === 'teacher' ? student : teacher;
+                      const personToShow = (currentUser?.role === 'teacher' || (currentUser?.role === 'admin' && userIdFilter.startsWith('teacher'))) ? student : teacher;
                       const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                       
                       return (
