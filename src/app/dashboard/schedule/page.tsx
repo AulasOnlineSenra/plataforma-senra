@@ -537,7 +537,7 @@ function SchedulePageComponent() {
                     filteredEvents.map((event) => {
                       const teacher = getTeacherById(event.teacherId);
                       const student = getStudentById(event.studentId);
-                      const personToShow = (currentUser?.role === 'teacher' || (currentUser?.role === 'admin' && userIdFilter.startsWith('teacher'))) ? student : teacher;
+                      const personToShow = (currentUser?.role === 'teacher') ? student : teacher;
                       const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                       
                       return (
