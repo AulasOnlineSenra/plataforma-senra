@@ -394,7 +394,7 @@ function SchedulePageComponent() {
     if (isToday(start)) {
       return `Hoje, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     }
-    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}`;
+    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
   };
   
   const availableTimes = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
@@ -537,7 +537,32 @@ function SchedulePageComponent() {
                     filteredEvents.map((event) => {
                       const teacher = getTeacherById(event.teacherId);
                       const student = getStudentById(event.studentId);
-                      const personToShow = (currentUser?.role === 'teacher') ? student : teacher;
+                      let personToShow: User | Teacher | undefined;
+                      let personDetail: React.ReactNode;
+                      
+                      if (currentUser?.role === 'admin') {
+                          personToShow = teacher;
+                          personDetail = (
+                              <>
+                                <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
+                                <p className="font-semibold">{student?.name || 'N/A'}</p>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span>{formatScheduledDate(event.start, event.end)}</span>
+                                </div>
+                              </>
+                          );
+                      } else {
+                          personToShow = (currentUser?.role === 'teacher') ? student : teacher;
+                           personDetail = (
+                            <>
+                                <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span>{formatScheduledDate(event.start, event.end)}</span>
+                                </div>
+                            </>
+                          );
+                      }
+                      
                       const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                       
                       return (
@@ -552,20 +577,10 @@ function SchedulePageComponent() {
                               </Avatar>
                               <div className="grid gap-1">
                                 <p className="font-semibold">{personToShow?.name}</p>
-                                {currentUser?.role === 'admin' && (
-                                  <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
-                                )}
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span>{formatScheduledDate(event.start, event.end)}</span>
-                                </div>
+                                {personDetail}
                               </div>
                           </div>
-                          <div className="text-center text-sm text-muted-foreground">
-                            {currentUser?.role === 'admin'
-                              ? `com ${student?.name || 'N/A'}`
-                              : event.title
-                            }
-                          </div>
+                          
                           <div className="flex items-center gap-2">
                             <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
                                 <Pencil className="h-5 w-5 text-muted-foreground" />
@@ -687,7 +702,7 @@ function SchedulePageComponent() {
                         {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
+                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, 'HH:mm')}
                         </TableCell>
                         {currentUser?.role === 'admin' && (
                         <TableCell className="text-right">
