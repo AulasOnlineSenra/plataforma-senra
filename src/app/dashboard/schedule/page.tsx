@@ -415,58 +415,6 @@ function SchedulePageComponent() {
       <div className="flex flex-1 flex-col gap-4 md:gap-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="font-headline text-2xl md:text-3xl font-bold">Agenda de Aulas</h1>
-          {currentUser?.role === 'admin' && (
-            <div className="w-full sm:w-auto">
-              <Label htmlFor="user-filter" className="sr-only">Filtrar por usuário</Label>
-              <Select value={userIdFilter} onValueChange={setUserIdFilter}>
-                <SelectTrigger id="user-filter" className="w-full sm:w-[280px]">
-                  <SelectValue placeholder="Filtrar por usuário" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todos os Usuários</SelectItem>
-                    {groupedUsers['teacher'] && (
-                        <SelectGroup>
-                            <SelectLabel>Professores</SelectLabel>
-                            {groupedUsers['teacher'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
-                                <SelectItem key={user.id} value={user.id}>
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
-                                    <span>{user.name}</span>
-                                </div>
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    )}
-                    {groupedUsers['student'] && (
-                        <SelectGroup>
-                            <SelectLabel>Alunos</SelectLabel>
-                            {groupedUsers['student'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
-                                <SelectItem key={user.id} value={user.id}>
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
-                                    <span>{user.name}</span>
-                                </div>
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    )}
-                    {groupedUsers['admin'] && (
-                        <SelectGroup>
-                            <SelectLabel>Admins</SelectLabel>
-                            {groupedUsers['admin'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
-                                <SelectItem key={user.id} value={user.id}>
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
-                                    <span>{user.name}</span>
-                                </div>
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
 
 
@@ -529,6 +477,58 @@ function SchedulePageComponent() {
                     <TabsTrigger value="month">Mês</TabsTrigger>
                 </TabsList>
               </div>
+                {currentUser?.role === 'admin' && (
+                <div className="w-full sm:w-auto mt-4">
+                  <Label htmlFor="user-filter" className="sr-only">Filtrar por usuário</Label>
+                  <Select value={userIdFilter} onValueChange={setUserIdFilter}>
+                    <SelectTrigger id="user-filter" className="w-full sm:w-[280px]">
+                      <SelectValue placeholder="Filtrar por usuário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os Usuários</SelectItem>
+                        {groupedUsers['teacher'] && (
+                            <SelectGroup>
+                                <SelectLabel>Professores</SelectLabel>
+                                {groupedUsers['teacher'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                    <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                        <span>{user.name}</span>
+                                    </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        )}
+                        {groupedUsers['student'] && (
+                            <SelectGroup>
+                                <SelectLabel>Alunos</SelectLabel>
+                                {groupedUsers['student'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                    <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                        <span>{user.name}</span>
+                                    </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        )}
+                        {groupedUsers['admin'] && (
+                            <SelectGroup>
+                                <SelectLabel>Admins</SelectLabel>
+                                {groupedUsers['admin'].sort((a,b) => a.name.localeCompare(b.name)).map(user => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                    <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6"><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                        <span>{user.name}</span>
+                                    </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="flex-1">
               <ScrollArea className="h-full max-h-[300px] pr-4">
