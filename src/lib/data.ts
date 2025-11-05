@@ -376,7 +376,7 @@ export const navItems: NavItem[] = [
     href: '/dashboard/notifications',
     icon: Bell,
     label: 'Notificações',
-    roles: ['admin'],
+    roles: ['student', 'teacher', 'admin'],
   },
   {
     href: '/dashboard/schedule',

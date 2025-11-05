@@ -16,8 +16,8 @@ import { Bell, UserPlus, CalendarCheck, Package, XCircle, Trash2, Eye, EyeOff, C
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Notification, NotificationType } from '@/lib/types';
-import { notifications as initialNotifications } from '@/lib/data';
+import { Notification, NotificationType, User } from '@/lib/types';
+import { notifications as initialNotifications, getMockUser } from '@/lib/data';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
@@ -45,6 +45,21 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('student'));
+  }, []);
+
+  const relevantNotifications = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'admin') {
+      return notifications;
+    }
+    return notifications.filter(n => n.userId === currentUser.id);
+  }, [currentUser, notifications]);
+
 
   useEffect(() => {
     const updateNotifications = () => {
@@ -55,23 +70,37 @@ export default function NotificationsPage() {
     
     updateNotifications();
 
-    // Mark all as read on component mount
     const markAllAsReadOnLoad = () => {
-        const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-        if (storedNotifications) {
-            const currentNotifications: Notification[] = JSON.parse(storedNotifications);
-            const readNotifications = currentNotifications.map(n => ({...n, read: true}));
-            localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
-            setNotifications(readNotifications.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp), events: n.events?.map((e:any) => ({...e, date: new Date(e.date)})) })));
-            window.dispatchEvent(new Event('storage')); // Notify sidebar
+        const storedNotificationsStr = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        if (storedNotificationsStr && currentUser) {
+            let currentNotifications: Notification[] = JSON.parse(storedNotificationsStr);
+            
+            let hasChanges = false;
+            const readNotifications = currentNotifications.map(n => {
+                if (currentUser.role === 'admin' || n.userId === currentUser.id) {
+                    if (!n.read) {
+                        hasChanges = true;
+                        return { ...n, read: true };
+                    }
+                }
+                return n;
+            });
+            
+            if (hasChanges) {
+                localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
+                setNotifications(readNotifications.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp), events: n.events?.map((e:any) => ({...e, date: new Date(e.date)})) })));
+                window.dispatchEvent(new Event('storage')); // Notify sidebar
+            }
         }
     };
     
-    markAllAsReadOnLoad();
+    if (currentUser) {
+        markAllAsReadOnLoad();
+    }
 
     window.addEventListener('storage', updateNotifications);
     return () => window.removeEventListener('storage', updateNotifications);
-  }, []);
+  }, [currentUser]);
 
   const handleToggleRead = (id: string) => {
     const updatedNotifications = notifications.map(n => 
@@ -83,7 +112,13 @@ export default function NotificationsPage() {
   };
   
   const handleMarkAllAsRead = () => {
-    const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
+    if (!currentUser) return;
+    const updatedNotifications = notifications.map(n => {
+        if (currentUser.role === 'admin' || n.userId === currentUser.id) {
+            return { ...n, read: true };
+        }
+        return n;
+    });
     setNotifications(updatedNotifications);
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
     window.dispatchEvent(new Event('storage'));
@@ -97,12 +132,12 @@ export default function NotificationsPage() {
   };
 
   const filteredNotifications = useMemo(() => {
-    return notifications
+    return relevantNotifications
       .filter(n => !showUnreadOnly || !n.read)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [notifications, showUnreadOnly]);
+  }, [relevantNotifications, showUnreadOnly]);
 
-  const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
+  const unreadCount = useMemo(() => relevantNotifications.filter(n => !n.read).length, [relevantNotifications]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
