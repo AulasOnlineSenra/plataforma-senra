@@ -175,6 +175,13 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
       setTransactionToDelete(null);
     };
 
+    const expenseItems = [
+      { id: 'exp-1', date: new Date(), category: 'Pagamentos', description: 'Professores (aulas concluídas)', amount: teacherPaymentsCost },
+      { id: 'exp-2', date: new Date(), category: 'Pagamentos', description: 'Comissões (Marketing)', amount: marketingCosts.organicCommissions + marketingCosts.paidCommissions },
+      { id: 'exp-3', date: new Date(), category: 'Custos de Marketing', description: 'Anúncios', amount: marketingCosts.ads },
+      { id: 'exp-4', date: new Date(), category: 'Custos de Marketing', description: 'Equipe', amount: marketingCosts.team },
+    ];
+
 
   return (
     <>
@@ -384,33 +391,24 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        <Table>
+                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>Data</TableHead>
                                     <TableHead>Categoria</TableHead>
-                                    <TableHead>Sub-Categoria</TableHead>
+                                    <TableHead>Descrição</TableHead>
                                     <TableHead className="text-right">Valor</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow>
-                                    <TableCell rowSpan={2} className="font-medium align-top">Pagamentos</TableCell>
-                                    <TableCell>Professores (aulas concluídas)</TableCell>
-                                    <TableCell className="text-right font-mono">R$ {teacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
-                                </TableRow>
-                                 <TableRow>
-                                    <TableCell>Comissões (Marketing)</TableCell>
-                                    <TableCell className="text-right font-mono">R$ {(marketingCosts.organicCommissions + marketingCosts.paidCommissions).toFixed(2).replace('.', ',')}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell rowSpan={2} className="font-medium align-top">Custos de Marketing</TableCell>
-                                    <TableCell>Anúncios</TableCell>
-                                    <TableCell className="text-right font-mono">R$ {marketingCosts.ads.toFixed(2).replace('.', ',')}</TableCell>
-                                </TableRow>
-                                 <TableRow>
-                                    <TableCell>Equipe</TableCell>
-                                    <TableCell className="text-right font-mono">R$ {marketingCosts.team.toFixed(2).replace('.', ',')}</TableCell>
-                                </TableRow>
+                                {expenseItems.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{format(item.date, 'dd/MM/yyyy')}</TableCell>
+                                        <TableCell className="font-medium">{item.category}</TableCell>
+                                        <TableCell>{item.description}</TableCell>
+                                        <TableCell className="text-right font-mono">R$ {item.amount.toFixed(2).replace('.', ',')}</TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     </CardContent>
