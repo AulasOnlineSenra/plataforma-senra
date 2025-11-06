@@ -327,7 +327,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     <>
     <div className="grid gap-6">
         {/* KPIs */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Faturamento (Mês)</CardTitle>
@@ -363,6 +363,15 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <p className="text-xs text-muted-foreground">
                     Margem: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                <CardTitle className="text-sm font-medium">Patrimônio Líquido</CardTitle>
+                <CardDescription className="text-xs">Receitas - Despesas</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
                 </CardContent>
             </Card>
         </div>
@@ -416,7 +425,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><DollarSign />Patrimônio Líquido</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><DollarSign />Resultado do Mês</CardTitle>
                     <CardDescription>Demonstração do resultado do mês.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 flex-1">
