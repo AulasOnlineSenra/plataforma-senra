@@ -33,7 +33,7 @@ import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents, teachers as initialTeachers } from '@/lib/data';
 import { PaymentTransaction, User as AppUser, MarketingCosts, ScheduleEvent, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
@@ -57,12 +57,14 @@ interface AdminFinancialsProps {
 }
 
 interface TeacherPaymentDetails {
+  id: string;
   teacherId: string;
   teacherName: string;
   teacherAvatarUrl?: string;
   completedClasses: number;
   paymentRate: number;
   totalAmount: number;
+  period: string;
 }
 
 
@@ -185,24 +187,29 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
-            const paymentsByTeacher: Record<string, TeacherPaymentDetails> = {};
+            const paymentsByTeacherAndWeek: Record<string, Omit<TeacherPaymentDetails, 'id'>> = {};
 
             monthCompletedClasses.forEach(c => {
-              if (!paymentsByTeacher[c.teacherId]) {
-                const teacher = teachers.find(t => t.id === c.teacherId);
-                paymentsByTeacher[c.teacherId] = {
-                  teacherId: c.teacherId,
-                  teacherName: teacher?.name || 'Professor Desconhecido',
-                  teacherAvatarUrl: teacher?.avatarUrl,
-                  completedClasses: 0,
-                  paymentRate: paymentRate,
-                  totalAmount: 0,
-                };
-              }
-              paymentsByTeacher[c.teacherId].completedClasses += 1;
+                const weekStart = startOfWeek(c.start, { locale: ptBR });
+                const weekKey = `${c.teacherId}-${format(weekStart, 'yyyy-MM-dd')}`;
+
+                if (!paymentsByTeacherAndWeek[weekKey]) {
+                    const teacher = teachers.find(t => t.id === c.teacherId);
+                    paymentsByTeacherAndWeek[weekKey] = {
+                        teacherId: c.teacherId,
+                        teacherName: teacher?.name || 'Professor Desconhecido',
+                        teacherAvatarUrl: teacher?.avatarUrl,
+                        completedClasses: 0,
+                        paymentRate: paymentRate,
+                        totalAmount: 0,
+                        period: `${format(weekStart, 'dd')} - ${format(endOfWeek(weekStart, { locale: ptBR }), 'dd/MM')}`
+                    };
+                }
+                paymentsByTeacherAndWeek[weekKey].completedClasses += 1;
             });
             
-            const paymentDetails = Object.values(paymentsByTeacher).map(p => ({
+            const paymentDetails = Object.entries(paymentsByTeacherAndWeek).map(([key, p]) => ({
+              id: key,
               ...p,
               totalAmount: p.completedClasses * p.paymentRate,
             })).sort((a,b) => b.totalAmount - a.totalAmount);
@@ -520,7 +527,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleContent>
             </Card>
         </Collapsible>
-
         <Collapsible open={isTeacherPaymentsOpen} onOpenChange={setIsTeacherPaymentsOpen}>
             <Card>
                 <CollapsibleTrigger asChild>
@@ -542,6 +548,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Professor</TableHead>
+                                    <TableHead>Período</TableHead>
                                     <TableHead className="text-center">Aulas Concluídas</TableHead>
                                     <TableHead className="text-center">Valor por Aula</TableHead>
                                     <TableHead className="text-right">Total a Pagar</TableHead>
@@ -549,7 +556,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             </TableHeader>
                             <TableBody>
                                 {teacherPaymentDetails.map(payment => (
-                                    <TableRow key={payment.teacherId}>
+                                    <TableRow key={payment.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-10 w-10">
@@ -559,6 +566,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                                 <div className="font-medium">{payment.teacherName}</div>
                                             </div>
                                         </TableCell>
+                                        <TableCell>{payment.period}</TableCell>
                                         <TableCell className="text-center font-medium">{payment.completedClasses}</TableCell>
                                         <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
                                         <TableCell className="text-right font-bold">R$ {payment.totalAmount.toFixed(2).replace('.', ',')}</TableCell>
@@ -566,7 +574,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                 ))}
                                 {teacherPaymentDetails.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">Nenhum pagamento de professor para este mês.</TableCell>
+                                        <TableCell colSpan={5} className="h-24 text-center">Nenhum pagamento de professor para este mês.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
