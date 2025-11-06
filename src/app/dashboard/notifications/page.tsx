@@ -57,6 +57,7 @@ export default function NotificationsPage() {
     if (currentUser.role === 'admin') {
       return notifications;
     }
+    // For students and teachers, show notifications specifically for them OR global notifications (without a userId)
     return notifications.filter(n => n.userId === currentUser.id || !n.userId);
   }, [currentUser, notifications]);
 
