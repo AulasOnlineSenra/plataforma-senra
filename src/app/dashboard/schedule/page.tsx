@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers, getMockUser, logNotification } from '@/lib/data';
 import type { ScheduleEvent, User, Teacher } from '@/lib/types';
-import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes, isToday, isTomorrow } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
@@ -421,6 +421,16 @@ function SchedulePageComponent() {
     }
     return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
   };
+
+  const formatHistoryDate = (start: Date, end: Date) => {
+    if (isToday(start)) {
+      return `Hoje, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    if (isYesterday(start)) {
+      return `Ontem, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
+  };
   
   const availableTimes = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
 
@@ -665,9 +675,7 @@ function SchedulePageComponent() {
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell>{event.title}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
-                          {isToday(event.start)
-                            ? `Hoje, às ${format(event.start, 'HH:mm')} - ${format(event.end, 'HH:mm')}`
-                            : `${format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(event.end, 'HH:mm')}`}
+                          {formatHistoryDate(event.start, event.end)}
                         </TableCell>
                         {currentUser?.role === 'admin' && (
                             <TableCell className="text-right">
@@ -729,7 +737,7 @@ function SchedulePageComponent() {
                         {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
                         <TableCell className="font-medium">{event.subject}</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, 'HH:mm')}
+                          {formatHistoryDate(event.start, event.end)}
                         </TableCell>
                         {currentUser?.role === 'admin' && (
                         <TableCell className="text-right">

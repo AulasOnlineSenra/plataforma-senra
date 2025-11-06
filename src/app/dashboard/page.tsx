@@ -35,7 +35,7 @@ import {
   StarHalf,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
-import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval, isToday, isTomorrow } from 'date-fns';
+import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState, useMemo } from 'react';
 import { UserRole, User, Teacher, ScheduleEvent } from '@/lib/types';
@@ -312,6 +312,9 @@ export default function DashboardPage() {
     }
     if (isTomorrow(start)) {
       return `Amanhã, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    if (isYesterday(start)) {
+      return `Ontem, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     }
     return format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR });
   };
