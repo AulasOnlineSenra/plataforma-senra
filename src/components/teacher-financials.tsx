@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { getMockUser, scheduleEvents as initialSchedule, teacherPayments as initialTeacherPayments } from '@/lib/data';
 import { ScheduleEvent, Teacher, PaymentTransaction } from '@/lib/types';
-import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths, getWeek, startOfMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from './ui/badge';
@@ -109,28 +109,44 @@ export default function TeacherFinancials() {
         thursday: nextThursday,
         friday: nextFriday,
     };
-
-    const getNextPaymentDay = dayMap[paymentDay as keyof typeof dayMap] || nextFriday;
     
-    let nextDate = getNextPaymentDay(zonedNow);
+    const dayIndexMap = {
+        monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5,
+    };
 
+    const getNextPaymentDayFunc = dayMap[paymentDay as keyof typeof dayMap] || nextFriday;
+
+    if (paymentFrequency === 'weekly') {
+      return getNextPaymentDayFunc(zonedNow);
+    }
+    
     if (paymentFrequency === 'biweekly') {
-        const weekNumber = Math.ceil(zonedNow.getDate() / 7);
-        if(weekNumber % 2 !== 0) { // If it's an odd week, add another week
-            nextDate = addWeeks(nextDate, 1);
-        }
-    } else if (paymentFrequency === 'monthly') {
-        // Find the first payment day of the current month
-        let firstPaymentDayOfMonth = getNextPaymentDay(startOfMonth(zonedNow));
+      let nextDate = getNextPaymentDayFunc(zonedNow);
+      // Use ISO week number which is standard
+      const currentWeek = getWeek(zonedNow, { weekStartsOn: 1 });
+      const nextPaymentWeek = getWeek(nextDate, { weekStartsOn: 1 });
+
+      // If the next payment date is in an odd week, and we pay on even weeks (or vice versa)
+      // This ensures payment is always on an even or odd week of the year.
+      if (nextPaymentWeek % 2 !== 0) { 
+        nextDate = addWeeks(nextDate, 1);
+      }
+      return nextDate;
+    }
+
+    if (paymentFrequency === 'monthly') {
+        let firstPaymentDayOfMonth = getNextPaymentDayFunc(startOfMonth(zonedNow));
+        // If the first payment day of this month has already passed
         if (firstPaymentDayOfMonth < zonedNow) {
-            // If it has passed, find the next one in the next month
-            nextDate = getNextPaymentDay(startOfMonth(addMonths(zonedNow, 1)));
+            // Calculate the first payment day of the next month
+            return getNextPaymentDayFunc(startOfMonth(addMonths(zonedNow, 1)));
         } else {
-            nextDate = firstPaymentDayOfMonth;
+            return firstPaymentDayOfMonth;
         }
     }
     
-    return nextDate;
+    // Default to weekly if something is wrong
+    return getNextPaymentDayFunc(zonedNow);
 
   }, [paymentDay, paymentFrequency, currentUser]);
 
