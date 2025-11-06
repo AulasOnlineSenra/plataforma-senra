@@ -34,7 +34,7 @@ import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents, teachers as initialTeachers } from '@/lib/data';
 import { PaymentTransaction, User as AppUser, MarketingCosts, ScheduleEvent, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek, getISODay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
@@ -134,6 +134,14 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
 
     useEffect(() => {
         const updateData = () => {
+            const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
+            const currentPaymentDay = storedPaymentDay || 'friday';
+            setPaymentDay(currentPaymentDay);
+            
+            const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
+            const currentPaymentFrequency = storedPaymentFrequency || 'weekly';
+            setPaymentFrequency(currentPaymentFrequency);
+
             const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
             const monthInterval = {
               start: startOfMonth(monthDate),
@@ -188,28 +196,52 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
-            const paymentsByTeacherAndWeek: Record<string, Omit<TeacherPaymentDetails, 'id'>> = {};
+            const paymentsByTeacherAndPeriod: Record<string, Omit<TeacherPaymentDetails, 'id'>> = {};
 
             monthCompletedClasses.forEach(c => {
-                const weekStart = startOfWeek(c.start, { locale: ptBR });
-                const weekKey = `${c.teacherId}-${format(weekStart, 'yyyy-MM-dd')}`;
+                let periodStart: Date;
+                let periodKey: string;
 
-                if (!paymentsByTeacherAndWeek[weekKey]) {
+                if (currentPaymentFrequency === 'weekly') {
+                    periodStart = startOfWeek(c.start, { locale: ptBR });
+                    periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-w')}`;
+                } else if (currentPaymentFrequency === 'biweekly') {
+                    const weekNumber = getWeek(c.start, { weekStartsOn: 1 });
+                    const isEvenWeek = weekNumber % 2 === 0;
+                    periodStart = isEvenWeek 
+                        ? startOfWeek(c.start, { locale: ptBR }) 
+                        : startOfWeek(addWeeks(c.start, -1), { locale: ptBR });
+                    periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-w')}`;
+                } else { // monthly
+                    periodStart = startOfMonth(c.start);
+                    periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-MM')}`;
+                }
+
+                if (!paymentsByTeacherAndPeriod[periodKey]) {
                     const teacher = teachers.find(t => t.id === c.teacherId);
-                    paymentsByTeacherAndWeek[weekKey] = {
+                    let periodLabel = '';
+                    if (currentPaymentFrequency === 'weekly') {
+                        periodLabel = `Semana de ${format(periodStart, 'dd/MM')}`;
+                    } else if (currentPaymentFrequency === 'biweekly') {
+                        periodLabel = `Quinzena de ${format(periodStart, 'dd/MM')}`;
+                    } else {
+                        periodLabel = format(periodStart, 'MMMM', { locale: ptBR });
+                    }
+
+                    paymentsByTeacherAndPeriod[periodKey] = {
                         teacherId: c.teacherId,
                         teacherName: teacher?.name || 'Professor Desconhecido',
                         teacherAvatarUrl: teacher?.avatarUrl,
                         completedClasses: 0,
                         paymentRate: paymentRate,
                         totalAmount: 0,
-                        period: `${format(weekStart, 'dd')} - ${format(endOfWeek(weekStart, { locale: ptBR }), 'dd/MM')}`
+                        period: periodLabel,
                     };
                 }
-                paymentsByTeacherAndWeek[weekKey].completedClasses += 1;
+                paymentsByTeacherAndPeriod[periodKey].completedClasses += 1;
             });
             
-            const paymentDetails = Object.entries(paymentsByTeacherAndWeek).map(([key, p]) => ({
+            const paymentDetails = Object.entries(paymentsByTeacherAndPeriod).map(([key, p]) => ({
               id: key,
               ...p,
               totalAmount: p.completedClasses * p.paymentRate,
@@ -218,16 +250,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             setTeacherPaymentDetails(paymentDetails);
 
             setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
-
-             const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
-            if (storedPaymentDay) {
-                setPaymentDay(storedPaymentDay);
-            }
-            
-            const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
-            if (storedPaymentFrequency) {
-                setPaymentFrequency(storedPaymentFrequency);
-            }
         };
 
         updateData();
@@ -287,6 +309,15 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
       { id: 'exp-3', date: new Date(), category: 'Custos de Marketing', description: 'Anúncios', amount: marketingCosts.ads },
       { id: 'exp-4', date: new Date(), category: 'Custos de Marketing', description: 'Equipe', amount: marketingCosts.team },
     ];
+    
+    const getFooterLabel = () => {
+        switch(paymentFrequency) {
+            case 'weekly': return 'Total a Pagar (Semanal)';
+            case 'biweekly': return 'Total a Pagar (Quinzenal)';
+            case 'monthly': return 'Total a Pagar (Mensal)';
+            default: return 'Total a Pagar';
+        }
+    }
 
 
   return (
@@ -581,7 +612,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                <TableCell colSpan={4} className="text-right font-bold">Total a Pagar no Mês</TableCell>
+                                <TableCell colSpan={4} className="text-right font-bold">{getFooterLabel()}</TableCell>
                                 <TableCell className="text-right font-extrabold text-lg">R$ {teacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
                                 </TableRow>
                             </TableFooter>
