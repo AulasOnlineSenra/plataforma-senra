@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp, User } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -30,8 +30,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
-import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents } from '@/lib/data';
-import { PaymentTransaction, User, MarketingCosts, ScheduleEvent } from '@/lib/types';
+import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents, teachers as initialTeachers } from '@/lib/data';
+import { PaymentTransaction, User as AppUser, MarketingCosts, ScheduleEvent, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { format, parse, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +41,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
 const USERS_STORAGE_KEY = 'userList';
+const TEACHERS_STORAGE_KEY = 'teacherList';
 const MONTHLY_MARKETING_COSTS_STORAGE_KEY = 'monthlyMarketingCosts';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -52,9 +53,19 @@ interface AdminFinancialsProps {
   selectedMonth: string;
 }
 
+interface TeacherPaymentDetails {
+  teacherId: string;
+  teacherName: string;
+  teacherAvatarUrl?: string;
+  completedClasses: number;
+  paymentRate: number;
+  totalAmount: number;
+}
+
+
 export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps) {
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<AppUser[]>([]);
     const [marketingCosts, setMarketingCosts] = useState<MarketingCosts>(DEFAULT_COSTS);
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [packageRevenue, setPackageRevenue] = useState(0);
@@ -62,8 +73,10 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
     const [isExpensesOpen, setIsExpensesOpen] = useState(true);
+    const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(true);
     const { toast } = useToast();
     const [teacherPaymentsCost, setTeacherPaymentsCost] = useState(0);
+    const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
     const totalExpenses = totalMarketingExpenses + teacherPaymentsCost;
@@ -116,12 +129,40 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
 
             const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
             const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})) : initialScheduleEvents;
-            const completedClasses = schedule.filter(e => e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval)).length;
-
+            
+            const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+            const teachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+            
+            const monthCompletedClasses = schedule.filter(e => e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval));
+            
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
-            setTeacherPaymentsCost(completedClasses * paymentRate);
+            const paymentsByTeacher: Record<string, TeacherPaymentDetails> = {};
+
+            monthCompletedClasses.forEach(c => {
+              if (!paymentsByTeacher[c.teacherId]) {
+                const teacher = teachers.find(t => t.id === c.teacherId);
+                paymentsByTeacher[c.teacherId] = {
+                  teacherId: c.teacherId,
+                  teacherName: teacher?.name || 'Professor Desconhecido',
+                  teacherAvatarUrl: teacher?.avatarUrl,
+                  completedClasses: 0,
+                  paymentRate: paymentRate,
+                  totalAmount: 0,
+                };
+              }
+              paymentsByTeacher[c.teacherId].completedClasses += 1;
+            });
+            
+            const paymentDetails = Object.values(paymentsByTeacher).map(p => ({
+              ...p,
+              totalAmount: p.completedClasses * p.paymentRate,
+            })).sort((a,b) => b.totalAmount - a.totalAmount);
+            
+            setTeacherPaymentDetails(paymentDetails);
+
+            setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
         };
 
         updateData();
@@ -130,7 +171,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         return () => window.removeEventListener('storage', updateData);
     }, [selectedMonth]);
 
-    const getUserById = (id: string): User | undefined => {
+    const getUserById = (id: string): AppUser | undefined => {
         return users.find(u => u.id === id);
     }
     
@@ -150,7 +191,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
 
       // Update user credits
       const allUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-      const allUsers: User[] = allUsersStr
+      const allUsers: AppUser[] = allUsersStr
         ? JSON.parse(allUsersStr)
         : initialUsers;
       const userIndex = allUsers.findIndex(
@@ -375,13 +416,67 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleContent>
             </Card>
         </Collapsible>
+        
+        <Collapsible open={isTeacherPaymentsOpen} onOpenChange={setIsTeacherPaymentsOpen}>
+            <Card>
+                <CollapsibleTrigger asChild>
+                    <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
+                        <div>
+                            <CardTitle>Pagamentos de Professores</CardTitle>
+                            <CardDescription>Detalhes dos pagamentos a serem feitos para aulas concluídas no mês.</CardDescription>
+                        </div>
+                        <Button variant="ghost" size="icon">
+                            {isTeacherPaymentsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </Button>
+                    </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Professor</TableHead>
+                                    <TableHead className="text-center">Aulas Concluídas</TableHead>
+                                    <TableHead className="text-center">Valor por Aula</TableHead>
+                                    <TableHead className="text-right">Total a Pagar</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teacherPaymentDetails.map(payment => (
+                                    <TableRow key={payment.teacherId}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-10 w-10">
+                                                    <AvatarImage src={payment.teacherAvatarUrl} alt={payment.teacherName} />
+                                                    <AvatarFallback>{payment.teacherName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="font-medium">{payment.teacherName}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-center font-medium">{payment.completedClasses}</TableCell>
+                                        <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
+                                        <TableCell className="text-right font-bold">R$ {payment.totalAmount.toFixed(2).replace('.', ',')}</TableCell>
+                                    </TableRow>
+                                ))}
+                                {teacherPaymentDetails.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">Nenhum pagamento de professor para este mês.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
+
 
          <Collapsible open={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
             <Card>
                 <CollapsibleTrigger asChild>
                     <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
                         <div>
-                            <CardTitle>Despesas</CardTitle>
+                            <CardTitle>Despesas Detalhadas</CardTitle>
                             <CardDescription>Detalhes dos custos operacionais.</CardDescription>
                         </div>
                         <Button variant="ghost" size="icon">
