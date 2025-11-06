@@ -77,9 +77,9 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [packageRevenue, setPackageRevenue] = useState(0);
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
-    const [isReceiptsOpen, setIsReceiptsOpen] = useState(true);
-    const [isExpensesOpen, setIsExpensesOpen] = useState(true);
-    const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(true);
+    const [isReceiptsOpen, setIsReceiptsOpen] = useState(false);
+    const [isExpensesOpen, setIsExpensesOpen] = useState(false);
+    const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(false);
     const { toast } = useToast();
     const [teacherPaymentsCost, setTeacherPaymentsCost] = useState(0);
     const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
