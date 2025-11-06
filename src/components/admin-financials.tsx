@@ -85,7 +85,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
     const [paymentDay, setPaymentDay] = useState('friday');
     const [paymentFrequency, setPaymentFrequency] = useState('weekly');
-    const [totalCash, setTotalCash] = useState(0);
 
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
@@ -254,20 +253,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             setTeacherPaymentDetails(paymentDetails);
 
             setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
-
-            // Calculate total cash
-            const totalRevenueAllTime = allHistory.reduce((acc, t) => acc + t.amount, 0);
-
-            const allCompletedClasses = schedule.filter(e => e.status === 'completed');
-            const totalTeacherPaymentsAllTime = allCompletedClasses.length * paymentRate;
-            
-            const totalMarketingExpensesAllTime = Object.values(allCosts as Record<string, MarketingCosts>).reduce((acc, monthlyCost) => {
-                return acc + monthlyCost.ads + monthlyCost.team + monthlyCost.organicCommissions + monthlyCost.paidCommissions;
-            }, 0);
-
-            const totalExpensesAllTime = totalTeacherPaymentsAllTime + totalMarketingExpensesAllTime;
-            
-            setTotalCash(totalRevenueAllTime - totalExpensesAllTime);
         };
 
         updateData();
@@ -342,7 +327,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     <>
     <div className="grid gap-6">
         {/* KPIs */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Faturamento (Mês)</CardTitle>
@@ -378,16 +363,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <p className="text-xs text-muted-foreground">
                     Margem: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Caixa</CardTitle>
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">R$ {totalCash.toFixed(2).replace('.',',')}</div>
-                <p className="text-xs text-muted-foreground">Patrimônio líquido total</p>
                 </CardContent>
             </Card>
         </div>
