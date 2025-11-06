@@ -312,7 +312,7 @@ export default function DashboardPage() {
 
   const renderAdminDashboard = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
         <Link href="/dashboard/schedule#scheduled-classes">
           <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -322,6 +322,18 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'scheduled').length}</div>
               <p className="text-xs text-muted-foreground">Total de aulas na plataforma</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/schedule#completed-history">
+          <Card className="hover:ring-2 hover:ring-brand-yellow transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Aulas Realizadas</CardTitle>
+              <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{scheduleEvents.filter(e => e.status === 'completed').length}</div>
+              <p className="text-xs text-muted-foreground">Total de aulas concluídas</p>
             </CardContent>
           </Card>
         </Link>
