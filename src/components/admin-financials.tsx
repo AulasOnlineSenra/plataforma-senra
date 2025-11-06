@@ -33,10 +33,11 @@ import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents, teachers as initialTeachers } from '@/lib/data';
 import { PaymentTransaction, User as AppUser, MarketingCosts, ScheduleEvent, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { format, parse, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
+import { toZonedTime } from 'date-fns-tz';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -44,6 +45,8 @@ const USERS_STORAGE_KEY = 'userList';
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const MONTHLY_MARKETING_COSTS_STORAGE_KEY = 'monthlyMarketingCosts';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
+const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
+const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
 const DEFAULT_COSTS = { ads: 0, team: 0, organicCommissions: 0, paidCommissions: 0 };
@@ -77,9 +80,53 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const { toast } = useToast();
     const [teacherPaymentsCost, setTeacherPaymentsCost] = useState(0);
     const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
+    const [paymentDay, setPaymentDay] = useState('friday');
+    const [paymentFrequency, setPaymentFrequency] = useState('weekly');
+
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
     const totalExpenses = totalMarketingExpenses + teacherPaymentsCost;
+    
+    const nextPaymentDate = useMemo(() => {
+        const now = new Date();
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const zonedNow = toZonedTime(now, userTimezone);
+
+        const dayMap = {
+            monday: nextMonday,
+            tuesday: nextTuesday,
+            wednesday: nextWednesday,
+            thursday: nextThursday,
+            friday: nextFriday,
+        };
+
+        const getNextPaymentDayFunc = dayMap[paymentDay as keyof typeof dayMap] || nextFriday;
+
+        if (paymentFrequency === 'weekly') {
+            return getNextPaymentDayFunc(zonedNow);
+        }
+        
+        if (paymentFrequency === 'biweekly') {
+            let nextDate = getNextPaymentDayFunc(zonedNow);
+            const nextPaymentWeek = getWeek(nextDate, { weekStartsOn: 1 });
+
+            if (nextPaymentWeek % 2 !== 0) { 
+                nextDate = addWeeks(nextDate, 1);
+            }
+            return nextDate;
+        }
+
+        if (paymentFrequency === 'monthly') {
+            let firstPaymentDayOfMonth = getNextPaymentDayFunc(startOfMonth(zonedNow));
+            if (firstPaymentDayOfMonth < zonedNow) {
+                return getNextPaymentDayFunc(startOfMonth(addMonths(zonedNow, 1)));
+            } else {
+                return firstPaymentDayOfMonth;
+            }
+        }
+        
+        return getNextPaymentDayFunc(zonedNow);
+    }, [paymentDay, paymentFrequency]);
 
 
     useEffect(() => {
@@ -163,6 +210,16 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             setTeacherPaymentDetails(paymentDetails);
 
             setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+
+             const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
+            if (storedPaymentDay) {
+                setPaymentDay(storedPaymentDay);
+            }
+            
+            const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
+            if (storedPaymentFrequency) {
+                setPaymentFrequency(storedPaymentFrequency);
+            }
         };
 
         updateData();
@@ -470,7 +527,9 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                     <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
                         <div>
                             <CardTitle>Pagamentos de Professores</CardTitle>
-                            <CardDescription>Detalhes dos pagamentos a serem feitos para aulas concluídas no mês.</CardDescription>
+                            <CardDescription>
+                                Detalhes para aulas concluídas no mês. Próximo pagamento em: {format(nextPaymentDate, 'dd/MM/yyyy')}
+                            </CardDescription>
                         </div>
                         <Button variant="ghost" size="icon">
                             {isTeacherPaymentsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
