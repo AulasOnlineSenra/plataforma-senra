@@ -17,6 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import {
   AlertDialog,
@@ -578,6 +579,12 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                     </TableRow>
                                 )}
                             </TableBody>
+                            <TableFooter>
+                                <TableRow>
+                                <TableCell colSpan={4} className="text-right font-bold">Total a Pagar no Mês</TableCell>
+                                <TableCell className="text-right font-extrabold text-lg">R$ {teacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
+                                </TableRow>
+                            </TableFooter>
                         </Table>
                     </CardContent>
                 </CollapsibleContent>
