@@ -417,6 +417,53 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             </Card>
         </Collapsible>
         
+        <Collapsible open={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
+            <Card>
+                <CollapsibleTrigger asChild>
+                    <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
+                        <div>
+                            <CardTitle>Despesas Detalhadas</CardTitle>
+                            <CardDescription>Detalhes dos custos operacionais.</CardDescription>
+                        </div>
+                        <Button variant="ghost" size="icon">
+                            {isExpensesOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </Button>
+                    </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <CardContent>
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Categoria</TableHead>
+                                    <TableHead>Descrição</TableHead>
+                                    <TableHead className="text-right">Valor</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {expenseItems.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{format(item.date, 'dd/MM/yyyy')}</TableCell>
+                                        <TableCell className="font-medium">{item.category}</TableCell>
+                                        <TableCell>{item.description}</TableCell>
+                                        <TableCell className="text-right font-mono">R$ {item.amount.toFixed(2).replace('.', ',')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                     <CardContent className="mt-auto">
+                        <Separator className="my-4" />
+                        <div className="flex items-center justify-between font-bold">
+                            <span>Total de Despesas</span>
+                            <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                        </div>
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
+
         <Collapsible open={isTeacherPaymentsOpen} onOpenChange={setIsTeacherPaymentsOpen}>
             <Card>
                 <CollapsibleTrigger asChild>
@@ -465,54 +512,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                 )}
                             </TableBody>
                         </Table>
-                    </CardContent>
-                </CollapsibleContent>
-            </Card>
-        </Collapsible>
-
-
-         <Collapsible open={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
-            <Card>
-                <CollapsibleTrigger asChild>
-                    <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
-                        <div>
-                            <CardTitle>Despesas Detalhadas</CardTitle>
-                            <CardDescription>Detalhes dos custos operacionais.</CardDescription>
-                        </div>
-                        <Button variant="ghost" size="icon">
-                            {isExpensesOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                        </Button>
-                    </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <CardContent>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Categoria</TableHead>
-                                    <TableHead>Descrição</TableHead>
-                                    <TableHead className="text-right">Valor</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {expenseItems.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{format(item.date, 'dd/MM/yyyy')}</TableCell>
-                                        <TableCell className="font-medium">{item.category}</TableCell>
-                                        <TableCell>{item.description}</TableCell>
-                                        <TableCell className="text-right font-mono">R$ {item.amount.toFixed(2).replace('.', ',')}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                     <CardContent className="mt-auto">
-                        <Separator className="my-4" />
-                        <div className="flex items-center justify-between font-bold">
-                            <span>Total de Despesas</span>
-                            <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
-                        </div>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
