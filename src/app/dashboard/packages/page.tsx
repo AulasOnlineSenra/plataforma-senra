@@ -65,10 +65,8 @@ export default function PackagesPage() {
     if (neededCredits) {
       const credits = parseInt(neededCredits, 10);
       if (credits > 0) {
-        // A simple logic: assume 1 class per week and find the number of weeks needed.
-        // A more complex logic could try to match a package.
-        setClassesPerWeek(1);
-        setNumberOfWeeks(credits);
+        setClassesPerWeek(credits);
+        setNumberOfWeeks(1); // Set to 1 week since we are calculating based on total needed credits
         const calculator = document.getElementById('calculator');
         if (calculator) {
             setTimeout(() => calculator.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
