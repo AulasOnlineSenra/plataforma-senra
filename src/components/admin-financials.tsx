@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp, User, Wallet } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -85,6 +85,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
     const [paymentDay, setPaymentDay] = useState('friday');
     const [paymentFrequency, setPaymentFrequency] = useState('weekly');
+    const [totalCash, setTotalCash] = useState(0);
 
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
@@ -176,12 +177,14 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             }
             
             const storedMonthlyCosts = localStorage.getItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY);
+            let allCosts = {};
             if (storedMonthlyCosts) {
-                const allCosts = JSON.parse(storedMonthlyCosts);
+                allCosts = JSON.parse(storedMonthlyCosts);
                 setMarketingCosts(allCosts[selectedMonth] || DEFAULT_COSTS);
             } else {
                 const initialData = { [format(new Date(), 'yyyy-MM')]: initialMarketingCosts };
                 localStorage.setItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY, JSON.stringify(initialData));
+                allCosts = initialData;
                 setMarketingCosts(selectedMonth === format(new Date(), 'yyyy-MM') ? initialMarketingCosts : DEFAULT_COSTS);
             }
 
@@ -251,6 +254,20 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             setTeacherPaymentDetails(paymentDetails);
 
             setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+
+            // Calculate total cash
+            const totalRevenueAllTime = allHistory.reduce((acc, t) => acc + t.amount, 0);
+
+            const allCompletedClasses = schedule.filter(e => e.status === 'completed');
+            const totalTeacherPaymentsAllTime = allCompletedClasses.length * paymentRate;
+            
+            const totalMarketingExpensesAllTime = Object.values(allCosts as Record<string, MarketingCosts>).reduce((acc, monthlyCost) => {
+                return acc + monthlyCost.ads + monthlyCost.team + monthlyCost.organicCommissions + monthlyCost.paidCommissions;
+            }, 0);
+
+            const totalExpensesAllTime = totalTeacherPaymentsAllTime + totalMarketingExpensesAllTime;
+            
+            setTotalCash(totalRevenueAllTime - totalExpensesAllTime);
         };
 
         updateData();
@@ -328,7 +345,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+                <CardTitle className="text-sm font-medium">Faturamento (Mês)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -340,7 +357,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Despesas Totais (Mês)</CardTitle>
+                <CardTitle className="text-sm font-medium">Despesas (Mês)</CardTitle>
                 <Landmark className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -359,18 +376,18 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <CardContent>
                 <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground">
-                    Margem de lucro: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
+                    Margem: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Patrimônio Líquido</CardTitle>
-                <Banknote className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Caixa</CardTitle>
+                <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
-                <p className="text-xs text-muted-foreground">Receitas - Despesas</p>
+                <div className="text-2xl font-bold">R$ {totalCash.toFixed(2).replace('.',',')}</div>
+                <p className="text-xs text-muted-foreground">Patrimônio líquido total</p>
                 </CardContent>
             </Card>
         </div>
@@ -425,7 +442,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><DollarSign />Patrimônio Líquido</CardTitle>
-                    <CardDescription>Demonstração do resultado.</CardDescription>
+                    <CardDescription>Demonstração do resultado do mês.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 flex-1">
                     <div className="flex items-center justify-between">
