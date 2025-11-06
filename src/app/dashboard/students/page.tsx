@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { users as initialUsers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
-import { User, ScheduleEvent, UserRole } from '@/lib/types';
+import { User, ScheduleEvent, UserRole, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,18 +48,26 @@ function StudentList({
   students,
   scheduleEvents,
   onDeleteStudent,
+  teacherId,
 }: {
   id?: string;
   title: string;
   students: User[];
   scheduleEvents: ScheduleEvent[];
   onDeleteStudent: (student: User) => void;
+  teacherId?: string;
 }) {
   const router = useRouter();
 
   const getScheduledClassesCount = (studentId: string) => {
     return scheduleEvents.filter(
-      (event) => event.studentId === studentId && event.status === 'scheduled'
+      (event) => {
+        const isStudentMatch = event.studentId === studentId;
+        const isScheduled = event.status === 'scheduled';
+        // If teacherId is provided, also filter by teacher
+        const isTeacherMatch = teacherId ? event.teacherId === teacherId : true;
+        return isStudentMatch && isScheduled && isTeacherMatch;
+      }
     ).length;
   };
 
@@ -159,7 +167,7 @@ export default function AdminStudentsPage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
   
   useEffect(() => {
     const updateData = () => {
@@ -256,12 +264,14 @@ export default function AdminStudentsPage() {
           students={activeStudents}
           scheduleEvents={scheduleEvents}
           onDeleteStudent={handleDeleteRequest}
+          teacherId={currentUser?.role === 'teacher' ? currentUser.id : undefined}
         />
         <StudentList
           title="Alunos Inativos"
           students={inactiveStudents}
           scheduleEvents={scheduleEvents}
           onDeleteStudent={handleDeleteRequest}
+          teacherId={currentUser?.role === 'teacher' ? currentUser.id : undefined}
         />
       </div>
 
