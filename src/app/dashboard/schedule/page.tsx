@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers, getMockUser, logNotification } from '@/lib/data';
 import type { ScheduleEvent, User, Teacher } from '@/lib/types';
-import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes, isToday } from 'date-fns';
+import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMinutes, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from '@/hooks/use-toast';
@@ -415,6 +415,9 @@ function SchedulePageComponent() {
   const formatScheduledDate = (start: Date, end: Date) => {
     if (isToday(start)) {
       return `Hoje, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    if (isTomorrow(start)) {
+      return `Amanhã, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     }
     return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
   };

@@ -35,7 +35,7 @@ import {
   StarHalf,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
-import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval, isToday } from 'date-fns';
+import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState, useMemo } from 'react';
 import { UserRole, User, Teacher, ScheduleEvent } from '@/lib/types';
@@ -306,6 +306,17 @@ export default function DashboardPage() {
     });
   };
 
+  const formatDate = (start: Date, end: Date) => {
+    if (isToday(start)) {
+      return `Hoje, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    if (isTomorrow(start)) {
+      return `Amanhã, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    }
+    return format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR });
+  };
+
+
   if (!user) {
     return null; // Or a loading spinner
   }
@@ -513,9 +524,7 @@ export default function DashboardPage() {
                           {users.find(u => u.id === event.studentId)?.name || 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isToday(event.start)
-                            ? `Hoje, às ${format(event.start, 'HH:mm')} - ${format(event.end, 'HH:mm')}`
-                            : format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
+                          {formatDate(event.start, event.end)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -633,9 +642,7 @@ export default function DashboardPage() {
                           }
                         </TableCell>
                         <TableCell className="text-right">
-                           {isToday(event.start)
-                            ? `Hoje, às ${format(event.start, 'HH:mm')} - ${format(event.end, 'HH:mm')}`
-                            : format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
+                           {formatDate(event.start, event.end)}
                         </TableCell>
                       </TableRow>
                     ))}
