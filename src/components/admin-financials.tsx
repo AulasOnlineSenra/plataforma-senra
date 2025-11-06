@@ -221,7 +221,8 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                     const teacher = teachers.find(t => t.id === c.teacherId);
                     let periodLabel = '';
                     if (currentPaymentFrequency === 'weekly') {
-                        periodLabel = `Semana de ${format(periodStart, 'dd/MM')}`;
+                        const periodEnd = endOfWeek(periodStart, { locale: ptBR });
+                        periodLabel = `${format(periodStart, 'dd')} - ${format(periodEnd, 'dd/MM')}`;
                     } else if (currentPaymentFrequency === 'biweekly') {
                         periodLabel = `Quinzena de ${format(periodStart, 'dd/MM')}`;
                     } else {
