@@ -9,7 +9,7 @@ import StudentFinancials from '@/components/student-financials';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { eachMonthOfInterval, format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
 
 const MONTHLY_MARKETING_COSTS_STORAGE_KEY = 'monthlyMarketingCosts';
@@ -111,15 +111,13 @@ export default function FinancialPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
             {user.role === 'admin' && (
                 <>
-                    <Card className="w-full sm:w-[240px]">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Caixa</CardTitle>
-                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">R$ {totalCash.toFixed(2).replace('.',',')}</div>
-                        </CardContent>
-                    </Card>
+                   <Button variant="outline" className="w-full sm:w-auto h-10 px-4 py-2 flex items-center justify-between gap-3 text-base">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Caixa:</span>
+                        </div>
+                        <span className="text-sm font-bold">R$ {totalCash.toFixed(2).replace('.',',')}</span>
+                    </Button>
                     <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                         <SelectTrigger className="w-full sm:w-[220px]">
                         <SelectValue placeholder="Selecione um mês" />
