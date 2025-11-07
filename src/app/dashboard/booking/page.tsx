@@ -26,7 +26,7 @@ import { subjects as initialSubjects, teachers as initialTeachers, getMockUser, 
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
@@ -654,8 +654,9 @@ function BookingPageComponent() {
 
   const renderCalendarView = () => {
     const calendarMonth = bookings.length > 0 ? startOfMonth(bookings[0].start) : startOfMonth(new Date());
-    const daysInMonth = eachDayOfInterval({ start: calendarMonth, end: endOfMonth(calendarMonth) });
-    const startingDayOfWeek = getDay(calendarMonth);
+    const firstDay = startOfWeek(calendarMonth);
+    const lastDay = endOfWeek(endOfMonth(calendarMonth));
+    const daysInGrid = eachDayOfInterval({ start: firstDay, end: lastDay });
 
     const bookingsByDay = bookings.reduce((acc, booking) => {
         const day = format(booking.start, 'yyyy-MM-dd');
@@ -672,18 +673,19 @@ function BookingPageComponent() {
                 {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map(day => (
                     <div key={day} className="p-2 text-center font-semibold text-xs border-b border-r bg-muted/50">{day}</div>
                 ))}
-                {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                    <div key={`empty-${i}`} className="border-b border-r"></div>
-                ))}
-                {daysInMonth.map(day => {
+                {daysInGrid.map(day => {
                     const dayKey = format(day, 'yyyy-MM-dd');
                     const dayBookings = bookingsByDay[dayKey] || [];
+                    const isCurrentMonth = isSameMonth(day, calendarMonth);
                     return (
-                        <div key={dayKey} className="h-40 border-b border-r p-2 flex flex-col overflow-hidden">
+                        <div key={dayKey} className={cn("h-40 border-b border-r p-2 flex flex-col overflow-hidden", !isCurrentMonth && "bg-muted/30")}>
                             <span className={cn(
                                 "font-semibold text-sm",
-                                isToday(day) && "text-primary"
-                            )}>{format(day, 'd')}</span>
+                                isToday(day) && "text-primary",
+                                !isCurrentMonth && "text-muted-foreground/50"
+                            )}>
+                                {format(day, 'd') === '1' ? format(day, 'd MMM', { locale: ptBR }) : format(day, 'd')}
+                            </span>
                             <div className="flex-1 overflow-y-auto text-xs mt-1 space-y-1 pr-1">
                                 {dayBookings.map(booking => {
                                     const teacher = teachers.find(t => t.id === booking.teacherId);
