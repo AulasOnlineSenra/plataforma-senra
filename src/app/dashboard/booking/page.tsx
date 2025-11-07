@@ -26,10 +26,12 @@ import { subjects as initialSubjects, teachers as initialTeachers, getMockUser, 
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse } from 'date-fns';
-import { Plus, Trash2, Repeat, X, AlertTriangle } from 'lucide-react';
+import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth } from 'date-fns';
+import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface Booking {
   id: string;
@@ -41,6 +43,7 @@ interface Booking {
 }
 
 type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
+type ViewMode = 'list' | 'calendar';
 
 const CLASS_DURATION_MINUTES = 90;
 const PENDING_BOOKINGS_STORAGE_KEY = 'pendingBookings';
@@ -68,6 +71,7 @@ function BookingPageComponent() {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   useEffect(() => {
     setIsClient(true);
@@ -579,6 +583,129 @@ function BookingPageComponent() {
       setTimezoneDifference(null);
     }
   }, [selectedTeacher, currentUser, teachers, studentIdParam, users]);
+  
+  const renderListView = () => (
+    bookings.length > 0 ? (
+        <div className="space-y-4">
+        {bookings
+            .sort((a, b) => a.start.getTime() - b.start.getTime())
+            .map((booking) => {
+            const subject = subjects.find(
+                (s) => s.id === booking.subjectId
+            );
+            const teacher = teachers.find(
+                (t) => t.id === booking.teacherId
+            );
+            return (
+                <div
+                key={booking.id}
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4"
+                >
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                    <Label>Disciplina</Label>
+                    <p className="font-semibold">{subject?.name}</p>
+                    </div>
+                    <div>
+                    <Label>Professor(a)</Label>
+                    <p className="font-semibold">{teacher?.name}</p>
+                    </div>
+                    <div>
+                    <Label>Data e Horário</Label>
+                    <p className="font-semibold">
+                        {format(booking.start, "dd/MM/yyyy 'às' HH:mm", {
+                        locale: ptBR,
+                        })}{' '}
+                        - {format(booking.end, 'HH:mm')}
+                    </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                    <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleRepeatBooking(booking)}
+                    title="Repetir agendamento"
+                    >
+                    <Repeat className="h-4 w-4" />
+                    </Button>
+                    <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleRemoveBooking(booking.id)}
+                    title="Remover agendamento"
+                    >
+                    <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+                </div>
+            );
+            })}
+        </div>
+    ) : (
+        <div className="text-center py-8 text-muted-foreground">
+            <p>Nenhuma aula adicionada ao resumo ainda.</p>
+            <p className="text-sm">
+                Use o formulário acima para começar a agendar.
+            </p>
+        </div>
+    )
+  );
+
+  const renderCalendarView = () => {
+    const calendarMonth = bookings.length > 0 ? startOfMonth(bookings[0].start) : startOfMonth(new Date());
+    const daysInMonth = eachDayOfInterval({ start: calendarMonth, end: endOfMonth(calendarMonth) });
+    const startingDayOfWeek = getDay(calendarMonth);
+
+    const bookingsByDay = bookings.reduce((acc, booking) => {
+        const day = format(booking.start, 'yyyy-MM-dd');
+        if (!acc[day]) {
+            acc[day] = [];
+        }
+        acc[day].push(booking);
+        return acc;
+    }, {} as Record<string, Booking[]>);
+
+    return (
+         bookings.length > 0 ? (
+            <div className="grid grid-cols-7 border-t border-l">
+                {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map(day => (
+                    <div key={day} className="p-2 text-center font-semibold text-xs border-b border-r bg-muted/50">{day}</div>
+                ))}
+                {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+                    <div key={`empty-${i}`} className="border-b border-r"></div>
+                ))}
+                {daysInMonth.map(day => {
+                    const dayKey = format(day, 'yyyy-MM-dd');
+                    const dayBookings = bookingsByDay[dayKey] || [];
+                    return (
+                        <div key={dayKey} className="h-40 border-b border-r p-2 flex flex-col overflow-hidden">
+                            <span className={cn(
+                                "font-semibold text-sm",
+                                isToday(day) && "text-primary"
+                            )}>{format(day, 'd')}</span>
+                            <div className="flex-1 overflow-y-auto text-xs mt-1 space-y-1 pr-1">
+                                {dayBookings.map(booking => {
+                                    const teacher = teachers.find(t => t.id === booking.teacherId);
+                                    return (
+                                        <div key={booking.id} className="p-1 rounded bg-blue-100 dark:bg-blue-900/50">
+                                            <p className="font-semibold truncate">{format(booking.start, 'HH:mm')} - {subjects.find(s => s.id === booking.subjectId)?.name}</p>
+                                            <p className="text-muted-foreground truncate">{teacher?.name}</p>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+         ) : (
+             <div className="text-center py-8 text-muted-foreground">
+                <p>Nenhuma aula adicionada ao resumo para exibir no calendário.</p>
+             </div>
+         )
+    )
+  };
 
 
   return (
@@ -753,80 +880,25 @@ function BookingPageComponent() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">
-              Passo 3: Resumo dos Agendamentos
-            </CardTitle>
-            <CardDescription>
-              Confira as aulas adicionadas antes de confirmar. Você pode remover
-              ou duplicar aulas da lista.
-            </CardDescription>
+             <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                <div>
+                    <CardTitle className="font-headline">
+                    Passo 3: Resumo dos Agendamentos
+                    </CardTitle>
+                    <CardDescription>
+                    Confira as aulas adicionadas antes de confirmar.
+                    </CardDescription>
+                </div>
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full sm:w-auto">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="list"><List className="mr-2 h-4 w-4" />Lista</TabsTrigger>
+                        <TabsTrigger value="calendar"><CalendarIcon className="mr-2 h-4 w-4" />Calendário</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
           </CardHeader>
           <CardContent>
-            {bookings.length > 0 ? (
-              <div className="space-y-4">
-                {bookings
-                  .sort((a, b) => a.start.getTime() - b.start.getTime())
-                  .map((booking) => {
-                    const subject = subjects.find(
-                      (s) => s.id === booking.subjectId
-                    );
-                    const teacher = teachers.find(
-                      (t) => t.id === booking.teacherId
-                    );
-                    return (
-                      <div
-                        key={booking.id}
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4"
-                      >
-                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div>
-                            <Label>Disciplina</Label>
-                            <p className="font-semibold">{subject?.name}</p>
-                          </div>
-                          <div>
-                            <Label>Professor(a)</Label>
-                            <p className="font-semibold">{teacher?.name}</p>
-                          </div>
-                          <div>
-                            <Label>Data e Horário</Label>
-                            <p className="font-semibold">
-                              {format(booking.start, "dd/MM/yyyy 'às' HH:mm", {
-                                locale: ptBR,
-                              })}{' '}
-                              - {format(booking.end, 'HH:mm')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 self-end sm:self-center">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleRepeatBooking(booking)}
-                            title="Repetir agendamento"
-                          >
-                            <Repeat className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => handleRemoveBooking(booking.id)}
-                            title="Remover agendamento"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Nenhuma aula adicionada ao resumo ainda.</p>
-                <p className="text-sm">
-                  Use o formulário acima para começar a agendar.
-                </p>
-              </div>
-            )}
+            {viewMode === 'list' ? renderListView() : renderCalendarView()}
           </CardContent>
         </Card>
 
