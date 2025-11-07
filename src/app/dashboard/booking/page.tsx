@@ -613,7 +613,7 @@ function BookingPageComponent() {
                     <div>
                     <Label>Data e Horário</Label>
                     <p className="font-semibold">
-                        {format(booking.start, "dd/MM/yyyy 'às' HH:mm", {
+                        {format(booking.start, "EEEE, dd/MM/yyyy 'às' HH:mm", {
                         locale: ptBR,
                         })}{' '}
                         - {format(booking.end, 'HH:mm')}
