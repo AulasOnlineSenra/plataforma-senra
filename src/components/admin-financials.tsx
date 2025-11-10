@@ -34,7 +34,7 @@ import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents, teachers as initialTeachers } from '@/lib/data';
 import { PaymentTransaction, User as AppUser, MarketingCosts, ScheduleEvent, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek, getISODay } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek, getISODay, previousOrSame } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
@@ -198,62 +198,58 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
-            const paymentsByTeacherAndPeriod: Record<string, Omit<TeacherPaymentDetails, 'id'>> = {};
+            const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
+            
+            const now = new Date();
+            const dayIndexMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
+            const paymentDayIndex = dayIndexMap[currentPaymentDay as keyof typeof dayIndexMap];
+            const lastPaymentDate = previousOrSame(now, { weekStartsOn: 1, day: paymentDayIndex });
 
-            monthCompletedClasses.forEach(c => {
-                const classDate = new Date(c.start);
-                let periodStart: Date;
-                let periodKey: string;
-            
-                if (currentPaymentFrequency === 'weekly') {
-                    periodStart = startOfWeek(classDate, { locale: ptBR });
-                    periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-w')}`;
-                } else if (currentPaymentFrequency === 'biweekly') {
-                    const weekNumber = getWeek(classDate, { weekStartsOn: 1 });
-                    const isEvenWeek = weekNumber % 2 === 0;
-                    periodStart = isEvenWeek 
-                        ? startOfWeek(classDate, { locale: ptBR }) 
-                        : startOfWeek(addWeeks(classDate, -1), { locale: ptBR });
-                    periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-w')}`;
-                } else { // monthly
-                    periodStart = startOfMonth(classDate);
-                    periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-MM')}`;
-                }
-            
-                if (!paymentsByTeacherAndPeriod[periodKey]) {
+            let currentPaymentPeriodStart: Date;
+            if (currentPaymentFrequency === 'weekly') {
+                currentPaymentPeriodStart = startOfWeek(now, { locale: ptBR });
+            } else if (currentPaymentFrequency === 'biweekly') {
+                 const weekNumber = getWeek(now, { weekStartsOn: 1 });
+                 currentPaymentPeriodStart = weekNumber % 2 === 0
+                    ? startOfWeek(now, { locale: ptBR })
+                    : startOfWeek(addWeeks(now, -1), { locale: ptBR });
+            } else { // monthly
+                currentPaymentPeriodStart = startOfMonth(now);
+            }
+
+
+            const classesInCurrentPeriod = schedule.filter(e => 
+                e.status === 'completed' &&
+                new Date(e.start) >= currentPaymentPeriodStart &&
+                new Date(e.start) <= now
+            );
+
+            classesInCurrentPeriod.forEach(c => {
+                if (!paymentsByTeacher[c.teacherId]) {
                     const teacher = teachers.find(t => t.id === c.teacherId);
-                    let periodLabel = '';
-                    if (currentPaymentFrequency === 'weekly') {
-                        const periodEnd = endOfWeek(periodStart, { locale: ptBR });
-                        periodLabel = `${format(periodStart, 'dd')} - ${format(periodEnd, 'dd/MM')}`;
-                    } else if (currentPaymentFrequency === 'biweekly') {
-                        const periodEnd = endOfWeek(addWeeks(periodStart, 1), { locale: ptBR });
-                        periodLabel = `${format(periodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`;
-                    } else {
-                        periodLabel = format(periodStart, 'MMMM', { locale: ptBR });
-                    }
-            
-                    paymentsByTeacherAndPeriod[periodKey] = {
+                    paymentsByTeacher[c.teacherId] = {
                         teacherId: c.teacherId,
                         teacherName: teacher?.name || 'Professor Desconhecido',
                         teacherAvatarUrl: teacher?.avatarUrl,
                         completedClasses: 0,
                         paymentRate: paymentRate,
                         totalAmount: 0,
-                        period: periodLabel,
                     };
                 }
-                paymentsByTeacherAndPeriod[periodKey].completedClasses += 1;
+                paymentsByTeacher[c.teacherId].completedClasses += 1;
             });
             
-            const paymentDetails = Object.entries(paymentsByTeacherAndPeriod).map(([key, p]) => ({
-              id: key,
+            const periodEnd = endOfWeek(now, {locale: ptBR});
+            const periodLabel = `${format(currentPaymentPeriodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`;
+            
+            const paymentDetails = Object.entries(paymentsByTeacher).map(([teacherId, p]) => ({
+              id: teacherId,
               ...p,
               totalAmount: p.completedClasses * p.paymentRate,
+              period: periodLabel,
             })).sort((a,b) => b.totalAmount - a.totalAmount);
             
             setTeacherPaymentDetails(paymentDetails);
-
             setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
         };
 
@@ -570,7 +566,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <div>
                             <CardTitle>Pagamentos de Professores</CardTitle>
                             <CardDescription>
-                                Detalhes para aulas concluídas no mês. Próximo pagamento em: {format(nextPaymentDate, 'dd/MM/yyyy')}
+                                Detalhes para aulas concluídas no período. Próximo pagamento em: {format(nextPaymentDate, 'dd/MM/yyyy')}
                             </CardDescription>
                         </div>
                         <Button variant="ghost" size="icon">
@@ -610,7 +606,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                 ))}
                                 {teacherPaymentDetails.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">Nenhum pagamento de professor para este mês.</TableCell>
+                                        <TableCell colSpan={5} className="h-24 text-center">Nenhum pagamento de professor para este período.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
