@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp, User, Wallet } from 'lucide-react';
+import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp, User, Wallet, CheckCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -51,6 +51,8 @@ const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
 const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
+const TEACHER_PAYMENT_HISTORY_KEY = 'teacherPaymentHistory';
+
 
 const DEFAULT_COSTS = { ads: 0, team: 0, organicCommissions: 0, paidCommissions: 0 };
 
@@ -201,8 +203,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
             const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})) : initialScheduleEvents;
             
-            const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-            const teachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
             
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
@@ -244,14 +244,16 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             setPaymentPeriods(periods.reverse());
 
             const currentPeriodKey = periods.find(p => isWithinInterval(new Date(), {start: p.start, end: p.end}))?.value || (periods[0] ? periods[0].value : undefined);
-            setSelectedPeriodKey(currentPeriodKey);
+            if (!selectedPeriodKey) {
+                setSelectedPeriodKey(currentPeriodKey);
+            }
         };
 
         updateData();
         
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
-    }, [selectedMonth]);
+    }, [selectedMonth, selectedPeriodKey]);
     
     useEffect(() => {
         if (!selectedPeriodKey || paymentPeriods.length === 0) {
@@ -347,6 +349,38 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         description: 'A transação e os créditos correspondentes foram removidos.',
       });
       setTransactionToDelete(null);
+    };
+
+    const handlePayPeriod = () => {
+        if (teacherPaymentDetails.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: "Nenhum Pagamento a Fazer",
+                description: "Não há pagamentos pendentes para este período.",
+            });
+            return;
+        }
+        
+        const storedHistoryStr = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
+        const currentHistory = storedHistoryStr ? JSON.parse(storedHistoryStr) : [];
+
+        const newPayments = teacherPaymentDetails.map(p => ({
+            teacherId: p.teacherId,
+            period: p.period,
+            classesDone: p.completedClasses,
+            amount: p.totalAmount,
+            status: 'Pago',
+            paymentDate: new Date().toISOString(),
+        }));
+        
+        const updatedHistory = [...currentHistory, ...newPayments];
+        localStorage.setItem(TEACHER_PAYMENT_HISTORY_KEY, JSON.stringify(updatedHistory));
+        window.dispatchEvent(new Event('storage'));
+
+        toast({
+            title: "Pagamento Realizado com Sucesso!",
+            description: `R$ ${selectedPeriodCost.toFixed(2).replace('.', ',')} foram pagos aos professores.`,
+        });
     };
 
     const expenseItems = [
@@ -612,7 +646,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <div className="flex w-full sm:w-auto items-center gap-2">
                              <Label htmlFor="period-filter" className="sr-only">Filtrar Período</Label>
                              <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
-                                <SelectTrigger id="period-filter" className="w-full sm:w-[180px] justify-center">
+                                <SelectTrigger id="period-filter" className="w-[180px] justify-center text-center">
                                     <SelectValue placeholder="Selecione um período" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -673,6 +707,12 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             </TableFooter>
                         </Table>
                     </CardContent>
+                    <CardFooter className="justify-end">
+                        <Button onClick={handlePayPeriod} disabled={teacherPaymentDetails.length === 0}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Marcar como Pago
+                        </Button>
+                    </CardFooter>
                 </CollapsibleContent>
             </Card>
         </Collapsible>

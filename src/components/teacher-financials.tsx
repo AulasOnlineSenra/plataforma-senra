@@ -29,6 +29,16 @@ const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
 const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
+const TEACHER_PAYMENT_HISTORY_KEY = 'teacherPaymentHistory';
+
+interface TeacherPaymentRecord {
+  teacherId: string;
+  period: string;
+  classesDone: number;
+  amount: number;
+  status: 'Pago' | 'Pendente';
+  paymentDate?: string;
+}
 
 export default function TeacherFinancials() {
   const [currentUser, setCurrentUser] = useState<Teacher | null>(null);
@@ -36,7 +46,7 @@ export default function TeacherFinancials() {
   const [paymentRate, setPaymentRate] = useState(50); // Default value
   const [paymentDay, setPaymentDay] = useState('friday');
   const [paymentFrequency, setPaymentFrequency] = useState('weekly');
-  const [teacherPayments, setTeacherPayments] = useState(initialTeacherPayments);
+  const [teacherPayments, setTeacherPayments] = useState<TeacherPaymentRecord[]>([]);
 
 
   useEffect(() => {
@@ -46,10 +56,12 @@ export default function TeacherFinancials() {
         const user = JSON.parse(userStr);
         if (user.role === 'teacher') {
           setCurrentUser(user);
-          // For new teachers, there might be no payment history yet.
-          if (!user.lastAccess || new Date().getTime() - new Date(user.lastAccess).getTime() < 5 * 60 * 1000) {
-            setTeacherPayments([]);
-          }
+          
+          const storedHistory = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
+          const allHistory = storedHistory ? JSON.parse(storedHistory) : initialTeacherPayments;
+          const userHistory = allHistory.filter((p: TeacherPaymentRecord) => p.teacherId === user.id);
+          setTeacherPayments(userHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
+
         }
       }
 
