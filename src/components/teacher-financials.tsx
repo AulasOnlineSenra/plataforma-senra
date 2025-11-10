@@ -314,11 +314,10 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Período de Referência</TableHead>
+                <TableHead>Período</TableHead>
                 <TableHead className="text-center">Aulas Concluídas</TableHead>
                 <TableHead className="text-center">Valor por Aula</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-right">Valor Recebido</TableHead>
+                <TableHead className="text-right">Total a Pagar</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -328,11 +327,6 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                     <TableCell className="font-medium">{payment.period}</TableCell>
                     <TableCell className="text-center">{payment.classesDone}</TableCell>
                     <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
-                    <TableCell className="text-center">
-                        <Badge className={payment.status === 'Pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                            {payment.status}
-                        </Badge>
-                    </TableCell>
                     <TableCell className="text-right font-mono">
                         R$ {payment.amount.toFixed(2).replace('.', ',')}
                     </TableCell>
@@ -340,7 +334,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                 ))
               ) : (
                 <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                         Nenhum histórico de pagamento encontrado para este período.
                     </TableCell>
                 </TableRow>
@@ -352,3 +346,5 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     </div>
   );
 }
+
+    
