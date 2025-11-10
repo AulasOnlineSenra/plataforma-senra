@@ -58,7 +58,7 @@ export default function TeacherFinancials() {
           setCurrentUser(user);
           
           const storedHistory = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
-          const allHistory = storedHistory ? JSON.parse(storedHistory) : initialTeacherPayments;
+          const allHistory: TeacherPaymentRecord[] = storedHistory ? JSON.parse(storedHistory) : [];
           const userHistory = allHistory.filter((p: TeacherPaymentRecord) => p.teacherId === user.id);
           setTeacherPayments(userHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
 
@@ -68,6 +68,8 @@ export default function TeacherFinancials() {
       const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
       if (storedSchedule) {
         setSchedule(JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})));
+      } else {
+        setSchedule(initialSchedule);
       }
 
       const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
