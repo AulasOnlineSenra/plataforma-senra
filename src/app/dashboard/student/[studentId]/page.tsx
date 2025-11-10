@@ -31,6 +31,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,7 +57,7 @@ function StudentDetailPageComponent() {
     const [editingClass, setEditingClass] = useState<ScheduleEvent | null>(null);
     const [editedTitle, setEditedTitle] = useState('');
     const [editedDescription, setEditedDescription] = useState('');
-    const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
+    const [isFileUploadDialogOpen, setIsFileUploadDialogOpen] = useState(false);
     const [selectedClassForMaterial, setSelectedClassForMaterial] = useState<ScheduleEvent | null>(null);
 
 
@@ -143,7 +150,7 @@ function StudentDetailPageComponent() {
 
     const handleOpenMaterialDialog = (classEvent: ScheduleEvent) => {
         setSelectedClassForMaterial(classEvent);
-        setIsMaterialDialogOpen(true);
+        setIsFileUploadDialogOpen(true);
     };
 
 
@@ -161,6 +168,47 @@ function StudentDetailPageComponent() {
             </div>
         );
     }
+    
+    const renderClassActions = (classEvent: ScheduleEvent) => (
+        <div className="flex items-center gap-2 ml-4">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                        <Plus className="h-4 w-4" />
+                        <span className="sr-only">Adicionar Recurso</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => handleOpenMaterialDialog(classEvent)}>
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        Anexar Arquivo
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/dashboard/simulados">
+                           <BookCopy className="mr-2 h-4 w-4" />
+                           Criar Simulado
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button variant="outline" size="icon" onClick={() => handleEditClick(classEvent)}>
+                <Edit className="h-4 w-4" />
+                <span className="sr-only">Editar</span>
+            </Button>
+            
+            {classEvent.status === 'scheduled' && (
+                 <Button asChild variant="outline" size="icon">
+                    <Link href={`/dashboard/schedule`}>
+                        <CalendarIcon className="h-4 w-4" />
+                        <span className="sr-only">Agenda</span>
+                    </Link>
+                 </Button>
+            )}
+        </div>
+    );
+
     
     return (
         <>
@@ -220,22 +268,7 @@ function StudentDetailPageComponent() {
                                             {c.subject} • {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2 ml-4">
-                                        <Button variant="outline" size="icon" onClick={() => handleOpenMaterialDialog(c)}>
-                                            <Plus className="h-4 w-4" />
-                                            <span className="sr-only">Adicionar Material</span>
-                                        </Button>
-                                        <Button variant="outline" size="icon" onClick={() => handleEditClick(c)}>
-                                            <Edit className="h-4 w-4" />
-                                            <span className="sr-only">Editar</span>
-                                        </Button>
-                                        <Button asChild variant="outline" size="icon">
-                                          <Link href={`/dashboard/schedule`}>
-                                            <CalendarIcon className="h-4 w-4" />
-                                            <span className="sr-only">Agenda</span>
-                                          </Link>
-                                        </Button>
-                                    </div>
+                                    {renderClassActions(c)}
                                 </div>
                             ))
                         ) : (
@@ -263,12 +296,7 @@ function StudentDetailPageComponent() {
                                                 {c.subject} • {format(c.start, "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-2 ml-4">
-                                            <Button variant="outline" size="icon" onClick={() => handleOpenMaterialDialog(c)}>
-                                                <Plus className="h-4 w-4" />
-                                                <span className="sr-only">Adicionar Material</span>
-                                            </Button>
-                                        </div>
+                                        {renderClassActions(c)}
                                     </div>
                                 ))
                             ) : (
@@ -328,17 +356,17 @@ function StudentDetailPageComponent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-             <Dialog open={isMaterialDialogOpen} onOpenChange={setIsMaterialDialogOpen}>
+             <Dialog open={isFileUploadDialogOpen} onOpenChange={setIsFileUploadDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Adicionar Recurso à Aula</DialogTitle>
+                        <DialogTitle>Anexar Arquivo</DialogTitle>
                         <DialogDescription>
-                            Anexe um material ou crie um simulado para a aula de <span className="font-semibold">{selectedClassForMaterial?.subject}</span> do dia {selectedClassForMaterial && format(selectedClassForMaterial.start, 'dd/MM/yy')}.
+                            Anexe um material para a aula de <span className="font-semibold">{selectedClassForMaterial?.subject}</span> do dia {selectedClassForMaterial && format(selectedClassForMaterial.start, 'dd/MM/yy')}.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="file-upload">Anexar Arquivo</Label>
+                            <Label htmlFor="file-upload">Arquivo</Label>
                             <div className="flex items-center gap-2">
                                 <Input id="file-upload" type="file" className="flex-1"/>
                                 <Button size="icon" variant="outline">
@@ -347,29 +375,15 @@ function StudentDetailPageComponent() {
                             </div>
                             <p className="text-xs text-muted-foreground">PDFs, planilhas, vídeos, imagens, etc.</p>
                         </div>
-                        <div className="relative my-2">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">ou</span>
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                             <Label>Criar Simulado</Label>
-                             <Button variant="secondary" asChild>
-                                <Link href="/dashboard/simulados">
-                                    <BookCopy className="mr-2 h-4 w-4" />
-                                    Ir para a Área de Simulados
-                                </Link>
-                             </Button>
-                             <p className="text-xs text-muted-foreground">Você será redirecionado para criar um novo simulado e poderá associá-lo a esta aula.</p>
-                        </div>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline">Fechar</Button>
+                            <Button variant="secondary">Cancelar</Button>
                         </DialogClose>
+                         <Button onClick={() => {
+                            toast({ title: 'Arquivo Anexado!', description: 'O material foi adicionado à aula.' });
+                            setIsFileUploadDialogOpen(false);
+                         }}>Anexar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
