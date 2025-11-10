@@ -391,7 +391,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     ];
     
     const getFooterLabel = () => {
-        return 'Total para o Período';
+        return 'Total a Pagar (Semanal)';
     }
 
 
