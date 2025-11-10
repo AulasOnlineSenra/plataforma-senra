@@ -31,7 +31,6 @@ const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
 const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
-const TEACHER_PAYMENT_HISTORY_KEY = 'teacherPaymentHistory';
 
 interface TeacherPaymentRecord {
   teacherId: string;
@@ -90,7 +89,6 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
       const currentPaymentFrequency = storedPaymentFrequency || 'weekly';
       setPaymentFrequency(currentPaymentFrequency);
       
-      // --- Payment Period Generation for the filter ---
       const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
       const monthInterval = {
         start: startOfMonth(monthDate),
@@ -124,7 +122,6 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
       }
       setPaymentPeriods(periods.reverse());
 
-      // Set default selected period to the most recent one
       if (periods.length > 0 && !selectedPeriodKey) {
           setSelectedPeriodKey(periods[0].value);
       }
@@ -136,32 +133,47 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
   }, [selectedMonth, selectedPeriodKey]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || paymentPeriods.length === 0) return;
+
+    const now = new Date();
+    const allPastPeriods = paymentPeriods.filter(p => now > p.end);
+    const simulatedPayments: TeacherPaymentRecord[] = [];
+
+    allPastPeriods.forEach(period => {
+      const classesInPeriod = schedule.filter(e =>
+        e.status === 'completed' &&
+        e.teacherId === currentUser.id &&
+        isWithinInterval(new Date(e.start), { start: period.start, end: period.end })
+      );
+
+      if (classesInPeriod.length > 0) {
+        simulatedPayments.push({
+          teacherId: currentUser.id,
+          period: period.label,
+          classesDone: classesInPeriod.length,
+          paymentRate: paymentRate,
+          amount: classesInPeriod.length * paymentRate,
+          status: 'Pago',
+          paymentDate: format(period.end, 'yyyy-MM-dd'),
+        });
+      }
+    });
     
-    const storedHistory = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
-    const allHistory: TeacherPaymentRecord[] = storedHistory ? JSON.parse(storedHistory) : [];
-    const userHistory = allHistory.filter((p: TeacherPaymentRecord) => p.teacherId === currentUser.id);
+    setTeacherPayments(simulatedPayments.sort((a,b) => new Date(b.paymentDate!).getTime() - new Date(a.paymentDate!).getTime()));
 
-    setTeacherPayments(userHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
-
-  }, [currentUser, selectedMonth]);
+  }, [currentUser, schedule, paymentRate, paymentPeriods, selectedMonth]);
   
   const filteredPayments = useMemo(() => {
-    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
-    
-    // Filter by the selected month first
-    const monthPayments = teacherPayments.filter(p => {
-        if (!p.paymentDate) return false;
-        const paymentDate = new Date(p.paymentDate);
-        return paymentDate.getMonth() === monthDate.getMonth() && paymentDate.getFullYear() === monthDate.getFullYear();
-    });
-
     if (!selectedPeriodKey) {
-        return monthPayments;
+        return teacherPayments.filter(p => {
+            const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+            const paymentDate = p.paymentDate ? new Date(p.paymentDate) : new Date(0);
+            return paymentDate.getMonth() === monthDate.getMonth() && paymentDate.getFullYear() === monthDate.getFullYear();
+        })
     }
 
     const selectedPeriod = paymentPeriods.find(pp => pp.value === selectedPeriodKey);
-    return monthPayments.filter(p => p.period === selectedPeriod?.label);
+    return teacherPayments.filter(p => p.period === selectedPeriod?.label);
   }, [selectedPeriodKey, teacherPayments, paymentPeriods, selectedMonth]);
 
 
@@ -204,11 +216,9 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     
     if (paymentFrequency === 'biweekly') {
       let nextDate = getNextPaymentDayFunc(zonedNow);
-      // Use ISO week number which is standard
       const currentWeek = getWeek(zonedNow, { weekStartsOn: 1 });
       const nextPaymentWeek = getWeek(nextDate, { weekStartsOn: 1 });
 
-      // This ensures payment is always on an even or odd week of the year.
       if (nextPaymentWeek % 2 !== 0) { 
         nextDate = addWeeks(nextDate, 1);
       }
@@ -217,16 +227,13 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
 
     if (paymentFrequency === 'monthly') {
         let firstPaymentDayOfMonth = getNextPaymentDayFunc(startOfMonth(zonedNow));
-        // If the first payment day of this month has already passed
         if (firstPaymentDayOfMonth < zonedNow) {
-            // Calculate the first payment day of the next month
             return getNextPaymentDayFunc(startOfMonth(addMonths(zonedNow, 1)));
         } else {
             return firstPaymentDayOfMonth;
         }
     }
     
-    // Default to weekly if something is wrong
     return getNextPaymentDayFunc(zonedNow);
 
   }, [paymentDay, paymentFrequency, currentUser]);

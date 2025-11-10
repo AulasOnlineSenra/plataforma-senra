@@ -305,7 +305,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         
         setTeacherPaymentDetails(paymentDetails);
         setSelectedPeriodCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
-    }, [selectedPeriodKey, paymentPeriods]);
+    }, [selectedPeriodKey, paymentPeriods, selectedMonth]); // Rerun when month changes to recalculate periods
 
     const getUserById = (id: string): AppUser | undefined => {
         return users.find(u => u.id === id);
@@ -350,39 +350,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         description: 'A transação e os créditos correspondentes foram removidos.',
       });
       setTransactionToDelete(null);
-    };
-
-    const handlePayPeriod = () => {
-        if (teacherPaymentDetails.length === 0) {
-            toast({
-                variant: 'destructive',
-                title: "Nenhum Pagamento a Fazer",
-                description: "Não há pagamentos pendentes para este período.",
-            });
-            return;
-        }
-        
-        const storedHistoryStr = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
-        const currentHistory = storedHistoryStr ? JSON.parse(storedHistoryStr) : [];
-
-        const newPayments = teacherPaymentDetails.map(p => ({
-            teacherId: p.teacherId,
-            period: p.period,
-            classesDone: p.completedClasses,
-            paymentRate: p.paymentRate,
-            amount: p.totalAmount,
-            status: 'Pago',
-            paymentDate: new Date().toISOString(),
-        }));
-        
-        const updatedHistory = [...currentHistory, ...newPayments];
-        localStorage.setItem(TEACHER_PAYMENT_HISTORY_KEY, JSON.stringify(updatedHistory));
-        window.dispatchEvent(new Event('storage'));
-
-        toast({
-            title: "Pagamento Realizado com Sucesso!",
-            description: `R$ ${selectedPeriodCost.toFixed(2).replace('.', ',')} foram pagos aos professores.`,
-        });
     };
 
     const expenseItems = [
@@ -709,12 +676,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             </TableFooter>
                         </Table>
                     </CardContent>
-                    <CardFooter className="justify-end">
-                        <Button onClick={handlePayPeriod} disabled={teacherPaymentDetails.length === 0}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Marcar como Pago
-                        </Button>
-                    </CardFooter>
                 </CollapsibleContent>
             </Card>
         </Collapsible>
