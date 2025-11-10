@@ -45,7 +45,7 @@ function StudentDetailPageComponent() {
 
     const [student, setStudent] = useState<User | null>(null);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
 
     const [editingClass, setEditingClass] = useState<ScheduleEvent | null>(null);
     const [editedTitle, setEditedTitle] = useState('');
@@ -75,13 +75,25 @@ function StudentDetailPageComponent() {
     }, [studentId]);
 
     const upcomingClasses = useMemo(() => {
-        if (!student) return [];
-        return schedule.filter(e => 
-            e.studentId === student.id &&
-            e.status === 'scheduled' &&
-            e.start > new Date()
-        ).sort((a, b) => a.start.getTime() - b.start.getTime());
-    }, [schedule, student]);
+        if (!student || !currentUser) return [];
+
+        const baseFilter = (e: ScheduleEvent) =>
+          e.studentId === student.id &&
+          e.status === 'scheduled' &&
+          e.start > new Date();
+    
+        // If the current user is a teacher, only show classes they are teaching to this student.
+        if (currentUser.role === 'teacher') {
+          return schedule
+            .filter(e => baseFilter(e) && e.teacherId === currentUser.id)
+            .sort((a, b) => a.start.getTime() - b.start.getTime());
+        }
+    
+        // For admin or the student themselves, show all their upcoming classes.
+        return schedule
+          .filter(baseFilter)
+          .sort((a, b) => a.start.getTime() - b.start.getTime());
+    }, [schedule, student, currentUser]);
     
     const handleEditClick = (classEvent: ScheduleEvent) => {
         setEditingClass(classEvent);
