@@ -201,24 +201,25 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const paymentsByTeacherAndPeriod: Record<string, Omit<TeacherPaymentDetails, 'id'>> = {};
 
             monthCompletedClasses.forEach(c => {
+                const classDate = new Date(c.start);
                 let periodStart: Date;
                 let periodKey: string;
-
+            
                 if (currentPaymentFrequency === 'weekly') {
-                    periodStart = startOfWeek(c.start, { locale: ptBR });
+                    periodStart = startOfWeek(classDate, { locale: ptBR });
                     periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-w')}`;
                 } else if (currentPaymentFrequency === 'biweekly') {
-                    const weekNumber = getWeek(c.start, { weekStartsOn: 1 });
+                    const weekNumber = getWeek(classDate, { weekStartsOn: 1 });
                     const isEvenWeek = weekNumber % 2 === 0;
                     periodStart = isEvenWeek 
-                        ? startOfWeek(c.start, { locale: ptBR }) 
-                        : startOfWeek(addWeeks(c.start, -1), { locale: ptBR });
+                        ? startOfWeek(classDate, { locale: ptBR }) 
+                        : startOfWeek(addWeeks(classDate, -1), { locale: ptBR });
                     periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-w')}`;
                 } else { // monthly
-                    periodStart = startOfMonth(c.start);
+                    periodStart = startOfMonth(classDate);
                     periodKey = `${c.teacherId}-${format(periodStart, 'yyyy-MM')}`;
                 }
-
+            
                 if (!paymentsByTeacherAndPeriod[periodKey]) {
                     const teacher = teachers.find(t => t.id === c.teacherId);
                     let periodLabel = '';
@@ -226,11 +227,12 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         const periodEnd = endOfWeek(periodStart, { locale: ptBR });
                         periodLabel = `${format(periodStart, 'dd')} - ${format(periodEnd, 'dd/MM')}`;
                     } else if (currentPaymentFrequency === 'biweekly') {
-                        periodLabel = `Quinzena de ${format(periodStart, 'dd/MM')}`;
+                        const periodEnd = endOfWeek(addWeeks(periodStart, 1), { locale: ptBR });
+                        periodLabel = `${format(periodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`;
                     } else {
                         periodLabel = format(periodStart, 'MMMM', { locale: ptBR });
                     }
-
+            
                     paymentsByTeacherAndPeriod[periodKey] = {
                         teacherId: c.teacherId,
                         teacherName: teacher?.name || 'Professor Desconhecido',
@@ -367,8 +369,8 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             </Card>
             <Card>
                 <CardHeader>
-                <CardTitle className="text-sm font-medium">Patrimônio Líquido</CardTitle>
-                <CardDescription className="text-xs">Receitas - Despesas</CardDescription>
+                <CardTitle className="text-sm font-medium">Patrimônio Líquido (Mês)</CardTitle>
+                <CardDescription className="text-xs">Resultado do mês</CardDescription>
                 </CardHeader>
                 <CardContent>
                 <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
