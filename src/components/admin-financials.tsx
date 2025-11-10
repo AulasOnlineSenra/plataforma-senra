@@ -243,7 +243,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             }
             setPaymentPeriods(periods.reverse());
 
-            const currentPeriodKey = periods.find(p => isWithinInterval(new Date(), {start: p.start, end: p.end}))?.value;
+            const currentPeriodKey = periods.find(p => isWithinInterval(new Date(), {start: p.start, end: p.end}))?.value || (periods[0] ? periods[0].value : undefined);
             setSelectedPeriodKey(currentPeriodKey);
         };
 
@@ -254,7 +254,11 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     }, [selectedMonth]);
     
     useEffect(() => {
-        if (!selectedPeriodKey || paymentPeriods.length === 0) return;
+        if (!selectedPeriodKey || paymentPeriods.length === 0) {
+            setTeacherPaymentDetails([]);
+            setSelectedPeriodCost(0);
+            return;
+        };
 
         const selectedPeriod = paymentPeriods.find(p => p.value === selectedPeriodKey);
         if (!selectedPeriod) return;
@@ -608,7 +612,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <div className="flex w-full sm:w-auto items-center gap-2">
                              <Label htmlFor="period-filter" className="sr-only">Filtrar Período</Label>
                              <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
-                                <SelectTrigger id="period-filter" className="w-full sm:w-[220px]">
+                                <SelectTrigger id="period-filter" className="w-full sm:w-[180px] justify-center">
                                     <SelectValue placeholder="Selecione um período" />
                                 </SelectTrigger>
                                 <SelectContent>
