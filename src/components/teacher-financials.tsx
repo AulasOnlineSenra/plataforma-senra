@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { getMockUser, scheduleEvents as initialSchedule, teacherPayments as initialTeacherPayments } from '@/lib/data';
 import { ScheduleEvent, Teacher, PaymentTransaction } from '@/lib/types';
-import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths, getWeek, startOfMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths, getWeek, startOfMonth, parse, endOfMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from './ui/badge';
@@ -40,7 +40,12 @@ interface TeacherPaymentRecord {
   paymentDate?: string;
 }
 
-export default function TeacherFinancials() {
+interface TeacherFinancialsProps {
+  selectedMonth: string;
+}
+
+
+export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsProps) {
   const [currentUser, setCurrentUser] = useState<Teacher | null>(null);
   const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
   const [paymentRate, setPaymentRate] = useState(50); // Default value
@@ -56,12 +61,6 @@ export default function TeacherFinancials() {
         const user = JSON.parse(userStr);
         if (user.role === 'teacher') {
           setCurrentUser(user);
-          
-          const storedHistory = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
-          const allHistory: TeacherPaymentRecord[] = storedHistory ? JSON.parse(storedHistory) : [];
-          const userHistory = allHistory.filter((p: TeacherPaymentRecord) => p.teacherId === user.id);
-          setTeacherPayments(userHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
-
         }
       }
 
@@ -92,6 +91,26 @@ export default function TeacherFinancials() {
     window.addEventListener('storage', updateData);
     return () => window.removeEventListener('storage', updateData);
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const storedHistory = localStorage.getItem(TEACHER_PAYMENT_HISTORY_KEY);
+    const allHistory: TeacherPaymentRecord[] = storedHistory ? JSON.parse(storedHistory) : [];
+    const userHistory = allHistory.filter((p: TeacherPaymentRecord) => p.teacherId === currentUser.id);
+
+    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+    const monthInterval = { start: startOfMonth(monthDate), end: endOfMonth(monthDate) };
+    
+    const monthHistory = userHistory.filter(p => {
+        if (!p.paymentDate) return false;
+        return isWithinInterval(new Date(p.paymentDate), monthInterval)
+    });
+
+    setTeacherPayments(monthHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
+
+  }, [currentUser, selectedMonth]);
+
 
   const weeklyStats = useMemo(() => {
     if (!currentUser) return { count: 0, earnings: 0 };
@@ -259,7 +278,7 @@ export default function TeacherFinancials() {
               ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        Nenhum histórico de pagamento encontrado.
+                        Nenhum histórico de pagamento encontrado para este mês.
                     </TableCell>
                 </TableRow>
               )}

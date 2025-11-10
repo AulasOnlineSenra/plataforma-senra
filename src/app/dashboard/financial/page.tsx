@@ -94,7 +94,7 @@ export default function FinancialPage() {
       case 'admin':
         return <AdminFinancials selectedMonth={selectedMonth} />;
       case 'teacher':
-        return <TeacherFinancials />;
+        return <TeacherFinancials selectedMonth={selectedMonth} />;
       case 'student':
         return <StudentFinancials />;
       default:
@@ -110,27 +110,27 @@ export default function FinancialPage() {
         </h1>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
             {user.role === 'admin' && (
-                <>
-                   <Button variant="outline" className="w-full sm:w-auto h-10 px-4 py-2 flex items-center justify-between gap-3 text-base">
-                        <div className="flex items-center gap-2">
-                          <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Caixa:</span>
-                        </div>
-                        <span className="text-sm font-bold">R$ {totalCash.toFixed(2).replace('.',',')}</span>
-                    </Button>
-                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                        <SelectTrigger className="w-full sm:w-[220px]">
-                        <SelectValue placeholder="Selecione um mês" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {monthOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                </>
+               <Button variant="outline" className="w-full sm:w-auto h-10 px-4 py-2 flex items-center justify-between gap-3 text-base">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Caixa:</span>
+                    </div>
+                    <span className="text-sm font-bold">R$ {totalCash.toFixed(2).replace('.',',')}</span>
+                </Button>
+            )}
+            {(user.role === 'admin' || user.role === 'teacher') && (
+                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Selecione um mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {monthOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
             )}
         </div>
       </div>
