@@ -81,14 +81,20 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [isExpensesOpen, setIsExpensesOpen] = useState(false);
     const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(false);
     const { toast } = useToast();
-    const [teacherPaymentsCost, setTeacherPaymentsCost] = useState(0);
+    
+    // State for the bottom table (current payment period)
+    const [currentPeriodTeacherPaymentsCost, setCurrentPeriodTeacherPaymentsCost] = useState(0);
     const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
+    
+    // State for the top cards (monthly total)
+    const [monthlyTeacherPaymentsCost, setMonthlyTeacherPaymentsCost] = useState(0);
+
     const [paymentDay, setPaymentDay] = useState('friday');
     const [paymentFrequency, setPaymentFrequency] = useState('weekly');
 
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
-    const totalExpenses = totalMarketingExpenses + teacherPaymentsCost;
+    const totalMonthlyExpenses = totalMarketingExpenses + monthlyTeacherPaymentsCost;
     
     const nextPaymentDate = useMemo(() => {
         const now = new Date();
@@ -195,9 +201,16 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
-
-            const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
             
+            // --- Monthly Calculation for Top Cards ---
+            const monthlyCompletedClasses = schedule.filter(e => 
+                e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval)
+            );
+            const totalMonthlyTeacherCost = monthlyCompletedClasses.length * paymentRate;
+            setMonthlyTeacherPaymentsCost(totalMonthlyTeacherCost);
+            
+            // --- Current Payment Period Calculation for Bottom Table ---
+            const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
             const now = new Date();
 
             let currentPaymentPeriodStart: Date;
@@ -211,7 +224,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             } else { // monthly
                 currentPaymentPeriodStart = startOfMonth(now);
             }
-
 
             const classesInCurrentPeriod = schedule.filter(e => 
                 e.status === 'completed' &&
@@ -245,7 +257,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             })).sort((a,b) => b.totalAmount - a.totalAmount);
             
             setTeacherPaymentDetails(paymentDetails);
-            setTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+            setCurrentPeriodTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
         };
 
         updateData();
@@ -300,7 +312,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     };
 
     const expenseItems = [
-      { id: 'exp-1', date: new Date(), category: 'Pagamentos', description: 'Professores (aulas concluídas)', amount: teacherPaymentsCost },
+      { id: 'exp-1', date: new Date(), category: 'Pagamentos', description: 'Professores (aulas concluídas)', amount: monthlyTeacherPaymentsCost },
       { id: 'exp-2', date: new Date(), category: 'Pagamentos', description: 'Comissões (Marketing)', amount: marketingCosts.organicCommissions + marketingCosts.paidCommissions },
       { id: 'exp-3', date: new Date(), category: 'Custos de Marketing', description: 'Anúncios', amount: marketingCosts.ads },
       { id: 'exp-4', date: new Date(), category: 'Custos de Marketing', description: 'Equipe', amount: marketingCosts.team },
@@ -339,7 +351,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <Landmark className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ {totalExpenses.toFixed(2).replace('.',',')}</div>
+                <div className="text-2xl font-bold">R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground flex items-center">
                     <ArrowDown className="h-4 w-4 text-red-500" />
                      -5.2% vs. mês anterior
@@ -352,9 +364,9 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
+                <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue - totalMonthlyExpenses).toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground">
-                    Margem: {totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : 0}%
+                    Margem: {totalRevenue > 0 ? ((totalRevenue - totalMonthlyExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
                 </CardContent>
             </Card>
@@ -364,7 +376,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                   <CardDescription className="text-xs">Resultado do mês</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
+                  <div className="text-2xl font-bold">R$ {(totalRevenue - totalMonthlyExpenses).toFixed(2).replace('.',',')}</div>
                 </CardContent>
             </Card>
         </div>
@@ -401,7 +413,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <CardContent className="grid gap-4 flex-1">
                      <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Pagamentos (Professores)</span>
-                        <span className="font-bold">R$ {teacherPaymentsCost.toFixed(2).replace('.',',')}</span>
+                        <span className="font-bold">R$ {monthlyTeacherPaymentsCost.toFixed(2).replace('.',',')}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Marketing e Anúncios</span>
@@ -412,7 +424,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                     <Separator className="my-2" />
                     <div className="flex items-center justify-between font-bold text-lg">
                         <span>Total de Despesas</span>
-                        <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                        <span className="text-red-600">R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -428,15 +440,15 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Total de Despesas</span>
-                        <span className="font-bold text-red-600">- R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                        <span className="font-bold text-red-600">- R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
                 <CardContent className="mt-auto">
                     <Separator className="my-2" />
                     <div className="flex items-center justify-between font-bold text-lg">
                         <span>Resultado Líquido</span>
-                        <span className={(totalRevenue - totalExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}>
-                            R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}
+                        <span className={(totalRevenue - totalMonthlyExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            R$ {(totalRevenue - totalMonthlyExpenses).toFixed(2).replace('.',',')}
                         </span>
                     </div>
                 </CardContent>
@@ -548,7 +560,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <Separator className="my-4" />
                         <div className="flex items-center justify-between font-bold">
                             <span>Total de Despesas</span>
-                            <span className="text-red-600">R$ {totalExpenses.toFixed(2).replace('.',',')}</span>
+                            <span className="text-red-600">R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</span>
                         </div>
                     </CardContent>
                 </CollapsibleContent>
@@ -608,7 +620,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             <TableFooter>
                                 <TableRow>
                                 <TableCell colSpan={4} className="text-right font-bold">{getFooterLabel()}</TableCell>
-                                <TableCell className="text-right font-extrabold text-lg">R$ {teacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
+                                <TableCell className="text-right font-extrabold text-lg">R$ {currentPeriodTeacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
@@ -636,5 +648,3 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     </>
   );
 }
-
-    
