@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { DollarSign, ArrowDown, Landmark, TrendingUp, TrendingDown, Banknote, Trash2, ChevronDown, ChevronUp, User, Wallet, CheckCircle } from 'lucide-react';
 import {
@@ -368,6 +369,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             teacherId: p.teacherId,
             period: p.period,
             classesDone: p.completedClasses,
+            paymentRate: p.paymentRate,
             amount: p.totalAmount,
             status: 'Pago',
             paymentDate: new Date().toISOString(),
@@ -736,3 +738,5 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     </>
   );
 }
+
+    
