@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit } from 'lucide-react';
+import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit, UploadCloud } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -50,6 +50,8 @@ function StudentDetailPageComponent() {
     const [editingClass, setEditingClass] = useState<ScheduleEvent | null>(null);
     const [editedTitle, setEditedTitle] = useState('');
     const [editedDescription, setEditedDescription] = useState('');
+    const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
+    const [selectedClassForMaterial, setSelectedClassForMaterial] = useState<ScheduleEvent | null>(null);
 
 
     useEffect(() => {
@@ -86,7 +88,7 @@ function StudentDetailPageComponent() {
         if (currentUser.role === 'teacher') {
           return schedule
             .filter(e => baseFilter(e) && e.teacherId === currentUser.id)
-            .sort((a, b) => a.start.getTime() - b.start.getTime());
+            .sort((a, b) => a.start.getTime() - a.start.getTime());
         }
     
         // For admin or the student themselves, show all their upcoming classes.
@@ -137,6 +139,11 @@ function StudentDetailPageComponent() {
         });
 
         setEditingClass(null);
+    };
+
+    const handleOpenMaterialDialog = (classEvent: ScheduleEvent) => {
+        setSelectedClassForMaterial(classEvent);
+        setIsMaterialDialogOpen(true);
     };
 
 
@@ -249,6 +256,12 @@ function StudentDetailPageComponent() {
                                                 {c.subject} • {format(c.start, "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                             </p>
                                         </div>
+                                        <div className="flex items-center gap-2 ml-4">
+                                            <Button variant="outline" size="icon" onClick={() => handleOpenMaterialDialog(c)}>
+                                                <Plus className="h-4 w-4" />
+                                                <span className="sr-only">Adicionar Material</span>
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))
                             ) : (
@@ -305,6 +318,51 @@ function StudentDetailPageComponent() {
                             <Button variant="outline">Cancelar</Button>
                         </DialogClose>
                         <Button onClick={handleSaveChanges}>Salvar Alterações</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+             <Dialog open={isMaterialDialogOpen} onOpenChange={setIsMaterialDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Adicionar Recurso à Aula</DialogTitle>
+                        <DialogDescription>
+                            Anexe um material ou crie um simulado para a aula de <span className="font-semibold">{selectedClassForMaterial?.subject}</span> do dia {selectedClassForMaterial && format(selectedClassForMaterial.start, 'dd/MM/yy')}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="file-upload">Anexar Arquivo</Label>
+                            <div className="flex items-center gap-2">
+                                <Input id="file-upload" type="file" className="flex-1"/>
+                                <Button size="icon" variant="outline">
+                                    <UploadCloud className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">PDFs, planilhas, vídeos, imagens, etc.</p>
+                        </div>
+                        <div className="relative my-2">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">ou</span>
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                             <Label>Criar Simulado</Label>
+                             <Button variant="secondary" asChild>
+                                <Link href="/dashboard/simulados">
+                                    <BookCopy className="mr-2 h-4 w-4" />
+                                    Ir para a Área de Simulados
+                                </Link>
+                             </Button>
+                             <p className="text-xs text-muted-foreground">Você será redirecionado para criar um novo simulado e poderá associá-lo a esta aula.</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Fechar</Button>
+                        </DialogClose>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
