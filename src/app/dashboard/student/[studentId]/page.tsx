@@ -94,6 +94,23 @@ function StudentDetailPageComponent() {
           .filter(baseFilter)
           .sort((a, b) => a.start.getTime() - b.start.getTime());
     }, [schedule, student, currentUser]);
+
+    const completedClasses = useMemo(() => {
+        if (!student || !currentUser) return [];
+
+        const baseFilter = (e: ScheduleEvent) =>
+          e.studentId === student.id && e.status === 'completed';
+
+        if (currentUser.role === 'teacher') {
+            return schedule
+                .filter(e => baseFilter(e) && e.teacherId === currentUser.id)
+                .sort((a, b) => b.start.getTime() - a.start.getTime());
+        }
+
+        return schedule
+            .filter(baseFilter)
+            .sort((a, b) => b.start.getTime() - a.start.getTime());
+    }, [schedule, student, currentUser]);
     
     const handleEditClick = (classEvent: ScheduleEvent) => {
         setEditingClass(classEvent);
@@ -168,9 +185,9 @@ function StudentDetailPageComponent() {
                         <CalendarCheck className="mr-2" />
                         Aulas Agendadas
                     </TabsTrigger>
-                    <TabsTrigger value="materials">
-                        <FileText className="mr-2" />
-                        Materiais de Aula
+                    <TabsTrigger value="completed">
+                        <BookOpen className="mr-2" />
+                        Aulas Realizadas
                     </TabsTrigger>
                     <TabsTrigger value="simulations">
                         <BookCopy className="mr-2" />
@@ -215,14 +232,30 @@ function StudentDetailPageComponent() {
                     </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="materials">
+                <TabsContent value="completed">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Materiais de Aula</CardTitle>
-                            <CardDescription>Materiais compartilhados com o aluno.</CardDescription>
+                            <CardTitle>Histórico de Aulas Realizadas</CardTitle>
+                            <CardDescription>Aulas que você já concluiu com {student.name}.</CardDescription>
                         </CardHeader>
-                        <CardContent className="text-center py-10 text-muted-foreground">
-                            <p>Nenhum material compartilhado ainda.</p>
+                        <CardContent className="space-y-3">
+                            {completedClasses.length > 0 ? (
+                                completedClasses.map(c => (
+                                    <div key={c.id} className="flex items-start justify-between rounded-md border p-4">
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{c.title}</p>
+                                            {c.description && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{c.description}</p>}
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                                {c.subject} • {format(c.start, "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    <p>Nenhuma aula foi concluída com este aluno ainda.</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
