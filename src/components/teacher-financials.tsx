@@ -147,17 +147,21 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
   }, [currentUser, selectedMonth]);
   
   const filteredPayments = useMemo(() => {
+    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+    
+    // Filter by the selected month first
+    const monthPayments = teacherPayments.filter(p => {
+        if (!p.paymentDate) return false;
+        const paymentDate = new Date(p.paymentDate);
+        return paymentDate.getMonth() === monthDate.getMonth() && paymentDate.getFullYear() === monthDate.getFullYear();
+    });
+
     if (!selectedPeriodKey) {
-        const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
-        // If no period is selected (e.g. month view), show all payments for that month
-        return teacherPayments.filter(p => {
-             if (!p.paymentDate) return false;
-             const paymentDate = new Date(p.paymentDate);
-             return paymentDate.getMonth() === monthDate.getMonth() && paymentDate.getFullYear() === monthDate.getFullYear();
-        });
+        return monthPayments;
     }
 
-    return teacherPayments.filter(p => p.period === paymentPeriods.find(pp => pp.value === selectedPeriodKey)?.label);
+    const selectedPeriod = paymentPeriods.find(pp => pp.value === selectedPeriodKey);
+    return monthPayments.filter(p => p.period === selectedPeriod?.label);
   }, [selectedPeriodKey, teacherPayments, paymentPeriods, selectedMonth]);
 
 
@@ -327,7 +331,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                     <TableCell className="font-medium">{payment.period}</TableCell>
                     <TableCell className="text-center">{payment.classesDone}</TableCell>
                     <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
-                    <TableCell className="text-right font-mono">
+                    <TableCell className="text-right font-mono text-green-600 font-semibold">
                         R$ {payment.amount.toFixed(2).replace('.', ',')}
                     </TableCell>
                     </TableRow>
@@ -346,5 +350,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     </div>
   );
 }
+
+    
 
     
