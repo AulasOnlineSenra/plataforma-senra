@@ -17,13 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getMockUser, scheduleEvents as initialSchedule, teacherPayments as initialTeacherPayments } from '@/lib/data';
-import { ScheduleEvent, Teacher, PaymentTransaction } from '@/lib/types';
+import { getMockUser, scheduleEvents as initialSchedule } from '@/lib/data';
+import { ScheduleEvent, Teacher } from '@/lib/types';
 import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths, getWeek, startOfMonth, parse, endOfMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from './ui/badge';
 import { DollarSign, BookOpen, Calendar, TrendingUp } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Label } from './ui/label';
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
@@ -53,6 +55,9 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
   const [paymentFrequency, setPaymentFrequency] = useState('weekly');
   const [teacherPayments, setTeacherPayments] = useState<TeacherPaymentRecord[]>([]);
 
+  const [paymentPeriods, setPaymentPeriods] = useState<{ label: string, value: string, start: Date, end: Date }[]>([]);
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | undefined>();
+
 
   useEffect(() => {
     const updateData = () => {
@@ -77,20 +82,57 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
       }
       
       const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
-      if (storedPaymentDay) {
-        setPaymentDay(storedPaymentDay);
-      }
+      const currentPaymentDay = storedPaymentDay || 'friday';
+      setPaymentDay(currentPaymentDay);
       
       const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
-      if (storedPaymentFrequency) {
-        setPaymentFrequency(storedPaymentFrequency);
+      const currentPaymentFrequency = storedPaymentFrequency || 'weekly';
+      setPaymentFrequency(currentPaymentFrequency);
+      
+      // --- Payment Period Generation for the filter ---
+      const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+      const monthInterval = {
+        start: startOfMonth(monthDate),
+        end: endOfMonth(monthDate),
+      };
+      const periods: { label: string, value: string, start: Date, end: Date }[] = [];
+      let periodStart = startOfWeek(monthInterval.start, { locale: ptBR });
+      
+      while(periodStart < monthInterval.end) {
+          let periodEnd = endOfWeek(periodStart, { locale: ptBR });
+          if (currentPaymentFrequency === 'biweekly') {
+              periodEnd = addWeeks(periodEnd, 1);
+          } else if (currentPaymentFrequency === 'monthly') {
+              periodEnd = endOfMonth(periodStart);
+          }
+
+          periods.push({
+              label: `${format(periodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`,
+              value: periodStart.toISOString(),
+              start: periodStart,
+              end: periodEnd,
+          });
+          
+          if (currentPaymentFrequency === 'weekly') {
+              periodStart = addWeeks(periodStart, 1);
+          } else if (currentPaymentFrequency === 'biweekly') {
+              periodStart = addWeeks(periodStart, 2);
+          } else { // monthly
+              periodStart = addMonths(periodStart, 1);
+          }
+      }
+      setPaymentPeriods(periods.reverse());
+
+      // Set default selected period to the most recent one
+      if (periods.length > 0 && !selectedPeriodKey) {
+          setSelectedPeriodKey(periods[0].value);
       }
     };
 
     updateData();
     window.addEventListener('storage', updateData);
     return () => window.removeEventListener('storage', updateData);
-  }, []);
+  }, [selectedMonth, selectedPeriodKey]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -99,17 +141,23 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     const allHistory: TeacherPaymentRecord[] = storedHistory ? JSON.parse(storedHistory) : [];
     const userHistory = allHistory.filter((p: TeacherPaymentRecord) => p.teacherId === currentUser.id);
 
-    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
-    const monthInterval = { start: startOfMonth(monthDate), end: endOfMonth(monthDate) };
-    
-    const monthHistory = userHistory.filter(p => {
-        if (!p.paymentDate) return false;
-        return isWithinInterval(new Date(p.paymentDate), monthInterval)
-    });
-
-    setTeacherPayments(monthHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
+    setTeacherPayments(userHistory.sort((a: TeacherPaymentRecord, b: TeacherPaymentRecord) => new Date(b.paymentDate || 0).getTime() - new Date(a.paymentDate || 0).getTime()));
 
   }, [currentUser, selectedMonth]);
+  
+  const filteredPayments = useMemo(() => {
+    if (!selectedPeriodKey) {
+        const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+        // If no period is selected (e.g. month view), show all payments for that month
+        return teacherPayments.filter(p => {
+             if (!p.paymentDate) return false;
+             const paymentDate = new Date(p.paymentDate);
+             return paymentDate.getMonth() === monthDate.getMonth() && paymentDate.getFullYear() === monthDate.getFullYear();
+        });
+    }
+
+    return teacherPayments.filter(p => p.period === paymentPeriods.find(pp => pp.value === selectedPeriodKey)?.label);
+  }, [selectedPeriodKey, teacherPayments, paymentPeriods, selectedMonth]);
 
 
   const weeklyStats = useMemo(() => {
@@ -143,10 +191,6 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
         friday: nextFriday,
     };
     
-    const dayIndexMap = {
-        monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5,
-    };
-
     const getNextPaymentDayFunc = dayMap[paymentDay as keyof typeof dayMap] || nextFriday;
 
     if (paymentFrequency === 'weekly') {
@@ -159,7 +203,6 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
       const currentWeek = getWeek(zonedNow, { weekStartsOn: 1 });
       const nextPaymentWeek = getWeek(nextDate, { weekStartsOn: 1 });
 
-      // If the next payment date is in an odd week, and we pay on even weeks (or vice versa)
       // This ensures payment is always on an even or odd week of the year.
       if (nextPaymentWeek % 2 !== 0) { 
         nextDate = addWeeks(nextDate, 1);
@@ -244,10 +287,27 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
 
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Pagamentos</CardTitle>
-          <CardDescription>
-            Um registro de todos os pagamentos recebidos.
-          </CardDescription>
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle>Histórico de Pagamentos</CardTitle>
+                <CardDescription>
+                  Um registro de todos os pagamentos recebidos no período selecionado.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="period-filter-teacher" className="sr-only">Filtrar Período</Label>
+                <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
+                  <SelectTrigger id="period-filter-teacher" className="w-[180px] justify-center text-center">
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentPeriods.map(p => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+           </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -260,8 +320,8 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teacherPayments.length > 0 ? (
-                teacherPayments.map((payment, index) => (
+              {filteredPayments.length > 0 ? (
+                filteredPayments.map((payment, index) => (
                     <TableRow key={index}>
                     <TableCell className="font-medium">{payment.period}</TableCell>
                     <TableCell className="text-center">{payment.classesDone}</TableCell>
@@ -278,7 +338,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
               ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        Nenhum histórico de pagamento encontrado para este mês.
+                        Nenhum histórico de pagamento encontrado para este período.
                     </TableCell>
                 </TableRow>
               )}
