@@ -34,7 +34,7 @@ import { Separator } from './ui/separator';
 import { paymentHistory as initialPaymentHistory, users as initialUsers, marketingCosts as initialMarketingCosts, scheduleEvents as initialScheduleEvents, teachers as initialTeachers } from '@/lib/data';
 import { PaymentTransaction, User as AppUser, MarketingCosts, ScheduleEvent, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek, getISODay, previousOrSame } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, getWeek, addWeeks, addMonths, startOfWeek, endOfWeek, getISODay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
@@ -193,17 +193,12 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
             const teachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
             
-            const monthCompletedClasses = schedule.filter(e => e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval));
-            
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
             const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
             
             const now = new Date();
-            const dayIndexMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
-            const paymentDayIndex = dayIndexMap[currentPaymentDay as keyof typeof dayIndexMap];
-            const lastPaymentDate = previousOrSame(now, { weekStartsOn: 1, day: paymentDayIndex });
 
             let currentPaymentPeriodStart: Date;
             if (currentPaymentFrequency === 'weekly') {
@@ -365,11 +360,11 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             </Card>
             <Card>
                 <CardHeader>
-                <CardTitle className="text-sm font-medium">Patrimônio Líquido (Mês)</CardTitle>
-                <CardDescription className="text-xs">Resultado do mês</CardDescription>
+                  <CardTitle className="text-sm font-medium">Patrimônio Líquido (Mês)</CardTitle>
+                  <CardDescription className="text-xs">Resultado do mês</CardDescription>
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
+                  <div className="text-2xl font-bold">R$ {(totalRevenue - totalExpenses).toFixed(2).replace('.',',')}</div>
                 </CardContent>
             </Card>
         </div>
@@ -641,3 +636,5 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     </>
   );
 }
+
+    
