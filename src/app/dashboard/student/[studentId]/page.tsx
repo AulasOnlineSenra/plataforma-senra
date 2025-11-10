@@ -88,7 +88,7 @@ function StudentDetailPageComponent() {
         if (currentUser.role === 'teacher') {
           return schedule
             .filter(e => baseFilter(e) && e.teacherId === currentUser.id)
-            .sort((a, b) => a.start.getTime() - a.start.getTime());
+            .sort((a, b) => a.start.getTime() - b.start.getTime());
         }
     
         // For admin or the student themselves, show all their upcoming classes.
@@ -221,12 +221,13 @@ function StudentDetailPageComponent() {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 ml-4">
+                                        <Button variant="outline" size="icon" onClick={() => handleOpenMaterialDialog(c)}>
+                                            <Plus className="h-4 w-4" />
+                                            <span className="sr-only">Adicionar Material</span>
+                                        </Button>
                                         <Button variant="outline" size="sm" onClick={() => handleEditClick(c)}>
                                             <Edit className="mr-2 h-4 w-4" />
                                             Editar
-                                        </Button>
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href="/dashboard/schedule">Agenda</Link>
                                         </Button>
                                     </div>
                                 </div>
