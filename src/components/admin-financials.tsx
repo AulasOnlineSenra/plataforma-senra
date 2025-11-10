@@ -39,6 +39,8 @@ import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
 import { toZonedTime } from 'date-fns-tz';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Label } from './ui/label';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -79,18 +81,21 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(false);
     const [isExpensesOpen, setIsExpensesOpen] = useState(false);
-    const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(false);
+    const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(true);
     const { toast } = useToast();
     
-    // State for the bottom table (current payment period)
-    const [currentPeriodTeacherPaymentsCost, setCurrentPeriodTeacherPaymentsCost] = useState(0);
+    // State for the bottom table (period-based)
     const [teacherPaymentDetails, setTeacherPaymentDetails] = useState<TeacherPaymentDetails[]>([]);
+    const [selectedPeriodCost, setSelectedPeriodCost] = useState(0);
     
     // State for the top cards (monthly total)
     const [monthlyTeacherPaymentsCost, setMonthlyTeacherPaymentsCost] = useState(0);
 
     const [paymentDay, setPaymentDay] = useState('friday');
     const [paymentFrequency, setPaymentFrequency] = useState('weekly');
+    
+    const [paymentPeriods, setPaymentPeriods] = useState<{ label: string, value: string, start: Date, end: Date }[]>([]);
+    const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | undefined>();
 
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
@@ -209,55 +214,37 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             const totalMonthlyTeacherCost = monthlyCompletedClasses.length * paymentRate;
             setMonthlyTeacherPaymentsCost(totalMonthlyTeacherCost);
             
-            // --- Current Payment Period Calculation for Bottom Table ---
-            const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
-            const now = new Date();
-
-            let currentPaymentPeriodStart: Date;
-            if (currentPaymentFrequency === 'weekly') {
-                currentPaymentPeriodStart = startOfWeek(now, { locale: ptBR });
-            } else if (currentPaymentFrequency === 'biweekly') {
-                 const weekNumber = getWeek(now, { weekStartsOn: 1 });
-                 currentPaymentPeriodStart = weekNumber % 2 === 0
-                    ? startOfWeek(now, { locale: ptBR })
-                    : startOfWeek(addWeeks(now, -1), { locale: ptBR });
-            } else { // monthly
-                currentPaymentPeriodStart = startOfMonth(now);
-            }
-
-            const classesInCurrentPeriod = schedule.filter(e => 
-                e.status === 'completed' &&
-                new Date(e.start) >= currentPaymentPeriodStart &&
-                new Date(e.start) <= now
-            );
-
-            classesInCurrentPeriod.forEach(c => {
-                if (!paymentsByTeacher[c.teacherId]) {
-                    const teacher = teachers.find(t => t.id === c.teacherId);
-                    paymentsByTeacher[c.teacherId] = {
-                        teacherId: c.teacherId,
-                        teacherName: teacher?.name || 'Professor Desconhecido',
-                        teacherAvatarUrl: teacher?.avatarUrl,
-                        completedClasses: 0,
-                        paymentRate: paymentRate,
-                        totalAmount: 0,
-                    };
+            // --- Payment Period Generation ---
+            const periods: { label: string, value: string, start: Date, end: Date }[] = [];
+            let periodStart = startOfWeek(monthInterval.start, { locale: ptBR });
+            
+            while(periodStart < monthInterval.end) {
+                let periodEnd = endOfWeek(periodStart, { locale: ptBR });
+                if (currentPaymentFrequency === 'biweekly') {
+                    periodEnd = addWeeks(periodEnd, 1);
+                } else if (currentPaymentFrequency === 'monthly') {
+                    periodEnd = endOfMonth(periodStart);
                 }
-                paymentsByTeacher[c.teacherId].completedClasses += 1;
-            });
-            
-            const periodEnd = endOfWeek(now, {locale: ptBR});
-            const periodLabel = `${format(currentPaymentPeriodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`;
-            
-            const paymentDetails = Object.entries(paymentsByTeacher).map(([teacherId, p]) => ({
-              id: teacherId,
-              ...p,
-              totalAmount: p.completedClasses * p.paymentRate,
-              period: periodLabel,
-            })).sort((a,b) => b.totalAmount - a.totalAmount);
-            
-            setTeacherPaymentDetails(paymentDetails);
-            setCurrentPeriodTeacherPaymentsCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+
+                periods.push({
+                    label: `${format(periodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`,
+                    value: periodStart.toISOString(),
+                    start: periodStart,
+                    end: periodEnd,
+                });
+                
+                if (currentPaymentFrequency === 'weekly') {
+                    periodStart = addWeeks(periodStart, 1);
+                } else if (currentPaymentFrequency === 'biweekly') {
+                    periodStart = addWeeks(periodStart, 2);
+                } else { // monthly
+                    periodStart = addMonths(periodStart, 1);
+                }
+            }
+            setPaymentPeriods(periods.reverse());
+
+            const currentPeriodKey = periods.find(p => isWithinInterval(new Date(), {start: p.start, end: p.end}))?.value;
+            setSelectedPeriodKey(currentPeriodKey);
         };
 
         updateData();
@@ -265,6 +252,53 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         window.addEventListener('storage', updateData);
         return () => window.removeEventListener('storage', updateData);
     }, [selectedMonth]);
+    
+    useEffect(() => {
+        if (!selectedPeriodKey || paymentPeriods.length === 0) return;
+
+        const selectedPeriod = paymentPeriods.find(p => p.value === selectedPeriodKey);
+        if (!selectedPeriod) return;
+
+        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+        const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})) : initialScheduleEvents;
+        
+        const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
+        const teachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+        
+        const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
+        const paymentRate = storedRate ? parseFloat(storedRate) : 50;
+
+        const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
+
+        const classesInPeriod = schedule.filter(e => 
+            e.status === 'completed' && isWithinInterval(new Date(e.start), { start: selectedPeriod.start, end: selectedPeriod.end })
+        );
+
+        classesInPeriod.forEach(c => {
+            if (!paymentsByTeacher[c.teacherId]) {
+                const teacher = teachers.find(t => t.id === c.teacherId);
+                paymentsByTeacher[c.teacherId] = {
+                    teacherId: c.teacherId,
+                    teacherName: teacher?.name || 'Professor Desconhecido',
+                    teacherAvatarUrl: teacher?.avatarUrl,
+                    completedClasses: 0,
+                    paymentRate: paymentRate,
+                    totalAmount: 0,
+                };
+            }
+            paymentsByTeacher[c.teacherId].completedClasses += 1;
+        });
+        
+        const paymentDetails = Object.entries(paymentsByTeacher).map(([teacherId, p]) => ({
+          id: `${selectedPeriodKey}-${teacherId}`,
+          ...p,
+          totalAmount: p.completedClasses * p.paymentRate,
+          period: selectedPeriod.label,
+        })).sort((a,b) => b.totalAmount - a.totalAmount);
+        
+        setTeacherPaymentDetails(paymentDetails);
+        setSelectedPeriodCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+    }, [selectedPeriodKey, paymentPeriods]);
 
     const getUserById = (id: string): AppUser | undefined => {
         return users.find(u => u.id === id);
@@ -319,12 +353,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     ];
     
     const getFooterLabel = () => {
-        switch(paymentFrequency) {
-            case 'weekly': return 'Total a Pagar (Semanal)';
-            case 'biweekly': return 'Total a Pagar (Quinzenal)';
-            case 'monthly': return 'Total a Pagar (Mensal)';
-            default: return 'Total a Pagar';
-        }
+        return 'Total para o Período';
     }
 
 
@@ -569,16 +598,31 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         <Collapsible open={isTeacherPaymentsOpen} onOpenChange={setIsTeacherPaymentsOpen}>
             <Card>
                 <CollapsibleTrigger asChild>
-                    <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
-                        <div>
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer gap-4">
+                        <div className="flex-1">
                             <CardTitle>Pagamentos de Professores</CardTitle>
                             <CardDescription>
                                 Detalhes para aulas concluídas no período. Próximo pagamento em: {format(nextPaymentDate, 'dd/MM/yyyy')}
                             </CardDescription>
                         </div>
-                        <Button variant="ghost" size="icon">
-                            {isTeacherPaymentsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                        </Button>
+                        <div className="flex w-full sm:w-auto items-center gap-2">
+                             <Label htmlFor="period-filter" className="sr-only">Filtrar Período</Label>
+                             <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
+                                <SelectTrigger id="period-filter" className="w-full sm:w-[220px]">
+                                    <SelectValue placeholder="Selecione um período" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {paymentPeriods.map(p => (
+                                        <SelectItem key={p.value} value={p.value}>
+                                            {p.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Button variant="ghost" size="icon" className='hidden sm:inline-flex'>
+                                {isTeacherPaymentsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            </Button>
+                        </div>
                     </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -620,7 +664,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                             <TableFooter>
                                 <TableRow>
                                 <TableCell colSpan={4} className="text-right font-bold">{getFooterLabel()}</TableCell>
-                                <TableCell className="text-right font-extrabold text-lg">R$ {currentPeriodTeacherPaymentsCost.toFixed(2).replace('.', ',')}</TableCell>
+                                <TableCell className="text-right font-extrabold text-lg">R$ {selectedPeriodCost.toFixed(2).replace('.', ',')}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
