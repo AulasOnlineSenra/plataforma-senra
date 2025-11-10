@@ -37,6 +37,7 @@ interface TeacherPaymentRecord {
   teacherId: string;
   period: string;
   classesDone: number;
+  paymentRate: number;
   amount: number;
   status: 'Pago' | 'Pendente';
   paymentDate?: string;
@@ -315,6 +316,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
               <TableRow>
                 <TableHead>Período de Referência</TableHead>
                 <TableHead className="text-center">Aulas Concluídas</TableHead>
+                <TableHead className="text-center">Valor por Aula</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-right">Valor Recebido</TableHead>
               </TableRow>
@@ -325,6 +327,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                     <TableRow key={index}>
                     <TableCell className="font-medium">{payment.period}</TableCell>
                     <TableCell className="text-center">{payment.classesDone}</TableCell>
+                    <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
                     <TableCell className="text-center">
                         <Badge className={payment.status === 'Pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
                             {payment.status}
@@ -337,7 +340,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                 ))
               ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         Nenhum histórico de pagamento encontrado para este período.
                     </TableCell>
                 </TableRow>
