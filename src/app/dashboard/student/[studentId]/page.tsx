@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit, UploadCloud } from 'lucide-react';
+import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -225,9 +225,15 @@ function StudentDetailPageComponent() {
                                             <Plus className="h-4 w-4" />
                                             <span className="sr-only">Adicionar Material</span>
                                         </Button>
-                                        <Button variant="outline" size="sm" onClick={() => handleEditClick(c)}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Editar
+                                        <Button variant="outline" size="icon" onClick={() => handleEditClick(c)}>
+                                            <Edit className="h-4 w-4" />
+                                            <span className="sr-only">Editar</span>
+                                        </Button>
+                                        <Button asChild variant="outline" size="icon">
+                                          <Link href={`/dashboard/schedule`}>
+                                            <CalendarIcon className="h-4 w-4" />
+                                            <span className="sr-only">Agenda</span>
+                                          </Link>
                                         </Button>
                                     </div>
                                 </div>
