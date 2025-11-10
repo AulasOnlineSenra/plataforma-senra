@@ -317,7 +317,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                 <TableHead>Período</TableHead>
                 <TableHead className="text-center">Aulas Concluídas</TableHead>
                 <TableHead className="text-center">Valor por Aula</TableHead>
-                <TableHead className="text-right">Total a Pagar</TableHead>
+                <TableHead className="text-right">Total Recebido</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
