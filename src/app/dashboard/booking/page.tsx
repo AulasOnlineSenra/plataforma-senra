@@ -31,7 +31,6 @@ import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon,
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -66,7 +65,6 @@ function BookingPageComponent() {
   const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(undefined);
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
-  const [isExperimental, setIsExperimental] = useState(false);
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timezoneDifference, setTimezoneDifference] = useState<string | null>(null);
@@ -170,6 +168,10 @@ function BookingPageComponent() {
     return !hasPreviousClasses;
   }, [currentUser, selectedTeacher, scheduleEvents, studentIdParam, users]);
 
+  const isExperimentalOptionAvailable = useMemo(() => {
+    return isFirstClassWithTeacher && !bookings.some(b => b.isExperimental);
+  }, [isFirstClassWithTeacher, bookings]);
+
 
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubject(subjectId);
@@ -191,7 +193,6 @@ function BookingPageComponent() {
     setSelectedTime(undefined);
     setRecurrence('none');
     setBookings([]);
-    setIsExperimental(false);
   };
 
   const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
@@ -233,20 +234,13 @@ function BookingPageComponent() {
       return;
     }
     
-    if (isExperimental && recurrence !== 'none') {
+    const isAddingExperimental = isExperimentalOptionAvailable;
+
+    if (isAddingExperimental && recurrence !== 'none') {
         toast({
             variant: 'destructive',
             title: 'Ação Inválida',
             description: 'Aulas experimentais não podem ser recorrentes.',
-        });
-        return;
-    }
-    
-    if (isExperimental && bookings.some(b => b.isExperimental)) {
-         toast({
-            variant: 'destructive',
-            title: 'Limite de Aula Experimental',
-            description: 'Você só pode agendar uma aula experimental por vez.',
         });
         return;
     }
@@ -294,7 +288,7 @@ function BookingPageComponent() {
                 studentId: studentToBook.id,
                 start: startDate,
                 end: endDate,
-                isExperimental: isExperimental,
+                isExperimental: isAddingExperimental,
              };
              newBookings.push(newBooking);
         }
@@ -355,7 +349,6 @@ function BookingPageComponent() {
     setSelectedDates([]);
     setSelectedTime(undefined);
     setRecurrence('none');
-    setIsExperimental(false);
 
 
     toast({
@@ -765,7 +758,6 @@ function BookingPageComponent() {
     )
   };
 
-  const hasExperimentalInCart = useMemo(() => bookings.some(b => b.isExperimental), [bookings]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -928,22 +920,21 @@ function BookingPageComponent() {
           </CardContent>
           <CardContent className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
              <div className="flex gap-2 w-full justify-end">
-                {isFirstClassWithTeacher && !hasExperimentalInCart && (
-                    <Button
-                        variant={isExperimental ? "default" : "outline"}
-                        onClick={() => setIsExperimental(!isExperimental)}
-                        className={cn(isExperimental && "bg-green-100 text-green-800 border-green-300 hover:bg-green-200")}
-                    >
-                    {isExperimental && <CheckCircle className="mr-2 h-4 w-4" />}
-                    Agendar como aula experimental gratuita
-                    </Button>
-                )}
                 <Button variant="ghost" onClick={handleClearSelections}>
-                <X className="mr-2" />
-                Limpar
+                  <X className="mr-2" />
+                  Limpar
                 </Button>
-                <Button onClick={handleAddBooking} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
-                Adicionar aula <Plus className="ml-2" />
+                <Button onClick={handleAddBooking} className={cn(isExperimentalOptionAvailable && "bg-green-100 text-green-800 border-green-300 hover:bg-green-200")}>
+                  {isExperimentalOptionAvailable ? (
+                    <>
+                      <CheckCircle className="mr-2" />
+                      Adicionar aula experimental
+                    </>
+                  ) : (
+                    <>
+                      Adicionar aula <Plus className="ml-2" />
+                    </>
+                  )}
                 </Button>
             </div>
           </CardContent>
