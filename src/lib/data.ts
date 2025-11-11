@@ -173,6 +173,21 @@ export let teachers: Teacher[] = [
     lastAccess: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
     classCredits: 15,
   },
+  {
+    id: 'teacher-4',
+    name: 'Sofia Borges da Silva',
+    email: 'sofia.borges@example.com',
+    avatarUrl: 'https://picsum.photos/seed/teacher4/200/200',
+    role: 'teacher',
+    subjects: ['subj-10'], // Inglês
+    bio: 'Professora de inglês com vivência internacional e foco em conversação.',
+    education: [{ id: 'edu-t4', course: 'Relações Internacionais', university: 'PUC-SP', type: 'Bacharelado', conclusionYear: '2019' }],
+    availability: {},
+    timezone: 'America/Sao_Paulo',
+    status: 'active',
+    lastAccess: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    classCredits: 5,
+  }
 ];
 
 export const allUsers: (User | Teacher)[] = [...users, ...teachers];
@@ -284,6 +299,16 @@ export const scheduleEvents: ScheduleEvent[] = [
     teacherId: 'teacher-1',
     subject: 'Física',
     status: 'scheduled'
+  },
+  {
+    id: 'evt-4',
+    title: 'Aula de Inglês',
+    start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 19, 30),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 21, 0),
+    studentId: 'user-4',
+    teacherId: 'teacher-4',
+    subject: 'Inglês',
+    status: 'completed'
   },
 ];
 
