@@ -926,18 +926,18 @@ function BookingPageComponent() {
               </div>
             </div>
           </CardContent>
-          <CardContent className="flex flex-col sm:flex-row justify-end pt-4 gap-4">
-             {isFirstClassWithTeacher && !hasExperimentalInCart && (
-                <Button
-                    variant={isExperimental ? "default" : "outline"}
-                    onClick={() => setIsExperimental(!isExperimental)}
-                    className={cn("mr-auto", isExperimental && "bg-green-100 text-green-800 border-green-300 hover:bg-green-200")}
-                >
-                   {isExperimental && <CheckCircle className="mr-2 h-4 w-4" />}
-                   Agendar como aula experimental gratuita
-                </Button>
-            )}
-            <div className="flex gap-2 self-end">
+          <CardContent className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
+             <div className="flex gap-2 w-full justify-end">
+                {isFirstClassWithTeacher && !hasExperimentalInCart && (
+                    <Button
+                        variant={isExperimental ? "default" : "outline"}
+                        onClick={() => setIsExperimental(!isExperimental)}
+                        className={cn(isExperimental && "bg-green-100 text-green-800 border-green-300 hover:bg-green-200")}
+                    >
+                    {isExperimental && <CheckCircle className="mr-2 h-4 w-4" />}
+                    Agendar como aula experimental gratuita
+                    </Button>
+                )}
                 <Button variant="ghost" onClick={handleClearSelections}>
                 <X className="mr-2" />
                 Limpar
