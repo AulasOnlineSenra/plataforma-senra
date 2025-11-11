@@ -419,7 +419,7 @@ function SchedulePageComponent() {
     if (isTomorrow(start)) {
       return `Amanhã, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     }
-    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}`;
+    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
   };
 
   const formatHistoryDate = (start: Date, end: Date) => {
@@ -572,8 +572,6 @@ function SchedulePageComponent() {
                     filteredEvents.map((event) => {
                       const teacher = getTeacherById(event.teacherId);
                       const student = getStudentById(event.studentId);
-                      let personToShow: User | Teacher | undefined;
-                      let personDetail: React.ReactNode;
                       
                       if (currentUser?.role === 'admin') {
                         return (
@@ -625,43 +623,43 @@ function SchedulePageComponent() {
                         )
                       }
                       
-                      personToShow = (currentUser?.role === 'teacher') ? student : teacher;
-                      personDetail = (
-                        <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-                            <span>{event.subject}</span>
-                            <span className="hidden sm:inline">•</span>
-                            <span className="whitespace-nowrap">{formatScheduledDate(event.start, event.end)}</span>
-                        </div>
-                      );
-                      
+                      const personToShow = (currentUser?.role === 'teacher') ? student : teacher;
                       const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                       
                       return (
                           <div
                           key={event.id}
-                          className="flex items-center gap-4 rounded-lg border p-3"
+                          className="flex flex-col gap-3 rounded-lg border p-3"
                         >
-                          <div className="flex items-center gap-3 flex-1">
-                              <Avatar className='h-12 w-12'>
-                                  <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
-                                  <AvatarFallback>{fallback}</AvatarFallback>
-                              </Avatar>
-                              <div className="grid gap-1">
-                                <p className="font-semibold">{personToShow?.name}</p>
-                                {personDetail}
-                              </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}>
-                                <Pencil className="h-5 w-5 text-muted-foreground" />
-                                <span className="sr-only">Editar Aula</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
-                                <XCircle className="h-5 w-5" />
-                                <span className="sr-only">Cancelar Aula</span>
-                            </Button>
-                          </div>
+                            <div className="flex items-center gap-3">
+                                <Avatar className='h-12 w-12'>
+                                    <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
+                                    <AvatarFallback>{fallback}</AvatarFallback>
+                                </Avatar>
+                                <div className="grid gap-1">
+                                    <p className="font-semibold">{personToShow?.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {currentUser?.role === 'teacher' ? 'Aluno' : 'Professor(a)'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                                    <span>{event.subject}</span>
+                                    <span className="hidden sm:inline">•</span>
+                                    <span className="whitespace-nowrap">{formatScheduledDate(event.start, event.end)}</span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(event)}>
+                                        <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Editar Aula</span>
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleCancelClick(event)}>
+                                        <XCircle className="h-4 w-4" />
+                                        <span className="sr-only">Cancelar Aula</span>
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                       )
                     })
