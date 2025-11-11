@@ -27,7 +27,7 @@ import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
-import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -926,11 +926,15 @@ function BookingPageComponent() {
             </div>
           </CardContent>
           <CardContent className="flex flex-col sm:flex-row justify-end pt-4 gap-4">
-            {isFirstClassWithTeacher && (
-                <div className="flex items-center space-x-2 mr-auto">
-                    <Checkbox id="experimental-class" checked={isExperimental} onCheckedChange={(checked) => setIsExperimental(Boolean(checked))} />
-                    <Label htmlFor="experimental-class" className="font-semibold text-primary">Agendar como aula experimental gratuita</Label>
-                </div>
+             {isFirstClassWithTeacher && (
+                <Button
+                    variant={isExperimental ? "default" : "outline"}
+                    onClick={() => setIsExperimental(!isExperimental)}
+                    className={cn("mr-auto", isExperimental && "bg-green-100 text-green-800 border-green-300 hover:bg-green-200")}
+                >
+                   {isExperimental && <CheckCircle className="mr-2 h-4 w-4" />}
+                   Agendar como aula experimental gratuita
+                </Button>
             )}
             <div className="flex gap-2 self-end">
                 <Button variant="ghost" onClick={handleClearSelections}>
