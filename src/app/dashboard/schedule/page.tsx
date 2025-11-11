@@ -580,8 +580,9 @@ function SchedulePageComponent() {
                           personDetail = (
                               <>
                                 <p className="font-semibold">{student?.name || 'N/A'}</p>
-                                <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                    <span>{event.title}</span>
+                                    <span className="hidden sm:inline">•</span>
                                     <span>{formatScheduledDate(event.start, event.end)}</span>
                                 </div>
                               </>
@@ -589,12 +590,11 @@ function SchedulePageComponent() {
                       } else {
                           personToShow = (currentUser?.role === 'teacher') ? student : teacher;
                            personDetail = (
-                            <>
-                                <p className="text-sm text-muted-foreground -mt-1">{event.title}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span>{formatScheduledDate(event.start, event.end)}</span>
-                                </div>
-                            </>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                <span>{event.title}</span>
+                                <span className="hidden sm:inline">•</span>
+                                <span>{formatScheduledDate(event.start, event.end)}</span>
+                            </div>
                           );
                       }
                       
