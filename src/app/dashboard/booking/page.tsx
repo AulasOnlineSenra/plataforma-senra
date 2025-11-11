@@ -765,6 +765,7 @@ function BookingPageComponent() {
     )
   };
 
+  const hasExperimentalInCart = useMemo(() => bookings.some(b => b.isExperimental), [bookings]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -926,7 +927,7 @@ function BookingPageComponent() {
             </div>
           </CardContent>
           <CardContent className="flex flex-col sm:flex-row justify-end pt-4 gap-4">
-             {isFirstClassWithTeacher && (
+             {isFirstClassWithTeacher && !hasExperimentalInCart && (
                 <Button
                     variant={isExperimental ? "default" : "outline"}
                     onClick={() => setIsExperimental(!isExperimental)}
