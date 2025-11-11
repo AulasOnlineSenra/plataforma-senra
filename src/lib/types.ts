@@ -81,6 +81,7 @@ export interface ScheduleEvent {
   status: 'completed' | 'scheduled' | 'cancelled';
   studentHasRated?: boolean;
   teacherHasRated?: boolean;
+  isExperimental?: boolean;
 }
 
 export interface ChatMessage {

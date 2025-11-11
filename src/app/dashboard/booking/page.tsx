@@ -31,6 +31,7 @@ import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 interface Booking {
@@ -40,6 +41,7 @@ interface Booking {
   studentId: string;
   start: Date;
   end: Date;
+  isExperimental?: boolean;
 }
 
 type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
@@ -63,6 +65,7 @@ function BookingPageComponent() {
   const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(undefined);
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
+  const [isExperimental, setIsExperimental] = useState(false);
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timezoneDifference, setTimezoneDifference] = useState<string | null>(null);
@@ -153,6 +156,20 @@ function BookingPageComponent() {
     return teachers.filter((t) => t.subjects.includes(selectedSubject) && t.status === 'active');
   }, [selectedSubject, teachers]);
 
+  const isFirstClassWithTeacher = useMemo(() => {
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+    if (!studentToBook || !selectedTeacher) {
+      return false;
+    }
+    const hasPreviousClasses = scheduleEvents.some(
+      (event) =>
+        event.studentId === studentToBook.id &&
+        event.teacherId === selectedTeacher
+    );
+    return !hasPreviousClasses;
+  }, [currentUser, selectedTeacher, scheduleEvents, studentIdParam, users]);
+
+
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubject(subjectId);
     // If the currently selected teacher doesn't teach this subject, deselect them
@@ -173,6 +190,7 @@ function BookingPageComponent() {
     setSelectedTime(undefined);
     setRecurrence('none');
     setBookings([]);
+    setIsExperimental(false);
   };
 
   const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
@@ -213,6 +231,25 @@ function BookingPageComponent() {
       });
       return;
     }
+    
+    if (isExperimental && recurrence !== 'none') {
+        toast({
+            variant: 'destructive',
+            title: 'Ação Inválida',
+            description: 'Aulas experimentais não podem ser recorrentes.',
+        });
+        return;
+    }
+    
+    if (isExperimental && bookings.some(b => b.isExperimental)) {
+         toast({
+            variant: 'destructive',
+            title: 'Limite de Aula Experimental',
+            description: 'Você só pode agendar uma aula experimental por vez.',
+        });
+        return;
+    }
+
 
     const newBookings: Booking[] = [];
     let conflictFound = false;
@@ -256,6 +293,7 @@ function BookingPageComponent() {
                 studentId: studentToBook.id,
                 start: startDate,
                 end: endDate,
+                isExperimental: isExperimental,
              };
              newBookings.push(newBooking);
         }
@@ -316,6 +354,7 @@ function BookingPageComponent() {
     setSelectedDates([]);
     setSelectedTime(undefined);
     setRecurrence('none');
+    setIsExperimental(false);
 
 
     toast({
@@ -413,10 +452,23 @@ function BookingPageComponent() {
       });
       return;
     }
+    
+    const nonExperimentalBookings = bookings.filter(b => !b.isExperimental);
+    const experimentalBooking = bookings.find(b => b.isExperimental);
+    
+    if (experimentalBooking && !isFirstClassWithTeacher) {
+        toast({
+            variant: 'destructive',
+            title: 'Aula Experimental Inválida',
+            description: 'Você já teve aulas com este professor. A aula experimental não é permitida.',
+        });
+        return;
+    }
+
 
     const currentCredits = studentToBook.classCredits || 0;
-    if (currentCredits < bookings.length) {
-      const creditsNeeded = bookings.length - currentCredits;
+    if (currentCredits < nonExperimentalBookings.length) {
+      const creditsNeeded = nonExperimentalBookings.length - currentCredits;
       toast({
         variant: 'destructive',
         title: 'Créditos Insuficientes',
@@ -440,12 +492,13 @@ function BookingPageComponent() {
       teacherId: b.teacherId,
       subject: currentSubjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
       status: 'scheduled' as 'scheduled',
+      isExperimental: b.isExperimental,
     }));
     
     const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
     localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
     
-    const updatedUsers = users.map(u => u.id === studentToBook.id ? { ...u, classCredits: currentCredits - bookings.length } : u);
+    const updatedUsers = users.map(u => u.id === studentToBook.id ? { ...u, classCredits: currentCredits - nonExperimentalBookings.length } : u);
     localStorage.setItem('userList', JSON.stringify(updatedUsers));
     localStorage.setItem('currentUser', JSON.stringify(updatedUsers.find(u => u.id === studentToBook.id)));
 
@@ -506,7 +559,7 @@ function BookingPageComponent() {
       description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
     });
     setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router]);
+  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router, isFirstClassWithTeacher]);
 
   const availableTimes = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
@@ -605,6 +658,7 @@ function BookingPageComponent() {
                     <div>
                     <Label>Disciplina</Label>
                     <p className="font-semibold">{subject?.name}</p>
+                    {booking.isExperimental && <Badge variant="secondary" className="mt-1">Experimental</Badge>}
                     </div>
                     <div>
                     <Label>Professor(a)</Label>
@@ -690,9 +744,10 @@ function BookingPageComponent() {
                                 {dayBookings.map(booking => {
                                     const teacher = teachers.find(t => t.id === booking.teacherId);
                                     return (
-                                        <div key={booking.id} className="p-1 rounded bg-blue-100 dark:bg-blue-900/50">
+                                        <div key={booking.id} className={cn("p-1 rounded", booking.isExperimental ? "bg-purple-100 dark:bg-purple-900/50" : "bg-blue-100 dark:bg-blue-900/50")}>
                                             <p className="font-semibold truncate">{format(booking.start, 'HH:mm')} - {subjects.find(s => s.id === booking.subjectId)?.name}</p>
                                             <p className="text-muted-foreground truncate">{teacher?.name}</p>
+                                            {booking.isExperimental && <Badge variant="secondary" className="mt-1 text-xs">Exp.</Badge>}
                                         </div>
                                     )
                                 })}
@@ -869,14 +924,22 @@ function BookingPageComponent() {
               </div>
             </div>
           </CardContent>
-          <CardContent className="flex justify-end pt-4 gap-2">
-            <Button variant="ghost" onClick={handleClearSelections}>
-              <X className="mr-2" />
-              Limpar
-            </Button>
-            <Button onClick={handleAddBooking} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
-              Adicionar aula <Plus className="ml-2" />
-            </Button>
+          <CardContent className="flex flex-col sm:flex-row justify-end pt-4 gap-4">
+            {isFirstClassWithTeacher && (
+                <div className="flex items-center space-x-2 mr-auto">
+                    <Checkbox id="experimental-class" checked={isExperimental} onCheckedChange={(checked) => setIsExperimental(Boolean(checked))} />
+                    <Label htmlFor="experimental-class" className="font-semibold text-primary">Agendar como aula experimental gratuita</Label>
+                </div>
+            )}
+            <div className="flex gap-2 self-end">
+                <Button variant="ghost" onClick={handleClearSelections}>
+                <X className="mr-2" />
+                Limpar
+                </Button>
+                <Button onClick={handleAddBooking} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
+                Adicionar aula <Plus className="ml-2" />
+                </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -926,5 +989,3 @@ export default function BookingPage() {
         </Suspense>
     );
 }
-
-    

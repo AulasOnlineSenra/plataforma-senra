@@ -58,7 +58,7 @@ export default function FinancialPage() {
         
         const totalRevenueAllTime = allHistory.reduce((acc, t) => acc + t.amount, 0);
 
-        const allCompletedClasses = schedule.filter(e => e.status === 'completed');
+        const allCompletedClasses = schedule.filter(e => e.status === 'completed' && !e.isExperimental);
         const totalTeacherPaymentsAllTime = allCompletedClasses.length * paymentRate;
         
         const totalMarketingExpensesAllTime = Object.values(allCosts as Record<string, MarketingCosts>).reduce((acc, monthlyCost) => {

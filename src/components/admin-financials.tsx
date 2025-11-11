@@ -210,7 +210,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             
             // --- Monthly Calculation for Top Cards ---
             const monthlyCompletedClasses = schedule.filter(e => 
-                e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval)
+                e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval) && !e.isExperimental
             );
             const totalMonthlyTeacherCost = monthlyCompletedClasses.length * paymentRate;
             setMonthlyTeacherPaymentsCost(totalMonthlyTeacherCost);
@@ -278,7 +278,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
 
         const classesInPeriod = schedule.filter(e => 
-            e.status === 'completed' && isWithinInterval(new Date(e.start), { start: selectedPeriod.start, end: selectedPeriod.end })
+            e.status === 'completed' && isWithinInterval(new Date(e.start), { start: selectedPeriod.start, end: selectedPeriod.end }) && !e.isExperimental
         );
 
         classesInPeriod.forEach(c => {
@@ -699,5 +699,3 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     </>
   );
 }
-
-    
