@@ -419,7 +419,7 @@ function SchedulePageComponent() {
     if (isTomorrow(start)) {
       return `Amanhã, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     }
-    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
+    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}`;
   };
 
   const formatHistoryDate = (start: Date, end: Date) => {
@@ -587,11 +587,17 @@ function SchedulePageComponent() {
                                         <AvatarImage src={student?.avatarUrl} alt={student?.name} />
                                         <AvatarFallback>{student?.name.charAt(0) || '?'}</AvatarFallback>
                                     </Avatar>
-                                    <span className="font-semibold truncate">{student?.name}</span>
+                                     <div>
+                                        <p className="font-semibold truncate">{student?.name}</p>
+                                        <p className="text-xs text-muted-foreground">Aluno</p>
+                                    </div>
                                 </div>
                                 <ArrowRightLeft className="h-5 w-5 text-muted-foreground shrink-0" />
-                                <div className="flex items-center gap-2 flex-1 justify-end">
-                                    <span className="font-semibold truncate text-right">{teacher?.name}</span>
+                                <div className="flex items-center gap-2 flex-1 justify-end text-right">
+                                    <div>
+                                        <p className="font-semibold truncate">{teacher?.name}</p>
+                                        <p className="text-xs text-muted-foreground">Professor(a)</p>
+                                    </div>
                                     <Avatar className='h-10 w-10'>
                                         <AvatarImage src={teacher?.avatarUrl} alt={teacher?.name} />
                                         <AvatarFallback>{teacher?.name.charAt(0) || '?'}</AvatarFallback>
@@ -624,7 +630,7 @@ function SchedulePageComponent() {
                         <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
                             <span>{event.subject}</span>
                             <span className="hidden sm:inline">•</span>
-                            <span>{formatScheduledDate(event.start, event.end)}</span>
+                            <span className="whitespace-nowrap">{formatScheduledDate(event.start, event.end)}</span>
                         </div>
                       );
                       
