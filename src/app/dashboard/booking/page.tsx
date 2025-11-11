@@ -919,12 +919,12 @@ function BookingPageComponent() {
             </div>
           </CardContent>
           <CardContent className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
-             <div className="flex gap-2 w-full justify-end">
+            <div className="flex gap-2 w-full justify-end">
                 <Button variant="ghost" onClick={handleClearSelections}>
                   <X className="mr-2" />
                   Limpar
                 </Button>
-                <Button onClick={handleAddBooking} className={cn(isExperimentalOptionAvailable && "bg-green-100 text-green-800 border-green-300 hover:bg-green-200")}>
+                <Button onClick={handleAddBooking} className={cn(isExperimentalOptionAvailable ? 'bg-brand-yellow text-black hover:bg-brand-yellow/90' : 'bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground')}>
                   {isExperimentalOptionAvailable ? (
                     <>
                       <CheckCircle className="mr-2" />
