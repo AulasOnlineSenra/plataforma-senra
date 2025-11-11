@@ -652,56 +652,58 @@ function SchedulePageComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
-                  {currentUser?.role !== 'student' && <TableHead>Aluno(a)</TableHead>}
-                  <TableHead>Disciplina</TableHead>
-                  <TableHead>Título da Aula</TableHead>
-                  <TableHead className="text-right">Data</TableHead>
-                  {currentUser?.role === 'admin' && <TableHead className="text-right">Ações</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {completedEvents.length > 0 ? (
-                  completedEvents.map((event) => {
-                    const student = getStudentById(event.studentId);
-                    const teacher = getTeacherById(event.teacherId);
-                    return (
-                      <TableRow key={event.id}>
-                        {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
-                        {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
-                        <TableCell className="font-medium">{event.subject}</TableCell>
-                        <TableCell>{event.title}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatHistoryDate(event.start, event.end)}
-                        </TableCell>
-                        {currentUser?.role === 'admin' && (
-                            <TableCell className="text-right">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={() => setEventToDelete(event)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="sr-only">Excluir</span>
-                                </Button>
+            <ScrollArea className="h-96">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
+                    {currentUser?.role !== 'student' && <TableHead>Aluno(a)</TableHead>}
+                    <TableHead>Disciplina</TableHead>
+                    <TableHead>Título da Aula</TableHead>
+                    <TableHead className="text-right">Data</TableHead>
+                    {currentUser?.role === 'admin' && <TableHead className="text-right">Ações</TableHead>}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {completedEvents.length > 0 ? (
+                    completedEvents.map((event) => {
+                        const student = getStudentById(event.studentId);
+                        const teacher = getTeacherById(event.teacherId);
+                        return (
+                        <TableRow key={event.id}>
+                            {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
+                            {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
+                            <TableCell className="font-medium">{event.subject}</TableCell>
+                            <TableCell>{event.title}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                            {formatHistoryDate(event.start, event.end)}
                             </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={currentUser?.role === 'admin' ? 6 : (currentUser?.role === 'teacher' ? 4 : 5)} className="h-24 text-center">
-                      Nenhuma aula concluída ainda.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                            {currentUser?.role === 'admin' && (
+                                <TableCell className="text-right">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-destructive hover:text-destructive"
+                                        onClick={() => setEventToDelete(event)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">Excluir</span>
+                                    </Button>
+                                </TableCell>
+                            )}
+                        </TableRow>
+                        );
+                    })
+                    ) : (
+                    <TableRow>
+                        <TableCell colSpan={currentUser?.role === 'admin' ? 6 : (currentUser?.role === 'teacher' ? 4 : 5)} className="h-24 text-center">
+                        Nenhuma aula concluída ainda.
+                        </TableCell>
+                    </TableRow>
+                    )}
+                </TableBody>
+                </Table>
+            </ScrollArea>
           </CardContent>
         </Card>
 
