@@ -63,7 +63,7 @@ function BookingPageComponent() {
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
   const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(undefined);
-  const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -220,7 +220,6 @@ function BookingPageComponent() {
     if (
       !selectedSubject ||
       !selectedTeacher ||
-      !selectedDates ||
       selectedDates.length === 0 ||
       !selectedTime ||
       !studentToBook
@@ -557,7 +556,7 @@ function BookingPageComponent() {
 
   const availableTimes = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (!selectedTeacher || !selectedDates || selectedDates.length === 0 || !studentToBook) {
+    if (!selectedTeacher || selectedDates.length === 0 || !studentToBook) {
       return [];
     }
   
@@ -630,6 +629,16 @@ function BookingPageComponent() {
       setTimezoneDifference(null);
     }
   }, [selectedTeacher, currentUser, teachers, studentIdParam, users]);
+  
+  const handleDateSelection = (dates: Date | Date[] | undefined) => {
+    if (Array.isArray(dates)) {
+        setSelectedDates(dates);
+    } else if (dates) {
+        setSelectedDates([dates]);
+    } else {
+        setSelectedDates([]);
+    }
+  };
   
   const renderListView = () => (
     bookings.length > 0 ? (
@@ -841,17 +850,19 @@ function BookingPageComponent() {
               Passo 2: Escolha as Datas e Horários
             </CardTitle>
             <CardDescription>
-              Você pode selecionar múltiplos dias no calendário. Os horários
-              exibidos são baseados na disponibilidade do professor. A duração de cada aula é de {CLASS_DURATION_MINUTES} minutos.
+              {isExperimentalOptionAvailable
+                ? "Selecione um dia e horário para sua aula experimental."
+                : "Você pode selecionar múltiplos dias no calendário. Os horários exibidos são baseados na disponibilidade do professor."}
+              {' '}A duração de cada aula é de {CLASS_DURATION_MINUTES} minutos.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-6 items-start">
             <div className="flex justify-center">
               {isClient ? (
                 <Calendar
-                  mode="multiple"
-                  selected={selectedDates}
-                  onSelect={setSelectedDates}
+                  mode={isExperimentalOptionAvailable ? 'single' : 'multiple'}
+                  selected={isExperimentalOptionAvailable ? selectedDates[0] : selectedDates}
+                  onSelect={(dates) => handleDateSelection(dates as Date[] | Date | undefined)}
                   className="rounded-md border p-0 sm:p-3"
                   locale={ptBR}
                   disabled={{ before: startOfToday() }}
@@ -884,12 +895,12 @@ function BookingPageComponent() {
                       'text-sm',
                       selectedTime === time.start ? 'bg-brand-yellow text-black hover:bg-brand-yellow/90' : ''
                     )}
-                    disabled={!selectedTeacher || (selectedDates || []).length === 0}
+                    disabled={!selectedTeacher || selectedDates.length === 0}
                   >
                     {time.start} - {time.end}
                   </Button>
                 ))}
-                {availableTimes.length === 0 && selectedTeacher && (selectedDates || []).length > 0 && (
+                {availableTimes.length === 0 && selectedTeacher && selectedDates.length > 0 && (
                     <p className='col-span-full text-sm text-muted-foreground'>Não há horários disponíveis para este professor no dia selecionado.</p>
                 )}
               </div>
@@ -898,6 +909,7 @@ function BookingPageComponent() {
                 <Select
                   value={recurrence}
                   onValueChange={(value) => setRecurrence(value as Recurrence)}
+                  disabled={isExperimentalOptionAvailable}
                 >
                   <SelectTrigger id="recurrence">
                     <SelectValue placeholder="Não repetir" />
