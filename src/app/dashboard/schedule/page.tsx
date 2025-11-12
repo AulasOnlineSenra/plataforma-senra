@@ -43,6 +43,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -241,7 +243,7 @@ function SchedulePageComponent() {
 
     // Add 1 credit back to the student
     const student = users.find(u => u.id === event.studentId);
-    if (student) {
+    if (student && !event.isExperimental) {
         const updatedUsers = users.map(u => 
             u.id === student.id 
                 ? { ...u, classCredits: (u.classCredits || 0) + 1 } 
@@ -279,7 +281,7 @@ function SchedulePageComponent() {
 
     toast({
         title: "Aula Cancelada",
-        description: `A aula de ${event?.subject} foi cancelada. 1 crédito foi devolvido ao aluno.`,
+        description: `A aula de ${event?.subject} foi cancelada.${!event.isExperimental ? ' 1 crédito foi devolvido ao aluno.' : ''}`,
     });
   };
 
@@ -420,7 +422,7 @@ function SchedulePageComponent() {
     if (isTomorrow(start)) {
       return `Amanhã, ${format(start, timeFormat)}`;
     }
-    return format(start, `EEEE, dd/MM ${timeFormat}`, { locale: ptBR });
+    return format(start, `EEEE, dd/MM/yyyy ${timeFormat}`, { locale: ptBR });
   };
 
   const formatHistoryDate = (start: Date, end: Date) => {
@@ -606,6 +608,9 @@ function SchedulePageComponent() {
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
                                     <span>{event.subject}</span>
+                                     {event.isExperimental && (
+                                        <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                                    )}
                                     <span className="hidden sm:inline">•</span>
                                     <span className="whitespace-nowrap">{formatScheduledDate(event.start, event.end)}</span>
                                 </div>
@@ -647,6 +652,9 @@ function SchedulePageComponent() {
                                       </div>
                                       <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
                                           <span>{event.subject}</span>
+                                          {event.isExperimental && (
+                                            <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                                          )}
                                           <span className="hidden sm:inline">•</span>
                                           <span className="whitespace-nowrap">{formatScheduledDate(event.start, event.end)}</span>
                                       </div>
@@ -709,7 +717,14 @@ function SchedulePageComponent() {
                         <TableRow key={event.id}>
                             {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
                             {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
-                            <TableCell className="font-medium">{event.subject}</TableCell>
+                            <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                    <span>{event.subject}</span>
+                                    {event.isExperimental && (
+                                        <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                                    )}
+                                </div>
+                            </TableCell>
                             <TableCell>{event.title}</TableCell>
                             <TableCell className="text-right text-muted-foreground">
                             {formatHistoryDate(event.start, event.end)}
@@ -773,7 +788,14 @@ function SchedulePageComponent() {
                       <TableRow key={event.id}>
                         {currentUser?.role !== 'teacher' && <TableCell>{teacher?.name || 'N/A'}</TableCell>}
                         {currentUser?.role !== 'student' && <TableCell>{student?.name || 'N/A'}</TableCell>}
-                        <TableCell className="font-medium">{event.subject}</TableCell>
+                        <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                                <span>{event.subject}</span>
+                                {event.isExperimental && (
+                                    <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                                )}
+                            </div>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">
                           {formatHistoryDate(event.start, event.end)}
                         </TableCell>

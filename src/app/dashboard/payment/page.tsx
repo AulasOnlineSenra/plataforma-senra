@@ -119,6 +119,7 @@ function PaymentPageComponent() {
       teacherId: b.teacherId,
       subject: subjects.find((s: any) => s.id === b.subjectId)?.name || 'Desconhecida',
       status: 'scheduled' as 'scheduled',
+      isExperimental: b.isExperimental,
     }));
     
     const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
@@ -127,7 +128,8 @@ function PaymentPageComponent() {
     // Decrement credits for the new bookings
     const student = users.find(u => u.id === pendingBookings[0].studentId);
     if (student) {
-        const updatedUsers = users.map(u => u.id === student.id ? { ...u, classCredits: (u.classCredits || 0) - pendingBookings.length } : u);
+        const nonExperimentalBookings = pendingBookings.filter((b:any) => !b.isExperimental);
+        const updatedUsers = users.map(u => u.id === student.id ? { ...u, classCredits: (u.classCredits || 0) - nonExperimentalBookings.length } : u);
         localStorage.setItem('userList', JSON.stringify(updatedUsers));
         localStorage.setItem('currentUser', JSON.stringify(updatedUsers.find(u => u.id === student.id)));
     }
