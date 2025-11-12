@@ -735,7 +735,7 @@ function BookingPageComponent() {
                         <Label>Disciplina</Label>
                         <div className="flex items-center gap-2">
                            <p className="font-semibold">{subject?.name}</p>
-                           {booking.isExperimental && <Badge variant="secondary">Experimental</Badge>}
+                           {booking.isExperimental && <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>}
                         </div>
                     </div>
                     <div>
