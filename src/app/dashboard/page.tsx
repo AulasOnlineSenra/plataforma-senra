@@ -56,6 +56,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 const TEACHERS_STORAGE_KEY = 'teacherList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -514,6 +515,7 @@ export default function DashboardPage() {
                     <TableRow>
                       <TableHead>Professor(a)</TableHead>
                       <TableHead>Aluno(a)</TableHead>
+                      <TableHead>Disciplina</TableHead>
                       <TableHead className="text-right">Data e Horário</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -525,6 +527,14 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell>
                           {users.find(u => u.id === event.studentId)?.name || 'N/A'}
+                        </TableCell>
+                         <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{event.subject}</span>
+                            {event.isExperimental && (
+                              <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm")}
