@@ -527,7 +527,7 @@ export default function DashboardPage() {
                           {users.find(u => u.id === event.studentId)?.name || 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatDate(event.start, event.end)}
+                          {format(event.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(event.end, "HH:mm")}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -722,5 +722,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
