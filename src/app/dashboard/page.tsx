@@ -646,7 +646,12 @@ export default function DashboardPage() {
                     {upcomingEvents.map((event) => (
                       <TableRow key={event.id}>
                         <TableCell>
-                          <div className="font-medium">{event.subject}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            <span>{event.subject}</span>
+                            {event.isExperimental && (
+                                <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           {user.role === 'student' ? 
