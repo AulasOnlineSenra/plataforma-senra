@@ -648,7 +648,7 @@ function SchedulePageComponent() {
                                           <p className="font-semibold">{personToShow?.name}</p>
                                           <p className="text-sm text-muted-foreground">•</p>
                                           <p className="text-sm text-muted-foreground">
-                                            {currentUser?.role === 'teacher' ? 'Aluno' : 'Professor(a)'}
+                                            {currentUser?.role === 'teacher' ? 'Aluno(a)' : 'Professor(a)'}
                                           </p>
                                            {event.isExperimental && (
                                             <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
