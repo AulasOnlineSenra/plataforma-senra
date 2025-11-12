@@ -316,7 +316,7 @@ export default function DashboardPage() {
     if (isYesterday(start)) {
       return `Ontem, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     }
-    return format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR });
+    return format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR }) + ` - ${format(end, 'HH:mm')}`;
   };
 
 
