@@ -74,6 +74,7 @@ function BookingPageComponent() {
   const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   useEffect(() => {
     setIsClient(true);
@@ -631,14 +632,86 @@ function BookingPageComponent() {
   }, [selectedTeacher, currentUser, teachers, studentIdParam, users]);
   
   const handleDateSelection = (dates: Date | Date[] | undefined) => {
-    if (Array.isArray(dates)) {
-        setSelectedDates(dates);
-    } else if (dates) {
-        setSelectedDates([dates]);
+    if (isExperimentalOptionAvailable) {
+        if (Array.isArray(dates)) {
+            // Should not happen in single mode, but as a fallback
+            setSelectedDates(dates.length > 0 ? [dates[0]] : []);
+        } else if (dates) {
+            setSelectedDates([dates]);
+        } else {
+            setSelectedDates([]);
+        }
     } else {
-        setSelectedDates([]);
+        if (Array.isArray(dates)) {
+            setSelectedDates(dates);
+        } else if (dates) {
+            setSelectedDates([dates]);
+        } else {
+            setSelectedDates([]);
+        }
     }
   };
+
+  const getUnavailableDaysForMonth = useCallback((month: Date): Date[] => {
+    if (!selectedTeacher) return [];
+
+    const teacher = teachers.find(t => t.id === selectedTeacher);
+    if (!teacher || !teacher.availability) return [];
+
+    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
+    if (!studentToBook) return [];
+
+    const daysInMonth = eachDayOfInterval({
+        start: startOfMonth(month),
+        end: endOfMonth(month),
+    });
+
+    const unavailableDays = daysInMonth.filter(day => {
+        if (isBefore(day, startOfToday())) return true;
+        
+        const dayOfWeekIndex = getDay(day);
+        const dayOfWeekName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex] as keyof Teacher['availability'];
+        const dayAvailability = teacher.availability[dayOfWeekName];
+
+        if (!dayAvailability || dayAvailability.length === 0) return true;
+
+        // Check if all slots for this day are taken
+        let hasAvailableSlot = false;
+        for (const range of dayAvailability) {
+            let currentTime = parse(range.start, 'HH:mm', new Date());
+            const endTime = parse(range.end, 'HH:mm', new Date());
+
+            while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime) {
+                const slotStart = new Date(day);
+                const [hours, minutes] = format(currentTime, 'HH:mm').split(':').map(Number);
+                slotStart.setHours(hours, minutes, 0, 0);
+                const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
+
+                const existingBookingConflict = bookings.some(b =>
+                    (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
+                    (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
+                );
+
+                if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
+                    hasAvailableSlot = true;
+                    break;
+                }
+                currentTime = addMinutes(currentTime, 30);
+            }
+            if (hasAvailableSlot) break;
+        }
+        return !hasAvailableSlot;
+    });
+
+    return unavailableDays;
+  }, [selectedTeacher, teachers, scheduleEvents, bookings, studentIdParam, currentUser, users]);
+
+  const disabledDays = useMemo(() => {
+    return [
+      { before: startOfToday() },
+      ...getUnavailableDaysForMonth(calendarMonth),
+    ];
+  }, [calendarMonth, getUnavailableDaysForMonth]);
   
   const renderListView = () => (
     bookings.length > 0 ? (
@@ -861,16 +934,17 @@ function BookingPageComponent() {
               {isClient ? (
                 <Calendar
                   mode={isExperimentalOptionAvailable ? 'single' : 'multiple'}
-                  selected={isExperimentalOptionAvailable ? selectedDates[0] : selectedDates}
+                  selected={selectedDates}
                   onSelect={(dates) => handleDateSelection(dates as Date[] | Date | undefined)}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
                   className="rounded-md border p-0 sm:p-3"
                   locale={ptBR}
-                  disabled={{ before: startOfToday() }}
+                  disabled={disabledDays}
                   classNames={{
                     root: 'w-full',
                     months: 'w-full',
                     month: 'w-full',
-                    table: 'w-full',
                     caption_label: 'font-headline text-lg mb-2',
                     head_row: 'w-full flex',
                     head_cell: 'flex-1',
