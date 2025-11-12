@@ -426,13 +426,14 @@ function SchedulePageComponent() {
   };
 
   const formatHistoryDate = (start: Date, end: Date) => {
+    const timeFormat = `'às' HH:mm - ${format(end, 'HH:mm')}`;
     if (isToday(start)) {
-      return `Hoje, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+      return `Hoje, ${timeFormat}`;
     }
     if (isYesterday(start)) {
-      return `Ontem, às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+      return `Ontem, ${timeFormat}`;
     }
-    return `${format(start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - ${format(end, 'HH:mm')}`;
+    return `${format(start, "EEEE, dd/MM " + timeFormat, { locale: ptBR })}`;
   };
   
   const availableTimes = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
@@ -650,7 +651,7 @@ function SchedulePageComponent() {
                                             {currentUser?.role === 'teacher' ? 'Aluno' : 'Professor(a)'}
                                           </p>
                                            {event.isExperimental && (
-                                            <Badge variant="secondary" className="ml-2 bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                                            <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
                                           )}
                                       </div>
                                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
