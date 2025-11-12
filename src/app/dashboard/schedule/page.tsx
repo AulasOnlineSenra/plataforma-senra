@@ -643,20 +643,20 @@ function SchedulePageComponent() {
                                       <AvatarFallback>{fallback}</AvatarFallback>
                                   </Avatar>
                                   <div className="grid gap-1">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex flex-wrap items-center gap-x-2">
                                           <p className="font-semibold">{personToShow?.name}</p>
                                           <p className="text-sm text-muted-foreground">•</p>
                                           <p className="text-sm text-muted-foreground">
                                             {currentUser?.role === 'teacher' ? 'Aluno' : 'Professor(a)'}
                                           </p>
-                                      </div>
-                                      <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-                                          <span>{event.subject}</span>
-                                          {event.isExperimental && (
-                                            <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                                           {event.isExperimental && (
+                                            <Badge variant="secondary" className="ml-2 bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
                                           )}
-                                          <span className="hidden sm:inline">•</span>
-                                          <span className="whitespace-nowrap">{formatScheduledDate(event.start, event.end)}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                          <span>{event.subject}</span>
+                                          <span>•</span>
+                                          <span>{formatScheduledDate(event.start, event.end)}</span>
                                       </div>
                                   </div>
                               </div>
