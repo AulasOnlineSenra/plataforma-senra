@@ -732,9 +732,11 @@ function BookingPageComponent() {
                 >
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                    <Label>Disciplina</Label>
-                    <p className="font-semibold">{subject?.name}</p>
-                    {booking.isExperimental && <Badge variant="secondary" className="mt-1">Experimental</Badge>}
+                        <Label>Disciplina</Label>
+                        <div className="flex items-center gap-2">
+                           <p className="font-semibold">{subject?.name}</p>
+                           {booking.isExperimental && <Badge variant="secondary">Experimental</Badge>}
+                        </div>
                     </div>
                     <div>
                     <Label>Professor(a)</Label>
