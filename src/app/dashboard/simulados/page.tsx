@@ -58,7 +58,7 @@ export default function SimuladosPage() {
   const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [students, setStudents] = useState<User[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -80,7 +80,7 @@ export default function SimuladosPage() {
       setStudents(storedUsers ? JSON.parse(storedUsers).filter((u:User) => u.role === 'student') : initialUsers.filter(u => u.role === 'student'));
 
       // In a real app, subjects would likely come from a DB
-      setSubjects(initialSubjects);
+      setAllSubjects(initialSubjects);
     };
 
     updateData();
@@ -99,6 +99,16 @@ export default function SimuladosPage() {
     }
     return [];
   }, [currentUser, students]);
+
+  const availableSubjects = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'admin') return allSubjects;
+    if (currentUser.role === 'teacher') {
+        const teacherUser = currentUser as Teacher;
+        return allSubjects.filter(sub => teacherUser.subjects.includes(sub.id));
+    }
+    return [];
+  }, [currentUser, allSubjects]);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -152,7 +162,7 @@ export default function SimuladosPage() {
     });
   };
 
-  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Desconhecida';
+  const getSubjectName = (id: string) => allSubjects.find(s => s.id === id)?.name || 'Desconhecida';
   const getStudentName = (id: string) => students.find(s => s.id === id)?.name || 'Desconhecido';
 
   const displayedSimulados = useMemo(() => {
@@ -216,7 +226,7 @@ export default function SimuladosPage() {
                     <SelectValue placeholder="Selecione uma disciplina" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((sub) => (
+                    {availableSubjects.map((sub) => (
                       <SelectItem key={sub.id} value={sub.id}>
                         {sub.name}
                       </SelectItem>
