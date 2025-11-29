@@ -1,6 +1,6 @@
 
 
-import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity, Notification, NotificationType } from '@/lib/types';
+import type { User, Teacher, Subject, ClassPackage, ScheduleEvent, ChatContact, ChatMessage, UserRole, Suggestion, Referral, NavItem, EducationEntry, Availability, PaymentTransaction, MarketingCosts, Activity, Notification, NotificationType, Simulado } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   LayoutDashboard,
@@ -583,6 +583,34 @@ export const logActivity = (action: string) => {
     // Dispatch a storage event to notify other tabs/components like the history page
     window.dispatchEvent(new Event('storage'));
 };
+
+export const simulados: Simulado[] = [
+  {
+    id: 'sim-1',
+    title: 'Revisão de Funções de 2º Grau',
+    description: 'Um teste rápido para avaliar o entendimento sobre parábolas e raízes de equações quadráticas.',
+    subjectId: 'subj-1',
+    studentId: 'user-1',
+    creatorId: 'teacher-1',
+    createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+    status: 'Concluído',
+    questions: [],
+    completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+    score: 85,
+  },
+  {
+    id: 'sim-2',
+    title: 'Análise Sintática - Período Simples',
+    description: 'Exercícios para identificar sujeito, predicado e complementos verbais.',
+    subjectId: 'subj-2',
+    studentId: 'user-2',
+    creatorId: 'teacher-2',
+    createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+    status: 'Pendente',
+    questions: [],
+  },
+];
+
 
 const NOTIFICATIONS_STORAGE_KEY = 'notificationsList';
 export const notifications: Notification[] = [

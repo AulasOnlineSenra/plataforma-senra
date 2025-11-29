@@ -4,8 +4,8 @@
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, users as initialUsers, subjects } from '@/lib/data';
-import { Teacher, ScheduleEvent, User } from '@/lib/types';
+import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, users as initialUsers, subjects, simulados as initialSimulados } from '@/lib/data';
+import { Teacher, ScheduleEvent, User, Simulado } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 
 
+const SIMULADOS_STORAGE_KEY = 'simuladosList';
+
 function TeacherDetailPageComponent() {
     const params = useParams();
     const teacherId = params.teacherId as string;
@@ -27,6 +29,7 @@ function TeacherDetailPageComponent() {
     const [teacher, setTeacher] = useState<Teacher | null>(null);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [simulados, setSimulados] = useState<Simulado[]>([]);
 
     useEffect(() => {
         const updateData = () => {
@@ -43,6 +46,9 @@ function TeacherDetailPageComponent() {
 
             const storedUser = localStorage.getItem('currentUser');
             setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('student'));
+            
+            const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
+            setSimulados(storedSimulados ? JSON.parse(storedSimulados) : initialSimulados);
         };
 
         updateData();
@@ -60,6 +66,12 @@ function TeacherDetailPageComponent() {
         ).sort((a, b) => a.start.getTime() - b.start.getTime());
     }, [schedule, teacher, currentUser]);
     
+    const teacherSimuladosForStudent = useMemo(() => {
+        if (!teacher || !currentUser) return [];
+        return simulados.filter(s => s.creatorId === teacher.id && s.studentId === currentUser.id)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [simulados, teacher, currentUser]);
+
     const handleConfirmCancel = (eventId: string) => {
         const updatedEvents = schedule.map(e => 
         e.id === eventId ? { ...e, status: 'cancelled' as 'cancelled' } : e
@@ -90,7 +102,7 @@ function TeacherDetailPageComponent() {
     };
     
     const averageFeedback = useMemo(() => {
-        if (!teacher || !teacher.ratings) {
+        if (!teacher || !teacher.ratings || teacher.ratings.length < 5) {
           return { score: 5.0, count: 0, text: 'Aguardando 5 avaliações' };
         }
         
@@ -124,6 +136,10 @@ function TeacherDetailPageComponent() {
     const teacherSubjects = teacher.subjects
     .map((subjectId) => subjects.find((s) => s.id === subjectId)?.name)
     .filter(Boolean);
+
+    const getSubjectName = (subjectId: string) => {
+        return subjects.find(s => s.id === subjectId)?.name || 'Disciplina Desconhecida';
+    };
 
 
     return (
@@ -198,8 +214,6 @@ function TeacherDetailPageComponent() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" onClick={() => {
-                                        // A lógica de edição abriria um modal, que não está no escopo aqui.
-                                        // Por enquanto, redireciona para a agenda, onde a edição é possível.
                                         toast({ title: 'Edição de Aula', description: 'A edição de aulas é feita na página principal da Agenda.' });
                                     }}>
                                         <Pencil className="h-5 w-5 text-muted-foreground" />
@@ -235,10 +249,24 @@ function TeacherDetailPageComponent() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Simulados</CardTitle>
-                        <CardDescription>Simulados e exercícios propostos.</CardDescription>
+                        <CardDescription>Simulados e exercícios propostos por {teacher.name}.</CardDescription>
                     </CardHeader>
-                    <CardContent className="text-center py-10 text-muted-foreground">
-                        <p>Nenhum simulado disponível no momento.</p>
+                    <CardContent className="space-y-3">
+                        {teacherSimuladosForStudent.length > 0 ? (
+                            teacherSimuladosForStudent.map(simulado => (
+                                <div key={simulado.id} className="flex items-center justify-between rounded-md border p-4">
+                                    <div>
+                                        <p className="font-semibold">{simulado.title}</p>
+                                        <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
+                                    </div>
+                                    <Button>Iniciar Simulado</Button>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-10 text-muted-foreground">
+                                <p>Nenhum simulado disponível com este professor no momento.</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
               </TabsContent>
