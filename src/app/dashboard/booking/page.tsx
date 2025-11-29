@@ -155,6 +155,17 @@ function BookingPageComponent() {
     }
     return teachers.filter((t) => t.subjects.includes(selectedSubject) && t.status === 'active');
   }, [selectedSubject, teachers]);
+  
+  const availableSubjects = useMemo(() => {
+    if (!selectedTeacher) {
+      return subjects;
+    }
+    const teacher = teachers.find(t => t.id === selectedTeacher);
+    if (!teacher) {
+      return subjects;
+    }
+    return subjects.filter(s => teacher.subjects.includes(s.id));
+  }, [selectedTeacher, teachers, subjects]);
 
   const isFirstClassWithTeacher = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
@@ -185,6 +196,12 @@ function BookingPageComponent() {
 
   const handleTeacherChange = (teacherId: string) => {
     setSelectedTeacher(teacherId);
+    
+    // Check if current subject is taught by new teacher, if not, deselect it
+    const newTeacher = teachers.find(t => t.id === teacherId);
+    if (newTeacher && selectedSubject && !newTeacher.subjects.includes(selectedSubject)) {
+        setSelectedSubject(undefined);
+    }
   };
 
   const handleClearSelections = () => {
@@ -286,9 +303,9 @@ function BookingPageComponent() {
                 subjectId: selectedSubject,
                 teacherId: selectedTeacher,
                 studentId: studentToBook.id,
+                isExperimental: isAddingExperimental,
                 start: startDate,
                 end: endDate,
-                isExperimental: isAddingExperimental,
              };
              newBookings.push(newBooking);
         }
@@ -487,6 +504,7 @@ function BookingPageComponent() {
       subject: currentSubjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
       status: 'scheduled' as 'scheduled',
       isExperimental: b.isExperimental,
+      subjectId: b.subjectId,
     }));
     
     const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
@@ -867,7 +885,7 @@ function BookingPageComponent() {
                   <SelectValue placeholder="Escolha uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subjects.map((subject) => (
+                  {availableSubjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       {subject.name}
                     </SelectItem>
@@ -1074,3 +1092,4 @@ export default function BookingPage() {
         </Suspense>
     );
 }
+
