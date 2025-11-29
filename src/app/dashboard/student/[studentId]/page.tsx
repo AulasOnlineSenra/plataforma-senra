@@ -4,8 +4,8 @@
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { users as initialUsers, getMockUser, scheduleEvents as initialSchedule, teachers as initialTeachers, subjects } from '@/lib/data';
-import { User, ScheduleEvent, Teacher } from '@/lib/types';
+import { users as initialUsers, getMockUser, scheduleEvents as initialSchedule, teachers as initialTeachers, subjects, simulados as initialSimulados } from '@/lib/data';
+import { User, ScheduleEvent, Teacher, Simulado } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -43,6 +43,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
+const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
 function StudentDetailPageComponent() {
     const params = useParams();
@@ -53,6 +54,7 @@ function StudentDetailPageComponent() {
     const [student, setStudent] = useState<User | null>(null);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
     const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
+    const [simulados, setSimulados] = useState<Simulado[]>([]);
 
     const [editingClass, setEditingClass] = useState<ScheduleEvent | null>(null);
     const [editedTitle, setEditedTitle] = useState('');
@@ -76,6 +78,9 @@ function StudentDetailPageComponent() {
             
             const storedUser = localStorage.getItem('currentUser');
             setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('teacher'));
+
+            const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
+            setSimulados(storedSimulados ? JSON.parse(storedSimulados) : initialSimulados);
         }
         
         updateData();
@@ -120,6 +125,13 @@ function StudentDetailPageComponent() {
             .filter(baseFilter)
             .sort((a, b) => b.start.getTime() - a.start.getTime());
     }, [schedule, student, currentUser]);
+
+    const studentSimulados = useMemo(() => {
+        if (!student) return [];
+        return simulados
+          .filter(s => s.studentId === student.id)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [simulados, student]);
     
     const handleEditClick = (classEvent: ScheduleEvent) => {
         setEditingClass(classEvent);
@@ -169,6 +181,10 @@ function StudentDetailPageComponent() {
         );
     }
     
+    const getSubjectName = (subjectId: string) => {
+        return subjects.find(s => s.id === subjectId)?.name || 'Disciplina Desconhecida';
+    };
+
     const renderClassActions = (classEvent: ScheduleEvent) => (
         <div className="flex items-center gap-2 ml-4">
             <DropdownMenu>
@@ -311,10 +327,24 @@ function StudentDetailPageComponent() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Simulados</CardTitle>
-                            <CardDescription>Simulados e exercícios propostos para o aluno.</CardDescription>
+                            <CardDescription>Simulados e exercícios propostos para {student.name}.</CardDescription>
                         </CardHeader>
-                        <CardContent className="text-center py-10 text-muted-foreground">
-                            <p>Nenhum simulado disponível no momento.</p>
+                        <CardContent className="space-y-3">
+                            {studentSimulados.length > 0 ? (
+                                studentSimulados.map(simulado => (
+                                    <div key={simulado.id} className="flex items-center justify-between rounded-md border p-4">
+                                        <div>
+                                            <p className="font-semibold">{simulado.title}</p>
+                                            <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
+                                        </div>
+                                        <Button>Iniciar Simulado</Button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    <p>Nenhum simulado disponível no momento.</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
