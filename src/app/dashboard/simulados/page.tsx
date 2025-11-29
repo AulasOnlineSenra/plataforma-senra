@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, CheckCircle, Image as ImageIcon, Circle, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getMockUser,
@@ -169,6 +169,26 @@ export default function SimuladosPage() {
     const newQuestions = [...questions];
     newQuestions.splice(qIndex, 1);
     setQuestions(newQuestions);
+  };
+
+  const handleDuplicateQuestion = (qIndex: number) => {
+    const questionToDuplicate = questions[qIndex];
+    const duplicatedQuestion: Question = {
+      ...questionToDuplicate,
+      id: `q-${Date.now()}`,
+      options: questionToDuplicate.options.map(opt => ({
+        ...opt,
+        id: `opt-${Date.now()}-${Math.random()}`
+      }))
+    };
+
+    const newQuestions = [...questions];
+    newQuestions.splice(qIndex + 1, 0, duplicatedQuestion);
+    setQuestions(newQuestions);
+    toast({
+      title: 'Questão Duplicada!',
+      description: 'Uma cópia da questão foi criada logo abaixo.',
+    });
   };
 
   const resetForm = () => {
@@ -463,7 +483,7 @@ export default function SimuladosPage() {
                     </CardContent>
                     <Separator />
                     <CardContent className="p-4 flex justify-end items-center gap-4">
-                        <Button variant="ghost" size="icon" title="Copiar" onClick={() => {}} disabled><ImageIcon className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" title="Copiar" onClick={() => handleDuplicateQuestion(qIndex)}><Copy className="h-5 w-5" /></Button>
                         <Button variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
                         <Separator orientation="vertical" className="h-6" />
                         <div className="flex items-center gap-2">
