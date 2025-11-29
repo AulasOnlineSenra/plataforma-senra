@@ -78,6 +78,7 @@ export interface ScheduleEvent {
   studentId: string;
   teacherId: string;
   subject: string;
+  subjectId: string;
   status: 'completed' | 'scheduled' | 'cancelled';
   studentHasRated?: boolean;
   teacherHasRated?: boolean;
@@ -99,6 +100,7 @@ export interface ChatContact {
   lastMessage: string;
   lastMessageTimestamp: Date;
   unreadCount: number;
+  role?: UserRole;
 }
 
 export interface Suggestion {

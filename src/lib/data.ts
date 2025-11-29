@@ -171,7 +171,7 @@ export let teachers: Teacher[] = [
     email: 'beatriz.costa@example.com',
     avatarUrl: findImage('teacher-photo-3'),
     role: 'teacher',
-    subjects: ['subj-5'],
+    subjects: ['subj-5', 'subj-12'],
     bio: 'Historiadora e geógrafa, adora contar histórias sobre o mundo e suas transformações.',
     education: [{ id: 'edu-t3', course: 'História', university: 'UNICAMP', type: 'Licenciatura', conclusionYear: '2020' }],
     availability: {
@@ -206,6 +206,7 @@ export let teachers: Teacher[] = [
 export const allUsers: (User | Teacher)[] = [...users, ...teachers];
 
 export const getAllUsers = (): (User | Teacher)[] => {
+    if (typeof window === 'undefined') return [];
     const storedUsers = localStorage.getItem('userList');
     const currentUsers = storedUsers ? JSON.parse(storedUsers) : users;
 
@@ -291,6 +292,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     studentId: 'user-5', // Felipe Madeira
     teacherId: 'teacher-1',
     subject: 'Matemática',
+    subjectId: 'subj-1',
     status: 'completed'
   },
   {
@@ -301,6 +303,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     studentId: 'user-1',
     teacherId: 'teacher-2',
     subject: 'Redação',
+    subjectId: 'subj-4',
     status: 'scheduled'
   },
   {
@@ -311,6 +314,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     studentId: 'user-2',
     teacherId: 'teacher-1',
     subject: 'Física',
+    subjectId: 'subj-3',
     status: 'scheduled'
   },
   {
@@ -321,6 +325,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     studentId: 'user-5', // Felipe Madeira
     teacherId: 'teacher-4',
     subject: 'Inglês',
+    subjectId: 'subj-10',
     status: 'completed'
   },
   {
@@ -329,8 +334,9 @@ export const scheduleEvents: ScheduleEvent[] = [
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 16, 0),
     end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 17, 30),
     studentId: 'user-5', // Felipe Madeira
-    teacherId: 'teacher-3', // Professora de História/Geografia nos dados, mas vamos usar para Bio no evento
+    teacherId: 'teacher-3', 
     subject: 'Biologia',
+    subjectId: 'subj-12',
     status: 'completed'
   },
 ];

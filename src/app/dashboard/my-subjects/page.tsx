@@ -69,14 +69,10 @@ export default function MySubjectsPage() {
     
     const subjectStats: Record<string, { classCount: number, teacherIds: Set<string> }> = {};
 
-    const subjectNameToIdMap = subjects.reduce((acc, subject) => {
-        acc[subject.name] = subject.id;
-        return acc;
-    }, {} as Record<string, string>);
-
     studentClasses.forEach(event => {
-        const subjectId = subjectNameToIdMap[event.subject];
-        if (!subjectId) return;
+        // Use subjectId directly if it exists
+        const subjectId = event.subjectId;
+        if (!subjectId) return; // Skip if no ID
 
         if (!subjectStats[subjectId]) {
             subjectStats[subjectId] = { classCount: 0, teacherIds: new Set() };
