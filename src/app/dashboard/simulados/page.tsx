@@ -280,8 +280,8 @@ export default function SimuladosPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">Simulados Criados</TabsTrigger>
-          <TabsTrigger value="answers">Respostas</TabsTrigger>
           <TabsTrigger value="create">Criar Novo</TabsTrigger>
+          <TabsTrigger value="answers">Respostas</TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="mt-6">
            <Card>
@@ -332,50 +332,6 @@ export default function SimuladosPage() {
             </Table>
             </CardContent>
         </Card>
-        </TabsContent>
-        <TabsContent value="answers" className="mt-6">
-           <Card>
-            <CardHeader>
-                <CardTitle>Respostas dos Simulados</CardTitle>
-                <CardDescription>Acompanhe o desempenho dos alunos nos simulados concluídos.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Simulado</TableHead>
-                            <TableHead>Aluno</TableHead>
-                            <TableHead>Data de Conclusão</TableHead>
-                            <TableHead className="text-center">Acertos</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                         {answeredSimulados.length > 0 ? (
-                            answeredSimulados.map(sim => (
-                                <TableRow key={`ans-${sim.id}`}>
-                                    <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
-                                    <TableCell>{getStudentName(sim.studentId)}</TableCell>
-                                    <TableCell>{sim.completedAt ? format(sim.completedAt, 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>{sim.score?.toFixed(0) || 'N/A'}%</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm">Ver Respostas</Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                         ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    Nenhum simulado foi respondido ainda.
-                                </TableCell>
-                            </TableRow>
-                         )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-           </Card>
         </TabsContent>
         <TabsContent value="create" className="mt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -512,6 +468,50 @@ export default function SimuladosPage() {
                     <Button type="submit">Salvar Simulado</Button>
                 </div>
             </form>
+        </TabsContent>
+        <TabsContent value="answers" className="mt-6">
+           <Card>
+            <CardHeader>
+                <CardTitle>Respostas dos Simulados</CardTitle>
+                <CardDescription>Acompanhe o desempenho dos alunos nos simulados concluídos.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Simulado</TableHead>
+                            <TableHead>Aluno</TableHead>
+                            <TableHead>Data de Conclusão</TableHead>
+                            <TableHead className="text-center">Acertos</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                         {answeredSimulados.length > 0 ? (
+                            answeredSimulados.map(sim => (
+                                <TableRow key={`ans-${sim.id}`}>
+                                    <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
+                                    <TableCell>{getStudentName(sim.studentId)}</TableCell>
+                                    <TableCell>{sim.completedAt ? format(sim.completedAt, 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>{sim.score?.toFixed(0) || 'N/A'}%</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm">Ver Respostas</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                         ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    Nenhum simulado foi respondido ainda.
+                                </TableCell>
+                            </TableRow>
+                         )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+           </Card>
         </TabsContent>
       </Tabs>
     </div>
