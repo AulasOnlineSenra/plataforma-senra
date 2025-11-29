@@ -131,6 +131,7 @@ export interface Simulado {
   questions: Question[];
   completedAt?: Date;
   score?: number;
+  userAnswers?: Record<string, string>; // questionId: optionId
 }
 
 export interface Suggestion {

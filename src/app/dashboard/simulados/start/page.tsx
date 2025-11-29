@@ -91,7 +91,7 @@ function StartSimuladoPageComponent() {
     
     const updatedSimulados = allSimulados.map(s => 
       s.id === simulado.id 
-        ? { ...s, status: 'Concluído' as 'Concluído', completedAt: new Date(), score: calculatedScore } 
+        ? { ...s, status: 'Concluído' as 'Concluído', completedAt: new Date(), score: calculatedScore, userAnswers: answers } 
         : s
     );
     localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));

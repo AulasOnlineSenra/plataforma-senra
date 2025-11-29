@@ -124,9 +124,9 @@ export default function SimuladosPage() {
   const handleAddQuestion = () => {
     const newQuestion: Question = {
       id: `q-${Date.now()}`,
-      title: 'Pergunta sem título',
+      title: '',
       type: 'multiple-choice',
-      options: [{ id: `opt-${Date.now()}`, text: '', isCorrect: false }],
+      options: [{ id: `opt-${Date.now()}`, text: '', isCorrect: true }],
       isRequired: false,
     };
     setQuestions([...questions, newQuestion]);
@@ -143,15 +143,24 @@ export default function SimuladosPage() {
     newQuestions[qIndex].options[oIndex].text = text;
     setQuestions(newQuestions);
   };
+
+  const handleCorrectOptionChange = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].options.forEach((opt, index) => {
+      opt.isCorrect = index === oIndex;
+    });
+    setQuestions(newQuestions);
+  };
   
   const handleAddOption = (qIndex: number) => {
     const newQuestions = [...questions];
-    newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: ``, isCorrect: false });
+    newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: '', isCorrect: false });
     setQuestions(newQuestions);
   };
   
   const handleRemoveOption = (qIndex: number, oIndex: number) => {
     const newQuestions = [...questions];
+    if (newQuestions[qIndex].options.length <= 1) return; // Must have at least one option
     newQuestions[qIndex].options.splice(oIndex, 1);
     setQuestions(newQuestions);
   };
@@ -410,42 +419,42 @@ export default function SimuladosPage() {
                 {questions.map((q, qIndex) => (
                 <Card key={q.id}>
                     <CardHeader className="flex flex-row items-start justify-between">
-                        <GripVertical className="cursor-move text-muted-foreground" />
+                        <GripVertical className="cursor-move text-muted-foreground mt-2" />
                         <Input 
                             value={q.title} 
                             onChange={(e) => handleQuestionChange(qIndex, 'title', e.target.value)} 
-                            placeholder="Pergunta"
-                            className="flex-1 text-base mx-4"
+                            placeholder="Pergunta sem título"
+                            className="flex-1 text-base mx-4 border-0 shadow-none focus-visible:ring-0"
                         />
-                        <Select defaultValue="multiple-choice" disabled>
+                        <Select value={q.type} onValueChange={(val) => handleQuestionChange(qIndex, 'type', val)}>
                             <SelectTrigger className="w-[180px]">
                             <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
-                                <SelectItem value="short-answer">Resposta curta</SelectItem>
-                                <SelectItem value="paragraph">Parágrafo</SelectItem>
+                                <SelectItem value="short-answer" disabled>Resposta curta</SelectItem>
+                                <SelectItem value="paragraph" disabled>Parágrafo</SelectItem>
                             </SelectContent>
                         </Select>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-3">
+                        <div className="space-y-3 pl-8">
                         {q.options.map((opt, oIndex) => (
                             <div key={opt.id} className="flex items-center gap-3">
-                                <Circle className="text-muted-foreground" />
+                                <input type="radio" name={`correct-opt-${q.id}`} checked={opt.isCorrect} onChange={() => handleCorrectOptionChange(qIndex, oIndex)} className="form-radio h-4 w-4 text-primary focus:ring-primary" />
                                 <Input
                                     value={opt.text}
                                     onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                                    placeholder={`Opção ${oIndex + 1}`}
+                                    placeholder={opt.text === '' ? 'Nova Opção' : ''}
                                     className="flex-1"
                                 />
                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
-                                    <Trash2 className="h-4 w-4 text-muted-foreground"/>
+                                    <X className="h-4 w-4 text-muted-foreground"/>
                                 </Button>
                             </div>
                         ))}
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <Circle />
+                            <input type="radio" disabled className="form-radio h-4 w-4" />
                             <Button variant="link" type="button" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
                                 Adicionar opção
                             </Button>
@@ -454,7 +463,7 @@ export default function SimuladosPage() {
                     </CardContent>
                     <Separator />
                     <CardContent className="p-4 flex justify-end items-center gap-4">
-                        <Button variant="ghost" size="icon" title="Copiar" onClick={() => {}}><ImageIcon className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" title="Copiar" onClick={() => {}} disabled><ImageIcon className="h-5 w-5" /></Button>
                         <Button variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
                         <Separator orientation="vertical" className="h-6" />
                         <div className="flex items-center gap-2">
@@ -499,7 +508,7 @@ export default function SimuladosPage() {
                     <TableBody>
                          {answeredSimulados.length > 0 ? (
                             answeredSimulados.map(sim => (
-                                <TableRow key={`ans-${sim.id}`}>
+                                <TableRow key={`ans-${sim.id}`} onClick={() => setViewingSimulado(sim)} className="cursor-pointer">
                                     <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
                                     <TableCell>{getStudentName(sim.studentId)}</TableCell>
                                     <TableCell>{sim.completedAt ? format(sim.completedAt, 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
@@ -535,19 +544,38 @@ export default function SimuladosPage() {
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-6">
             <div className="space-y-6 py-4">
-              {viewingSimulado?.questions.map((q, qIndex) => (
-                <div key={q.id} className="space-y-3">
-                  <p className="font-semibold">{qIndex + 1}. {q.title} {q.isRequired && <span className="text-destructive">*</span>}</p>
-                  <div className="pl-4 space-y-2">
-                    {q.options.map(opt => (
-                      <div key={opt.id} className="flex items-center gap-2 text-muted-foreground">
-                        <Circle className="h-3 w-3" />
-                        <span>{opt.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {viewingSimulado?.questions.map((q, qIndex) => {
+                const userAnswerId = viewingSimulado.userAnswers ? viewingSimulado.userAnswers[q.id] : undefined;
+                return (
+                    <div key={q.id} className="space-y-3">
+                    <p className="font-semibold">{qIndex + 1}. {q.title} {q.isRequired && <span className="text-destructive">*</span>}</p>
+                    <div className="pl-4 space-y-2">
+                        {q.options.map(opt => {
+                            const isSelected = userAnswerId === opt.id;
+                            const isCorrect = opt.isCorrect;
+                            
+                            return (
+                                <div key={opt.id} className={cn(
+                                    "flex items-center gap-2 text-muted-foreground p-2 rounded-md",
+                                    isSelected && isCorrect && "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200",
+                                    isSelected && !isCorrect && "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200",
+                                    !isSelected && isCorrect && "bg-green-50 dark:bg-green-900/20"
+                                )}>
+                                    { isSelected ? (
+                                        isCorrect ? <CheckCircle className="h-4 w-4 text-green-600" /> : <X className="h-4 w-4 text-red-600" />
+                                    ) : (
+                                        isCorrect ? <CheckCircle className="h-4 w-4 text-green-500/50" /> : <Circle className="h-3 w-3" />
+                                    )}
+                                    <span>{opt.text}</span>
+                                    {isSelected && <Badge variant="outline" className="ml-auto bg-transparent">{isCorrect ? 'Sua Resposta (Correta)' : 'Sua Resposta'}</Badge>}
+                                    {!isSelected && isCorrect && <Badge variant="outline" className="ml-auto bg-transparent">Resposta Correta</Badge>}
+                                </div>
+                            )
+                        })}
+                    </div>
+                    </div>
+                );
+              })}
               {viewingSimulado?.questions.length === 0 && (
                 <p className="text-muted-foreground text-center">Este simulado não tem nenhuma questão.</p>
               )}
