@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getMockUser,
@@ -63,8 +63,9 @@ export default function SimuladosPage() {
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [activeTab, setActiveTab] = useState('list');
   const [viewingSimulado, setViewingSimulado] = useState<Simulado | null>(null);
+  const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
 
-  // State for the new simulado form
+  // State for the new/edit simulado form
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -92,7 +93,7 @@ export default function SimuladosPage() {
     window.addEventListener('storage', updateData);
     return () => window.removeEventListener('storage', updateData);
   }, []);
-  
+
   const myStudents = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === 'admin') return students;
@@ -116,10 +117,10 @@ export default function SimuladosPage() {
   }, [currentUser, allSubjects]);
 
   useEffect(() => {
-    if (availableSubjects.length === 1) {
+    if (availableSubjects.length === 1 && !editingSimulado) {
       setSelectedSubject(availableSubjects[0].id);
     }
-  }, [availableSubjects]);
+  }, [availableSubjects, editingSimulado]);
 
   const handleAddQuestion = () => {
     const newQuestion: Question = {
@@ -197,6 +198,7 @@ export default function SimuladosPage() {
     setSelectedSubject(availableSubjects.length === 1 ? availableSubjects[0].id : '');
     setSelectedStudent('');
     setQuestions([]);
+    setEditingSimulado(null);
     setActiveTab('list');
   };
 
@@ -211,28 +213,46 @@ export default function SimuladosPage() {
       return;
     }
 
-    const newSimulado: Simulado = {
-      id: `sim-${Date.now()}`,
-      title,
-      description,
-      subjectId: selectedSubject,
-      studentId: selectedStudent,
-      creatorId: currentUser.id,
-      createdAt: new Date(),
-      status: 'Pendente',
-      questions,
-    };
-
-    const updatedSimulados = [...simulados, newSimulado];
-    setSimulados(updatedSimulados);
-    localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
+    if (editingSimulado) {
+      // Update existing simulado
+      const updatedSimulado: Simulado = {
+        ...editingSimulado,
+        title,
+        description,
+        subjectId: selectedSubject,
+        studentId: selectedStudent,
+        questions,
+      };
+      const updatedSimulados = simulados.map(s => s.id === editingSimulado.id ? updatedSimulado : s);
+      setSimulados(updatedSimulados);
+      localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
+      toast({
+        title: 'Simulado Atualizado!',
+        description: 'As alterações no simulado foram salvas.',
+      });
+    } else {
+      // Create new simulado
+      const newSimulado: Simulado = {
+        id: `sim-${Date.now()}`,
+        title,
+        description,
+        subjectId: selectedSubject,
+        studentId: selectedStudent,
+        creatorId: currentUser.id,
+        createdAt: new Date(),
+        status: 'Pendente',
+        questions,
+      };
+      const updatedSimulados = [...simulados, newSimulado];
+      setSimulados(updatedSimulados);
+      localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
+      toast({
+        title: 'Simulado Criado!',
+        description: 'O novo simulado foi adicionado à lista.',
+      });
+    }
+    
     window.dispatchEvent(new Event('storage'));
-
-    toast({
-      title: 'Simulado Criado!',
-      description: 'O novo simulado foi adicionado à lista.',
-    });
-
     resetForm();
   };
 
@@ -247,6 +267,16 @@ export default function SimuladosPage() {
       description: 'O simulado foi removido da lista.',
     });
   };
+
+  const handleEditClick = (simuladoToEdit: Simulado) => {
+    setEditingSimulado(simuladoToEdit);
+    setTitle(simuladoToEdit.title);
+    setDescription(simuladoToEdit.description);
+    setSelectedSubject(simuladoToEdit.subjectId);
+    setSelectedStudent(simuladoToEdit.studentId);
+    setQuestions(simuladoToEdit.questions);
+    setActiveTab('create');
+  }
 
   const getSubjectName = (id: string) => allSubjects.find(s => s.id === id)?.name || 'Desconhecida';
   const getStudentName = (id: string) => students.find(s => s.id === id)?.name || 'Desconhecido';
@@ -319,7 +349,7 @@ export default function SimuladosPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">Simulados Criados</TabsTrigger>
-          <TabsTrigger value="create">Criar Novo</TabsTrigger>
+          <TabsTrigger value="create">{editingSimulado ? 'Editar Simulado' : 'Criar Novo'}</TabsTrigger>
           <TabsTrigger value="answers">Respostas</TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="mt-6">
@@ -354,9 +384,14 @@ export default function SimuladosPage() {
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                          {sim.status === 'Pendente' && (
+                            <Button variant="ghost" size="icon" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleEditClick(sim); }}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                     </TableRow>
                     ))
@@ -376,9 +411,9 @@ export default function SimuladosPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <Card>
                 <CardHeader>
-                    <CardTitle>Informações Gerais</CardTitle>
+                    <CardTitle>{editingSimulado ? 'Editar Simulado' : 'Informações Gerais'}</CardTitle>
                     <CardDescription>
-                    Crie um novo conjunto de exercícios para um aluno específico.
+                    {editingSimulado ? 'Altere as informações do simulado abaixo.' : 'Crie um novo conjunto de exercícios para um aluno específico.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6">
@@ -465,7 +500,7 @@ export default function SimuladosPage() {
                                 <Input
                                     value={opt.text}
                                     onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                                    placeholder={opt.text === '' ? 'Nova Opção' : ''}
+                                    placeholder={'Nova Opção'}
                                     className="flex-1"
                                 />
                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
@@ -504,7 +539,7 @@ export default function SimuladosPage() {
                 
                 <div className="flex justify-end gap-2">
                     <Button type="button" variant="secondary" onClick={resetForm}>Cancelar</Button>
-                    <Button type="submit">Salvar Simulado</Button>
+                    <Button type="submit">{editingSimulado ? 'Atualizar Simulado' : 'Salvar Simulado'}</Button>
                 </div>
             </form>
         </TabsContent>
