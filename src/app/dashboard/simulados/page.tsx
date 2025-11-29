@@ -513,7 +513,9 @@ export default function SimuladosPage() {
                                     <TableCell>{getStudentName(sim.studentId)}</TableCell>
                                     <TableCell>{sim.completedAt ? format(sim.completedAt, 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>{sim.score?.toFixed(0) || 'N/A'}%</Badge>
+                                        <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>
+                                            {sim.score?.toFixed(0) || 'N/A'}%
+                                        </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="sm">Ver Respostas</Button>
