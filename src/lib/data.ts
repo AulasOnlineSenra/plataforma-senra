@@ -288,7 +288,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     title: 'Aula de Matemática',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0),
     end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 11, 30),
-    studentId: 'user-1',
+    studentId: 'user-5', // Felipe Madeira
     teacherId: 'teacher-1',
     subject: 'Matemática',
     status: 'completed'
@@ -318,9 +318,19 @@ export const scheduleEvents: ScheduleEvent[] = [
     title: 'Aula de Inglês',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 19, 30),
     end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 21, 0),
-    studentId: 'user-5',
+    studentId: 'user-5', // Felipe Madeira
     teacherId: 'teacher-4',
     subject: 'Inglês',
+    status: 'completed'
+  },
+  {
+    id: 'evt-5',
+    title: 'Aula de Biologia',
+    start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 16, 0),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 17, 30),
+    studentId: 'user-5', // Felipe Madeira
+    teacherId: 'teacher-3', // Professora de História/Geografia nos dados, mas vamos usar para Bio no evento
+    subject: 'Biologia',
     status: 'completed'
   },
 ];
