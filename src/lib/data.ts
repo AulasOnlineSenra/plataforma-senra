@@ -21,6 +21,7 @@ import {
   Gift,
   History,
   Bell,
+  BookCopy,
 } from 'lucide-react';
 
 
@@ -437,6 +438,12 @@ export const navItems: NavItem[] = [
     href: '/dashboard/my-teachers',
     icon: Briefcase,
     label: 'Meus Professores',
+    roles: ['student'],
+  },
+  {
+    href: '/dashboard/my-subjects',
+    icon: BookCopy,
+    label: 'Minhas Disciplinas',
     roles: ['student'],
   },
   {
