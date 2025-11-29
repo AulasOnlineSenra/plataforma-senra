@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, users as initialUsers, subjects, simulados as initialSimulados } from '@/lib/data';
 import { Teacher, ScheduleEvent, User, Simulado } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,7 @@ const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
 function TeacherDetailPageComponent() {
     const params = useParams();
+    const router = useRouter();
     const teacherId = params.teacherId as string;
     const { toast } = useToast();
 
@@ -259,7 +260,7 @@ function TeacherDetailPageComponent() {
                                         <p className="font-semibold">{simulado.title}</p>
                                         <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
                                     </div>
-                                    <Button>Iniciar Simulado</Button>
+                                    <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
                                 </div>
                             ))
                         ) : (

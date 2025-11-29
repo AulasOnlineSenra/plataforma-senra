@@ -337,7 +337,7 @@ function StudentDetailPageComponent() {
                                             <p className="font-semibold">{simulado.title}</p>
                                             <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
                                         </div>
-                                        <Button>Iniciar Simulado</Button>
+                                        <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
                                     </div>
                                 ))
                             ) : (
