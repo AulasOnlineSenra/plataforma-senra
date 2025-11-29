@@ -117,7 +117,7 @@ export default function SimuladosPage() {
       id: `q-${Date.now()}`,
       title: 'Pergunta sem título',
       type: 'multiple-choice',
-      options: [{ id: `opt-${Date.now()}`, text: 'Opção 1', isCorrect: false }],
+      options: [{ id: `opt-${Date.now()}`, text: '', isCorrect: false }],
       isRequired: false,
     };
     setQuestions([...questions, newQuestion]);
@@ -137,7 +137,7 @@ export default function SimuladosPage() {
   
   const handleAddOption = (qIndex: number) => {
     const newQuestions = [...questions];
-    newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: `Opção ${newQuestions[qIndex].options.length + 1}`, isCorrect: false });
+    newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: ``, isCorrect: false });
     setQuestions(newQuestions);
   };
   
