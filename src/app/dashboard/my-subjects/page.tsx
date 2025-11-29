@@ -68,8 +68,13 @@ export default function MySubjectsPage() {
     
     const subjectStats: Record<string, { classCount: number, teacherIds: Set<string> }> = {};
 
+    const subjectNameToIdMap = subjects.reduce((acc, subject) => {
+        acc[subject.name] = subject.id;
+        return acc;
+    }, {} as Record<string, string>);
+
     studentClasses.forEach(event => {
-        const subjectId = subjects.find(s => s.name === event.subject)?.id;
+        const subjectId = subjectNameToIdMap[event.subject];
         if (!subjectId) return;
 
         if (!subjectStats[subjectId]) {
