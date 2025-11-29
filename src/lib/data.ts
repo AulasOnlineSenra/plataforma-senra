@@ -306,7 +306,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     title: 'Aula de Inglês',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 19, 30),
     end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 21, 0),
-    studentId: 'user-4',
+    studentId: 'user-1',
     teacherId: 'teacher-4',
     subject: 'Inglês',
     status: 'completed'
