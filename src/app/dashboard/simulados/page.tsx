@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +44,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -51,7 +53,7 @@ export default function SimuladosPage() {
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [students, setStudents] = useState<User[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState('list');
 
   // State for the new simulado form
   const [title, setTitle] = useState('');
@@ -157,7 +159,7 @@ export default function SimuladosPage() {
     setSelectedSubject(availableSubjects.length === 1 ? availableSubjects[0].id : '');
     setSelectedStudent('');
     setQuestions([]);
-    setIsCreating(false);
+    setActiveTab('list');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -267,156 +269,19 @@ export default function SimuladosPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          {isCreating ? 'Novo Simulado' : 'Simulados'}
+          Simulados
         </h1>
-        {!isCreating && (
-            <Button onClick={() => setIsCreating(true)}>
-                <Plus className="mr-2" /> Criar Simulado
-            </Button>
-        )}
       </div>
 
-      {isCreating && (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="list">Simulados Criados</TabsTrigger>
+          <TabsTrigger value="create">Criar Novo</TabsTrigger>
+        </TabsList>
+        <TabsContent value="list" className="mt-6">
+           <Card>
             <CardHeader>
-                <CardTitle>Informações Gerais</CardTitle>
-                <CardDescription>
-                Crie um novo conjunto de exercícios para um aluno específico.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                    <Label htmlFor="title">Título do Simulado</Label>
-                    <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Revisão de Funções de 2º Grau"
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="subject">Disciplina</Label>
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger id="subject">
-                        <SelectValue placeholder="Selecione uma disciplina" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableSubjects.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id}>
-                            {sub.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="student">Aluno</Label>
-                    <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                    <SelectTrigger id="student">
-                        <SelectValue placeholder="Selecione um aluno" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {myStudents.map((stu) => (
-                        <SelectItem key={stu.id} value={stu.id}>
-                            {stu.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                </div>
-                </div>
-                <div className="grid gap-2">
-                <Label htmlFor="description">Descrição/Instruções</Label>
-                <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
-                    rows={2}
-                />
-                </div>
-            </CardContent>
-            </Card>
-
-            {questions.map((q, qIndex) => (
-            <Card key={q.id}>
-                <CardHeader className="flex flex-row items-start justify-between">
-                    <GripVertical className="cursor-move text-muted-foreground" />
-                    <Input 
-                        value={q.title} 
-                        onChange={(e) => handleQuestionChange(qIndex, 'title', e.target.value)} 
-                        placeholder="Pergunta"
-                        className="flex-1 text-base mx-4"
-                    />
-                    <Select defaultValue="multiple-choice" disabled>
-                        <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
-                            <SelectItem value="short-answer">Resposta curta</SelectItem>
-                            <SelectItem value="paragraph">Parágrafo</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3">
-                    {q.options.map((opt, oIndex) => (
-                        <div key={opt.id} className="flex items-center gap-3">
-                            <Circle className="text-muted-foreground" />
-                            <Input
-                                value={opt.text}
-                                onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                                placeholder={`Opção ${oIndex + 1}`}
-                                className="flex-1"
-                            />
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
-                                <Trash2 className="h-4 w-4 text-muted-foreground"/>
-                            </Button>
-                        </div>
-                    ))}
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <Circle />
-                        <Button variant="link" type="button" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
-                            Adicionar opção
-                        </Button>
-                    </div>
-                    </div>
-                </CardContent>
-                <Separator />
-                <CardContent className="p-4 flex justify-end items-center gap-4">
-                    <Button variant="ghost" size="icon" title="Copiar" onClick={() => {}}><ImageIcon className="h-5 w-5" /></Button>
-                    <Button variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
-                    <Separator orientation="vertical" className="h-6" />
-                    <div className="flex items-center gap-2">
-                        <Label htmlFor={`required-${q.id}`}>Obrigatória</Label>
-                        <Switch id={`required-${q.id}`} checked={q.isRequired} onCheckedChange={(checked) => handleQuestionChange(qIndex, 'isRequired', checked)} />
-                    </div>
-                </CardContent>
-            </Card>
-            ))}
-
-            <Card>
-                <CardContent className="p-4 flex justify-center">
-                    <Button type="button" variant="outline" onClick={handleAddQuestion}>
-                        <Plus className="mr-2"/> Adicionar Pergunta
-                    </Button>
-                </CardContent>
-            </Card>
-            
-            <div className="flex justify-end gap-2">
-                <Button type="button" variant="secondary" onClick={resetForm}>Cancelar</Button>
-                <Button type="submit">Salvar Simulado</Button>
-            </div>
-        </form>
-      )}
-      
-      {!isCreating && (
-        <Card>
-            <CardHeader>
-            <CardTitle>Simulados Criados</CardTitle>
+            <CardTitle>Seus Simulados</CardTitle>
             <CardDescription>Lista de todos os simulados que você já criou.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -462,7 +327,144 @@ export default function SimuladosPage() {
             </Table>
             </CardContent>
         </Card>
-      )}
+        </TabsContent>
+        <TabsContent value="create" className="mt-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <Card>
+                <CardHeader>
+                    <CardTitle>Informações Gerais</CardTitle>
+                    <CardDescription>
+                    Crie um novo conjunto de exercícios para um aluno específico.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="title">Título do Simulado</Label>
+                        <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Ex: Revisão de Funções de 2º Grau"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="subject">Disciplina</Label>
+                        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                        <SelectTrigger id="subject">
+                            <SelectValue placeholder="Selecione uma disciplina" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableSubjects.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.id}>
+                                {sub.name}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="student">Aluno</Label>
+                        <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                        <SelectTrigger id="student">
+                            <SelectValue placeholder="Selecione um aluno" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {myStudents.map((stu) => (
+                            <SelectItem key={stu.id} value={stu.id}>
+                                {stu.name}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    </div>
+                    </div>
+                    <div className="grid gap-2">
+                    <Label htmlFor="description">Descrição/Instruções</Label>
+                    <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
+                        rows={2}
+                    />
+                    </div>
+                </CardContent>
+                </Card>
+
+                {questions.map((q, qIndex) => (
+                <Card key={q.id}>
+                    <CardHeader className="flex flex-row items-start justify-between">
+                        <GripVertical className="cursor-move text-muted-foreground" />
+                        <Input 
+                            value={q.title} 
+                            onChange={(e) => handleQuestionChange(qIndex, 'title', e.target.value)} 
+                            placeholder="Pergunta"
+                            className="flex-1 text-base mx-4"
+                        />
+                        <Select defaultValue="multiple-choice" disabled>
+                            <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
+                                <SelectItem value="short-answer">Resposta curta</SelectItem>
+                                <SelectItem value="paragraph">Parágrafo</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                        {q.options.map((opt, oIndex) => (
+                            <div key={opt.id} className="flex items-center gap-3">
+                                <Circle className="text-muted-foreground" />
+                                <Input
+                                    value={opt.text}
+                                    onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
+                                    placeholder={`Opção ${oIndex + 1}`}
+                                    className="flex-1"
+                                />
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
+                                    <Trash2 className="h-4 w-4 text-muted-foreground"/>
+                                </Button>
+                            </div>
+                        ))}
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <Circle />
+                            <Button variant="link" type="button" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
+                                Adicionar opção
+                            </Button>
+                        </div>
+                        </div>
+                    </CardContent>
+                    <Separator />
+                    <CardContent className="p-4 flex justify-end items-center gap-4">
+                        <Button variant="ghost" size="icon" title="Copiar" onClick={() => {}}><ImageIcon className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
+                        <Separator orientation="vertical" className="h-6" />
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor={`required-${q.id}`}>Obrigatória</Label>
+                            <Switch id={`required-${q.id}`} checked={q.isRequired} onCheckedChange={(checked) => handleQuestionChange(qIndex, 'isRequired', checked)} />
+                        </div>
+                    </CardContent>
+                </Card>
+                ))}
+
+                <Card>
+                    <CardContent className="p-4 flex justify-center">
+                        <Button type="button" variant="outline" onClick={handleAddQuestion}>
+                            <Plus className="mr-2"/> Adicionar Pergunta
+                        </Button>
+                    </CardContent>
+                </Card>
+                
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" onClick={resetForm}>Cancelar</Button>
+                    <Button type="submit">Salvar Simulado</Button>
+                </div>
+            </form>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
