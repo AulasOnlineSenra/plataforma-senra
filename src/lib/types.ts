@@ -103,6 +103,34 @@ export interface ChatContact {
   role?: UserRole;
 }
 
+export interface QuestionOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export type QuestionType = 'multiple-choice' | 'short-answer' | 'paragraph';
+
+export interface Question {
+  id: string;
+  title: string;
+  type: QuestionType;
+  options: QuestionOption[];
+  isRequired: boolean;
+}
+
+export interface Simulado {
+  id: string;
+  title: string;
+  description: string;
+  subjectId: string;
+  studentId: string;
+  creatorId: string;
+  createdAt: Date;
+  status: 'Pendente' | 'Concluído';
+  questions: Question[];
+}
+
 export interface Suggestion {
   id: string;
   submittedBy: string;

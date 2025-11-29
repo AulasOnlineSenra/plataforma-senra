@@ -11,14 +11,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -28,29 +20,20 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, Image as ImageIcon, Circle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getMockUser,
   subjects as initialSubjects,
   users as initialUsers,
-  teachers as initialTeachers,
   scheduleEvents as initialSchedule
 } from '@/lib/data';
-import { User, Teacher, Subject, ScheduleEvent, UserRole } from '@/lib/types';
+import { User, Teacher, Subject, ScheduleEvent, UserRole, Simulado, Question, QuestionOption } from '@/lib/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface Simulado {
-  id: string;
-  title: string;
-  description: string;
-  subjectId: string;
-  studentId: string;
-  creatorId: string;
-  createdAt: Date;
-  status: 'Pendente' | 'Concluído';
-}
+import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -60,10 +43,12 @@ export default function SimuladosPage() {
   const [students, setStudents] = useState<User[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
 
+  // State for the new simulado form
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   const { toast } = useToast();
 
@@ -79,7 +64,6 @@ export default function SimuladosPage() {
       const storedUsers = localStorage.getItem('userList');
       setStudents(storedUsers ? JSON.parse(storedUsers).filter((u:User) => u.role === 'student') : initialUsers.filter(u => u.role === 'student'));
 
-      // In a real app, subjects would likely come from a DB
       setAllSubjects(initialSubjects);
     };
 
@@ -111,12 +95,59 @@ export default function SimuladosPage() {
   }, [currentUser, allSubjects]);
 
   useEffect(() => {
-    // Automatically select the subject if there's only one option
     if (availableSubjects.length === 1) {
       setSelectedSubject(availableSubjects[0].id);
     }
   }, [availableSubjects]);
 
+  const handleAddQuestion = () => {
+    const newQuestion: Question = {
+      id: `q-${Date.now()}`,
+      title: 'Pergunta sem título',
+      type: 'multiple-choice',
+      options: [{ id: `opt-${Date.now()}`, text: 'Opção 1', isCorrect: false }],
+      isRequired: false,
+    };
+    setQuestions([...questions, newQuestion]);
+  };
+  
+  const handleQuestionChange = (qIndex: number, field: keyof Question, value: any) => {
+    const newQuestions = [...questions];
+    (newQuestions[qIndex] as any)[field] = value;
+    setQuestions(newQuestions);
+  };
+  
+  const handleOptionChange = (qIndex: number, oIndex: number, text: string) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].options[oIndex].text = text;
+    setQuestions(newQuestions);
+  };
+  
+  const handleAddOption = (qIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: `Opção ${newQuestions[qIndex].options.length + 1}`, isCorrect: false });
+    setQuestions(newQuestions);
+  };
+  
+  const handleRemoveOption = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].options.splice(oIndex, 1);
+    setQuestions(newQuestions);
+  };
+
+  const handleRemoveQuestion = (qIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions.splice(qIndex, 1);
+    setQuestions(newQuestions);
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setSelectedSubject(availableSubjects.length === 1 ? availableSubjects[0].id : '');
+    setSelectedStudent('');
+    setQuestions([]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +169,7 @@ export default function SimuladosPage() {
       creatorId: currentUser.id,
       createdAt: new Date(),
       status: 'Pendente',
+      questions,
     };
 
     const updatedSimulados = [...simulados, newSimulado];
@@ -150,14 +182,10 @@ export default function SimuladosPage() {
       description: 'O novo simulado foi adicionado à lista.',
     });
 
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setSelectedSubject('');
-    setSelectedStudent('');
+    resetForm();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteSimulado = (id: string) => {
     const updatedSimulados = simulados.filter(s => s.id !== id);
     setSimulados(updatedSimulados);
     localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
@@ -178,7 +206,6 @@ export default function SimuladosPage() {
     if (currentUser.role === 'teacher') {
         return simulados.filter(s => s.creatorId === currentUser.id);
     }
-    // Student view
     return simulados.filter(s => s.studentId === currentUser.id);
   }, [currentUser, simulados]);
 
@@ -196,6 +223,31 @@ export default function SimuladosPage() {
                     <p className="text-muted-foreground">Você não tem permissão para criar simulados. Aqui você verá os simulados que foram designados a você.</p>
                 </CardContent>
             </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Simulados Atribuídos</CardTitle>
+                    <CardDescription>Lista de simulados que você precisa concluir.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {displayedSimulados.length > 0 ? (
+                        <div className="space-y-4">
+                        {displayedSimulados.map(sim => (
+                            <div key={sim.id} className="rounded-lg border p-4 flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-semibold">{sim.title}</h3>
+                                    <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
+                                </div>
+                                <Button>Iniciar</Button>
+                            </div>
+                        ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <p>Nenhum simulado atribuído a você no momento.</p>
+                        </div>
+                    )}
+                </CardContent>
+             </Card>
         </div>
      )
   }
@@ -204,19 +256,19 @@ export default function SimuladosPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Simulados
+          Construtor de Simulados
         </h1>
       </div>
-      <Card>
-        <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card>
           <CardHeader>
-            <CardTitle>Criar Novo Simulado/Exercício</CardTitle>
+            <CardTitle>Informações Gerais</CardTitle>
             <CardDescription>
               Crie um novo conjunto de exercícios para um aluno específico.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="title">Título do Simulado</Label>
                 <Input
@@ -257,32 +309,95 @@ export default function SimuladosPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid gap-2">
+             <div className="grid gap-2">
               <Label htmlFor="description">Descrição/Instruções</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
-                rows={4}
+                rows={2}
               />
             </div>
           </CardContent>
-          <CardContent className="flex justify-end">
-            <Button type="submit">
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Simulado
-            </Button>
-          </CardContent>
-        </form>
-      </Card>
+        </Card>
 
+        {questions.map((q, qIndex) => (
+          <Card key={q.id}>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <GripVertical className="cursor-move text-muted-foreground" />
+                <Input 
+                    value={q.title} 
+                    onChange={(e) => handleQuestionChange(qIndex, 'title', e.target.value)} 
+                    placeholder="Pergunta"
+                    className="flex-1 text-base mx-4"
+                />
+                 <Select defaultValue="multiple-choice" disabled>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
+                        <SelectItem value="short-answer">Resposta curta</SelectItem>
+                        <SelectItem value="paragraph">Parágrafo</SelectItem>
+                    </SelectContent>
+                </Select>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                {q.options.map((opt, oIndex) => (
+                    <div key={opt.id} className="flex items-center gap-3">
+                        <Circle className="text-muted-foreground" />
+                        <Input
+                            value={opt.text}
+                            onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
+                            placeholder={`Opção ${oIndex + 1}`}
+                            className="flex-1"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
+                            <Trash2 className="h-4 w-4 text-muted-foreground"/>
+                        </Button>
+                    </div>
+                ))}
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <Circle />
+                    <Button variant="link" type="button" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
+                        Adicionar opção
+                    </Button>
+                </div>
+                </div>
+            </CardContent>
+            <Separator />
+            <CardContent className="p-4 flex justify-end items-center gap-4">
+                 <Button variant="ghost" size="icon" title="Copiar" onClick={() => {}}><ImageIcon className="h-5 w-5" /></Button>
+                 <Button variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
+                <Separator orientation="vertical" className="h-6" />
+                <div className="flex items-center gap-2">
+                    <Label htmlFor={`required-${q.id}`}>Obrigatória</Label>
+                    <Switch id={`required-${q.id}`} checked={q.isRequired} onCheckedChange={(checked) => handleQuestionChange(qIndex, 'isRequired', checked)} />
+                </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        <Card>
+            <CardContent className="p-4 flex justify-center">
+                 <Button type="button" variant="outline" onClick={handleAddQuestion}>
+                    <Plus className="mr-2"/> Adicionar Pergunta
+                </Button>
+            </CardContent>
+        </Card>
+        
+        <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={resetForm}>Cancelar</Button>
+            <Button type="submit">Salvar Simulado</Button>
+        </div>
+      </form>
+      
       <Card>
         <CardHeader>
           <CardTitle>Simulados Criados</CardTitle>
-          <CardDescription>
-            Lista de todos os simulados criados por você.
-          </CardDescription>
+          <CardDescription>Lista de todos os simulados que você já criou.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -304,9 +419,13 @@ export default function SimuladosPage() {
                     <TableCell>{getStudentName(sim.studentId)}</TableCell>
                     <TableCell>{getSubjectName(sim.subjectId)}</TableCell>
                     <TableCell>{format(sim.createdAt, 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
-                    <TableCell>{sim.status}</TableCell>
+                    <TableCell>
+                        <Badge variant={sim.status === 'Concluído' ? 'secondary' : 'default'} className={cn(sim.status === 'Concluído' && 'bg-green-100 text-green-800')}>
+                            {sim.status}
+                        </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(sim.id)}>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteSimulado(sim.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
