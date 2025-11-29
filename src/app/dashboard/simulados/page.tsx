@@ -523,29 +523,29 @@ export default function SimuladosPage() {
                                     placeholder="Nova Opção"
                                     className="flex-1"
                                 />
-                                <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
                                     <X className="h-4 w-4 text-muted-foreground"/>
                                 </Button>
                             </div>
                         ))}
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             <input type="radio" disabled className="form-radio h-4 w-4" />
-                            <Button variant="link" type="button" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
+                            <Button type="button" variant="link" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
                                 Adicionar opção
                             </Button>
                         </div>
                         </div>
                     </CardContent>
                     <Separator />
-                    <CardContent className="p-4 flex justify-end items-center gap-4">
-                        <Button variant="ghost" size="icon" title="Copiar" onClick={() => handleDuplicateQuestion(qIndex)}><Copy className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
+                    <CardFooter className="p-4 flex justify-end items-center gap-4">
+                        <Button type="button" variant="ghost" size="icon" title="Copiar" onClick={() => handleDuplicateQuestion(qIndex)}><Copy className="h-5 w-5" /></Button>
+                        <Button type="button" variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
                         <Separator orientation="vertical" className="h-6" />
                         <div className="flex items-center gap-2">
                             <Label htmlFor={`required-${q.id}`}>Obrigatória</Label>
                             <Switch id={`required-${q.id}`} checked={q.isRequired} onCheckedChange={(checked) => handleQuestionChange(qIndex, 'isRequired', checked)} />
                         </div>
-                    </CardContent>
+                    </CardFooter>
                 </Card>
                 ))}
 
