@@ -101,6 +101,18 @@ export const users: User[] = [
     classCredits: 10,
     activePackage: 'Pacote de 12 aulas',
   },
+  {
+    id: 'user-5',
+    name: 'Felipe Madeira',
+    email: 'felipe.madeira@example.com',
+    avatarUrl: 'https://picsum.photos/seed/student5/200/200',
+    role: 'student',
+    status: 'active',
+    timezone: 'America/Sao_Paulo',
+    lastAccess: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    classCredits: 5,
+    activePackage: 'Pacote 8 Aulas',
+  },
 ];
 
 export let teachers: Teacher[] = [
@@ -306,7 +318,7 @@ export const scheduleEvents: ScheduleEvent[] = [
     title: 'Aula de Inglês',
     start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 19, 30),
     end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 21, 0),
-    studentId: 'user-1',
+    studentId: 'user-5',
     teacherId: 'teacher-4',
     subject: 'Inglês',
     status: 'completed'
