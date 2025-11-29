@@ -110,6 +110,13 @@ export default function SimuladosPage() {
     return [];
   }, [currentUser, allSubjects]);
 
+  useEffect(() => {
+    // Automatically select the subject if there's only one option
+    if (availableSubjects.length === 1) {
+      setSelectedSubject(availableSubjects[0].id);
+    }
+  }, [availableSubjects]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
