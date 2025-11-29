@@ -77,14 +77,6 @@ export default function SimuladosPage() {
   
   const optionRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
-  useEffect(() => {
-    optionRefs.current.forEach((inputElement, id) => {
-      if (!document.body.contains(inputElement)) {
-        optionRefs.current.delete(id);
-      }
-    });
-  }, [questions]);
-
 
   useEffect(() => {
     const updateData = () => {
@@ -520,7 +512,11 @@ export default function SimuladosPage() {
                                 <input type="radio" name={`correct-opt-${q.id}`} checked={opt.isCorrect} onChange={() => handleCorrectOptionChange(qIndex, oIndex)} className="form-radio h-4 w-4 text-primary focus:ring-primary" />
                                 <Input
                                     ref={(el) => {
-                                      if (el) optionRefs.current.set(opt.id, el);
+                                      if (el) {
+                                          optionRefs.current.set(opt.id, el);
+                                      } else {
+                                          optionRefs.current.delete(opt.id);
+                                      }
                                     }}
                                     value={opt.text}
                                     onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
