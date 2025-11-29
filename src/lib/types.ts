@@ -129,6 +129,8 @@ export interface Simulado {
   createdAt: Date;
   status: 'Pendente' | 'Concluído';
   questions: Question[];
+  completedAt?: Date;
+  score?: number;
 }
 
 export interface Suggestion {
