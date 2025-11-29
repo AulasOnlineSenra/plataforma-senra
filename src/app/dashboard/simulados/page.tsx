@@ -45,6 +45,14 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -54,6 +62,7 @@ export default function SimuladosPage() {
   const [students, setStudents] = useState<User[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [activeTab, setActiveTab] = useState('list');
+  const [viewingSimulado, setViewingSimulado] = useState<Simulado | null>(null);
 
   // State for the new simulado form
   const [title, setTitle] = useState('');
@@ -270,6 +279,7 @@ export default function SimuladosPage() {
   }
 
   return (
+    <>
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
@@ -287,7 +297,7 @@ export default function SimuladosPage() {
            <Card>
             <CardHeader>
             <CardTitle>Seus Simulados</CardTitle>
-            <CardDescription>Lista de todos os simulados que você já criou.</CardDescription>
+            <CardDescription>Lista de todos os simulados que você já criou. Clique em uma linha para ver os detalhes.</CardDescription>
             </CardHeader>
             <CardContent>
             <Table>
@@ -304,7 +314,7 @@ export default function SimuladosPage() {
                 <TableBody>
                 {displayedSimulados.length > 0 ? (
                     displayedSimulados.map((sim) => (
-                    <TableRow key={sim.id}>
+                    <TableRow key={sim.id} onClick={() => setViewingSimulado(sim)} className="cursor-pointer">
                         <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
                         <TableCell>{getStudentName(sim.studentId)}</TableCell>
                         <TableCell>{getSubjectName(sim.subjectId)}</TableCell>
@@ -315,7 +325,7 @@ export default function SimuladosPage() {
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteSimulado(sim.id)}>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
                             <Trash2 className="h-4 w-4" />
                         </Button>
                         </TableCell>
@@ -510,10 +520,41 @@ export default function SimuladosPage() {
                          )}
                     </TableBody>
                 </Table>
-            </CardContent>
+           </CardContent>
            </Card>
         </TabsContent>
       </Tabs>
     </div>
+    <Dialog open={!!viewingSimulado} onOpenChange={() => setViewingSimulado(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewingSimulado?.title}</DialogTitle>
+            <DialogDescription>
+              {viewingSimulado?.description || 'Simulado sem descrição.'}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-6">
+            <div className="space-y-6 py-4">
+              {viewingSimulado?.questions.map((q, qIndex) => (
+                <div key={q.id} className="space-y-3">
+                  <p className="font-semibold">{qIndex + 1}. {q.title} {q.isRequired && <span className="text-destructive">*</span>}</p>
+                  <div className="pl-4 space-y-2">
+                    {q.options.map(opt => (
+                      <div key={opt.id} className="flex items-center gap-2 text-muted-foreground">
+                        <Circle className="h-3 w-3" />
+                        <span>{opt.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {viewingSimulado?.questions.length === 0 && (
+                <p className="text-muted-foreground text-center">Este simulado não tem nenhuma questão.</p>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
