@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -27,7 +27,8 @@ import {
   getMockUser,
   subjects as initialSubjects,
   users as initialUsers,
-  scheduleEvents as initialSchedule
+  scheduleEvents as initialSchedule,
+  simulados as initialSimulados
 } from '@/lib/data';
 import { User, Teacher, Subject, ScheduleEvent, UserRole, Simulado, Question, QuestionOption } from '@/lib/types';
 import { format } from 'date-fns';
@@ -73,6 +74,17 @@ export default function SimuladosPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
 
   const { toast } = useToast();
+  
+  const optionRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+
+  useEffect(() => {
+    optionRefs.current.forEach((inputElement, id) => {
+      if (!document.body.contains(inputElement)) {
+        optionRefs.current.delete(id);
+      }
+    });
+  }, [questions]);
+
 
   useEffect(() => {
     const updateData = () => {
@@ -81,7 +93,7 @@ export default function SimuladosPage() {
       setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
 
       const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-      setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s: any) => ({...s, createdAt: new Date(s.createdAt)})) : []);
+      setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s: any) => ({...s, createdAt: new Date(s.createdAt), completedAt: s.completedAt ? new Date(s.completedAt) : undefined})) : initialSimulados);
       
       const storedUsers = localStorage.getItem('userList');
       setStudents(storedUsers ? JSON.parse(storedUsers).filter((u:User) => u.role === 'student') : initialUsers.filter(u => u.role === 'student'));
@@ -154,9 +166,18 @@ export default function SimuladosPage() {
   };
   
   const handleAddOption = (qIndex: number) => {
+    const newOptionId = `opt-${Date.now()}`;
     const newQuestions = [...questions];
-    newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: '', isCorrect: false });
+    newQuestions[qIndex].options.push({ id: newOptionId, text: '', isCorrect: false });
     setQuestions(newQuestions);
+
+    // Focus the new input after it has rendered
+    setTimeout(() => {
+      const input = optionRefs.current.get(newOptionId);
+      if (input) {
+        input.focus();
+      }
+    }, 0);
   };
   
   const handleRemoveOption = (qIndex: number, oIndex: number) => {
@@ -498,9 +519,12 @@ export default function SimuladosPage() {
                             <div key={opt.id} className="flex items-center gap-3">
                                 <input type="radio" name={`correct-opt-${q.id}`} checked={opt.isCorrect} onChange={() => handleCorrectOptionChange(qIndex, oIndex)} className="form-radio h-4 w-4 text-primary focus:ring-primary" />
                                 <Input
+                                    ref={(el) => {
+                                      if (el) optionRefs.current.set(opt.id, el);
+                                    }}
                                     value={opt.text}
                                     onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                                    placeholder={'Nova Opção'}
+                                    placeholder="Nova Opção"
                                     className="flex-1"
                                 />
                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
@@ -566,7 +590,7 @@ export default function SimuladosPage() {
                                 <TableRow key={`ans-${sim.id}`} onClick={() => setViewingSimulado(sim)} className="cursor-pointer">
                                     <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
                                     <TableCell>{getStudentName(sim.studentId)}</TableCell>
-                                    <TableCell>{sim.completedAt ? format(sim.completedAt, 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
+                                    <TableCell>{sim.completedAt ? format(new Date(sim.completedAt), 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
                                     <TableCell className="text-center">
                                         <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>
                                             {sim.score?.toFixed(0) || 'N/A'}%
