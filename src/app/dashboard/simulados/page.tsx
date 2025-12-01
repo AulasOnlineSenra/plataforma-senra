@@ -163,12 +163,8 @@ export default function SimuladosPage() {
     newQuestions[qIndex].options.push({ id: newOptionId, text: '', isCorrect: false });
     setQuestions(newQuestions);
 
-    // Focus the new input after it has rendered
     setTimeout(() => {
-      const input = optionRefs.current.get(newOptionId);
-      if (input) {
-        input.focus();
-      }
+      optionRefs.current.get(newOptionId)?.focus();
     }, 0);
   };
   
@@ -512,11 +508,8 @@ export default function SimuladosPage() {
                                 <input type="radio" name={`correct-opt-${q.id}`} checked={opt.isCorrect} onChange={() => handleCorrectOptionChange(qIndex, oIndex)} className="form-radio h-4 w-4 text-primary focus:ring-primary" />
                                 <Input
                                     ref={(el) => {
-                                      if (el) {
-                                          optionRefs.current.set(opt.id, el);
-                                      } else {
-                                          optionRefs.current.delete(opt.id);
-                                      }
+                                      if (el) optionRefs.current.set(opt.id, el);
+                                      else optionRefs.current.delete(opt.id);
                                     }}
                                     value={opt.text}
                                     onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
