@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -19,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon } from 'lucide-react';
+import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -42,6 +41,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -183,6 +183,21 @@ function StudentDetailPageComponent() {
     
     const getSubjectName = (subjectId: string) => {
         return subjects.find(s => s.id === subjectId)?.name || 'Disciplina Desconhecida';
+    };
+    
+    const calculateSimuladoResults = (simulado: Simulado) => {
+        if (!simulado.userAnswers) return { correct: 0, incorrect: 0 };
+        let correct = 0;
+        simulado.questions.forEach(q => {
+            const correctOption = q.options.find(opt => opt.isCorrect);
+            if (correctOption && simulado.userAnswers && simulado.userAnswers[q.id] === correctOption.id) {
+                correct++;
+            }
+        });
+        return {
+            correct,
+            incorrect: simulado.questions.length - correct,
+        };
     };
 
     const renderClassActions = (classEvent: ScheduleEvent) => (
@@ -331,15 +346,35 @@ function StudentDetailPageComponent() {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {studentSimulados.length > 0 ? (
-                                studentSimulados.map(simulado => (
-                                    <div key={simulado.id} className="flex items-center justify-between rounded-md border p-4">
-                                        <div>
-                                            <p className="font-semibold">{simulado.title}</p>
-                                            <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
+                                studentSimulados.map(simulado => {
+                                    const results = calculateSimuladoResults(simulado);
+                                    return (
+                                        <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{simulado.title}</p>
+                                                <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
+                                            </div>
+                                            {simulado.status === 'Concluído' && simulado.score !== undefined ? (
+                                                <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
+                                                    <div className="flex items-center gap-2 text-green-600">
+                                                        <Check className="h-4 w-4" />
+                                                        <span>{results.correct} Acertos</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-destructive">
+                                                        <XCircle className="h-4 w-4" />
+                                                        <span>{results.incorrect} Erros</span>
+                                                    </div>
+                                                     <Badge variant={simulado.score >= 70 ? 'secondary' : 'destructive'} className={cn(simulado.score >= 70 && 'bg-green-100 text-green-800')}>
+                                                        {simulado.score.toFixed(0)}%
+                                                    </Badge>
+                                                    <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
+                                                </div>
+                                            ) : (
+                                                <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
+                                            )}
                                         </div>
-                                        <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
-                                    </div>
-                                ))
+                                    )
+                                })
                             ) : (
                                 <div className="text-center py-10 text-muted-foreground">
                                     <p>Nenhum simulado disponível no momento.</p>

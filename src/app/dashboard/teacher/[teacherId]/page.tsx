@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -9,7 +8,7 @@ import { Teacher, ScheduleEvent, User, Simulado } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle, Star, StarHalf } from 'lucide-react';
+import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle, Star, StarHalf, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -17,6 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
+import { cn } from '@/lib/utils';
 
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
@@ -141,6 +141,21 @@ function TeacherDetailPageComponent() {
     const getSubjectName = (subjectId: string) => {
         return subjects.find(s => s.id === subjectId)?.name || 'Disciplina Desconhecida';
     };
+    
+    const calculateSimuladoResults = (simulado: Simulado) => {
+        if (!simulado.userAnswers) return { correct: 0, incorrect: 0 };
+        let correct = 0;
+        simulado.questions.forEach(q => {
+            const correctOption = q.options.find(opt => opt.isCorrect);
+            if (correctOption && simulado.userAnswers && simulado.userAnswers[q.id] === correctOption.id) {
+                correct++;
+            }
+        });
+        return {
+            correct,
+            incorrect: simulado.questions.length - correct,
+        };
+    };
 
 
     return (
@@ -254,15 +269,35 @@ function TeacherDetailPageComponent() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {teacherSimuladosForStudent.length > 0 ? (
-                            teacherSimuladosForStudent.map(simulado => (
-                                <div key={simulado.id} className="flex items-center justify-between rounded-md border p-4">
-                                    <div>
+                            teacherSimuladosForStudent.map(simulado => {
+                                const results = calculateSimuladoResults(simulado);
+                                return (
+                                <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
+                                    <div className="flex-1">
                                         <p className="font-semibold">{simulado.title}</p>
                                         <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
                                     </div>
-                                    <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
+                                    {simulado.status === 'Concluído' && simulado.score !== undefined ? (
+                                        <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
+                                            <div className="flex items-center gap-2 text-green-600">
+                                                <Check className="h-4 w-4" />
+                                                <span>{results.correct} Acertos</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-destructive">
+                                                <XCircle className="h-4 w-4" />
+                                                <span>{results.incorrect} Erros</span>
+                                            </div>
+                                            <Badge variant={simulado.score >= 70 ? 'secondary' : 'destructive'} className={cn(simulado.score >= 70 && 'bg-green-100 text-green-800')}>
+                                                {simulado.score.toFixed(0)}%
+                                            </Badge>
+                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
+                                        </div>
+                                    ) : (
+                                        <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
+                                    )}
                                 </div>
-                            ))
+                                )
+                            })
                         ) : (
                             <div className="text-center py-10 text-muted-foreground">
                                 <p>Nenhum simulado disponível com este professor no momento.</p>
