@@ -119,7 +119,7 @@ function StartSimuladoPageComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => router.back()}>Voltar</Button>
+            <Button onClick={() => router.push('/dashboard/simulados')}>Voltar</Button>
           </CardFooter>
         </Card>
       </div>
@@ -129,7 +129,7 @@ function StartSimuladoPageComponent() {
   return (
     <>
       <div className="flex flex-1 flex-col p-4 md:p-6 relative">
-         <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 z-10">
+         <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10">
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Voltar</span>
           </Button>
@@ -189,7 +189,7 @@ function StartSimuladoPageComponent() {
             </Card>
         </div>
       </div>
-      <Dialog open={isFinished} onOpenChange={(open) => !open && router.back()}>
+      <Dialog open={isFinished} onOpenChange={(open) => !open && router.push('/dashboard/simulados')}>
         <DialogContent>
             <DialogHeader className="text-center items-center">
                 <div className={cn(
@@ -208,7 +208,7 @@ function StartSimuladoPageComponent() {
                 <p className="text-muted-foreground">de acerto</p>
             </div>
             <DialogFooter className="justify-center">
-                <Button onClick={() => router.back()}>Voltar para o perfil</Button>
+                <Button onClick={() => router.push('/dashboard/simulados')}>Voltar para simulados</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
