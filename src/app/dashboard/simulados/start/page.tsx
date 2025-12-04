@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -50,6 +51,12 @@ function StartSimuladoPageComponent() {
     const allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : initialSimulados;
     const foundSimulado = allSimulados.find(s => s.id === simuladoId);
     setSimulado(foundSimulado || null);
+
+    if (foundSimulado?.status === 'Concluído') {
+      setIsFinished(true);
+      setAnswers(foundSimulado.userAnswers || {});
+      setScore(foundSimulado.score || 0);
+    }
   }, [simuladoId]);
   
   const currentQuestion: Question | undefined = simulado?.questions[currentQuestionIndex];
@@ -126,10 +133,75 @@ function StartSimuladoPageComponent() {
     );
   }
 
+  if(isFinished) {
+    return (
+        <div className="flex flex-1 flex-col p-4 md:p-6 relative bg-background">
+            <Button variant="ghost" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10 h-auto p-2">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para Simulados
+            </Button>
+
+            <div className="mx-auto w-full max-w-4xl pt-16">
+                 <Card className="mb-6 shadow-md">
+                    <CardHeader>
+                        <CardTitle className="text-2xl font-bold">{simulado.title}</CardTitle>
+                        <CardDescription>{simulado.description}</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
+                        <div className="text-sm">
+                            <span className="font-semibold">Pontuação Final: </span>
+                            <span className={cn("font-bold text-lg", score >= 70 ? "text-green-600" : "text-red-600")}>{score.toFixed(0)}%</span>
+                        </div>
+                         <Button onClick={() => router.push('/dashboard/simulados')}>Finalizar Revisão</Button>
+                    </CardFooter>
+                </Card>
+
+                <ScrollArea className="h-[calc(100vh-20rem)]">
+                    <div className="space-y-6 pr-4">
+                        {simulado.questions.map((question, qIndex) => {
+                            const userAnswerId = answers[question.id];
+                            return (
+                                <Card key={question.id} className="shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Questão {qIndex + 1}: {question.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                    {question.options.map((option, oIndex) => {
+                                        const isCorrect = option.isCorrect;
+                                        const isUserAnswer = userAnswerId === option.id;
+                                        const optionLabel = String.fromCharCode(97 + oIndex); // a, b, c...
+
+                                        return (
+                                        <div key={option.id} className={cn(
+                                            "flex items-start gap-3 rounded-md border p-3 text-sm transition-colors",
+                                            isCorrect ? "border-green-300 bg-green-50" : "",
+                                            isUserAnswer && !isCorrect ? "border-red-300 bg-red-50" : ""
+                                        )}>
+                                            <div className="flex items-center gap-2 h-6">
+                                                {isCorrect && <Check className="h-5 w-5 text-green-600" />}
+                                                {isUserAnswer && !isCorrect && <X className="h-5 w-5 text-red-600" />}
+                                            </div>
+                                            <span className="font-bold">{optionLabel})</span>
+                                            <p className="flex-1">{option.text}</p>
+                                        </div>
+                                        );
+                                    })}
+                                    </div>
+                                </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </ScrollArea>
+            </div>
+        </div>
+    )
+  }
+
   return (
-    <>
       <div className="flex flex-1 flex-col p-4 md:p-6 relative">
-         <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 z-10">
+         <Button variant="ghost" onClick={() => router.back()} className="absolute top-4 left-4 z-10">
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Voltar</span>
           </Button>
@@ -189,30 +261,6 @@ function StartSimuladoPageComponent() {
             </Card>
         </div>
       </div>
-      <Dialog open={isFinished} onOpenChange={(open) => !open && router.push('/dashboard/simulados')}>
-        <DialogContent>
-            <DialogHeader className="text-center items-center">
-                <div className={cn(
-                    "rounded-full p-4 w-fit mb-4",
-                    score >= 70 ? 'bg-green-100' : 'bg-red-100'
-                )}>
-                    <FileText className={cn("h-10 w-10", score >= 70 ? 'text-green-600' : 'text-red-600')} />
-                </div>
-                <DialogTitle className="text-2xl font-bold">Simulado Concluído!</DialogTitle>
-                <DialogDescription>
-                   Sua pontuação final foi de
-                </DialogDescription>
-            </DialogHeader>
-            <div className="text-center">
-                <p className="text-6xl font-bold">{score.toFixed(0)}%</p>
-                <p className="text-muted-foreground">de acerto</p>
-            </div>
-            <DialogFooter className="justify-center">
-                <Button onClick={() => router.push('/dashboard/simulados')}>Voltar para simulados</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }
 
