@@ -342,7 +342,33 @@ export default function SimuladosPage() {
                 <CardContent>
                     {displayedSimulados.length > 0 ? (
                         <div className="space-y-4">
-                        {displayedSimulados.map(sim => (
+                        {displayedSimulados.map(sim => {
+                          if (sim.status === 'Concluído' && sim.score !== undefined) {
+                              const results = calculateSimuladoResults(sim);
+                              return (
+                                  <div key={sim.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
+                                      <div className="flex-1">
+                                          <p className="font-semibold">{sim.title}</p>
+                                          <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
+                                          <div className="flex items-center gap-2 text-green-600">
+                                              <Check className="h-4 w-4" />
+                                              <span>{results.correct} Acertos</span>
+                                          </div>
+                                          <div className="flex items-center gap-2 text-destructive">
+                                              <XCircle className="h-4 w-4" />
+                                              <span>{results.incorrect} Erros</span>
+                                          </div>
+                                          <Badge variant={sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score >= 70 && 'bg-green-100 text-green-800')}>
+                                              {sim.score.toFixed(0)}%
+                                          </Badge>
+                                          <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
+                                      </div>
+                                  </div>
+                              )
+                          }
+                          return (
                             <div key={sim.id} className="rounded-lg border p-4 flex items-center justify-between">
                                 <div>
                                     <h3 className="font-semibold">{sim.title}</h3>
@@ -350,7 +376,8 @@ export default function SimuladosPage() {
                                 </div>
                                 <Button onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Iniciar</Button>
                             </div>
-                        ))}
+                          );
+                        })}
                         </div>
                     ) : (
                         <div className="text-center py-8 text-muted-foreground">
