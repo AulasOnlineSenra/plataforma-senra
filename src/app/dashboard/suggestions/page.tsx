@@ -536,7 +536,7 @@ export default function SuggestionsPage() {
           Sugestões e Feedback
         </h1>
          {currentUser.role !== 'admin' && !isFormVisible && (
-          <Button onClick={() => setIsFormVisible(true)} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+          <Button onClick={() => setIsFormVisible(true)} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
               <Plus className="mr-2"/>
               Nova Sugestão
           </Button>
