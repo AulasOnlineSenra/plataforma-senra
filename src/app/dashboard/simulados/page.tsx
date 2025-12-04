@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit, Check, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getMockUser,
@@ -54,6 +54,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -65,6 +66,7 @@ export default function SimuladosPage() {
   const [activeTab, setActiveTab] = useState('list');
   const [viewingSimulado, setViewingSimulado] = useState<Simulado | null>(null);
   const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
+  const router = useRouter();
 
   // State for the new/edit simulado form
   const [title, setTitle] = useState('');
@@ -303,6 +305,21 @@ export default function SimuladosPage() {
     return displayedSimulados.filter(s => s.status === 'Concluído').sort((a,b) => (b.completedAt?.getTime() || 0) - (a.completedAt?.getTime() || 0));
   }, [displayedSimulados]);
 
+  const calculateSimuladoResults = (simulado: Simulado) => {
+    if (!simulado.userAnswers) return { correct: 0, incorrect: 0 };
+    let correct = 0;
+    simulado.questions.forEach(q => {
+        const correctOption = q.options.find(opt => opt.isCorrect);
+        if (correctOption && simulado.userAnswers && simulado.userAnswers[q.id] === correctOption.id) {
+            correct++;
+        }
+    });
+    return {
+        correct,
+        incorrect: simulado.questions.length - correct,
+    };
+  };
+
   if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'teacher')) {
      return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -331,7 +348,7 @@ export default function SimuladosPage() {
                                     <h3 className="font-semibold">{sim.title}</h3>
                                     <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
                                 </div>
-                                <Button>Iniciar</Button>
+                                <Button onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Iniciar</Button>
                             </div>
                         ))}
                         </div>
@@ -563,42 +580,39 @@ export default function SimuladosPage() {
                 <CardDescription>Acompanhe o desempenho dos alunos nos simulados concluídos.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Simulado</TableHead>
-                            <TableHead>Aluno</TableHead>
-                            <TableHead>Data de Conclusão</TableHead>
-                            <TableHead className="text-center">Acertos</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                         {answeredSimulados.length > 0 ? (
-                            answeredSimulados.map(sim => (
-                                <TableRow key={`ans-${sim.id}`} onClick={() => setViewingSimulado(sim)} className="cursor-pointer">
-                                    <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
-                                    <TableCell>{getStudentName(sim.studentId)}</TableCell>
-                                    <TableCell>{sim.completedAt ? format(new Date(sim.completedAt), 'dd/MM/yyyy HH:mm') : '-'}</TableCell>
-                                    <TableCell className="text-center">
+                 <div className="space-y-4">
+                    {answeredSimulados.length > 0 ? (
+                        answeredSimulados.map(sim => {
+                            const results = calculateSimuladoResults(sim);
+                            return (
+                                <div key={`ans-${sim.id}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
+                                    <div className="flex-1">
+                                        <p className="font-semibold">{sim.title}</p>
+                                        <p className="text-sm text-muted-foreground">{getStudentName(sim.studentId)} • {getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
+                                        <div className="flex items-center gap-2 text-green-600">
+                                            <Check className="h-4 w-4" />
+                                            <span>{results.correct} Acertos</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-destructive">
+                                            <XCircle className="h-4 w-4" />
+                                            <span>{results.incorrect} Erros</span>
+                                        </div>
                                         <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>
-                                            {sim.score?.toFixed(0) || 'N/A'}%
+                                            {sim.score?.toFixed(0)}%
                                         </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm">Ver Respostas</Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                         ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    Nenhum simulado foi respondido ainda.
-                                </TableCell>
-                            </TableRow>
-                         )}
-                    </TableBody>
-                </Table>
+                                        <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
+                                    </div>
+                                </div>
+                            )
+                        })
+                    ) : (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <p>Nenhum simulado foi respondido ainda.</p>
+                        </div>
+                    )}
+                </div>
            </CardContent>
            </Card>
         </TabsContent>
