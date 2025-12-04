@@ -99,44 +99,42 @@ function ChatPageComponent() {
     useEffect(() => {
         const users = getAllUsers();
         setAllUsers(users);
+
         const storedMessages = localStorage.getItem('chatMessages');
         setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
-    }, [getAllUsers]);
 
-    useEffect(() => {
-        if (!currentUser || allUsers.length === 0) return;
-    
-        const userContactsKey = `chatContacts_${currentUser.id}`;
-        const storedContactsStr = localStorage.getItem(userContactsKey);
-        const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : [];
-        const contactsMap = new Map(contactsData.map(c => [c.id, c]));
-    
-        let potentialPartners: (User | Teacher)[] = [];
-    
-        if (currentUser.role === 'admin') {
-            potentialPartners = allUsers.filter(u => u.id !== currentUser.id);
-        } else if (currentUser.role === 'student') {
-            potentialPartners = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
-        } else if (currentUser.role === 'teacher') {
-            potentialPartners = allUsers.filter(u => u.role === 'student' || u.role === 'admin');
+        if (currentUser) {
+            const userContactsKey = `chatContacts_${currentUser.id}`;
+            const storedContactsStr = localStorage.getItem(userContactsKey);
+            const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : [];
+            const contactsMap = new Map(contactsData.map(c => [c.id, c]));
+        
+            let potentialPartners: (User | Teacher)[] = [];
+        
+            if (currentUser.role === 'admin') {
+                potentialPartners = users.filter(u => u.id !== currentUser.id);
+            } else if (currentUser.role === 'student') {
+                potentialPartners = users.filter(u => u.role === 'teacher' || u.role === 'admin');
+            } else if (currentUser.role === 'teacher') {
+                potentialPartners = users.filter(u => u.role === 'student' || u.role === 'admin');
+            }
+        
+            const fullContactList: ChatContact[] = potentialPartners.map(partner => {
+                const existingContact = contactsMap.get(partner.id);
+                return {
+                    id: partner.id,
+                    name: partner.name,
+                    avatarUrl: partner.avatarUrl,
+                    role: partner.role,
+                    lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
+                    lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
+                    unreadCount: existingContact?.unreadCount || 0,
+                };
+            }).sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+        
+            setChatContacts(fullContactList);
         }
-    
-        const fullContactList: ChatContact[] = potentialPartners.map(partner => {
-            const existingContact = contactsMap.get(partner.id);
-            return {
-                id: partner.id,
-                name: partner.name,
-                avatarUrl: partner.avatarUrl,
-                role: partner.role,
-                lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
-                lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
-                unreadCount: existingContact?.unreadCount || 0,
-            };
-        }).sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-    
-        setChatContacts(fullContactList);
-    
-    }, [currentUser, allUsers]);
+    }, [currentUser, getAllUsers]);
 
     const handleContactSelect = useCallback((contactId: string) => {
         const contact = allUsers.find(u => u.id === contactId);
