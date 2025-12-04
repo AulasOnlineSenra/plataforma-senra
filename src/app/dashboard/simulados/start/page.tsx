@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -17,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { simulados as initialSimulados, subjects as initialSubjects, getMockUser } from '@/lib/data';
 import { Simulado, Question } from '@/lib/types';
-import { AlertCircle, ArrowLeft, ArrowRight, Check, X, FileText } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Check, X, FileText, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,15 @@ const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
 type Answers = Record<string, string>;
 
+function formatDuration(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds} s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes} min ${remainingSeconds} s`;
+}
+
 function StartSimuladoPageComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -45,17 +55,26 @@ function StartSimuladoPageComponent() {
   const [answers, setAnswers] = useState<Answers>({});
   const [isFinished, setIsFinished] = useState(false);
   const [score, setScore] = useState(0);
+  const [startTime, setStartTime] = useState<Date | null>(null);
   
   useEffect(() => {
     const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
     const allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : initialSimulados;
     const foundSimulado = allSimulados.find(s => s.id === simuladoId);
-    setSimulado(foundSimulado || null);
+    
+    if (foundSimulado) {
+        setSimulado(foundSimulado);
 
-    if (foundSimulado?.status === 'Concluído') {
-      setIsFinished(true);
-      setAnswers(foundSimulado.userAnswers || {});
-      setScore(foundSimulado.score || 0);
+        if (foundSimulado.status === 'Concluído') {
+          setIsFinished(true);
+          setAnswers(foundSimulado.userAnswers || {});
+          setScore(foundSimulado.score || 0);
+        } else {
+          // If not completed, set start time
+          setStartTime(new Date());
+        }
+    } else {
+        setSimulado(null);
     }
   }, [simuladoId]);
   
@@ -79,7 +98,10 @@ function StartSimuladoPageComponent() {
   };
 
   const handleFinish = () => {
-    if (!simulado) return;
+    if (!simulado || !startTime) return;
+
+    const endTime = new Date();
+    const durationInSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
 
     let correctAnswers = 0;
     simulado.questions.forEach(q => {
@@ -92,13 +114,12 @@ function StartSimuladoPageComponent() {
     const calculatedScore = (correctAnswers / simulado.questions.length) * 100;
     setScore(calculatedScore);
     
-    // Update simulado status and score in localStorage
     const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
     let allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : [];
     
     const updatedSimulados = allSimulados.map(s => 
       s.id === simulado.id 
-        ? { ...s, status: 'Concluído' as 'Concluído', completedAt: new Date(), score: calculatedScore, userAnswers: answers } 
+        ? { ...s, status: 'Concluído' as 'Concluído', startedAt: startTime, completedAt: endTime, durationSeconds: durationInSeconds, score: calculatedScore, userAnswers: answers } 
         : s
     );
     localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
@@ -147,10 +168,18 @@ function StartSimuladoPageComponent() {
                         <CardTitle className="text-2xl font-bold">{simulado.title}</CardTitle>
                         <CardDescription>{simulado.description}</CardDescription>
                     </CardHeader>
-                    <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
-                        <div className="text-sm">
-                            <span className="font-semibold">Pontuação Final: </span>
-                            <span className={cn("font-bold text-lg", score >= 70 ? "text-green-600" : "text-red-600")}>{score.toFixed(0)}%</span>
+                    <CardFooter className="flex flex-wrap justify-between items-center bg-muted/50 p-4 gap-4">
+                        <div className="flex items-center gap-4 text-sm">
+                           <div>
+                                <span className="font-semibold">Pontuação Final: </span>
+                                <span className={cn("font-bold text-lg", score >= 70 ? "text-green-600" : "text-red-600")}>{score.toFixed(0)}%</span>
+                           </div>
+                           {simulado.durationSeconds !== undefined && (
+                               <div className="flex items-center gap-2 text-muted-foreground">
+                                   <Clock className="h-4 w-4" />
+                                   <span>{formatDuration(simulado.durationSeconds)}</span>
+                               </div>
+                           )}
                         </div>
                          <Button onClick={() => router.push('/dashboard/simulados')}>Finalizar Revisão</Button>
                     </CardFooter>
@@ -201,7 +230,7 @@ function StartSimuladoPageComponent() {
 
   return (
       <div className="flex flex-1 flex-col p-4 md:p-6 relative">
-         <Button variant="ghost" onClick={() => router.back()} className="absolute top-4 left-4 z-10">
+         <Button variant="ghost" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10">
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Voltar</span>
           </Button>

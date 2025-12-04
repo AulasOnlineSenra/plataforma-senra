@@ -129,7 +129,9 @@ export interface Simulado {
   createdAt: Date;
   status: 'Pendente' | 'Concluído';
   questions: Question[];
+  startedAt?: Date;
   completedAt?: Date;
+  durationSeconds?: number;
   score?: number;
   userAnswers?: Record<string, string>; // questionId: optionId
 }

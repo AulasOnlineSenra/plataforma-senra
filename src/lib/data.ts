@@ -474,6 +474,12 @@ export const navItems: NavItem[] = [
     label: 'Minhas Disciplinas',
     roles: ['student'],
   },
+    {
+    href: '/dashboard/simulados',
+    icon: FileText,
+    label: 'Simulados',
+    roles: ['teacher', 'admin', 'student'],
+  },
   {
     href: '/dashboard/packages',
     icon: WalletCards,
@@ -491,12 +497,6 @@ export const navItems: NavItem[] = [
     icon: History,
     label: 'Histórico de Atividades',
     roles: ['student', 'teacher'],
-  },
-  {
-    href: '/dashboard/simulados',
-    icon: FileText,
-    label: 'Simulados',
-    roles: ['student', 'teacher', 'admin'],
   },
   {
     href: '/dashboard/suggestions',
@@ -596,6 +596,8 @@ export const simulados: Simulado[] = [
     status: 'Concluído',
     questions: [],
     completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+    startedAt: new Date(now.getTime() - (1 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)), // 5 minutes before completion
+    durationSeconds: 300,
     score: 85,
   },
   {

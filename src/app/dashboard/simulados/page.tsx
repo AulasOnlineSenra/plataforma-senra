@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -21,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit, Check, XCircle } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit, Check, XCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getMockUser,
@@ -57,6 +58,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
+
+function formatDuration(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds} s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
+}
 
 export default function SimuladosPage() {
   const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
@@ -326,14 +336,6 @@ export default function SimuladosPage() {
             <div className="flex items-center">
                 <h1 className="font-headline text-2xl md:text-3xl font-bold">Simulados</h1>
             </div>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Meus Simulados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Você não tem permissão para criar simulados. Aqui você verá os simulados que foram designados a você.</p>
-                </CardContent>
-            </Card>
              <Card>
                 <CardHeader>
                     <CardTitle>Simulados Atribuídos</CardTitle>
@@ -349,7 +351,17 @@ export default function SimuladosPage() {
                                   <div key={sim.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
                                       <div className="flex-1">
                                           <p className="font-semibold">{sim.title}</p>
-                                          <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
+                                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                                            <span>{getSubjectName(sim.subjectId)}</span>
+                                            <span>•</span>
+                                            <span>{sim.questions.length} questões</span>
+                                            {sim.durationSeconds !== undefined && (
+                                                <>
+                                                 <span>•</span>
+                                                 <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {formatDuration(sim.durationSeconds)}</span>
+                                                </>
+                                            )}
+                                          </div>
                                       </div>
                                       <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
                                           <div className="flex items-center gap-2 text-green-600">
@@ -438,11 +450,11 @@ export default function SimuladosPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {sim.status === 'Pendente' && (
-                            <Button variant="ghost" size="icon" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleEditClick(sim); }}>
+                            <Button type="button" variant="ghost" size="icon" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleEditClick(sim); }}>
                                 <Edit className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
+                          <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
                               <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -615,7 +627,17 @@ export default function SimuladosPage() {
                                 <div key={`ans-${sim.id}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
                                     <div className="flex-1">
                                         <p className="font-semibold">{sim.title}</p>
-                                        <p className="text-sm text-muted-foreground">{getStudentName(sim.studentId)} • {getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                                            <span>{getStudentName(sim.studentId)}</span>
+                                            <span>•</span>
+                                            <span>{getSubjectName(sim.subjectId)}</span>
+                                            {sim.durationSeconds !== undefined && (
+                                                <>
+                                                 <span>•</span>
+                                                 <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {formatDuration(sim.durationSeconds)}</span>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
                                         <div className="flex items-center gap-2 text-green-600">

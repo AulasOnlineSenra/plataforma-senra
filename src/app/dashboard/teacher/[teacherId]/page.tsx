@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -8,7 +9,7 @@ import { Teacher, ScheduleEvent, User, Simulado } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle, Star, StarHalf, Check } from 'lucide-react';
+import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle, Star, StarHalf, Check, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -20,6 +21,15 @@ import { cn } from '@/lib/utils';
 
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
+
+function formatDuration(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds} s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
+}
 
 function TeacherDetailPageComponent() {
     const params = useParams();
@@ -275,7 +285,17 @@ function TeacherDetailPageComponent() {
                                 <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
                                     <div className="flex-1">
                                         <p className="font-semibold">{simulado.title}</p>
-                                        <p className="text-sm text-muted-foreground">{getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões</p>
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                                            <span>{getSubjectName(simulado.subjectId)}</span>
+                                            <span>•</span>
+                                            <span>{simulado.questions.length} questões</span>
+                                            {simulado.durationSeconds !== undefined && (
+                                                <>
+                                                 <span>•</span>
+                                                 <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {formatDuration(simulado.durationSeconds)}</span>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                     {simulado.status === 'Concluído' && simulado.score !== undefined ? (
                                         <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
