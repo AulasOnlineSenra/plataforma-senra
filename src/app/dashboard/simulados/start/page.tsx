@@ -129,7 +129,7 @@ function StartSimuladoPageComponent() {
   return (
     <>
       <div className="flex flex-1 flex-col p-4 md:p-6 relative">
-         <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10">
+         <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 z-10">
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Voltar</span>
           </Button>
