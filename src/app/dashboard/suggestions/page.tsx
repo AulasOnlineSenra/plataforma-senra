@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getMockUser, suggestions as initialSuggestions, users } from '@/lib/data';
 import { User, UserRole, Suggestion } from '@/lib/types';
-import { Bug, Lightbulb, Send, Check, X, Archive, Filter, Trash2, RotateCcw } from 'lucide-react';
+import { Bug, Lightbulb, Send, Check, X, Archive, Filter, Trash2, RotateCcw, Plus } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -70,7 +70,7 @@ const statusColors: Record<Suggestion['status'], string> = {
 };
 
 
-const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion: (newSuggestion: Suggestion) => void }) => {
+const SuggestionForm = ({ user, onNewSuggestion, onCancel }: { user: User, onNewSuggestion: (newSuggestion: Suggestion) => void, onCancel: () => void }) => {
   const [type, setType] = useState<'bug' | 'suggestion'>('suggestion');
   const [content, setContent] = useState('');
   const { toast } = useToast();
@@ -152,8 +152,11 @@ const SuggestionForm = ({ user, onNewSuggestion }: { user: User, onNewSuggestion
             />
           </div>
         </CardContent>
-        <CardFooter>
-          <Button type="submit" className="ml-auto">
+        <CardFooter className="flex justify-end gap-2">
+           <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit">
             <Send className="mr-2" />
             Enviar
           </Button>
@@ -217,9 +220,29 @@ const UserSuggestionsHistory = ({ user, allSuggestions }: { user: User; allSugge
 
 
 const UserSuggestionsView = ({ user, suggestions, onNewSuggestion }: { user: User, suggestions: Suggestion[], onNewSuggestion: (s: Suggestion) => void }) => {
+  const [isFormVisible, setIsFormVisible] = useState(false);
+
+  const handleNewSuggestionWithHide = (newSuggestion: Suggestion) => {
+    onNewSuggestion(newSuggestion);
+    setIsFormVisible(false);
+  }
+
   return (
     <div className="grid gap-6">
-      <SuggestionForm user={user} onNewSuggestion={onNewSuggestion} />
+      {isFormVisible ? (
+        <SuggestionForm 
+            user={user} 
+            onNewSuggestion={handleNewSuggestionWithHide}
+            onCancel={() => setIsFormVisible(false)} 
+        />
+      ) : (
+        <div className="flex justify-start">
+            <Button onClick={() => setIsFormVisible(true)} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Plus className="mr-2"/>
+                Nova Sugestão
+            </Button>
+        </div>
+      )}
       <UserSuggestionsHistory user={user} allSuggestions={suggestions} />
     </div>
   );
@@ -534,3 +557,4 @@ export default function SuggestionsPage() {
 }
 
     
+
