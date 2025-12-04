@@ -362,17 +362,9 @@ function StudentDetailPageComponent() {
                                         <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
                                             <div className="flex-1">
                                                 <p className="font-semibold">{simulado.title}</p>
-                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                                                    <span>{getSubjectName(simulado.subjectId)}</span>
-                                                    <span>•</span>
-                                                    <span>{simulado.questions.length} questões</span>
-                                                    {simulado.durationSeconds !== undefined && (
-                                                        <>
-                                                            <span>•</span>
-                                                            <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {formatDuration(simulado.durationSeconds)}</span>
-                                                        </>
-                                                    )}
-                                                </div>
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    {getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões
+                                                </p>
                                             </div>
                                             {simulado.status === 'Concluído' && simulado.score !== undefined ? (
                                                 <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
@@ -384,6 +376,12 @@ function StudentDetailPageComponent() {
                                                         <XCircle className="h-4 w-4" />
                                                         <span>{results.incorrect} Erros</span>
                                                     </div>
+                                                    {simulado.durationSeconds !== undefined && (
+                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                            <Clock className="h-4 w-4" /> 
+                                                            <span>{formatDuration(simulado.durationSeconds)}</span>
+                                                        </div>
+                                                    )}
                                                      <Badge variant={simulado.score >= 70 ? 'secondary' : 'destructive'} className={cn(simulado.score >= 70 && 'bg-green-100 text-green-800')}>
                                                         {simulado.score.toFixed(0)}%
                                                     </Badge>
