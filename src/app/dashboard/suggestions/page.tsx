@@ -170,7 +170,7 @@ const UserSuggestionsHistory = ({ user, allSuggestions }: { user: User; allSugge
   const mySuggestions = useMemo(() => {
     return allSuggestions
       .filter(s => s.submittedBy === user.name) // Simple name check for prototype
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [user, allSuggestions]);
 
   return (
@@ -219,8 +219,7 @@ const UserSuggestionsHistory = ({ user, allSuggestions }: { user: User; allSugge
 };
 
 
-const UserSuggestionsView = ({ user, suggestions, onNewSuggestion }: { user: User, suggestions: Suggestion[], onNewSuggestion: (s: Suggestion) => void }) => {
-  const [isFormVisible, setIsFormVisible] = useState(false);
+const UserSuggestionsView = ({ user, suggestions, onNewSuggestion, isFormVisible, setIsFormVisible }: { user: User, suggestions: Suggestion[], onNewSuggestion: (s: Suggestion) => void, isFormVisible: boolean, setIsFormVisible: (v: boolean) => void }) => {
 
   const handleNewSuggestionWithHide = (newSuggestion: Suggestion) => {
     onNewSuggestion(newSuggestion);
@@ -229,19 +228,12 @@ const UserSuggestionsView = ({ user, suggestions, onNewSuggestion }: { user: Use
 
   return (
     <div className="grid gap-6">
-      {isFormVisible ? (
+      {isFormVisible && (
         <SuggestionForm 
             user={user} 
             onNewSuggestion={handleNewSuggestionWithHide}
             onCancel={() => setIsFormVisible(false)} 
         />
-      ) : (
-        <div className="flex justify-start">
-            <Button onClick={() => setIsFormVisible(true)} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <Plus className="mr-2"/>
-                Nova Sugestão
-            </Button>
-        </div>
       )}
       <UserSuggestionsHistory user={user} allSuggestions={suggestions} />
     </div>
@@ -323,7 +315,7 @@ const AdminSuggestionsView = () => {
 
 
   const incomingSuggestions = useMemo(() => {
-    return allSuggestions.filter(s => s.status === 'received').sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return allSuggestions.filter(s => s.status === 'received').sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [allSuggestions]);
 
   const processedSuggestions = useMemo(() => {
@@ -367,7 +359,7 @@ const AdminSuggestionsView = () => {
                     <TableCell className="font-medium">{suggestion.submittedBy} ({roleLabels[suggestion.userRole] || suggestion.userRole})</TableCell>
                     <TableCell className="max-w-xs truncate">{suggestion.content}</TableCell>
                      <TableCell className="text-muted-foreground">
-                      {format(suggestion.timestamp, 'dd/MM/yyyy')}
+                      {format(new Date(suggestion.timestamp), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -438,7 +430,7 @@ const AdminSuggestionsView = () => {
                     {suggestion.content}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {format(suggestion.timestamp, 'dd/MM/yyyy')}
+                    {format(new Date(suggestion.timestamp), 'dd/MM/yyyy')}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {suggestion.evaluationDate
@@ -501,6 +493,7 @@ const AdminSuggestionsView = () => {
 export default function SuggestionsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
   const updateSuggestions = () => {
     const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
@@ -538,10 +531,16 @@ export default function SuggestionsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           Sugestões e Feedback
         </h1>
+         {currentUser.role !== 'admin' && !isFormVisible && (
+          <Button onClick={() => setIsFormVisible(true)} className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <Plus className="mr-2"/>
+              Nova Sugestão
+          </Button>
+        )}
       </div>
       {currentUser.role === 'admin' ? (
         <AdminSuggestionsView />
@@ -549,12 +548,11 @@ export default function SuggestionsPage() {
         <UserSuggestionsView 
             user={currentUser} 
             suggestions={suggestions} 
-            onNewSuggestion={handleNewSuggestion} 
+            onNewSuggestion={handleNewSuggestion}
+            isFormVisible={isFormVisible}
+            setIsFormVisible={setIsFormVisible} 
         />
       )}
     </div>
   );
 }
-
-    
-
