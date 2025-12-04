@@ -128,60 +128,66 @@ function StartSimuladoPageComponent() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col items-center justify-center p-4 md:p-6">
-        <Card className="w-full max-w-3xl">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-                <div>
-                    <CardTitle className="font-headline text-2xl">{simulado.title}</CardTitle>
-                    <CardDescription>{simulado.description}</CardDescription>
-                </div>
-                <div className="text-right">
-                    <p className="font-semibold">Questão {currentQuestionIndex + 1} de {simulado.questions.length}</p>
-                    <Progress value={progress} className="w-28 mt-2" />
-                </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {currentQuestion ? (
-              <div className="space-y-6">
-                <p className="text-lg font-semibold">{currentQuestion.title}</p>
-                <RadioGroup
-                  value={answers[currentQuestion.id]}
-                  onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                  className="space-y-3"
-                >
-                  {currentQuestion.options.map(opt => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.id} id={`opt-${opt.id}`} />
-                      <Label htmlFor={`opt-${opt.id}`} className="text-base cursor-pointer">
-                        {opt.text}
-                      </Label>
+      <div className="flex flex-1 flex-col p-4 md:p-6 relative">
+         <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 z-10">
+            <ArrowLeft className="h-5 w-5" />
+            <span className="sr-only">Voltar</span>
+          </Button>
+        <div className="flex flex-1 items-center justify-center">
+            <Card className="w-full max-w-3xl">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <div>
+                        <CardTitle className="font-headline text-2xl">{simulado.title}</CardTitle>
+                        <CardDescription>{simulado.description}</CardDescription>
                     </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                    <p>Este simulado não contém nenhuma questão.</p>
+                    <div className="text-right">
+                        <p className="font-semibold">Questão {currentQuestionIndex + 1} de {simulado.questions.length}</p>
+                        <Progress value={progress} className="w-28 mt-2" />
+                    </div>
                 </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
-                <ArrowLeft className="mr-2" /> Anterior
-            </Button>
-            {currentQuestionIndex < simulado.questions.length - 1 ? (
-                <Button onClick={handleNext}>
-                    Próxima <ArrowRight className="ml-2" />
+            </CardHeader>
+            <CardContent>
+                {currentQuestion ? (
+                <div className="space-y-6">
+                    <p className="text-lg font-semibold">{currentQuestion.title}</p>
+                    <RadioGroup
+                    value={answers[currentQuestion.id]}
+                    onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                    className="space-y-3"
+                    >
+                    {currentQuestion.options.map(opt => (
+                        <div key={opt.id} className="flex items-center space-x-2">
+                        <RadioGroupItem value={opt.id} id={`opt-${opt.id}`} />
+                        <Label htmlFor={`opt-${opt.id}`} className="text-base cursor-pointer">
+                            {opt.text}
+                        </Label>
+                        </div>
+                    ))}
+                    </RadioGroup>
+                </div>
+                ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                        <p>Este simulado não contém nenhuma questão.</p>
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
+                    <ArrowLeft className="mr-2" /> Anterior
                 </Button>
-            ) : (
-                <Button onClick={handleFinish} className="bg-green-600 hover:bg-green-700">
-                    Finalizar Simulado
-                </Button>
-            )}
-          </CardFooter>
-        </Card>
+                {currentQuestionIndex < simulado.questions.length - 1 ? (
+                    <Button onClick={handleNext}>
+                        Próxima <ArrowRight className="ml-2" />
+                    </Button>
+                ) : (
+                    <Button onClick={handleFinish} className="bg-green-600 hover:bg-green-700">
+                        Finalizar Simulado
+                    </Button>
+                )}
+            </CardFooter>
+            </Card>
+        </div>
       </div>
       <Dialog open={isFinished} onOpenChange={(open) => !open && router.back()}>
         <DialogContent>
