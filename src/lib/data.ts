@@ -496,7 +496,7 @@ export const navItems: NavItem[] = [
     href: '/dashboard/simulados',
     icon: FileText,
     label: 'Simulados',
-    roles: ['teacher', 'admin'],
+    roles: ['student', 'teacher', 'admin'],
   },
   {
     href: '/dashboard/suggestions',
