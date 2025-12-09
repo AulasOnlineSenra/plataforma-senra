@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -108,6 +109,15 @@ const NotionIcon = () => (
     </svg>
 );
 
+const GoogleMeetIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6">
+        <path fill="#00832D" d="M13 10.5h8.5v3H13z"/>
+        <path fill="#0066DA" d="M12.5 1.875A3.375 3.375 0 009.125 5.25V11h6.75V5.25A3.375 3.375 0 0012.5 1.875z"/>
+        <path fill="#E94235" d="M9.125 11v7.875a3.375 3.375 0 106.75 0V11"/>
+        <path fill="#2684FC" d="M1 11h8.125v8.875a3.375 3.375 0 11-6.75 0V11H1z"/>
+        <path fill="#FFBA00" d="M21.5 1.875A3.375 3.375 0 0018.125 5.25V11H23V5.25A3.375 3.375 0 0021.5 1.875z"/>
+    </svg>
+);
 
 
 function ProfilePageComponent() {
@@ -456,24 +466,25 @@ function ProfilePageComponent() {
                     </CardContent>
                 </CollapsibleCard>
 
-                {profileUser.role !== 'student' && (
-                    <CollapsibleCard 
-                        title="Formação Acadêmica" 
-                        description="Seu histórico educacional e qualificações." 
-                        icon={BookUser}
-                        isOpen={openAccordion === 'education'}
-                        onOpenChange={() => handleAccordionToggle('education')}
-                    >
-                        <EducationManager
-                            initialEntries={profileUser.education || []}
-                            onSave={handleSaveEducation}
-                            canEdit={canEdit}
-                        />
-                    </CollapsibleCard>
-                )}
-
                 {isTeacher && teacherProfile && (
                      <>
+                         <CollapsibleCard 
+                            title="Sala de Aula Virtual" 
+                            description="Configure o link permanente para suas aulas." 
+                            icon={GoogleMeetIcon}
+                            isOpen={openAccordion === 'meet'}
+                            onOpenChange={() => handleAccordionToggle('meet')}
+                         >
+                           <CardContent className="grid gap-6 pt-6">
+                                <EditableInput 
+                                    label="Link do Google Meet" 
+                                    value={teacherProfile.googleMeetLink || ''} 
+                                    placeholder="https://meet.google.com/sua-sala" 
+                                    onSave={(v) => handleSave('googleMeetLink', v)} 
+                                    canEdit={canEdit} 
+                                />
+                            </CardContent>
+                        </CollapsibleCard>
                         <CollapsibleCard 
                             title="Disciplinas Lecionadas" 
                             description="Quais disciplinas você está apto(a) a lecionar." 
@@ -520,6 +531,22 @@ function ProfilePageComponent() {
                             </CardContent>
                         </CollapsibleCard>
                     </>
+                )}
+
+                {profileUser.role !== 'student' && (
+                    <CollapsibleCard 
+                        title="Formação Acadêmica" 
+                        description="Seu histórico educacional e qualificações." 
+                        icon={BookUser}
+                        isOpen={openAccordion === 'education'}
+                        onOpenChange={() => handleAccordionToggle('education')}
+                    >
+                        <EducationManager
+                            initialEntries={profileUser.education || []}
+                            onSave={handleSaveEducation}
+                            canEdit={canEdit}
+                        />
+                    </CollapsibleCard>
                 )}
                 
                 <CollapsibleCard 

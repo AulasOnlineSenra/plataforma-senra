@@ -58,6 +58,7 @@ export interface Teacher extends User {
   subjects: string[]; // array of subject IDs
   availability: Availability; // e.g. { "monday": [{ start: "09:00", end: "11:00" }] }
   status: 'active' | 'hidden' | 'deleted';
+  googleMeetLink?: string;
 }
 
 export interface ClassPackage {
