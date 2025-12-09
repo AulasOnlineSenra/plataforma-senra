@@ -33,6 +33,7 @@ import {
   CheckCircle2,
   XCircle,
   StarHalf,
+  Video,
 } from 'lucide-react';
 import { getMockUser, scheduleEvents as initialScheduleEvents, users as initialUsers, teachers as initialTeachers } from '@/lib/data';
 import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval, isToday, isTomorrow, isYesterday } from 'date-fns';
@@ -64,7 +65,7 @@ const USERS_STORAGE_KEY = 'userList';
 
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | Teacher | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
@@ -558,6 +559,8 @@ export default function DashboardPage() {
         : users.find(s => s.id === lastUnratedClass.studentId)
       : null;
 
+    const teacherMeetLink = user.role === 'teacher' ? (user as Teacher).googleMeetLink : undefined;
+
     return (
       <>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -607,9 +610,9 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {user.role === 'student' ? (user.classCredits ?? 0) : teacherCompletedClassesThisMonth}
+                  {user.role === 'student' ? (user as User).classCredits ?? 0 : teacherCompletedClassesThisMonth}
                 </div>
-                <p className="text-xs text-muted-foreground">{user.activePackage ?? 'Nenhum pacote ativo'}</p>
+                <p className="text-xs text-muted-foreground">{(user as User).activePackage ?? 'Nenhum pacote ativo'}</p>
               </CardContent>
             </Card>
           </Link>
@@ -639,31 +642,51 @@ export default function DashboardPage() {
                       <TableHead className="hidden sm:table-cell">
                         {user.role === 'student' ? 'Professor(a)' : 'Aluno(a)'}
                       </TableHead>
-                      <TableHead className="text-right">Data e Horário</TableHead>
+                      <TableHead>Data e Horário</TableHead>
+                      <TableHead className="text-right">Ação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {upcomingEvents.map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell>
-                          <div className="font-medium flex items-center gap-2">
-                            <span>{event.subject}</span>
-                            {event.isExperimental && (
-                                <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          {user.role === 'student' ? 
-                            (teachers.find(t => t.id === event.teacherId)?.name || 'N/A') :
-                            (users.find(u => u.id === event.studentId)?.name || 'N/A')
-                          }
-                        </TableCell>
-                        <TableCell className="text-right">
-                           {formatDate(event.start, event.end)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {upcomingEvents.map((event) => {
+                      const teacherForEvent = teachers.find(t => t.id === event.teacherId);
+                      return (
+                        <TableRow key={event.id}>
+                          <TableCell>
+                            <div className="font-medium flex items-center gap-2">
+                              <span>{event.subject}</span>
+                              {event.isExperimental && (
+                                  <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {user.role === 'student' ? 
+                              (teacherForEvent?.name || 'N/A') :
+                              (users.find(u => u.id === event.studentId)?.name || 'N/A')
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(event.start, event.end)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                              {user.role === 'teacher' && teacherMeetLink ? (
+                                  <Button asChild size="sm">
+                                      <Link href={teacherMeetLink} target="_blank" rel="noopener noreferrer">
+                                          <Video className="mr-2 h-4 w-4" />
+                                          Acessar Aula
+                                      </Link>
+                                  </Button>
+                              ) : (
+                                  <Button asChild size="sm" variant="outline">
+                                      <Link href={`/dashboard/teacher/${event.teacherId}`}>
+                                          Ver Detalhes
+                                      </Link>
+                                  </Button>
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </ScrollArea>
