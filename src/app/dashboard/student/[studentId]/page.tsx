@@ -90,7 +90,7 @@ function StudentDetailPageComponent() {
             setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('teacher'));
 
             const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-            setSimulados(storedSimulados ? JSON.parse(storedSimulados) : initialSimulados);
+            setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s:any) => ({...s, createdAt: new Date(s.createdAt), completedAt: s.completedAt ? new Date(s.completedAt) : undefined})) : initialSimulados);
         }
         
         updateData();
@@ -388,7 +388,7 @@ function StudentDetailPageComponent() {
                                                     <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
                                                 </div>
                                             ) : (
-                                                <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
+                                                 <Badge>Pendente</Badge>
                                             )}
                                         </div>
                                     )
