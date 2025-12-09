@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -321,6 +322,9 @@ export default function SimuladosPage() {
   }, [displayedSimulados]);
 
   const calculateSimuladoResults = (simulado: Simulado, attemptIndex = -1) => {
+    if (!simulado.attempts || simulado.attempts.length === 0) {
+      return { correct: 0, incorrect: simulado.questions.length, score: 0, durationSeconds: 0 };
+    }
     const attempt = simulado.attempts[attemptIndex === -1 ? simulado.attempts.length - 1 : attemptIndex];
     if (!attempt || !attempt.userAnswers) return { correct: 0, incorrect: 0, score: 0, durationSeconds: 0 };
     
