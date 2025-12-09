@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -245,6 +246,7 @@ const AdminSuggestionsView = () => {
   const [allSuggestions, setAllSuggestions] = useState<Suggestion[]>([]);
   const [filter, setFilter] = useState<Suggestion['status'] | 'all'>('all');
   const [suggestionToDelete, setSuggestionToDelete] = useState<Suggestion | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { toast } = useToast();
   
   const roleLabels: Record<UserRole, string> = {
@@ -254,6 +256,12 @@ const AdminSuggestionsView = () => {
   };
   
   useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserRole | null;
+    if (role) {
+      const storedUser = localStorage.getItem('currentUser');
+      setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
+    }
+  
     const updateSuggestions = () => {
         const storedSuggestions = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
         if (storedSuggestions) {
@@ -362,14 +370,16 @@ const AdminSuggestionsView = () => {
                       {format(new Date(suggestion.timestamp), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
-                              <Check className="h-4 w-4 text-green-600"/>
-                            </Button>
-                            <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
-                              <X className="h-4 w-4 text-red-600"/>
-                            </Button>
-                        </div>
+                        {currentUser?.role === 'admin' && (
+                            <div className="flex justify-end gap-1">
+                                <Button variant="ghost" size="icon" title="Marcar como Implementada" onClick={() => handleUpdateStatus(suggestion.id, 'implemented')}>
+                                  <Check className="h-4 w-4 text-green-600"/>
+                                </Button>
+                                <Button variant="ghost" size="icon" title="Marcar como Rejeitada" onClick={() => handleUpdateStatus(suggestion.id, 'rejected')}>
+                                  <X className="h-4 w-4 text-red-600"/>
+                                </Button>
+                            </div>
+                        )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -446,14 +456,16 @@ const AdminSuggestionsView = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" title="Mover para Caixa de Entrada" onClick={() => handleUpdateStatus(suggestion.id, 'received')}>
-                            <RotateCcw className="h-4 w-4 text-blue-600"/>
-                        </Button>
-                        <Button variant="ghost" size="icon" title="Excluir Permanentemente" onClick={() => handleDeleteClick(suggestion)}>
-                            <Trash2 className="h-4 w-4 text-red-600"/>
-                        </Button>
-                    </div>
+                    {currentUser?.role === 'admin' && (
+                        <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" title="Mover para Caixa de Entrada" onClick={() => handleUpdateStatus(suggestion.id, 'received')}>
+                                <RotateCcw className="h-4 w-4 text-blue-600"/>
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Excluir Permanentemente" onClick={() => handleDeleteClick(suggestion)}>
+                                <Trash2 className="h-4 w-4 text-red-600"/>
+                            </Button>
+                        </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -508,7 +520,8 @@ export default function SuggestionsPage() {
   useEffect(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role) {
-      setCurrentUser(getMockUser(role));
+      const storedUser = localStorage.getItem('currentUser');
+      setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
     }
     
     updateSuggestions();
