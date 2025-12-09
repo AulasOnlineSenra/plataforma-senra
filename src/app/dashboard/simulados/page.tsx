@@ -154,6 +154,15 @@ export default function SimuladosPage() {
   const handleQuestionChange = (qIndex: number, field: keyof Question, value: any) => {
     const newQuestions = [...questions];
     (newQuestions[qIndex] as any)[field] = value;
+    
+    // If changing to a type without options, ensure options array is handled
+    if (field === 'type' && value !== 'multiple-choice') {
+      newQuestions[qIndex].options = [];
+    } else if (field === 'type' && value === 'multiple-choice' && newQuestions[qIndex].options.length === 0) {
+      // If changing back to multiple-choice and there are no options, add a default one
+      newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: '', isCorrect: true });
+    }
+
     setQuestions(newQuestions);
   };
   
@@ -558,14 +567,14 @@ export default function SimuladosPage() {
                       </SelectTrigger>
                       <SelectContent>
                           <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
-                          <SelectItem value="short-answer" disabled>Resposta curta</SelectItem>
+                          <SelectItem value="short-answer">Resposta curta</SelectItem>
                           <SelectItem value="paragraph" disabled>Parágrafo</SelectItem>
                       </SelectContent>
                   </Select>
               </CardHeader>
               <CardContent>
                   <div className="space-y-3 pl-8">
-                  {q.options.map((opt, oIndex) => (
+                  {q.type === 'multiple-choice' && q.options.map((opt, oIndex) => (
                       <div key={opt.id} className="flex items-center gap-3">
                           <input type="radio" name={`correct-opt-${q.id}`} checked={opt.isCorrect} onChange={() => handleCorrectOptionChange(qIndex, oIndex)} className="form-radio h-4 w-4 text-primary focus:ring-primary" />
                           <Input
@@ -583,12 +592,17 @@ export default function SimuladosPage() {
                           </Button>
                       </div>
                   ))}
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <input type="radio" disabled className="form-radio h-4 w-4" />
-                      <Button type="button" variant="link" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
-                          Adicionar opção
-                      </Button>
-                  </div>
+                  {q.type === 'multiple-choice' && (
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <input type="radio" disabled className="form-radio h-4 w-4" />
+                        <Button type="button" variant="link" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
+                            Adicionar opção
+                        </Button>
+                    </div>
+                  )}
+                  {q.type === 'short-answer' && (
+                      <Input disabled placeholder="O aluno irá digitar a resposta aqui..." />
+                  )}
                   </div>
               </CardContent>
               <Separator />
