@@ -319,6 +319,23 @@ export default function SimuladosPage() {
     setIsCreatingOrEditing(true);
   }
 
+  const handleDuplicateClick = (simuladoToDuplicate: Simulado) => {
+    setEditingSimulado(null); // Ensure we are in "create" mode
+    setTitle(`${simuladoToDuplicate.title} (Cópia)`);
+    setDescription(simuladoToDuplicate.description);
+    setSelectedSubject(simuladoToDuplicate.subjectId);
+    setQuestions(simuladoToDuplicate.questions.map(q => ({...q, id: `q-${Date.now()}-${Math.random()}`}))); // New IDs for questions
+    setMaxAttempts(simuladoToDuplicate.maxAttempts || 1);
+    setTimeLimitMinutes(simuladoToDuplicate.timeLimitMinutes);
+    setSelectedStudent(''); // Clear student selection
+    setIsCreatingOrEditing(true);
+    toast({
+      title: 'Simulado Copiado!',
+      description: 'Selecione um novo aluno e salve.',
+    });
+  };
+
+
   const getSubjectName = (id: string) => allSubjects.find(s => s.id === id)?.name || 'Desconhecida';
   const getStudentName = (id: string) => students.find(s => s.id === id)?.name || 'Desconhecido';
 
@@ -669,12 +686,15 @@ export default function SimuladosPage() {
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-right">
+                            <Button type="button" variant="ghost" size="icon" title="Copiar para outro aluno" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleDuplicateClick(sim); }}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
                             {sim.status === 'Pendente' && (
-                                <Button type="button" variant="ghost" size="icon" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleEditClick(sim); }}>
+                                <Button type="button" variant="ghost" size="icon" title="Editar" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleEditClick(sim); }}>
                                     <Edit className="h-4 w-4" />
                                 </Button>
                             )}
-                            <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
+                            <Button type="button" variant="ghost" size="icon" title="Excluir" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             </TableCell>
