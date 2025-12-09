@@ -4,24 +4,63 @@ import { SenraLogo } from '@/components/senra-logo';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, CheckCircle2, ChevronRight, Heart, PlayCircle, ShieldCheck, Star, XCircle, BrainCircuit, Bot, Briefcase, CalendarCheck, MessageSquare, Target, TrendingUp } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronRight, Heart, PlayCircle, ShieldCheck, Star, XCircle, BrainCircuit, Bot, Briefcase, CalendarCheck, MessageSquare, Target, TrendingUp, Menu } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { EditableText } from '@/components/editable-text';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const heroImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
+
+const navLinks = [
+  { href: "#", label: "Página inicial", storageKey: "home-nav-home" },
+  { href: "#", label: "Blog", storageKey: "home-nav-blog" },
+  { href: "#", label: "Sobre nós", storageKey: "home-nav-about" },
+  { href: "#", label: "Fale conosco", storageKey: "home-nav-contact" },
+];
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-card">
       <header className="sticky top-0 z-50 flex items-center justify-between p-4 lg:p-6 bg-card/80 backdrop-blur-sm border-b">
         <SenraLogo />
-        <Button asChild>
-          <Link href="/login"><EditableText storageKey="home-login-button">Acessar Plataforma</EditableText></Link>
-        </Button>
+        <nav className="hidden md:flex items-center gap-6">
+          {navLinks.map(link => (
+             <Link key={link.href} href={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                <EditableText storageKey={link.storageKey}>{link.label}</EditableText>
+             </Link>
+          ))}
+        </nav>
+        <div className="flex items-center gap-4">
+            <Button asChild className="hidden sm:inline-flex">
+              <Link href="/login"><EditableText storageKey="home-login-button">Acessar Plataforma</EditableText></Link>
+            </Button>
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="md:hidden">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Abrir menu</span>
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="right">
+                    <nav className="grid gap-6 text-lg font-medium mt-12">
+                        {navLinks.map(link => (
+                             <Link key={link.href} href={link.href} className="text-muted-foreground hover:text-foreground">
+                                <EditableText storageKey={link.storageKey}>{link.label}</EditableText>
+                             </Link>
+                        ))}
+                    </nav>
+                    <div className="absolute bottom-6 left-6 right-6">
+                         <Button asChild className="w-full">
+                            <Link href="/login"><EditableText storageKey="home-login-button-mobile">Acessar Plataforma</EditableText></Link>
+                         </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
+        </div>
       </header>
 
       <main className="flex-1">
