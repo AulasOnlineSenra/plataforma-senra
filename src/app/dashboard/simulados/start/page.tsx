@@ -54,7 +54,6 @@ function StartSimuladoPageComponent() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [isFinished, setIsFinished] = useState(false);
-  const [score, setScore] = useState(0);
   const [startTime, setStartTime] = useState<Date | null>(null);
   
   useEffect(() => {
@@ -63,16 +62,19 @@ function StartSimuladoPageComponent() {
     const foundSimulado = allSimulados.find(s => s.id === simuladoId);
     
     if (foundSimulado) {
-        setSimulado(foundSimulado);
-
-        if (foundSimulado.status === 'Concluído') {
+        // If the simulado can be retaken, we present it as new
+        const canRetake = foundSimulado.attempts.length < foundSimulado.maxAttempts;
+        if (foundSimulado.status === 'Concluído' && !canRetake) {
           setIsFinished(true);
-          setAnswers(foundSimulado.userAnswers || {});
-          setScore(foundSimulado.score || 0);
+          setAnswers(foundSimulado.attempts[foundSimulado.attempts.length-1].userAnswers);
         } else {
-          // If not completed, set start time
+          // If starting for the first time or retaking
+          setIsFinished(false);
+          setAnswers({});
+          setCurrentQuestionIndex(0);
           setStartTime(new Date());
         }
+        setSimulado(foundSimulado);
     } else {
         setSimulado(null);
     }
@@ -112,14 +114,21 @@ function StartSimuladoPageComponent() {
     });
 
     const calculatedScore = (correctAnswers / simulado.questions.length) * 100;
-    setScore(calculatedScore);
+    
+    const newAttempt = {
+        startedAt: startTime,
+        completedAt: endTime,
+        durationSeconds: durationInSeconds,
+        score: calculatedScore,
+        userAnswers: answers,
+    };
     
     const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
     let allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : [];
     
     const updatedSimulados = allSimulados.map(s => 
       s.id === simulado.id 
-        ? { ...s, status: 'Concluído' as 'Concluído', startedAt: startTime, completedAt: endTime, durationSeconds: durationInSeconds, score: calculatedScore, userAnswers: answers } 
+        ? { ...s, status: 'Concluído' as 'Concluído', attempts: [...s.attempts, newAttempt] } 
         : s
     );
     localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
@@ -132,6 +141,8 @@ function StartSimuladoPageComponent() {
         description: `Sua pontuação foi de ${calculatedScore.toFixed(0)}%.`
     });
   };
+  
+  const latestAttempt = simulado?.attempts[simulado.attempts.length - 1];
 
   if (!simulado) {
     return (
@@ -154,7 +165,7 @@ function StartSimuladoPageComponent() {
     );
   }
 
-  if(isFinished) {
+  if(isFinished && latestAttempt) {
     return (
         <div className="flex flex-1 flex-col p-4 md:p-6 relative bg-background">
             <Button variant="ghost" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10 h-auto p-2">
@@ -172,14 +183,12 @@ function StartSimuladoPageComponent() {
                         <div className="flex items-center gap-4 text-sm">
                            <div>
                                 <span className="font-semibold">Pontuação Final: </span>
-                                <span className={cn("font-bold text-lg", score >= 70 ? "text-green-600" : "text-red-600")}>{score.toFixed(0)}%</span>
+                                <span className={cn("font-bold text-lg", latestAttempt.score >= 70 ? "text-green-600" : "text-red-600")}>{latestAttempt.score.toFixed(0)}%</span>
                            </div>
-                           {simulado.durationSeconds !== undefined && (
-                               <div className="flex items-center gap-2 text-muted-foreground">
-                                   <Clock className="h-4 w-4" />
-                                   <span>{formatDuration(simulado.durationSeconds)}</span>
-                               </div>
-                           )}
+                           <div className="flex items-center gap-2 text-muted-foreground">
+                               <Clock className="h-4 w-4" />
+                               <span>{formatDuration(latestAttempt.durationSeconds)}</span>
+                           </div>
                         </div>
                          <Button onClick={() => router.push('/dashboard/simulados')}>Finalizar Revisão</Button>
                     </CardFooter>

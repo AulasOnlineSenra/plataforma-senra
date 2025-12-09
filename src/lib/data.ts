@@ -595,10 +595,14 @@ export const simulados: Simulado[] = [
     createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
     status: 'Concluído',
     questions: [],
-    completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-    startedAt: new Date(now.getTime() - (1 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)), // 5 minutes before completion
-    durationSeconds: 300,
-    score: 85,
+    maxAttempts: 1,
+    attempts: [{
+      startedAt: new Date(now.getTime() - (1 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)),
+      completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+      durationSeconds: 300,
+      score: 85,
+      userAnswers: {},
+    }],
   },
   {
     id: 'sim-2',
@@ -610,6 +614,8 @@ export const simulados: Simulado[] = [
     createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
     status: 'Pendente',
     questions: [],
+    maxAttempts: 2,
+    attempts: [],
   },
 ];
 

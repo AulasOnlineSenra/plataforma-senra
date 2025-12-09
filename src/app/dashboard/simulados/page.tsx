@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit, Check, XCircle, Clock } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit, Check, XCircle, Clock, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getMockUser,
@@ -83,6 +83,7 @@ export default function SimuladosPage() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [maxAttempts, setMaxAttempts] = useState(1);
 
   const { toast } = useToast();
   
@@ -96,7 +97,7 @@ export default function SimuladosPage() {
       setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
 
       const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-      setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s: any) => ({...s, createdAt: new Date(s.createdAt), completedAt: s.completedAt ? new Date(s.completedAt) : undefined})) : initialSimulados);
+      setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s: any) => ({...s, createdAt: new Date(s.createdAt)})) : initialSimulados);
       
       const storedUsers = localStorage.getItem('userList');
       setStudents(storedUsers ? JSON.parse(storedUsers).filter((u:User) => u.role === 'student') : initialUsers.filter(u => u.role === 'student'));
@@ -218,6 +219,7 @@ export default function SimuladosPage() {
     setSelectedSubject(availableSubjects.length === 1 ? availableSubjects[0].id : '');
     setSelectedStudent('');
     setQuestions([]);
+    setMaxAttempts(1);
     setEditingSimulado(null);
     setIsCreatingOrEditing(false);
   };
@@ -242,6 +244,7 @@ export default function SimuladosPage() {
         subjectId: selectedSubject,
         studentId: selectedStudent,
         questions,
+        maxAttempts,
       };
       const updatedSimulados = simulados.map(s => s.id === editingSimulado.id ? updatedSimulado : s);
       setSimulados(updatedSimulados);
@@ -262,6 +265,8 @@ export default function SimuladosPage() {
         createdAt: new Date(),
         status: 'Pendente',
         questions,
+        maxAttempts,
+        attempts: [],
       };
       const updatedSimulados = [...simulados, newSimulado];
       setSimulados(updatedSimulados);
@@ -295,6 +300,7 @@ export default function SimuladosPage() {
     setSelectedSubject(simuladoToEdit.subjectId);
     setSelectedStudent(simuladoToEdit.studentId);
     setQuestions(simuladoToEdit.questions);
+    setMaxAttempts(simuladoToEdit.maxAttempts || 1);
     setIsCreatingOrEditing(true);
   }
 
@@ -311,21 +317,25 @@ export default function SimuladosPage() {
   }, [currentUser, simulados]);
 
   const answeredSimulados = useMemo(() => {
-    return displayedSimulados.filter(s => s.status === 'Concluído').sort((a,b) => (b.completedAt?.getTime() || 0) - (a.completedAt?.getTime() || 0));
+    return displayedSimulados.filter(s => s.status === 'Concluído').sort((a,b) => (b.attempts[b.attempts.length - 1]?.completedAt.getTime() || 0) - (a.attempts[a.attempts.length - 1]?.completedAt.getTime() || 0));
   }, [displayedSimulados]);
 
-  const calculateSimuladoResults = (simulado: Simulado) => {
-    if (!simulado.userAnswers) return { correct: 0, incorrect: 0 };
+  const calculateSimuladoResults = (simulado: Simulado, attemptIndex = -1) => {
+    const attempt = simulado.attempts[attemptIndex === -1 ? simulado.attempts.length - 1 : attemptIndex];
+    if (!attempt || !attempt.userAnswers) return { correct: 0, incorrect: 0, score: 0, durationSeconds: 0 };
+    
     let correct = 0;
     simulado.questions.forEach(q => {
         const correctOption = q.options.find(opt => opt.isCorrect);
-        if (correctOption && simulado.userAnswers && simulado.userAnswers[q.id] === correctOption.id) {
+        if (correctOption && attempt.userAnswers[q.id] === correctOption.id) {
             correct++;
         }
     });
     return {
         correct,
         incorrect: simulado.questions.length - correct,
+        score: attempt.score,
+        durationSeconds: attempt.durationSeconds,
     };
   };
 
@@ -358,8 +368,9 @@ export default function SimuladosPage() {
                     {displayedSimulados.length > 0 ? (
                         <div className="space-y-4">
                         {displayedSimulados.map(sim => {
-                          if (sim.status === 'Concluído' && sim.score !== undefined) {
+                          if (sim.status === 'Concluído') {
                               const results = calculateSimuladoResults(sim);
+                              const canRetake = sim.attempts.length < sim.maxAttempts;
                               return (
                                   <div key={sim.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
                                       <div className="flex-1">
@@ -377,16 +388,21 @@ export default function SimuladosPage() {
                                               <XCircle className="h-4 w-4" />
                                               <span>{results.incorrect} Erros</span>
                                           </div>
-                                           {sim.durationSeconds !== undefined && (
-                                              <div className="flex items-center gap-1.5 text-muted-foreground">
+                                           <div className="flex items-center gap-1.5 text-muted-foreground">
                                                   <Clock className="h-4 w-4" /> 
-                                                  <span>{formatDuration(sim.durationSeconds)}</span>
-                                              </div>
-                                          )}
-                                          <Badge variant={sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score >= 70 && 'bg-green-100 text-green-800')}>
-                                              {sim.score.toFixed(0)}%
+                                                  <span>{formatDuration(results.durationSeconds)}</span>
+                                            </div>
+                                          <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn(results.score >= 70 && 'bg-green-100 text-green-800')}>
+                                              {results.score.toFixed(0)}%
                                           </Badge>
-                                          <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
+                                          {canRetake ? (
+                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>
+                                                <RefreshCw className="mr-2 h-4 w-4"/>
+                                                Refazer ({sim.maxAttempts - sim.attempts.length} restantes)
+                                            </Button>
+                                          ) : (
+                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
+                                          )}
                                       </div>
                                   </div>
                               )
@@ -438,8 +454,8 @@ export default function SimuladosPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="grid gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid gap-2 md:col-span-2">
                     <Label htmlFor="title">Título do Simulado</Label>
                     <Input
                     id="title"
@@ -479,15 +495,27 @@ export default function SimuladosPage() {
                     </Select>
                 </div>
                 </div>
-                <div className="grid gap-2">
-                <Label htmlFor="description">Descrição/Instruções</Label>
-                <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
-                    rows={2}
-                />
+                <div className="grid md:grid-cols-4 gap-4">
+                    <div className="grid gap-2 md:col-span-3">
+                        <Label htmlFor="description">Descrição/Instruções</Label>
+                        <Textarea
+                            id="description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
+                            rows={1}
+                        />
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="max-attempts">Nº de Tentativas</Label>
+                        <Input
+                            id="max-attempts"
+                            type="number"
+                            value={maxAttempts}
+                            onChange={(e) => setMaxAttempts(Math.max(1, parseInt(e.target.value, 10)))}
+                            min="1"
+                        />
+                    </div>
                 </div>
             </CardContent>
           </Card>
@@ -658,14 +686,12 @@ export default function SimuladosPage() {
                                                 <XCircle className="h-4 w-4" />
                                                 <span>{results.incorrect} Erros</span>
                                             </div>
-                                            {sim.durationSeconds !== undefined && (
-                                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                            <div className="flex items-center gap-1.5 text-muted-foreground">
                                                     <Clock className="h-4 w-4" /> 
-                                                    <span>{formatDuration(sim.durationSeconds)}</span>
-                                                </div>
-                                            )}
-                                            <Badge variant={sim.score && sim.score >= 70 ? 'secondary' : 'destructive'} className={cn(sim.score && sim.score >= 70 && 'bg-green-100 text-green-800')}>
-                                                {sim.score?.toFixed(0)}%
+                                                    <span>{formatDuration(results.durationSeconds)}</span>
+                                            </div>
+                                            <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn(results.score >= 70 && 'bg-green-100 text-green-800')}>
+                                                {results.score.toFixed(0)}%
                                             </Badge>
                                             <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
                                         </div>
@@ -695,7 +721,8 @@ export default function SimuladosPage() {
           <ScrollArea className="max-h-[60vh] pr-6">
             <div className="space-y-6 py-4">
               {viewingSimulado?.questions.map((q, qIndex) => {
-                const userAnswerId = viewingSimulado.userAnswers ? viewingSimulado.userAnswers[q.id] : undefined;
+                const latestAttempt = viewingSimulado.attempts[viewingSimulado.attempts.length - 1];
+                const userAnswerId = latestAttempt ? latestAttempt.userAnswers[q.id] : undefined;
                 return (
                     <div key={q.id} className="space-y-3">
                     <p className="font-semibold">{qIndex + 1}. {q.title} {q.isRequired && <span className="text-destructive">*</span>}</p>

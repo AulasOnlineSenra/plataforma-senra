@@ -129,11 +129,14 @@ export interface Simulado {
   createdAt: Date;
   status: 'Pendente' | 'Concluído';
   questions: Question[];
-  startedAt?: Date;
-  completedAt?: Date;
-  durationSeconds?: number;
-  score?: number;
-  userAnswers?: Record<string, string>; // questionId: optionId
+  maxAttempts: number;
+  attempts: {
+    startedAt: Date;
+    completedAt: Date;
+    durationSeconds: number;
+    score: number;
+    userAnswers: Record<string, string>;
+  }[];
 }
 
 export interface Suggestion {
