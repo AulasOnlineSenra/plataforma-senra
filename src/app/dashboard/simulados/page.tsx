@@ -627,8 +627,8 @@ export default function SimuladosPage() {
           </Card>
           
           <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={handleCancelCreation}>Cancelar</Button>
-              <Button type="submit">{editingSimulado ? 'Atualizar Simulado' : 'Salvar Simulado'}</Button>
+            <Button type="button" variant="ghost" className="hover:bg-brand-yellow hover:text-black" onClick={handleCancelCreation}>Cancelar</Button>
+            <Button type="submit" className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">{editingSimulado ? 'Atualizar Simulado' : 'Salvar Simulado'}</Button>
           </div>
         </form>
       ) : (
