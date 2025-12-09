@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, DragEvent, MouseEvent } from 'react';
@@ -21,8 +22,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     <svg
       {...props}
       viewBox="0 0 48 48"
-      width="24"
-      height="24"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
@@ -160,7 +159,7 @@ const LoginForm = ({
       </div>
       <div className="grid gap-4">
         <Button variant="outline" className="h-11 w-full">
-          <GoogleIcon className="mr-2" />
+          <GoogleIcon className="mr-2 h-6 w-6" />
           Continuar com Google
         </Button>
       </div>
