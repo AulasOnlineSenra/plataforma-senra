@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { simulados as initialSimulados, subjects as initialSubjects, getMockUser } from '@/lib/data';
 import { Simulado, Question } from '@/lib/types';
-import { AlertCircle, ArrowLeft, ArrowRight, Check, X, FileText, Clock } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Check, X, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,7 @@ function formatDuration(seconds: number): string {
     }
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes} min ${remainingSeconds} s`;
+    return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
 }
 
 function StartSimuladoPageComponent() {
@@ -204,12 +204,13 @@ function StartSimuladoPageComponent() {
                                         return (
                                         <div key={option.id} className={cn(
                                             "flex items-start gap-3 rounded-md border p-3 text-sm transition-colors",
-                                            isCorrect ? "border-green-300 bg-green-50" : "",
-                                            isUserAnswer && !isCorrect ? "border-red-300 bg-red-50" : ""
+                                            isCorrect ? "border-green-300 bg-green-50 dark:bg-green-900/30" : "border-transparent",
+                                            isUserAnswer && !isCorrect ? "border-red-300 bg-red-50 dark:bg-red-900/30" : ""
                                         )}>
                                             <div className="flex items-center gap-2 h-6">
-                                                {isCorrect && <Check className="h-5 w-5 text-green-600" />}
-                                                {isUserAnswer && !isCorrect && <X className="h-5 w-5 text-red-600" />}
+                                                {isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                                {isUserAnswer && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                                                {!isCorrect && !isUserAnswer && <div className="w-5 h-5" /> }
                                             </div>
                                             <span className="font-bold">{optionLabel})</span>
                                             <p className="flex-1">{option.text}</p>
