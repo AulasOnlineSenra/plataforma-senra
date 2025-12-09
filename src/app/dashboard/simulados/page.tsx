@@ -85,7 +85,7 @@ export default function SimuladosPage() {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [maxAttempts, setMaxAttempts] = useState(1);
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState<number | undefined>(undefined);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState<number | undefined>(120);
 
   const { toast } = useToast();
   
@@ -231,7 +231,7 @@ export default function SimuladosPage() {
     setSelectedStudent('');
     setQuestions([]);
     setMaxAttempts(1);
-    setTimeLimitMinutes(undefined);
+    setTimeLimitMinutes(120);
     setEditingSimulado(null);
     setIsCreatingOrEditing(false);
   };
@@ -473,8 +473,8 @@ export default function SimuladosPage() {
           Simulados
         </h1>
         {!isCreatingOrEditing && (
-            <Button onClick={handleCreateNewClick}>
-                <Plus className="mr-2" /> Criar Novo Simulado
+            <Button onClick={handleCreateNewClick} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
+                <Plus className="mr-2" /> Criar Simulado
             </Button>
         )}
       </div>
@@ -560,7 +560,7 @@ export default function SimuladosPage() {
                             type="number"
                             value={timeLimitMinutes || ''}
                             onChange={(e) => setTimeLimitMinutes(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                            placeholder="Opcional"
+                            placeholder="Ex: 120"
                             min="1"
                         />
                     </div>
