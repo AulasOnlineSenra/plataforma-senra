@@ -130,6 +130,7 @@ export interface Simulado {
   status: 'Pendente' | 'Concluído';
   questions: Question[];
   maxAttempts: number;
+  timeLimitMinutes?: number;
   attempts: {
     startedAt: Date;
     completedAt: Date;

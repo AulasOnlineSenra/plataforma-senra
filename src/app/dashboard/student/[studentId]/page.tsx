@@ -196,17 +196,21 @@ function StudentDetailPageComponent() {
     };
     
     const calculateSimuladoResults = (simulado: Simulado) => {
-        if (!simulado.userAnswers) return { correct: 0, incorrect: 0 };
+        const latestAttempt = simulado.attempts.length > 0 ? simulado.attempts[simulado.attempts.length - 1] : null;
+        if (!latestAttempt) return { correct: 0, incorrect: simulado.questions.length, score: 0, durationSeconds: 0 };
+    
         let correct = 0;
         simulado.questions.forEach(q => {
             const correctOption = q.options.find(opt => opt.isCorrect);
-            if (correctOption && simulado.userAnswers && simulado.userAnswers[q.id] === correctOption.id) {
+            if (correctOption && latestAttempt.userAnswers[q.id] === correctOption.id) {
                 correct++;
             }
         });
         return {
             correct,
             incorrect: simulado.questions.length - correct,
+            score: latestAttempt.score,
+            durationSeconds: latestAttempt.durationSeconds
         };
     };
 
@@ -363,10 +367,10 @@ function StudentDetailPageComponent() {
                                             <div className="flex-1">
                                                 <p className="font-semibold">{simulado.title}</p>
                                                 <p className="text-sm text-muted-foreground mt-1">
-                                                    {getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões
+                                                    {getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões {simulado.timeLimitMinutes && `• ${simulado.timeLimitMinutes} min`}
                                                 </p>
                                             </div>
-                                            {simulado.status === 'Concluído' && simulado.score !== undefined ? (
+                                            {simulado.status === 'Concluído' ? (
                                                 <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
                                                     <div className="flex items-center gap-2 text-green-600">
                                                         <Check className="h-4 w-4" />
@@ -376,14 +380,14 @@ function StudentDetailPageComponent() {
                                                         <XCircle className="h-4 w-4" />
                                                         <span>{results.incorrect} Erros</span>
                                                     </div>
-                                                    {simulado.durationSeconds !== undefined && (
+                                                    {results.durationSeconds !== undefined && (
                                                         <div className="flex items-center gap-1.5 text-muted-foreground">
                                                             <Clock className="h-4 w-4" /> 
-                                                            <span>{formatDuration(simulado.durationSeconds)}</span>
+                                                            <span>{formatDuration(results.durationSeconds)}</span>
                                                         </div>
                                                     )}
-                                                     <Badge variant={simulado.score >= 70 ? 'secondary' : 'destructive'} className={cn(simulado.score >= 70 && 'bg-green-100 text-green-800')}>
-                                                        {simulado.score.toFixed(0)}%
+                                                     <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn(results.score >= 70 && 'bg-green-100 text-green-800')}>
+                                                        {results.score.toFixed(0)}%
                                                     </Badge>
                                                     <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
                                                 </div>

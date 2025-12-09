@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Suspense, useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Card,
@@ -30,6 +30,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -55,52 +56,16 @@ function StartSimuladoPageComponent() {
   const [answers, setAnswers] = useState<Answers>({});
   const [isFinished, setIsFinished] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
-  
-  useEffect(() => {
-    const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-    const allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : initialSimulados;
-    const foundSimulado = allSimulados.find(s => s.id === simuladoId);
-    
-    if (foundSimulado) {
-        // If the simulado can be retaken, we present it as new
-        const canRetake = foundSimulado.attempts.length < foundSimulado.maxAttempts;
-        if (foundSimulado.status === 'Concluído' && !canRetake) {
-          setIsFinished(true);
-          setAnswers(foundSimulado.attempts[foundSimulado.attempts.length-1].userAnswers);
-        } else {
-          // If starting for the first time or retaking
-          setIsFinished(false);
-          setAnswers({});
-          setCurrentQuestionIndex(0);
-          setStartTime(new Date());
-        }
-        setSimulado(foundSimulado);
-    } else {
-        setSimulado(null);
-    }
-  }, [simuladoId]);
-  
-  const currentQuestion: Question | undefined = simulado?.questions[currentQuestionIndex];
-  const progress = simulado ? ((currentQuestionIndex + 1) / simulado.questions.length) * 100 : 0;
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleAnswerChange = (questionId: string, optionId: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
-  };
-
-  const handleNext = () => {
-    if (simulado && currentQuestionIndex < simulado.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
-  };
   
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
-  };
-
   const handleFinish = () => {
     if (!simulado || !startTime) return;
+
+    if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+    }
 
     const endTime = new Date();
     const durationInSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
@@ -142,6 +107,89 @@ function StartSimuladoPageComponent() {
     });
   };
   
+  useEffect(() => {
+    const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
+    const allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : initialSimulados;
+    const foundSimulado = allSimulados.find(s => s.id === simuladoId);
+    
+    if (foundSimulado) {
+        const canRetake = foundSimulado.attempts.length < foundSimulado.maxAttempts;
+        if (foundSimulado.status === 'Concluído' && !canRetake) {
+          setIsFinished(true);
+          setAnswers(foundSimulado.attempts[foundSimulado.attempts.length-1].userAnswers);
+        } else {
+          setIsFinished(false);
+          setAnswers({});
+          setCurrentQuestionIndex(0);
+          setStartTime(new Date());
+          if (foundSimulado.timeLimitMinutes) {
+            setRemainingTime(foundSimulado.timeLimitMinutes * 60);
+          }
+        }
+        setSimulado(foundSimulado);
+    } else {
+        setSimulado(null);
+    }
+
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [simuladoId]);
+  
+  useEffect(() => {
+    if (remainingTime === null || isFinished) {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      return;
+    }
+    
+    if (remainingTime <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Tempo Esgotado!",
+        description: "Seu simulado foi finalizado automaticamente.",
+      });
+      handleFinish();
+      return;
+    }
+
+    timerIntervalRef.current = setInterval(() => {
+      setRemainingTime(prevTime => (prevTime ? prevTime - 1 : 0));
+    }, 1000);
+
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingTime, isFinished]);
+  
+  const currentQuestion: Question | undefined = simulado?.questions[currentQuestionIndex];
+  const progress = simulado ? ((currentQuestionIndex + 1) / simulado.questions.length) * 100 : 0;
+
+  const handleAnswerChange = (questionId: string, optionId: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
+  };
+
+  const handleNext = () => {
+    if (simulado && currentQuestionIndex < simulado.questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+  
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const formatRemainingTime = () => {
+    if (remainingTime === null) return '';
+    const minutes = Math.floor(remainingTime / 60);
+    const seconds = remainingTime % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   const latestAttempt = simulado?.attempts[simulado.attempts.length - 1];
 
   if (!simulado) {
@@ -217,12 +265,19 @@ function StartSimuladoPageComponent() {
                                             isUserAnswer && !isCorrect ? "border-red-300 bg-red-50 dark:bg-red-900/30" : ""
                                         )}>
                                             <div className="flex items-center gap-2 h-6">
-                                                {isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                                {isUserAnswer && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                                                 {isUserAnswer && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                                                {!isCorrect && !isUserAnswer && <div className="w-5 h-5" /> }
+                                                {!isUserAnswer && isCorrect && <CheckCircle className="h-5 w-5 text-green-500/50" />}
+                                                {!isUserAnswer && !isCorrect && <div className="w-5 h-5" />}
                                             </div>
                                             <span className="font-bold">{optionLabel})</span>
                                             <p className="flex-1">{option.text}</p>
+                                             {isUserAnswer && (
+                                                <Badge variant="outline" className="ml-auto bg-transparent">{isCorrect ? 'Sua Resposta (Correta)' : 'Sua Resposta'}</Badge>
+                                             )}
+                                             {!isUserAnswer && isCorrect && (
+                                                <Badge variant="outline" className="ml-auto bg-transparent">Resposta Correta</Badge>
+                                             )}
                                         </div>
                                         );
                                     })}
@@ -257,6 +312,12 @@ function StartSimuladoPageComponent() {
                         <Progress value={progress} className="w-28 mt-2" />
                     </div>
                 </div>
+                 {remainingTime !== null && (
+                    <div className="mt-4 flex items-center justify-center gap-2 text-lg font-mono font-semibold rounded-lg border bg-muted p-2">
+                        <Clock className="h-5 w-5"/>
+                        <span>{formatRemainingTime()}</span>
+                    </div>
+                )}
             </CardHeader>
             <CardContent>
                 {currentQuestion ? (

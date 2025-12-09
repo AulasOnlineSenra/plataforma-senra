@@ -85,6 +85,7 @@ export default function SimuladosPage() {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [maxAttempts, setMaxAttempts] = useState(1);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState<number | undefined>(undefined);
 
   const { toast } = useToast();
   
@@ -221,6 +222,7 @@ export default function SimuladosPage() {
     setSelectedStudent('');
     setQuestions([]);
     setMaxAttempts(1);
+    setTimeLimitMinutes(undefined);
     setEditingSimulado(null);
     setIsCreatingOrEditing(false);
   };
@@ -246,6 +248,7 @@ export default function SimuladosPage() {
         studentId: selectedStudent,
         questions,
         maxAttempts,
+        timeLimitMinutes: timeLimitMinutes,
       };
       const updatedSimulados = simulados.map(s => s.id === editingSimulado.id ? updatedSimulado : s);
       setSimulados(updatedSimulados);
@@ -267,6 +270,7 @@ export default function SimuladosPage() {
         status: 'Pendente',
         questions,
         maxAttempts,
+        timeLimitMinutes: timeLimitMinutes,
         attempts: [],
       };
       const updatedSimulados = [...simulados, newSimulado];
@@ -302,6 +306,7 @@ export default function SimuladosPage() {
     setSelectedStudent(simuladoToEdit.studentId);
     setQuestions(simuladoToEdit.questions);
     setMaxAttempts(simuladoToEdit.maxAttempts || 1);
+    setTimeLimitMinutes(simuladoToEdit.timeLimitMinutes);
     setIsCreatingOrEditing(true);
   }
 
@@ -318,7 +323,7 @@ export default function SimuladosPage() {
   }, [currentUser, simulados]);
 
   const answeredSimulados = useMemo(() => {
-    return displayedSimulados.filter(s => s.status === 'Concluído').sort((a,b) => (b.attempts[b.attempts.length - 1]?.completedAt.getTime() || 0) - (a.attempts[a.attempts.length - 1]?.completedAt.getTime() || 0));
+    return displayedSimulados.filter(s => s.status === 'Concluído').sort((a,b) => (b.attempts.length > 0 ? new Date(b.attempts[b.attempts.length-1].completedAt).getTime() : 0) - (a.attempts.length > 0 ? new Date(a.attempts[a.attempts.length-1].completedAt).getTime() : 0));
   }, [displayedSimulados]);
 
   const calculateSimuladoResults = (simulado: Simulado, attemptIndex = -1) => {
@@ -380,7 +385,7 @@ export default function SimuladosPage() {
                                       <div className="flex-1">
                                           <p className="font-semibold">{sim.title}</p>
                                           <p className="text-sm text-muted-foreground mt-1">
-                                            {getSubjectName(sim.subjectId)} • {sim.questions.length} questões
+                                            {getSubjectName(sim.subjectId)} • {sim.questions.length} questões {sim.timeLimitMinutes && `• ${sim.timeLimitMinutes} min`}
                                           </p>
                                       </div>
                                       <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
@@ -415,7 +420,7 @@ export default function SimuladosPage() {
                             <div key={sim.id} className="rounded-lg border p-4 flex items-center justify-between">
                                 <div>
                                     <h3 className="font-semibold">{sim.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões</p>
+                                    <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões {sim.timeLimitMinutes && `• ${sim.timeLimitMinutes} min`}</p>
                                 </div>
                                 <Button onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Iniciar</Button>
                             </div>
@@ -458,65 +463,78 @@ export default function SimuladosPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="grid gap-2 md:col-span-2">
-                    <Label htmlFor="title">Título do Simulado</Label>
-                    <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Revisão de Funções de 2º Grau"
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="subject">Disciplina</Label>
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger id="subject">
-                        <SelectValue placeholder="Selecione uma disciplina" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableSubjects.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id}>
-                            {sub.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="student">Aluno</Label>
-                    <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                    <SelectTrigger id="student">
-                        <SelectValue placeholder="Selecione um aluno" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {myStudents.map((stu) => (
-                        <SelectItem key={stu.id} value={stu.id}>
-                            {stu.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                </div>
-                </div>
-                <div className="grid md:grid-cols-4 gap-4">
-                    <div className="grid gap-2 md:col-span-3">
-                        <Label htmlFor="description">Descrição/Instruções</Label>
-                        <Textarea
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
-                            rows={1}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="title">Título do Simulado</Label>
+                        <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Ex: Revisão de Funções de 2º Grau"
                         />
                     </div>
-                     <div className="grid gap-2">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="subject">Disciplina</Label>
+                            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                            <SelectTrigger id="subject">
+                                <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableSubjects.map((sub) => (
+                                <SelectItem key={sub.id} value={sub.id}>
+                                    {sub.name}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="student">Aluno</Label>
+                            <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                            <SelectTrigger id="student">
+                                <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {myStudents.map((stu) => (
+                                <SelectItem key={stu.id} value={stu.id}>
+                                    {stu.name}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="description">Descrição/Instruções</Label>
+                    <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
+                        rows={2}
+                    />
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
                         <Label htmlFor="max-attempts">Nº de Tentativas</Label>
                         <Input
                             id="max-attempts"
                             type="number"
                             value={maxAttempts}
                             onChange={(e) => setMaxAttempts(Math.max(1, parseInt(e.target.value, 10)))}
+                            min="1"
+                        />
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="time-limit">Tempo Limite (minutos)</Label>
+                        <Input
+                            id="time-limit"
+                            type="number"
+                            value={timeLimitMinutes || ''}
+                            onChange={(e) => setTimeLimitMinutes(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                            placeholder="Opcional"
                             min="1"
                         />
                     </div>
