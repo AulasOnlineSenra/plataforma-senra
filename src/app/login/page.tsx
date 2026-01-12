@@ -469,14 +469,12 @@ export default function LoginPage() {
     >
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
+            <Button asChild variant="ghost" size="icon" className="absolute cursor-grab" style={{ top: `${position.top}px`, left: `${position.left}px`, zIndex: 10 }}>
+                <Link href="/home" onMouseDown={handleMouseDown}>
+                    <ArrowLeft />
+                </Link>
+            </Button>
             <div className="w-full max-w-md relative">
-                {!role && (
-                    <Button asChild variant="ghost" size="icon" className="absolute cursor-grab" style={{ top: `${position.top}px`, left: `${position.left}px`, zIndex: 10 }}>
-                        <Link href="/home" onMouseDown={handleMouseDown}>
-                            <ArrowLeft />
-                        </Link>
-                    </Button>
-                )}
                 <div className="rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
                     <div className="mb-8">
                         <SenraLogo className="mx-auto" />
