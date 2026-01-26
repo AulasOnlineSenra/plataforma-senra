@@ -183,7 +183,7 @@ const defaultRoleButtons = [
 const ROLE_BUTTON_ORDER_STORAGE_KEY = 'loginRoleOrder';
 
 
-const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.FormEvent) => void;}) => {
+const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.MouseEvent) => void;}) => {
   const [roleButtons, setRoleButtons] = useState(defaultRoleButtons);
   
   useEffect(() => {
@@ -347,9 +347,40 @@ export default function LoginPage() {
     });
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     
+    // If role is null, it's the visitor login. This is the cleanest check.
+    if (role === null) {
+      const visitorRole = 'student';
+      localStorage.setItem('userRole', visitorRole);
+
+      const visitorId = `visitor-${Date.now()}`;
+      const user: User = {
+        id: visitorId,
+        name: 'Visitante',
+        email: 'visitor@example.com',
+        avatarUrl: `https://picsum.photos/seed/${visitorId}/200/200`,
+        role: 'student',
+        status: 'active',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        classCredits: 0,
+        activePackage: 'Nenhum pacote ativo',
+        ratings: [],
+      };
+      
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      localStorage.setItem('userId', user.id);
+      
+      toast({
+          title: "Acesso de Visitante",
+          description: `Você está acessando como Visitante.`,
+      });
+      router.push('/dashboard');
+      return;
+    }
+
+    // The rest of the logic is for registered users with a selected role.
     const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
     const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
     const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
@@ -407,35 +438,6 @@ export default function LoginPage() {
         }
     }
 
-    if (!role && !userToLogin) {
-        const visitorRole = 'student';
-        localStorage.setItem('userRole', visitorRole);
-
-        const visitorId = `visitor-${Date.now()}`;
-        const user: User = {
-          id: visitorId,
-          name: 'Visitante',
-          email: 'visitor@example.com',
-          avatarUrl: `https://picsum.photos/seed/${visitorId}/200/200`,
-          role: 'student',
-          status: 'active',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          classCredits: 0,
-          activePackage: 'Nenhum pacote ativo',
-          ratings: [],
-        };
-        
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        localStorage.setItem('userId', user.id);
-        
-        toast({
-            title: "Acesso de Visitante",
-            description: `Você está acessando como Visitante.`,
-        });
-        router.push('/dashboard');
-        return;
-    }
-    
     if (userToLogin) {
         const now = new Date().toISOString();
         const updatedUser = { ...userToLogin, lastAccess: now };
