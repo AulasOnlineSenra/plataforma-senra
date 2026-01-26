@@ -410,12 +410,27 @@ export default function LoginPage() {
     if (!role && !userToLogin) {
         const visitorRole = 'student';
         localStorage.setItem('userRole', visitorRole);
-        const user = getMockUser(visitorRole);
+
+        const visitorId = `visitor-${Date.now()}`;
+        const user: User = {
+          id: visitorId,
+          name: 'Visitante',
+          email: 'visitor@example.com',
+          avatarUrl: `https://picsum.photos/seed/${visitorId}/200/200`,
+          role: 'student',
+          status: 'active',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          classCredits: 0,
+          activePackage: 'Nenhum pacote ativo',
+          ratings: [],
+        };
+        
         localStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.setItem('userId', user.id);
+        
         toast({
             title: "Acesso de Visitante",
-            description: `Você está acessando como ${user.name.split(' ')[0]}.`,
+            description: `Você está acessando como Visitante.`,
         });
         router.push('/dashboard');
         return;
@@ -469,7 +484,7 @@ export default function LoginPage() {
     >
       <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
         <div className="relative flex flex-col items-center justify-center p-8">
-            <Button asChild variant="ghost" size="icon" className="absolute cursor-grab" style={{ top: `${position.top}px`, left: `${position.left}px`, zIndex: 10 }}>
+            <Button asChild variant="ghost" className="absolute cursor-grab" style={{ top: `${position.top}px`, left: `${position.left}px`, zIndex: 10 }}>
                 <Link href="/home" onMouseDown={handleMouseDown}>
                     <ArrowLeft />
                 </Link>
