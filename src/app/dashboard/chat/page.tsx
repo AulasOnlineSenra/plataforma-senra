@@ -104,7 +104,7 @@ function ChatPageComponent() {
         setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
 
         if (currentUser) {
-            const userContactsKey = `chatContacts_${currentUser.id}`;
+            const userContactsKey = `chatContacts_${'\'\''}${currentUser.id}`;
             const storedContactsStr = localStorage.getItem(userContactsKey);
             const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : [];
             const contactsMap = new Map(contactsData.map(c => [c.id, c]));
@@ -142,7 +142,7 @@ function ChatPageComponent() {
         if (contact && currentUser) {
             setActiveChatPartner(contact);
 
-            const userContactsKey = `chatContacts_${currentUser.id}`;
+            const userContactsKey = `chatContacts_${'\'\''}${currentUser.id}`;
             const storedContacts = localStorage.getItem(userContactsKey);
             let currentContacts: ChatContact[] = storedContacts ? JSON.parse(storedContacts).map((c: any) => ({...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp)})) : [];
             
@@ -213,7 +213,7 @@ function ChatPageComponent() {
     
     const sendMessage = useCallback((senderId: string, receiverId: string, content: string) => {
       const newMessage: ChatMessage = {
-        id: `msg-${Date.now()}`,
+        id: `msg-${'\'\''}${Date.now()}`,
         senderId: senderId,
         receiverId: receiverId,
         content: content,
@@ -230,7 +230,7 @@ function ChatPageComponent() {
           partnerId: string,
           isReceiver: boolean
       ) => {
-          const userContactsKey = `chatContacts_${ownerId}`;
+          const userContactsKey = `chatContacts_${'\'\''}${ownerId}`;
           const allCurrentContactsStr = localStorage.getItem(userContactsKey);
           let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
               ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
@@ -274,7 +274,7 @@ function ChatPageComponent() {
       
       const receiver = allUsers.find(u => u.id === receiverId);
       if (receiver) {
-        logActivity(`Enviou uma mensagem para ${receiver.name}`);
+        logActivity(`Enviou uma mensagem para ${'\'\''}${receiver.name}`);
       }
 
       window.dispatchEvent(new Event('storage'));
@@ -308,7 +308,7 @@ function ChatPageComponent() {
             const reader = new FileReader();
             reader.onload = (loadEvent) => {
                 const dataUrl = loadEvent.target?.result as string;
-                const fileMessage = `file::${file.name}::${dataUrl}`;
+                const fileMessage = `file::${'\'\''}${file.name}::${'\'\''}${dataUrl}`;
                 handleSendMessage(undefined, fileMessage);
             };
             reader.readAsDataURL(file);
@@ -389,7 +389,7 @@ function ChatPageComponent() {
             await addDoc(collectionRef, messageData);
             toast({
                 title: 'Mensagem Agendada',
-                description: `Sua mensagem para ${activeChatPartner.name} foi agendada para ${format(scheduledDate!, "'dia' dd/MM 'às' HH:mm")}.`,
+                description: `Sua mensagem para ${'\'\''}${activeChatPartner.name} foi agendada para ${'\'\''}${format(scheduledDate!, "'dia' dd/MM 'às' HH:mm")}.`,
             });
 
             // Reset form and close dialog
@@ -414,8 +414,8 @@ function ChatPageComponent() {
             const reader = new FileReader();
             reader.onload = (loadEvent) => {
                 const dataUrl = loadEvent.target?.result as string;
-                const fileIdentifier = `file::${file.name}::${dataUrl}`;
-                setMessageContent(prev => prev ? `${prev}\n${fileIdentifier}` : fileIdentifier);
+                const fileIdentifier = `file::${'\'\''}${file.name}::${'\'\''}${dataUrl}`;
+                setMessageContent(prev => prev ? `${'\'\''}${prev}\n${'\'\''}${fileIdentifier}` : fileIdentifier);
             };
             reader.readAsDataURL(file);
 
@@ -427,11 +427,11 @@ function ChatPageComponent() {
     
     const handleToggleRecording = () => {
         setIsRecording(!isRecording);
-        const audioIdentifier = `file::audio-gravado-${Date.now()}.mp3::data:audio/mpeg;base64,SUQz...`;
+        const audioIdentifier = `file::audio-gravado-${'\'\''}${Date.now()}.mp3::data:audio/mpeg;base64,SUQz...`;
         if (!isRecording) { // When starting recording
             toast({ title: 'Gravação Iniciada', description: 'Clique novamente para parar.' });
         } else { // When stopping recording
-            setMessageContent(prev => prev ? `${prev}\n${audioIdentifier}` : audioIdentifier);
+            setMessageContent(prev => prev ? `${'\'\''}${prev}\n${'\'\''}${audioIdentifier}` : audioIdentifier);
             toast({ title: 'Gravação Finalizada', description: 'Áudio anexado à mensagem.' });
         }
     };
@@ -448,7 +448,13 @@ function ChatPageComponent() {
     return (
       <>
         <div className="grid flex-1 w-full grid-cols-1 md:grid-cols-[450px_1fr] gap-4">
-              <Card className="flex flex-col rounded-lg border max-h-[calc(100vh-8rem)]">
+            <div
+                className={cn(
+                'flex flex-col',
+                activeChatPartner ? 'hidden md:flex' : 'flex'
+                )}
+            >
+                <Card className="flex flex-col rounded-lg border max-h-[calc(100vh-8rem)] w-full">
                   <div className="p-4 border-b">
                       <h2 className="font-headline text-xl font-bold">Conversas</h2>
                       <div className="relative mt-2">
@@ -493,8 +499,14 @@ function ChatPageComponent() {
                           )})}
                       </div>
                   </ScrollArea>
-              </Card>
-
+                </Card>
+            </div>
+            <div
+              className={cn(
+                'flex flex-col',
+                !activeChatPartner ? 'hidden md:flex' : 'flex'
+              )}
+            >
               { activeChatPartner ? (
                   <Card className="flex flex-col rounded-lg border bg-card max-h-[calc(100vh-8rem)]" style={{
                       backgroundImage: "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABOUlEQVR4Ae3ToY1EMRCF0UvUf2wB3sImsQvsQ7AP2Ics2EWwBwuwC+xCGSBD5jZ5Y+Pj/yc5CZvMk49KKaXEV4/iXkCgGvA5sAV4IwsQ7wJ0fQc8oYoSnGQCbAN2eAI8EucK9xTQZwJ8ATY5wE0S53pHcAJMHeAJsMkBfCVx/sYJcALMHeAIsMkBfCdxvsYJcALMfeAIsMkBCv5KOXeMOcA+gCvAJgf4k4RznZwD7AO4wJuE8wacA+wDuMA3necMHARwD+D/e+3u4BwR7gFc4Pu88xacA/gL4MG88zYcBGRI2LwJMO8ARpiAnwJ3AON+gK0J9zVwFaDvAkyb4C/A1sT5GjgL0HcCbE24/wE2Jc4V7inAcYjsBdgK3LvAFYlzdY0dK6WU/At/AD5ZUU6Z2QJRAAAAAElFTkSuQmCC')",
@@ -502,6 +514,9 @@ function ChatPageComponent() {
                       backgroundSize: '200px',
                     }}>
                       <div className="flex items-center gap-4 p-4 border-b bg-card">
+                          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setActiveChatPartner(null)}>
+                              <ArrowLeft className="h-5 w-5" />
+                          </Button>
                           <Avatar className="h-10 w-10">
                               <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
                               <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
@@ -624,6 +639,7 @@ function ChatPageComponent() {
                       </CardHeader>
                   </Card>
               )}
+            </div>
         </div>
         {activeChatPartner && (
             <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>

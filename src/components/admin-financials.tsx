@@ -42,6 +42,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 import { toZonedTime } from 'date-fns-tz';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
+import { ScrollArea } from './ui/scroll-area';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -228,7 +229,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 }
 
                 periods.push({
-                    label: `${format(periodStart, 'dd/MM')} - ${format(periodEnd, 'dd/MM')}`,
+                    label: `${'\'\''}${format(periodStart, 'dd/MM')} - ${'\'\''}${format(periodEnd, 'dd/MM')}`,
                     value: periodStart.toISOString(),
                     start: periodStart,
                     end: periodEnd,
@@ -297,7 +298,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         });
         
         const paymentDetails = Object.entries(paymentsByTeacher).map(([teacherId, p]) => ({
-          id: `${selectedPeriodKey}-${teacherId}`,
+          id: `${'\'\''}${selectedPeriodKey}-${'\'\''}${teacherId}`,
           ...p,
           totalAmount: p.completedClasses * p.paymentRate,
           period: selectedPeriod.label,
@@ -506,51 +507,53 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Aluno</TableHead>
-                                    <TableHead>Pacote</TableHead>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead className="text-center">Créditos</TableHead>
-                                    <TableHead className="text-right">Valor</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactions.map(transaction => {
-                                    const user = getUserById(transaction.studentId);
-                                    return (
-                                        <TableRow key={transaction.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="h-10 w-10">
-                                                        <AvatarImage src={user?.avatarUrl} alt={user?.name} />
-                                                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="font-medium">{user?.name || 'Aluno não encontrado'}</div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>{transaction.packageName}</TableCell>
-                                            <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
-                                            <TableCell className="text-center font-medium">+{transaction.creditsAdded}</TableCell>
-                                            <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span className="sr-only">Excluir</span>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                                {transactions.length === 0 && (
+                        <ScrollArea>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
+                                        <TableHead>Aluno</TableHead>
+                                        <TableHead>Pacote</TableHead>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead className="text-center">Créditos</TableHead>
+                                        <TableHead className="text-right">Valor</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {transactions.map(transaction => {
+                                        const user = getUserById(transaction.studentId);
+                                        return (
+                                            <TableRow key={transaction.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-10 w-10">
+                                                            <AvatarImage src={user?.avatarUrl} alt={user?.name} />
+                                                            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="font-medium">{user?.name || 'Aluno não encontrado'}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{transaction.packageName}</TableCell>
+                                                <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</TableCell>
+                                                <TableCell className="text-center font-medium">+{transaction.creditsAdded}</TableCell>
+                                                <TableCell className="text-right font-mono">R$ {transaction.amount.toFixed(2).replace('.', ',')}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setTransactionToDelete(transaction)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span className="sr-only">Excluir</span>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                    {transactions.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
@@ -571,26 +574,28 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Categoria</TableHead>
-                                    <TableHead>Descrição</TableHead>
-                                    <TableHead className="text-right">Valor</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {expenseItems.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{format(item.date, 'dd/MM/yyyy')}</TableCell>
-                                        <TableCell className="font-medium">{item.category}</TableCell>
-                                        <TableCell>{item.description}</TableCell>
-                                        <TableCell className="text-right font-mono">R$ {item.amount.toFixed(2).replace('.', ',')}</TableCell>
+                        <ScrollArea>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Categoria</TableHead>
+                                        <TableHead>Descrição</TableHead>
+                                        <TableHead className="text-right">Valor</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {expenseItems.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>{format(item.date, 'dd/MM/yyyy')}</TableCell>
+                                            <TableCell className="font-medium">{item.category}</TableCell>
+                                            <TableCell>{item.description}</TableCell>
+                                            <TableCell className="text-right font-mono">R$ {item.amount.toFixed(2).replace('.', ',')}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
                     </CardContent>
                      <CardContent className="mt-auto">
                         <Separator className="my-4" />
@@ -634,47 +639,49 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Professor</TableHead>
-                                    <TableHead>Período</TableHead>
-                                    <TableHead className="text-center">Aulas Concluídas</TableHead>
-                                    <TableHead className="text-center">Valor por Aula</TableHead>
-                                    <TableHead className="text-right">Total a Pagar</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {teacherPaymentDetails.map(payment => (
-                                    <TableRow key={payment.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-10 w-10">
-                                                    <AvatarImage src={payment.teacherAvatarUrl} alt={payment.teacherName} />
-                                                    <AvatarFallback>{payment.teacherName.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <div className="font-medium">{payment.teacherName}</div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{payment.period}</TableCell>
-                                        <TableCell className="text-center font-medium">{payment.completedClasses}</TableCell>
-                                        <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
-                                        <TableCell className="text-right font-bold">R$ {payment.totalAmount.toFixed(2).replace('.', ',')}</TableCell>
-                                    </TableRow>
-                                ))}
-                                {teacherPaymentDetails.length === 0 && (
+                        <ScrollArea>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">Nenhum pagamento de professor para este período.</TableCell>
+                                        <TableHead>Professor</TableHead>
+                                        <TableHead>Período</TableHead>
+                                        <TableHead className="text-center">Aulas Concluídas</TableHead>
+                                        <TableHead className="text-center">Valor por Aula</TableHead>
+                                        <TableHead className="text-right">Total a Pagar</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                <TableCell colSpan={4} className="text-right font-bold">{getFooterLabel()}</TableCell>
-                                <TableCell className="text-right font-extrabold text-lg">R$ {selectedPeriodCost.toFixed(2).replace('.', ',')}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {teacherPaymentDetails.map(payment => (
+                                        <TableRow key={payment.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={payment.teacherAvatarUrl} alt={payment.teacherName} />
+                                                        <AvatarFallback>{payment.teacherName.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="font-medium">{payment.teacherName}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{payment.period}</TableCell>
+                                            <TableCell className="text-center font-medium">{payment.completedClasses}</TableCell>
+                                            <TableCell className="text-center font-mono">R$ {payment.paymentRate.toFixed(2).replace('.', ',')}</TableCell>
+                                            <TableCell className="text-right font-bold">R$ {payment.totalAmount.toFixed(2).replace('.', ',')}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {teacherPaymentDetails.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center">Nenhum pagamento de professor para este período.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                    <TableCell colSpan={4} className="text-right font-bold">{getFooterLabel()}</TableCell>
+                                    <TableCell className="text-right font-extrabold text-lg">R$ {selectedPeriodCost.toFixed(2).replace('.', ',')}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+                        </ScrollArea>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
