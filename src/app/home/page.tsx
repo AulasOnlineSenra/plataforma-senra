@@ -25,7 +25,7 @@ const navLinks = [
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-card">
-      <header className="sticky top-0 z-50 flex items-center justify-between p-4 lg:p-6 bg-card/80 backdrop-blur-sm border-b">
+      <header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:p-4 bg-card/80 backdrop-blur-sm border-b">
         <SenraLogo />
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map(link => (
