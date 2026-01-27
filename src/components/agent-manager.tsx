@@ -76,7 +76,7 @@ export function AgentManager() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
   const [newAgentDescription, setNewAgentDescription] = useState('');
-  const [newAgentModel, setNewAgentModel] = useState('googleai/gemini-2.5-flash');
+  const [newAgentModel, setNewAgentModel] = useState('');
 
   const handleRunAgent = async () => {
     if (!prompt || !selectedAgent) {
@@ -145,7 +145,7 @@ export function AgentManager() {
     setIsCreateDialogOpen(false);
     setNewAgentName('');
     setNewAgentDescription('');
-    setNewAgentModel('googleai/gemini-2.5-flash');
+    setNewAgentModel('');
   };
 
   return (
@@ -272,7 +272,7 @@ export function AgentManager() {
           <DialogHeader>
             <DialogTitle>Criar Novo Agente de IA</DialogTitle>
             <DialogDescription>
-              Configure um novo agente para realizar tarefas automatizadas. A chave de API é gerenciada centralmente.
+              Configure um novo agente de IA. Você precisará fornecer o identificador do modelo que deseja usar, conectado através da sua chave de API.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -296,16 +296,15 @@ export function AgentManager() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="new-agent-model">Modelo de IA</Label>
-              <Select value={newAgentModel} onValueChange={setNewAgentModel}>
-                <SelectTrigger id="new-agent-model">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="googleai/gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
-                  <SelectItem value="googleai/gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                  <SelectItem value="googleai/gemini-pro">Gemini Pro</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="new-agent-model"
+                value={newAgentModel}
+                onChange={(e) => setNewAgentModel(e.target.value)}
+                placeholder="Ex: googleai/gemini-2.5-flash"
+              />
+              <p className="text-xs text-muted-foreground">
+                Insira o identificador do modelo que você conectou com sua chave de API.
+              </p>
             </div>
           </div>
           <DialogFooter>
