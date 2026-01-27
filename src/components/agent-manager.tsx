@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -98,6 +97,17 @@ export function AgentManager() {
     }
   };
 
+  const handleDeleteAgent = (agentId: string) => {
+    setAgents((prev) => prev.filter((agent) => agent.id !== agentId));
+    if (selectedAgent?.id === agentId) {
+      setSelectedAgent(null);
+    }
+    toast({
+      title: 'Agente Excluído',
+      description: 'O agente foi removido com sucesso.',
+    });
+  };
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -113,25 +123,37 @@ export function AgentManager() {
             <h3 className="font-semibold text-lg">Agentes Disponíveis</h3>
             <div className="flex flex-col gap-2">
               {agents.map((agent) => (
-                <button
-                  key={agent.id}
-                  onClick={() => setSelectedAgent(agent)}
-                  className={`p-4 border rounded-lg text-left transition-colors ${
-                    selectedAgent?.id === agent.id
-                      ? 'bg-primary/10 border-primary ring-2 ring-primary'
-                      : 'hover:bg-accent/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Bot className="h-6 w-6 text-primary" />
-                    <div>
-                      <p className="font-semibold">{agent.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {agent.model}
-                      </p>
+                <div key={agent.id} className="relative group">
+                  <button
+                    onClick={() => setSelectedAgent(agent)}
+                    className={`p-4 border rounded-lg text-left transition-colors w-full ${
+                      selectedAgent?.id === agent.id
+                        ? 'bg-primary/10 border-primary ring-2 ring-primary'
+                        : 'hover:bg-accent/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Bot className="h-6 w-6 text-primary" />
+                      <div>
+                        <p className="font-semibold">{agent.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {agent.model}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1/2 -translate-y-1/2 right-2 h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteAgent(agent.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               ))}
             </div>
             <Button variant="outline" className="mt-2">
@@ -150,7 +172,11 @@ export function AgentManager() {
                         {selectedAgent.description}
                       </CardDescription>
                     </div>
-                    <Button variant="ghost" size="icon">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteAgent(selectedAgent.id)}
+                    >
                       <Trash2 className="h-5 w-5 text-destructive" />
                     </Button>
                   </div>
@@ -176,7 +202,11 @@ export function AgentManager() {
                   )}
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={handleRunAgent} disabled={isLoading} className="w-full">
+                  <Button
+                    onClick={handleRunAgent}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
                     {isLoading ? (
                       <Loader2 className="mr-2 animate-spin" />
                     ) : (
