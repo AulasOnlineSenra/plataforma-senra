@@ -87,7 +87,7 @@ export default function HomePage() {
               <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6">
                 <ChevronRight className="mr-2 h-5 w-5" /> <EditableText storageKey="home-cta-primary">Encontre Seu Tutor Ideal</EditableText>
               </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 py-6 border-2 border-white text-white hover:bg-white hover:text-black">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 py-6 bg-transparent border-2 border-white text-white hover:bg-white hover:text-black">
                 <EditableText storageKey="home-cta-secondary">Ver Depoimentos</EditableText>
               </Button>
             </div>
@@ -146,13 +146,15 @@ export default function HomePage() {
         {/* Section 4: How It Works */}
         <section className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline mb-12"><EditableText storageKey="home-howitworks-title">Do Desafio ao Sucesso em Apenas 3 Passos</EditableText></h2>
-            <div className="grid md:grid-cols-3 gap-8 relative">
-                <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-8"></div>
-                <Card className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline mb-12">
+              <EditableText storageKey="home-howitworks-title">Do Desafio ao Sucesso em Apenas 3 Passos</EditableText>
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8"> 
+                
+                <Card className="text-center bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1"> 
                     <CardHeader>
-                        <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit mb-4 relative">
-                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold">1</span>
+                        <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 relative">
+                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-md">1</span>
                             <Target className="h-8 w-8 text-primary" />
                         </div>
                         <h3 className="text-xl font-bold"><EditableText storageKey="home-howitworks-step1-title">Conte Seu Objetivo</EditableText></h3>
@@ -161,10 +163,11 @@ export default function HomePage() {
                         <p className="text-muted-foreground"><EditableText storageKey="home-howitworks-step1-text">Responda um quiz rápido para entendermos sua necessidade, estilo de aprendizado e disponibilidade.</EditableText></p>
                     </CardContent>
                 </Card>
-                 <Card className="text-center">
+
+                 <Card className="text-center bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
                     <CardHeader>
-                        <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit mb-4 relative">
-                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold">2</span>
+                        <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 relative">
+                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-md">2</span>
                             <Bot className="h-8 w-8 text-primary" />
                         </div>
                         <h3 className="text-xl font-bold"><EditableText storageKey="home-howitworks-step2-title">Conheça Seu Tutor Ideal</EditableText></h3>
@@ -173,18 +176,22 @@ export default function HomePage() {
                         <p className="text-muted-foreground"><EditableText storageKey="home-howitworks-step2-text">Nossa IA e nosso time especializado selecionam o professor perfeito para você. Veja o perfil e as avaliações.</EditableText></p>
                     </CardContent>
                 </Card>
-                 <Card className="text-center">
+
+                 <Card className="text-center bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
                     <CardHeader>
-                        <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit mb-4 relative">
-                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold">3</span>
+                        <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 relative">
+                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-md">3</span>
                             <CalendarCheck className="h-8 w-8 text-primary" />
                         </div>
                         <h3 className="text-xl font-bold"><EditableText storageKey="home-howitworks-step3-title">Agende Sua Primeira Aula</EditableText></h3>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground"><EditableText storageKey="home-howitworks-step3-text">Escolha o horário e comece sua jornada. <span className="font-bold text-primary">A primeira aula é por nossa conta!</span></EditableText></p>
+                        <p className="text-muted-foreground">
+                            <EditableText storageKey="home-howitworks-step3-text">Escolha o horário e comece sua jornada.</EditableText>
+                        </p>
                     </CardContent>
                 </Card>
+
             </div>
           </div>
         </section>
@@ -192,20 +199,32 @@ export default function HomePage() {
         {/* Section 5: Differentiators */}
         <section className="py-16 md:py-24 bg-card">
             <div className="container mx-auto px-4 grid md:grid-cols-3 gap-8">
-                <div className="flex flex-col items-center text-center gap-3">
+                <div className="flex flex-col items-center text-center p-8 bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
                     <BrainCircuit className="h-10 w-10 text-primary" />
-                    <h3 className="text-xl font-bold font-headline"><EditableText storageKey="home-diff-1-title">Não é Sorte, é Método.</EditableText></h3>
-                    <p className="text-muted-foreground"><EditableText storageKey="home-diff-1-text">Usamos tecnologia para analisar perfil, personalidade e objetivos, garantindo a combinação mais eficaz entre aluno e tutor.</EditableText></p>
+                    <h3 className="text-xl font-bold font-headline mb-3">
+                      <EditableText storageKey="home-diff-1-title">Não é Sorte, é Método.</EditableText>
+                      </h3>
+                    <p className="text-muted-foreground loading-relaxed">
+                      <EditableText storageKey="home-diff-1-text">Usamos tecnologia para analisar perfil, personalidade e objetivos, garantindo a combinação mais eficaz entre aluno e tutor.</EditableText>
+                      </p>
                 </div>
-                 <div className="flex flex-col items-center text-center gap-3">
+                 <div className="flex flex-col items-center text-center p-8 bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
                     <Briefcase className="h-10 w-10 text-primary" />
-                    <h3 className="text-xl font-bold font-headline"><EditableText storageKey="home-diff-2-title">Tudo o que Você Precisa em Um Só Lugar.</EditableText></h3>
-                    <p className="text-muted-foreground"><EditableText storageKey="home-diff-2-text">Videochamada de alta qualidade, quadro branco interativo, compartilhamento de tela e biblioteca de exercícios.</EditableText></p>
+                    <h3 className="text-xl font-bold font-headline mb-3">
+                      <EditableText storageKey="home-diff-2-title">Tudo o que Você Precisa em Um Só Lugar.</EditableText>
+                      </h3>
+                    <p className="text-muted-foreground loading-relaxed">
+                      <EditableText storageKey="home-diff-2-text">Videochamada de alta qualidade, quadro branco interativo, compartilhamento de tela e biblioteca de exercícios.</EditableText>
+                      </p>
                 </div>
-                 <div className="flex flex-col items-center text-center gap-3">
-                    <TrendingUp className="h-10 w-10 text-primary" />
-                    <h3 className="text-xl font-bold font-headline"><EditableText storageKey="home-diff-3-title">Acompanhe Cada Passo do Sucesso.</EditableText></h3>
-                    <p className="text-muted-foreground"><EditableText storageKey="home-diff-3-text">Relatórios periódicos detalham o progresso, pontos fortes e áreas de melhoria, para pais e alunos sempre informados.</EditableText></p>
+                 <div className="flex flex-col items-center text-center p-8 bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
+                    <TrendingUp className="h-10 w-10 text-primary"/>
+                    <h3 className="text-xl font-bold font-headline mb-3">
+                      <EditableText storageKey="home-diff-3-title">Acompanhe Cada Passo do Sucesso.</EditableText>
+                      </h3>
+                    <p className="text-muted-foreground loading-relaxed">
+                      <EditableText storageKey="home-diff-3-text">Relatórios periódicos detalham o progresso, pontos fortes e áreas de melhoria, para pais e alunos sempre informados.</EditableText>
+                    </p>
                 </div>
             </div>
         </section>
@@ -239,48 +258,96 @@ export default function HomePage() {
         </section>
 
         {/* Section 7: Call to Action Final */}
-        <section className="py-20 bg-primary/80 text-primary-foreground">
-            <div className="container mx-auto px-4 text-center">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline"><EditableText storageKey="home-finalcta-title">Pronto para Transformar Sua Jornada de Aprendizado?</EditableText></h2>
-                <p className="mt-2 text-lg"><EditableText storageKey="home-finalcta-subtitle">A primeira aula-experiência é gratuita e sem compromisso. Sem cartão de crédito. Sem letras miúdas.</EditableText></p>
-                <div className="mt-8 max-w-md mx-auto flex flex-col sm:flex-row gap-4">
-                    <Input type="email" placeholder="Seu melhor e-mail" className="h-12 text-black" />
-                    <Button size="lg" className="h-12 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent"><EditableText storageKey="home-finalcta-button">Quero Minha Aula Grátis! 🚀</EditableText></Button>
-                </div>
-                 <p className="mt-4 text-xs text-primary-foreground/80"><EditableText storageKey="home-finalcta-guarantee">Seu e-mail está 100% seguro. Não fazemos spam.</EditableText></p>
+        <section className="py-24 relative overflow-hidden bg-slate-950">
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 z-0"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-3xl bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+            <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                <h2 className="text-3xl md:text-5xl font-bold font-headline text-white mb-6">
+                  <EditableText storageKey="home-finalcta-title">Pronto para Transformar Sua Jornada de Aprendizado?</EditableText>
+                  </h2>
+                <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto mb-10 leading-relaxed">
+                  <EditableText storageKey="home-finalcta-subtitle">A primeira aula-experiência é gratuita e sem compromisso. Sem cartão de crédito. Sem letras miúdas.</EditableText>
+                  </p>
+
+                  <div className="mt-8 max-w-lg mx-auto bg-white/10 p-2 rounded-full backdrop-blur-sm border border-white/20 flex flex-col sm:flex-row gap-2">
+                    <Input 
+                        type="email" 
+                        placeholder="Seu melhor e-mail" 
+                        className="h-12 bg-transparent border-none text-white placeholder:text-blue-200 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 rounded-full" 
+                    />
+                    <Button 
+                        size="lg" 
+                        className="h-12 rounded-full px-8 bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-[0_0_20px_rgba(255,193,7,0.3)] transition-all hover:scale-105"
+                    >
+                        <EditableText storageKey="home-finalcta-button">Quero Minha Aula! 🚀</EditableText>
+                    </Button>
+                  </div>
+                 <p className="mt-6 text-sm text-blue-200/80 flex items-center justify-center gap-2">
+                 <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                 <EditableText storageKey="home-finalcta-guarantee">Seu e-mail está 100% seguro. Não fazemos spam.</EditableText>
+                 </p>
             </div>
         </section>
       </main>
 
-      <footer className="bg-sidebar text-sidebar-foreground p-8">
-        <div className="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-                <SenraLogo />
-                <p className="text-xs mt-2 text-sidebar-foreground/70"><EditableText storageKey="home-footer-copyright">&copy; {new Date().getFullYear()} Aulas Online Senra. <br/>Todos os direitos reservados.</EditableText></p>
+      <footer id="contato" className="bg-slate-950 text-slate-400 py-16 border-t border-slate-800">
+        <div className="container mx-auto px-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+              
+                <div className="flex flex-col gap-5">
+                    <div className="w-fit filter invert brightness-200 grayscale opacity-90 hover:opacity-100 transition-opacity">
+                        <SenraLogo />
+                    </div>
+                    <p className="text-sm leading-relaxed max-w-xs">
+                        Transformando dificuldades em conquistas através de uma educação personalizada e humana.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 className="font-bold text-white mb-6 text-lg tracking-tight">Navegação</h4>
+                    <ul className="space-y-3 text-sm">
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Como Funciona</Link></li>
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Nossos Tutores</Link></li>
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Depoimentos</Link></li>
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Blog Educativo</Link></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 className="font-bold text-white mb-6 text-lg tracking-tight">Institucional</h4>
+                    <ul className="space-y-3 text-sm">
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Sobre Nós</Link></li>
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Política de Privacidade</Link></li>
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Termos de Uso</Link></li>
+                        <li><Link href="#" className="hover:text-white hover:translate-x-1 transition-all inline-block">Trabalhe Conosco</Link></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 className="font-bold text-white mb-6 text-lg tracking-tight">Fale Conosco</h4>
+                    <ul className="space-y-4 text-sm">
+                        <li className="flex items-center gap-3 group cursor-pointer">
+                            <span className="hover:text-white transition-colors">contato@senra.com.br</span>
+                        </li>
+                        <li className="flex items-center gap-3 group cursor-pointer">
+                            <span className="hover:text-white transition-colors">(11) 99999-9999</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
-             <div>
-                <h4 className="font-bold mb-2"><EditableText storageKey="home-footer-quicklinks-title">Links Rápidos</EditableText></h4>
-                <ul className="space-y-1 text-sm text-sidebar-foreground/80">
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-link-how">Como Funciona</EditableText></Link></li>
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-link-subjects">Matérias</EditableText></Link></li>
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-link-pricing">Preços</EditableText></Link></li>
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-link-blog">Blog</EditableText></Link></li>
-                </ul>
-             </div>
-             <div>
-                <h4 className="font-bold mb-2"><EditableText storageKey="home-footer-legal-title">Legal</EditableText></h4>
-                <ul className="space-y-1 text-sm text-sidebar-foreground/80">
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-link-terms">Termos de Uso</EditableText></Link></li>
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-link-privacy">Política de Privacidade</EditableText></Link></li>
-                </ul>
-             </div>
-             <div>
-                <h4 className="font-bold mb-2"><EditableText storageKey="home-footer-contact-title">Contato</EditableText></h4>
-                 <ul className="space-y-1 text-sm text-sidebar-foreground/80">
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-contact-email">contato@senra.com</EditableText></Link></li>
-                    <li><Link href="#" className="hover:underline"><EditableText storageKey="home-footer-contact-phone">(11) 99999-9999</EditableText></Link></li>
-                </ul>
-             </div>
+
+            <div className="pt-8 mt-8 border-t border-slate-800 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+                <p>
+                    &copy; {new Date().getFullYear()} Aulas Online Senra Ltda. Todos os direitos reservados.
+                </p>
+                <div className="flex gap-6">
+                    <span className="hover:text-white cursor-pointer transition-colors">Instagram</span>
+                    <span className="hover:text-white cursor-pointer transition-colors">Facebook</span>
+                    <span className="hover:text-white cursor-pointer transition-colors">LinkedIn</span>
+                </div>
+            </div>
+
         </div>
       </footer>
     </div>

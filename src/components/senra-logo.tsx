@@ -1,41 +1,18 @@
 'use client';
 
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export function SenraLogo({ className }: { className?: string }) {
-  const [logoSrc, setLogoSrc] = useState('/logo.png');
-
-  useEffect(() => {
-    const updateLogo = () => {
-      const storedLogo = localStorage.getItem('appLogo');
-      if (storedLogo) {
-        setLogoSrc(storedLogo);
-      } else {
-        setLogoSrc('/logo.png');
-      }
-    };
-
-    updateLogo();
-
-    window.addEventListener('storage', updateLogo);
-    return () => {
-      window.removeEventListener('storage', updateLogo);
-    };
-  }, []);
-
   return (
-    <div className={cn('relative w-40 h-20', className)}>
+    <Link href="/" className={`relative block w-40 h-16 ${className || ''}`}>
       <Image
-        src={logoSrc}
-        alt="Aulas Online Senra Logo"
+        src="/logo.png"
+        alt="Logo Aulas Senra"
         fill
-        sizes="160px"
         className="object-contain"
-        data-ai-hint="logo"
-        key={logoSrc}
+        priority 
       />
-    </div>
+    </Link>
   );
 }
