@@ -4,8 +4,7 @@ import { SenraLogo } from '@/components/senra-logo';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, CheckCircle2, ChevronRight, Heart, PlayCircle, ShieldCheck, Star, XCircle, BrainCircuit, Bot, Briefcase, CalendarCheck, MessageSquare, Target, TrendingUp, Menu } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ArrowRight, CheckCircle2, ChevronRight, Heart, PlayCircle, ShieldCheck, Star, XCircle, BrainCircuit, Bot, Briefcase, CalendarCheck, MessageSquare, Target, TrendingUp, Menu, LogIn } from 'lucide-react';import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Badge } from '@/components/ui/badge';
@@ -35,8 +34,10 @@ export default function HomePage() {
           ))}
         </nav>
         <div className="flex items-center gap-4">
-            <Button asChild className="hidden sm:inline-flex">
-              <Link href="/login"><EditableText storageKey="home-login-button">Acessar Plataforma</EditableText></Link>
+            <Button asChild className="hidden sm:inline-flex rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all hover:scale-105 active:scale-95 gap-2 font-bold border border-slate-800">
+              <Link href="/login" className="flex items-center">
+              <LogIn className="w-4 h-4 text-amber-400" />
+              <EditableText storageKey="home-login-button">Acessar Plataforma</EditableText></Link>
             </Button>
             <Sheet>
                 <SheetTrigger asChild>
