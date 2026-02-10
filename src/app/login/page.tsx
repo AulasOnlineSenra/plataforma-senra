@@ -1,8 +1,6 @@
-
-
 'use client';
 
-import { useState, useEffect, DragEvent, MouseEvent } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,36 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import { User, UserRole, Teacher } from '@/lib/types';
-import { getMockUser, teachers as initialTeachers, users as initialRegularUsers } from '@/lib/data';
+import { teachers as initialTeachers, users as initialRegularUsers } from '@/lib/data';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft, Eye, EyeOff, GripVertical } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowLeft, Eye, EyeOff, UserCircle2, GraduationCap, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      {...props}
-      viewBox="0 0 48 48"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        fill="#FFC107"
-        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-      />
-      <path
-        fill="#FF3D00"
-        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-      />
-      <path
-        fill="#4CAF50"
-        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-      />
-      <path
-        fill="#1976D2"
-        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-      />
+    <svg {...props} viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
     </svg>
   );
 }
@@ -77,60 +58,58 @@ const LoginForm = ({
     if (savedEmail) {
       setEmail(savedEmail);
       const savedPassword = localStorage.getItem(`savedPassword-${savedEmail}`);
-      if (savedPassword) {
-        setPassword(savedPassword);
-      } else {
-        setPassword('');
-      }
+      if (savedPassword) setPassword(savedPassword);
+      else setPassword('');
     } else {
         setEmail('');
         setPassword('');
     }
   }, [role, setEmail, setPassword]);
 
-
   return (
-    <div className="w-full relative">
-      <Button
-        onClick={onBack}
-        variant="ghost"
-        size="icon"
-        className="absolute -top-24 left-0"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        <span className="sr-only">Voltar para seleção</span>
-      </Button>
-      <h1 className="text-2xl font-bold font-headline text-center mb-1">
-        Login como {rolePortuguese[role]}
-      </h1>
-      <p className="text-muted-foreground text-center mb-6">
-        Insira seus dados para acessar a plataforma.
-      </p>
-      <form onSubmit={onLogin} className="grid gap-4">
+    <div className="w-full animate-in fade-in slide-in-from-right-8 duration-500">
+      
+      {/* 1. Botão Voltar (Agora fixo e alinhado, sem bugs de corte) */}
+      <div className="flex items-center justify-start mb-6">
+          <Button
+            onClick={onBack}
+            variant="ghost"
+            className="-ml-4 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-full px-4"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" /> Voltar
+          </Button>
+      </div>
+
+      <div className="text-center mb-8">
+         <h1 className="text-2xl font-bold font-headline mb-2 text-slate-900">
+            Login como <span className="text-amber-500">{rolePortuguese[role]}</span>
+         </h1>
+         <p className="text-slate-500 text-sm">
+            Bem-vindo de volta! Insira suas credenciais.
+         </p>
+      </div>
+
+      <form onSubmit={onLogin} className="grid gap-5">
         <div className="grid gap-2">
-          <Label htmlFor="email" className="sr-only">
-            E-mail
-          </Label>
+          <Label htmlFor="email" className="sr-only">E-mail</Label>
           <Input
             id="email"
             type="email"
-            placeholder="E-mail"
+            placeholder="Seu e-mail cadastrado"
             required
-            className="h-11"
+            className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="grid gap-2 relative">
-          <Label htmlFor="password" className="sr-only">
-            Senha
-          </Label>
+          <Label htmlFor="password" className="sr-only">Senha</Label>
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="Senha"
+            placeholder="Sua senha"
             required
-            className="h-11 pr-10"
+            className="h-12 rounded-xl pr-10 bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -138,157 +117,108 @@ const LoginForm = ({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-400 hover:text-slate-600"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
-            <span className="sr-only">{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</span>
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </Button>
         </div>
-        <Button type="submit" className="h-11 w-full">
-          Entrar
+        
+        <Button 
+            type="submit" 
+            className="h-12 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-lg shadow-amber-500/20 text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+        >
+          Entrar na Plataforma
         </Button>
       </form>
-      <div className="relative my-6">
+
+      <div className="relative my-8">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+          <span className="w-full border-t border-slate-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">ou</span>
+          <span className="bg-white px-4 text-slate-400 font-medium">ou continue com</span>
         </div>
       </div>
+
       <div className="grid gap-4">
-        <Button variant="outline" className="h-11 w-full">
-          <GoogleIcon className="mr-2 h-6 w-6" />
-          Continuar com Google
+        <Button variant="outline" className="h-12 w-full rounded-xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 font-medium text-slate-600">
+            <GoogleIcon className="mr-3 h-5 w-5" />
+            Google
         </Button>
       </div>
-      <div className="mt-6 text-center text-sm">
+
+      <div className="mt-8 text-center text-sm text-slate-500">
         Não tem uma conta?{' '}
-        <Link href={`/register?role=${role}`} className="underline font-semibold">
-          Cadastrar-se
+        <Link href={`/register?role=${role}`} className="text-amber-600 font-bold hover:underline underline-offset-4">
+          Criar conta agora
         </Link>
       </div>
     </div>
   );
 };
 
-const defaultRoleButtons = [
-  { id: 'teacher', label: 'Sou Professor', role: 'teacher' as UserRole },
-  { id: 'student', label: 'Sou Aluno', role: 'student' as UserRole },
-  { id: 'admin', label: 'Sou Administrador', role: 'admin' as UserRole },
-  { id: 'visitor', label: 'Acessar como Visitante' },
-];
-
-const ROLE_BUTTON_ORDER_STORAGE_KEY = 'loginRoleOrder';
-
-
 const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.MouseEvent) => void;}) => {
-  const [roleButtons, setRoleButtons] = useState(defaultRoleButtons);
-  
-  useEffect(() => {
-    const savedOrder = localStorage.getItem(ROLE_BUTTON_ORDER_STORAGE_KEY);
-    if (savedOrder) {
-      try {
-        const orderedIds = JSON.parse(savedOrder);
-        const reorderedButtons = orderedIds
-            .map((id: string) => defaultRoleButtons.find(btn => btn.id === id))
-            .filter(Boolean);
-        const remainingButtons = defaultRoleButtons.filter(btn => !orderedIds.includes(btn.id));
-        setRoleButtons([...reorderedButtons, ...remainingButtons]);
-      } catch (e) {
-        console.error("Failed to parse role order from localStorage", e);
-      }
-    }
-  }, []);
-
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, id: string) => {
-    e.dataTransfer.setData('text/plain', id);
-    e.dataTransfer.effectAllowed = 'move';
-    (e.currentTarget as HTMLDivElement).classList.add('dragging');
-  };
-
-  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).classList.remove('dragging');
-  };
-  
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    (e.currentTarget as HTMLDivElement).classList.add('drag-over');
-  };
-  
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).classList.remove('drag-over');
-  };
-  
-  const handleDrop = (e: DragEvent<HTMLDivElement>, dropId: string) => {
-    e.preventDefault();
-    (e.currentTarget as HTMLDivElement).classList.remove('drag-over');
-
-    const draggedId = e.dataTransfer.getData('text/plain');
-    if (draggedId === dropId) return;
-
-    const draggedItem = roleButtons.find(btn => btn.id === draggedId);
-    if (!draggedItem) return;
-
-    const itemsWithoutDragged = roleButtons.filter(btn => btn.id !== draggedId);
-    const dropIndex = itemsWithoutDragged.findIndex(btn => btn.id === dropId);
-    
-    const newItems = [
-      ...itemsWithoutDragged.slice(0, dropIndex),
-      draggedItem,
-      ...itemsWithoutDragged.slice(dropIndex),
-    ];
-    
-    setRoleButtons(newItems);
-    localStorage.setItem(ROLE_BUTTON_ORDER_STORAGE_KEY, JSON.stringify(newItems.map(btn => btn.id)));
-  };
-
   return (
-  <div className="w-full">
-    <h1 className="text-2xl font-bold font-headline text-center mb-6">
-      Selecione seu perfil para entrar
-    </h1>
+  <div className="w-full animate-in fade-in zoom-in-95 duration-500">
+    <div className="text-center mb-8">
+        <h1 className="text-2xl font-bold font-headline text-slate-900 mb-2">
+            Como você deseja acessar?
+        </h1>
+        <p className="text-slate-500 text-sm">
+            Escolha seu perfil para continuar.
+        </p>
+    </div>
+
     <div className="grid gap-4">
-      {roleButtons.map((item) => (
-        <div 
-          key={item.id}
-          className="relative group"
-          draggable
-          onDragStart={(e) => handleDragStart(e, item.id)}
-          onDragEnd={handleDragEnd}
-          onDrop={(e) => handleDrop(e, item.id)}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
+        <Button 
+            onClick={() => onSelectRole('teacher')} 
+            className="h-14 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-1 text-lg flex items-center justify-start px-6 gap-4 group"
         >
-          <GripVertical className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-          {item.role ? (
-            <Button onClick={() => onSelectRole(item.role)} className="h-12 text-base w-full pl-10">
-              {item.label}
-            </Button>
-          ) : (
-            <>
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">ou</span>
-                </div>
-              </div>
-              <Button onClick={onLogin} className="h-12 text-base w-full bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent pl-10">
-                {item.label}
-              </Button>
-            </>
-          )}
+            <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+                <GraduationCap className="w-6 h-6" />
+            </div>
+            Sou Professor
+        </Button>
+
+        <Button 
+            onClick={() => onSelectRole('student')} 
+            className="h-14 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-1 text-lg flex items-center justify-start px-6 gap-4 group"
+        >
+             <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+                <School className="w-6 h-6" />
+            </div>
+            Sou Aluno
+        </Button>
+        
+         <Button 
+            onClick={() => onSelectRole('admin')} 
+            variant="outline"
+            className="h-14 w-full rounded-xl border-2 border-slate-100 hover:border-amber-400 hover:bg-amber-50 text-slate-600 font-bold transition-all text-base flex items-center justify-start px-6 gap-4"
+        >
+            Sou Administrador
+        </Button>
+
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-slate-200" />
         </div>
-      ))}
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-4 text-slate-400 font-medium">ou</span>
+        </div>
+      </div>
+
+      <Button 
+        onClick={onLogin} 
+        className="h-14 w-full rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-lg shadow-slate-900/20 transition-all hover:scale-[1.02] text-base flex items-center justify-center gap-3"
+      >
+        <UserCircle2 className="w-5 h-5 text-amber-400" />
+        Acessar como Visitante
+      </Button>
     </div>
   </div>
 );
 }
-
-const DRAGGABLE_BUTTON_STORAGE_KEY = 'loginDraggableButtonPos';
 
 export default function LoginPage() {
   const [role, setRole] = useState<UserRole | null>(null);
@@ -296,10 +226,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
-
-  const [position, setPosition] = useState({ top: 24, left: 24 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const newUserDataString = localStorage.getItem('newlyRegisteredUser');
@@ -314,43 +240,9 @@ export default function LoginPage() {
     }
   }, []);
 
-  useEffect(() => {
-    const savedPos = localStorage.getItem(DRAGGABLE_BUTTON_STORAGE_KEY);
-    if (savedPos) {
-        try {
-            setPosition(JSON.parse(savedPos));
-        } catch (e) {
-            console.error("Failed to parse button position from localStorage", e);
-            setPosition({ top: 24, left: 24 });
-        }
-    }
-  }, []);
-
-  const handleMouseDown = (e: MouseEvent<HTMLAnchorElement>) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.left, y: e.clientY - position.top });
-    e.currentTarget.style.cursor = 'grabbing';
-  };
-
-  const handleMouseUp = (e: MouseEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    (e.currentTarget as HTMLElement).style.cursor = '';
-    localStorage.setItem(DRAGGABLE_BUTTON_STORAGE_KEY, JSON.stringify(position));
-  };
-  
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-    setPosition({
-      top: e.clientY - dragStart.y,
-      left: e.clientX - dragStart.x,
-    });
-  };
-
   const handleLogin = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     
-    // If role is null, it's the visitor login. This is the cleanest check.
     if (role === null) {
       const visitorRole = 'student';
       localStorage.setItem('userRole', visitorRole);
@@ -380,7 +272,6 @@ export default function LoginPage() {
       return;
     }
 
-    // The rest of the logic is for registered users with a selected role.
     const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
     const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
     const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
@@ -420,7 +311,7 @@ export default function LoginPage() {
                 if (storedPassword === password || (storedPassword === null && password === 'password')) {
                     userToLogin = foundUser;
                 } else {
-                     toast({
+                      toast({
                         variant: "destructive",
                         title: "Credenciais Inválidas",
                         description: "Email ou senha incorretos para o perfil selecionado.",
@@ -478,60 +369,71 @@ export default function LoginPage() {
   };
 
   return (
-    <div 
-        className="flex min-h-screen w-full items-center justify-center bg-background"
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-    >
-      <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
-        <div className="relative flex flex-col items-center justify-center p-8">
-            <Button asChild variant="ghost" className="absolute cursor-grab" style={{ top: `${position.top}px`, left: `${position.left}px`, zIndex: 10 }}>
-                <Link href="/home" onMouseDown={handleMouseDown}>
-                    <ArrowLeft />
+    <div className="flex min-h-screen w-full bg-slate-50">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8 relative">
+
+      <div className="absolute top-6 left-6 md:top-10 md:left-10 z-10"> 
+          <Button 
+            asChild
+            variant="ghost"
+            className="text-slate-500 hover:text-amber-600 hover:bg-amber-50 gap-2 transition-colors"
+          >
+            <Link href="/home">
+              <ArrowLeft className="h-4 w-4"/>
+              <span className="hidden sm:inline">Voltar ao site</span>
+              <span className="sm:hidden">Voltar</span>
+            </Link>
+          </Button>
+      </div>
+
+        <div className="w-full max-w-md">
+            <div className="flex justify-center mb-8">
+                <Link href="/home">
+                    <SenraLogo />
                 </Link>
-            </Button>
-            <div className="w-full max-w-md relative">
-                <div className="rounded-lg border-2 border-brand-yellow p-8 shadow-[0_0_15px_rgba(245,176,0,0.5)]">
-                    <div className="mb-8">
-                        <SenraLogo className="mx-auto" />
-                    </div>
-                    {role ? (
-                        <LoginForm
-                            role={role}
-                            onBack={() => setRole(null)}
-                            onLogin={handleLogin}
-                            email={email}
-                            setEmail={setEmail}
-                            password={password}
-                            setPassword={setPassword}
-                        />
-                    ) : (
-                       <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
-                    )}
-                </div>
             </div>
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>
+                {role ? (
+                    <LoginForm
+                        role={role}
+                        onBack={() => setRole(null)}
+                        onLogin={handleLogin}
+                        email={email}
+                        setEmail={setEmail}
+                        password={password}
+                        setPassword={setPassword}
+                    />
+                ) : (
+                    <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
+                )}
+            </div>
+            <p className="text-center text-slate-400 text-xs mt-8">
+                &copy; {new Date().getFullYear()} Senra Aulas Online. Todos os direitos reservados.
+            </p>
         </div>
-        <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-primary to-accent p-12 text-center text-primary-foreground relative">
-          {loginImage && (
-             <Image
+      </div>
+      <div className="hidden md:flex w-1/2 bg-slate-900 relative items-center justify-center text-center p-12 overflow-hidden">
+         {loginImage && (
+            <>
+            <Image
               src={loginImage.imageUrl}
-              alt="Estudante feliz"
+              alt="Estudante focado"
               fill
-              className="object-cover opacity-20"
-              data-ai-hint={loginImage.imageHint}
+              className="object-cover opacity-40 mix-blend-overlay"
+              priority
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30"></div>
+            </>
           )}
-          <div className="relative z-10">
-            <h2 className="text-4xl font-bold font-headline mb-4">
-              Aulas que inspiram. Resultados que impressionam.
+          <div className="relative z-10 max-w-lg">
+            <h2 className="text-4xl md:text-5xl font-bold font-headline text-white mb-6 leading-tight">
+              Aulas que inspiram.<br/>Resultados que impressionam.
             </h2>
-            <p className="text-lg text-primary-foreground/90">
-              Junte-se a milhares de alunos que estão alcançando seus objetivos com
-              os melhores professores.
+            <p className="text-lg text-slate-300 leading-relaxed">
+              Junte-se a milhares de alunos que estão transformando suas notas e conquistando seus sonhos com nossos mentores.
             </p>
           </div>
-        </div>
       </div>
     </div>
   );
