@@ -1,8 +1,11 @@
-
+'use client';
 import { Button } from '@/components/ui/button';
 import { SenraLogo } from '@/components/senra-logo';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowRight, CheckCircle2, ChevronRight, Heart, PlayCircle, ShieldCheck, Star, XCircle, BrainCircuit, Bot, Briefcase, CalendarCheck, MessageSquare, Target, TrendingUp, Menu, LogIn } from 'lucide-react';import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +25,49 @@ const navLinks = [
 ];
 
 export default function HomePage() {
+
+const [leadEmail, setLeadEmail] = useState('');
+const [isLoading, setIsLoading] = useState(false);
+const { toast } = useToast();
+
+const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!leadEmail || !leadEmail.includes('@')) {
+        toast({ title: "Erro", description: "Por favor, digite um e-mail válido.", variant: "destructive" });
+        return;
+    }
+
+    setIsLoading(true);
+
+    try {
+        const response = await fetch('/api/send-lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: leadEmail }),
+        });
+
+        if (response.ok) {
+            toast({ 
+                title: "Sucesso! 🚀", 
+                description: "Recebemos seu interesse. Entraremos em contato em breve!",
+                className: "bg-green-600 text-white border-none"
+            });
+            setLeadEmail('');
+        } else {
+            throw new Error('Erro no envio');
+        }
+    } catch (error) {
+        toast({ 
+            title: "Ops!", 
+            description: "Houve um erro ao enviar. Tente novamente mais tarde.", 
+            variant: "destructive" 
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-card">
       <header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:p-4 bg-card/80 backdrop-blur-sm border-b">
@@ -270,19 +316,28 @@ export default function HomePage() {
                   <EditableText storageKey="home-finalcta-subtitle">A primeira aula-experiência é gratuita e sem compromisso. Sem cartão de crédito. Sem letras miúdas.</EditableText>
                   </p>
 
-                  <div className="mt-8 max-w-lg mx-auto bg-white/10 p-2 rounded-full backdrop-blur-sm border border-white/20 flex flex-col sm:flex-row gap-2">
-                    <Input 
-                        type="email" 
-                        placeholder="Seu melhor e-mail" 
-                        className="h-12 bg-transparent border-none text-white placeholder:text-blue-200 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 rounded-full" 
-                    />
-                    <Button 
-                        size="lg" 
-                        className="h-12 rounded-full px-8 bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-[0_0_20px_rgba(255,193,7,0.3)] transition-all hover:scale-105"
-                    >
-                        <EditableText storageKey="home-finalcta-button">Quero Minha Aula! 🚀</EditableText>
-                    </Button>
-                  </div>
+                  <form onSubmit={handleSubscribe} className="mt-8 max-w-lg mx-auto bg-white/10 p-2 rounded-full backdrop-blur-sm border border-white/20 flex flex-col sm:flex-row gap-2">
+          <Input 
+              type="email" 
+              placeholder="Seu melhor e-mail" 
+              className="h-12 bg-transparent border-none text-white placeholder:text-blue-200 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 rounded-full" 
+              value={leadEmail}
+              onChange={(e) => setLeadEmail(e.target.value)} 
+              disabled={isLoading}
+          />
+            <Button 
+                type="submit"
+                size="lg" 
+                disabled={isLoading}
+                className="h-12 rounded-full px-8 bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-[0_0_20px_rgba(255,193,7,0.3)] transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+                {isLoading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
+                ) : (
+                    <EditableText storageKey="home-finalcta-button">Quero Minha Aula! 🚀</EditableText>
+                )}
+            </Button>
+          </form>
                  <p className="mt-6 text-sm text-blue-200/80 flex items-center justify-center gap-2">
                  <span className="w-2 h-2 rounded-full bg-green-400"></span>
                  <EditableText storageKey="home-finalcta-guarantee">Seu e-mail está 100% seguro. Não fazemos spam.</EditableText>
