@@ -402,7 +402,7 @@ export default function DashboardPage() {
             <CarouselItem>
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle>Visão Geral da Receita</CardTitle>
                       <CardDescription>Receita por período.</CardDescription>
@@ -425,7 +425,7 @@ export default function DashboardPage() {
             <CarouselItem>
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle>Aulas por Disciplina</CardTitle>
                       <CardDescription>Distribuição das aulas agendadas.</CardDescription>
@@ -452,7 +452,7 @@ export default function DashboardPage() {
             <CarouselItem>
                <Card>
                 <CardHeader>
-                   <div className="flex justify-between items-center">
+                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <CardTitle>Aquisição de Novos Usuários</CardTitle>
                         <CardDescription>Novos usuários por dia no mês selecionado.</CardDescription>
