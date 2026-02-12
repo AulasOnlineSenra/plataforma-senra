@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,35 +9,18 @@ import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, GraduationCap, School, UserCircle2, Check } from 'lucide-react'; 
 import { User, UserRole, Teacher } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { teachers as initialTeachers, users as initialUsers, logNotification } from '@/lib/data';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      {...props}
-      viewBox="0 0 48 48"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        fill="#FFC107"
-        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-      />
-      <path
-        fill="#FF3D00"
-        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-      />
-      <path
-        fill="#4CAF50"
-        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-      />
-      <path
-        fill="#1976D2"
-        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-      />
+    <svg {...props} viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
     </svg>
   );
 }
@@ -68,12 +49,8 @@ export default function RegisterPage() {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!role) {
-        toast({
-            variant: "destructive",
-            title: "Erro de Cadastro",
-            description: "Um perfil deve ser selecionado.",
-        });
-        return;
+      toast({ variant: "destructive", title: "Erro", description: "Selecione um perfil." });
+      return;
     }
 
     const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
@@ -85,210 +62,242 @@ export default function RegisterPage() {
     const emailExists = allExistingUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (emailExists) {
-        toast({
-            variant: "destructive",
-            title: "Email já Cadastrado",
-            description: "Este endereço de e-mail já está em uso. Por favor, tente fazer login ou use um e-mail diferente.",
-        });
-        return;
+      toast({ variant: "destructive", title: "Email já existe", description: "Tente fazer login." });
+      return;
     }
-    
-    // Create a new user object based on the form data
-    let newUser: User | Teacher;
+
+    let newUser: any;
     const baseUser = {
-        id: `user-${Date.now()}`,
-        name: name,
-        email: email,
-        avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`,
-        role: role,
-        status: 'active' as 'active',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        ratings: [],
+      id: `user-${Date.now()}`,
+      name, email,
+      avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`,
+      role,
+      status: 'active',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      ratings: [],
     };
 
     if (role === 'teacher') {
-        newUser = {
-            ...baseUser,
-            id: `teacher-${Date.now()}`,
-            role: 'teacher',
-            subjects: [],
-            bio: 'Novo professor na plataforma! Perfil em breve.',
-            education: [],
-            availability: {},
-            status: 'active',
-            classCredits: 0, // Start with 0 completed classes
-        } as Teacher;
-
-        const updatedTeachers = [...currentTeachers, newUser];
-        localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
-
+      newUser = {
+        ...baseUser,
+        id: `teacher-${Date.now()}`,
+        role: 'teacher',
+        subjects: [],
+        bio: 'Novo professor!',
+        education: [],
+        availability: {},
+        classCredits: 0,
+      } as Teacher;
+      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify([...currentTeachers, newUser]));
     } else {
-        newUser = { ...baseUser, role: role } as User;
-        const updatedUsers = [...currentUsers, newUser];
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+      newUser = { ...baseUser, role };
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify([...currentUsers, newUser]));
     }
-    
-    const roleLabels: Record<UserRole, string> = {
-        student: 'Aluno',
-        teacher: 'Professor',
-        admin: 'Administrador'
-    };
 
+    const roleLabels: Record<string, string> = { student: 'Aluno', teacher: 'Professor', admin: 'Admin' };
     logNotification({
-        type: 'new_user_registered',
-        title: `Novo ${roleLabels[role]} Cadastrado`,
-        description: `${newUser.name} acabou de se cadastrar na plataforma como ${role}.`,
-        userId: newUser.id,
+      type: 'new_user_registered',
+      title: `Novo ${roleLabels[role]}`,
+      description: `${newUser.name} se cadastrou.`,
+      userId: newUser.id,
     });
-
 
     window.dispatchEvent(new Event('storage'));
-    
-    // Store the new user object in localStorage to be picked up by the login page.
     localStorage.setItem('newlyRegisteredUser', JSON.stringify(newUser));
-    
-    toast({
-        title: "Cadastro realizado!",
-        description: "Você será redirecionado para a página de login.",
-    });
+    toast({ title: "Sucesso!", description: "Conta criada. Redirecionando..." });
     router.push('/login');
   };
 
   const renderRoleSelection = () => (
-    <>
-      <h1 className="text-2xl font-bold font-headline text-center mb-6">
-        Como você usará a plataforma?
-      </h1>
+    <div className="w-full animate-in fade-in zoom-in-95 duration-500">
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-bold font-headline text-slate-900 mb-2">
+          Vamos começar!
+        </h1>
+        <p className="text-slate-500 text-sm">
+          Escolha como você deseja acessar a plataforma
+        </p>
+      </div>
+
       <div className="grid gap-4">
-        <Button onClick={() => setRole('teacher')} className="h-12 text-base">
+        <Button
+          onClick={() => setRole('teacher')}
+          className="h-14 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-1 text-lg flex items-center justify-start px-6 gap-4 group"
+        >
+          <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+            <GraduationCap className="w-6 h-6" />
+          </div>
           Sou Professor
         </Button>
-        <Button onClick={() => setRole('student')} className="h-12 text-base">
+        <Button
+          onClick={() => setRole('student')}
+          className="h-14 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-1 text-lg flex items-center justify-start px-6 gap-4 group"
+        >
+          <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+            <School className="w-6 h-6" />
+          </div>
           Sou Aluno
         </Button>
-         <Button onClick={() => setRole('admin')} className="h-12 text-base">
-          Sou Administrador
-        </Button>
       </div>
-      <div className="mt-8 text-center text-sm">
+
+      <div className="mt-8 text-center text-sm text-slate-500">
         Já tem uma conta?{' '}
-        <Link href="/login" className="underline font-semibold">
+        <Link href="/login" className="text-amber-600 font-bold hover:underline underline-offset-4">
           Faça login
         </Link>
       </div>
-    </>
+    </div>
   );
 
   const renderRegistrationForm = () => (
-     <>
-        <div className="relative mb-4">
-            <Button
-                onClick={() => setRole(null)}
-                variant="ghost"
-                size="icon"
-                className="absolute -left-4 -top-2"
-            >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Voltar</span>
-            </Button>
-            <h1 className="text-2xl font-bold font-headline text-center">
-                Crie sua Conta de {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor' : 'Administrador'}
-            </h1>
-        </div>
-        <form onSubmit={handleRegister} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nome Completo</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Seu nome completo"
-              required
-              className="h-11"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu.email@exemplo.com"
-              required
-              className="h-11"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-            <div className="grid gap-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Sua senha"
-              required
-              className="h-11"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button type="submit" className="h-11 mt-2">
-            Criar Conta
+    <div className="w-full animate-in fade-in slide-in-from-right-8 duration-500">
+      
+      <div className="flex items-center justify-start mb-6">
+          <Button
+            onClick={() => setRole(null)}
+            variant="ghost"
+            className="-ml-4 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-full px-4"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" /> Voltar
           </Button>
-        </form>
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
-          </div>
+      </div>
+
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-bold font-headline text-slate-900 mb-2">
+          Criar conta de <span className="text-amber-500">{role === 'student' ? 'Aluno' : 'Professor'}</span>
+        </h1>
+        <p className="text-slate-500 text-sm">
+           Preencha seus dados para continuar
+        </p>
+      </div>
+
+      <form onSubmit={handleRegister} className="grid gap-5">
+        <div className="grid gap-2">
+          <Label htmlFor="name" className="sr-only">Nome Completo</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Seu nome completo"
+            required
+            className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </div>
-        <div className="grid gap-4">
-          <Button variant="outline" className="h-11">
-            <GoogleIcon className="mr-2 h-6 w-6" />
-            Cadastrar com Google
-          </Button>
+        <div className="grid gap-2">
+          <Label htmlFor="email" className="sr-only">E-mail</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Seu melhor e-mail"
+            required
+            className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
-        <div className="mt-6 text-center text-sm">
-          Já tem uma conta?{' '}
-          <Link href="/login" className="underline font-semibold">
-            Faça login
-          </Link>
+        <div className="grid gap-2">
+          <Label htmlFor="password" className="sr-only">Senha</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Crie uma senha segura"
+            required
+            className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
-     </>
+
+        <Button
+          type="submit"
+          className="h-12 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-lg shadow-amber-500/20 text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+        >
+          Criar Conta
+        </Button>
+      </form>
+
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-slate-200" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-4 text-slate-400 font-medium">ou continue com</span>
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        <Button variant="outline" className="h-12 w-full rounded-xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 font-medium text-slate-600">
+          <GoogleIcon className="mr-3 h-5 w-5" />
+          Google
+        </Button>
+      </div>
+
+      <div className="mt-8 text-center text-sm text-slate-500">
+        Já tem uma conta?{' '}
+        <Link href="/login" className="text-amber-600 font-bold hover:underline underline-offset-4">
+          Fazer login
+        </Link>
+      </div>
+    </div>
   );
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-card">
-      <div className="grid w-full h-screen grid-cols-1 md:grid-cols-2">
-        <div className="relative flex flex-col items-center justify-center p-8">
-          <div className="w-full max-w-sm">
-            <div className="mb-8">
-                <SenraLogo className="mx-auto" />
-            </div>
+    <div className="flex min-h-screen w-full bg-slate-50">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8 relative">
+
+        <div className="absolute top-6 left-6 md:top-10 md:left-10 z-10">
+          <Button
+            asChild
+            variant="ghost"
+            className="text-slate-500 hover:text-amber-600 hover:bg-amber-50 gap-2 transition-colors"
+          >
+            <Link href="/home">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Voltar ao site</span>
+              <span className="sm:hidden">Voltar</span>
+            </Link>
+          </Button>
+        </div>
+
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-8">
+            <Link href="/home">
+              <SenraLogo />
+            </Link>
+          </div>
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>
+            
             {role ? renderRegistrationForm() : renderRoleSelection()}
           </div>
+
+          <p className="text-center text-slate-400 text-xs mt-8">
+            &copy; {new Date().getFullYear()} Senra Aulas Online. Todos os direitos reservados.
+          </p>
         </div>
-        <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-primary to-accent p-12 text-center text-primary-foreground relative">
-          {loginImage && (
-             <Image
+      </div>
+
+      <div className="hidden md:flex w-1/2 bg-slate-900 relative items-center justify-center text-center p-12 overflow-hidden">
+        {loginImage && (
+          <>
+            <Image
               src={loginImage.imageUrl}
               alt="Estudante feliz"
               fill
-              className="object-cover opacity-20"
-              data-ai-hint={loginImage.imageHint}
+              className="object-cover opacity-40 mix-blend-overlay"
+              priority
             />
-          )}
-          <div className="relative z-10">
-            <h2 className="text-4xl font-bold font-headline mb-4">
-              Aulas que inspiram. Resultados que impressionam.
-            </h2>
-            <p className="text-lg text-primary-foreground/90">
-              Junte-se a milhares de alunos que estão alcançando seus objetivos com
-              os melhores professores.
-            </p>
-          </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30"></div>
+          </>
+        )}
+        <div className="relative z-10 max-w-lg">
+          <h2 className="text-4xl md:text-5xl font-bold font-headline text-white mb-6 leading-tight">
+             Aulas que inspiram.<br/>Resultados que impressionam.
+          </h2>
+          <p className="text-lg text-slate-300 leading-relaxed">
+             Junte-se a milhares de alunos que estão transformando suas notas e conquistando seus sonhos com nossos mentores.
+          </p>
         </div>
       </div>
     </div>

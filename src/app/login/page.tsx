@@ -69,7 +69,6 @@ const LoginForm = ({
   return (
     <div className="w-full animate-in fade-in slide-in-from-right-8 duration-500">
       
-      {/* 1. Botão Voltar (Agora fixo e alinhado, sem bugs de corte) */}
       <div className="flex items-center justify-start mb-6">
           <Button
             onClick={onBack}
@@ -215,6 +214,14 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
         <UserCircle2 className="w-5 h-5 text-amber-400" />
         Acessar como Visitante
       </Button>
+
+      <div className="mt-8 text-center text-sm text-slate-500">
+        Não tem uma conta?{' '}
+        <Link href="/register" className="text-amber-600 font-bold hover:underline underline-offset-4">
+          Criar conta agora
+        </Link>
+      </div>
+
     </div>
   </div>
 );
