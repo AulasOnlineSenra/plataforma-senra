@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, DragEvent } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -35,7 +35,6 @@ import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion, Notification
 import { getMockUser, navItems as defaultNavItems, adminNavItems as defaultAdminNavItems, users as initialUsers, teachers as initialTeachers, chatContacts as initialChatContacts, suggestions as initialSuggestions, notifications as initialNotifications, logNotification, scheduleEvents as initialScheduleEvents } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
-import { Button } from './ui/button';
 import { isToday, format } from 'date-fns';
 
 const USERS_STORAGE_KEY = 'userList';
@@ -103,8 +102,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const router = useRouter();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems);
-  const [adminNavItems, setAdminNavItems] = useState<NavItem[]>(defaultAdminNavItems);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [hasNewSuggestions, setHasNewSuggestions] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
@@ -185,85 +182,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     };
   }, [updateUserAndNotifications, user?.id]);
   
-  useEffect(() => {
-    const storedNavOrder = localStorage.getItem('navOrder');
-    if (storedNavOrder) {
-      const orderedHrefs = JSON.parse(storedNavOrder);
-      const reorderedNavItems = orderedHrefs.map((href: string) => defaultNavItems.find(item => item.href === href)).filter(Boolean);
-      const remainingNavItems = defaultNavItems.filter(item => !orderedHrefs.includes(item.href));
-      setNavItems([...reorderedNavItems, ...remainingNavItems]);
-    }
-
-    const storedAdminNavOrder = localStorage.getItem('adminNavOrder');
-    if (storedAdminNavOrder) {
-      const orderedAdminHrefs = JSON.parse(storedAdminNavOrder);
-      const reorderedAdminNavItems = orderedAdminHrefs.map((href: string) => defaultAdminNavItems.find(item => item.href === href)).filter(Boolean);
-      const remainingAdminNavItems = defaultAdminNavItems.filter(item => !orderedAdminHrefs.includes(item.href));
-      setAdminNavItems([...reorderedAdminNavItems, ...remainingAdminNavItems]);
-    }
-  }, []);
-
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, href: string) => {
-    e.dataTransfer.setData('text/plain', href);
-    e.dataTransfer.effectAllowed = 'move';
-    const target = e.currentTarget as HTMLDivElement;
-    target.classList.add('dragging');
-    if (e.dataTransfer) {
-      const empty = new Image();
-      e.dataTransfer.setDragImage(empty, 0, 0);
-    }
-  };
-
-  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).classList.remove('dragging');
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>, itemType: 'main' | 'admin') => {
-    e.preventDefault();
-    const droppedOnElement = e.currentTarget as HTMLDivElement;
-    droppedOnElement.classList.remove('drag-over');
-
-    const droppedOnHref = droppedOnElement.dataset.href;
-    const draggedHref = e.dataTransfer.getData('text/plain');
-    
-    if (droppedOnHref === draggedHref) return;
-
-    const currentItems = itemType === 'main' ? navItems : adminNavItems;
-    const setItems = itemType === 'main' ? setNavItems : setAdminNavItems;
-    const storageKey = itemType === 'main' ? 'navOrder' : 'adminNavOrder';
-
-    const draggedItem = currentItems.find(item => item.href === draggedHref);
-    if (!draggedItem) return;
-
-    const itemsWithoutDragged = currentItems.filter(item => item.href !== draggedHref);
-    let dropIndex = itemsWithoutDragged.findIndex(item => item.href === droppedOnHref);
-
-    const targetRect = droppedOnElement.getBoundingClientRect();
-    const isAfter = e.clientY > targetRect.top + targetRect.height / 2;
-    if (isAfter) {
-      dropIndex++;
-    }
-
-    const newItems = [
-        ...itemsWithoutDragged.slice(0, dropIndex),
-        draggedItem,
-        ...itemsWithoutDragged.slice(dropIndex)
-    ];
-
-    setItems(newItems);
-    localStorage.setItem(storageKey, JSON.stringify(newItems.map(item => item.href)));
-  };
-
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    (e.currentTarget as HTMLDivElement).classList.add('drag-over');
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).classList.remove('drag-over');
-  }
-
-
   if (!userRole || !user) {
     return null; 
   }
@@ -278,12 +196,10 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     localStorage.removeItem('userRole');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userId');
-    // NOTE: navOrder and adminNavOrder are NOT cleared on logout
-    // to preserve user's preference across sessions.
     router.push('/login');
   };
 
-  const filteredNavItems = navItems.filter(item =>
+  const filteredNavItems = defaultNavItems.filter(item =>
     item.roles.includes(userRole)
   ).map(item => {
     if (item.href === '/dashboard/students' && userRole === 'teacher') {
@@ -294,7 +210,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   const filteredAdminNavItems =
     userRole === 'admin'
-      ? adminNavItems.filter(item => item.roles.includes(userRole))
+      ? defaultAdminNavItems.filter(item => item.roles.includes(userRole))
       : [];
 
   const settingsLink: NavItem =
@@ -302,9 +218,8 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       ? { href: '/dashboard/admin/settings', icon: Settings, label: 'Configurações', roles: ['admin'] }
       : { href: '/dashboard/profile', icon: UserIcon, label: 'Meu Perfil', roles: ['student', 'teacher'] };
 
-  const renderLink = (item: NavItem, isLogout = false, itemType?: 'main' | 'admin') => {
+  const renderLink = (item: NavItem, isLogout = false) => {
     const isActive = pathname === item.href;
-    const isDraggable = userRole === 'admin' && itemType && !isMobile;
     const isChat = item.href === '/dashboard/chat';
     const isSuggestions = item.href === '/dashboard/suggestions';
     const isNotifications = item.href === '/dashboard/notifications';
@@ -336,7 +251,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         className={cn(
           'relative flex items-center gap-4 rounded-lg px-3 py-2 transition-all',
           'text-base group',
-          isDraggable && 'cursor-grab',
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground'
             : 'text-sidebar-foreground/80 hover:text-brand-yellow hover:bg-sidebar-accent',
@@ -360,19 +274,13 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         <div
             key={item.href}
             data-href={item.href}
-            onDragStart={isDraggable ? (e) => handleDragStart(e, item.href) : undefined}
-            onDragEnd={isDraggable ? handleDragEnd : undefined}
-            onDrop={isDraggable ? (e) => handleDrop(e, itemType!) : undefined}
-            onDragOver={isDraggable ? handleDragOver : undefined}
-            onDragLeave={isDraggable ? handleDragLeave : undefined}
-            draggable={isDraggable}
         >
         { isLogout ? (
             <button onClick={handleLogout} className="w-full text-left">
                 {LinkContent}
             </button>
         ) : (
-             <Link href={item.href} onClick={handleLinkClick} onDragStart={(e) => e.preventDefault()} draggable={false}>
+             <Link href={item.href} onClick={handleLinkClick}>
               {LinkContent}
             </Link>
         )}
@@ -403,11 +311,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </Link>
         <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
                 <nav className={cn("grid items-start gap-1 px-2 text-sm font-medium lg:px-4 py-4", isMobile ? 'py-4' : '')}>
-                    {filteredNavItems.map(item => renderLink(item, false, 'main'))}
+                    {filteredNavItems.map(item => renderLink(item))}
                     {filteredAdminNavItems.length > 0 && (
                         <>
                             <div className="my-2 mx-3 h-px bg-sidebar-border" />
-                            {filteredAdminNavItems.map(item => renderLink(item, false, 'admin'))}
+                            {filteredAdminNavItems.map(item => renderLink(item))}
                         </>
                     )}
                 </nav>
