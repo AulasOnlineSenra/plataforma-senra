@@ -201,6 +201,7 @@ export default function TeachersPage() {
   const [newTeacherName, setNewTeacherName] = useState('');
   const [newTeacherEmail, setNewTeacherEmail] = useState('');
   const [newTeacherPassword, setNewTeacherPassword] = useState('');
+  const [newTeacherSubject, setNewTeacherSubject] = useState('');
   const { toast } = useToast();
   const [selectedSubject, setSelectedSubject] = useState('all');
 
@@ -259,11 +260,11 @@ export default function TeachersPage() {
     const normalizedEmail = newTeacherEmail.trim().toLowerCase();
     const trimmedPassword = newTeacherPassword.trim();
 
-    if (!trimmedName || !normalizedEmail || !trimmedPassword) {
+    if (!trimmedName || !normalizedEmail || !trimmedPassword || !newTeacherSubject) {
       toast({
         variant: 'destructive',
         title: 'Campos obrigatórios',
-        description: 'Preencha nome, email e senha para cadastrar o professor.',
+        description: 'Preencha nome, email, senha e materia para cadastrar o professor.',
       });
       return;
     }
@@ -288,7 +289,7 @@ export default function TeachersPage() {
       email: normalizedEmail,
       avatarUrl: 'https://github.com/shadcn.png',
       role: 'teacher',
-      subjects: ['Matéria Geral'],
+      subjects: [newTeacherSubject],
       bio: 'Professor recém cadastrado na plataforma.',
       education: [
         {
@@ -299,7 +300,13 @@ export default function TeachersPage() {
           conclusionYear: '',
         },
       ],
-      availability: {},
+      availability: {
+        monday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        tuesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        wednesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        thursday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        friday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+      } as any,
       classCredits: 0,
       ratings: [],
       status: 'active',
@@ -316,6 +323,7 @@ export default function TeachersPage() {
     setNewTeacherName('');
     setNewTeacherEmail('');
     setNewTeacherPassword('');
+    setNewTeacherSubject('');
     setIsCreateTeacherDialogOpen(false);
 
     toast({
@@ -583,6 +591,25 @@ export default function TeachersPage() {
                 placeholder="nome.sobrenome@exemplo.com"
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="teacher-subject">Matéria Principal</Label>
+              <Select value={newTeacherSubject} onValueChange={setNewTeacherSubject}>
+                <SelectTrigger id="teacher-subject">
+                  <SelectValue placeholder="Selecione a matéria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="subj-1">Matemática</SelectItem>
+                  <SelectItem value="subj-3">Física</SelectItem>
+                  <SelectItem value="subj-6">Química</SelectItem>
+                  <SelectItem value="subj-2">Português</SelectItem>
+                  <SelectItem value="subj-4">Redação</SelectItem>
+                  <SelectItem value="subj-5">História</SelectItem>
+                  <SelectItem value="subj-9">Geografia</SelectItem>
+                  <SelectItem value="subj-10">Inglês</SelectItem>
+                  <SelectItem value="subj-12">Biologia</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="teacher-password">Senha</Label>
