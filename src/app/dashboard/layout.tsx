@@ -8,7 +8,7 @@ export default function DashboardLayout({
 }) {
   return (
     <DashboardClientLayout>
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="mx-auto w-full min-w-0 max-w-7xl">
         {children}
       </div>
     </DashboardClientLayout>

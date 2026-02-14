@@ -620,7 +620,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <div className="flex w-full sm:w-auto items-center gap-2">
                              <Label htmlFor="period-filter" className="sr-only">Filtrar Período</Label>
                              <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
-                                <SelectTrigger id="period-filter" className="w-[180px] justify-center text-center">
+                                <SelectTrigger id="period-filter" className="w-full justify-center text-center sm:w-[180px]">
                                     <SelectValue placeholder="Selecione um período" />
                                 </SelectTrigger>
                                 <SelectContent>

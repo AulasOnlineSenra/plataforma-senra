@@ -26,7 +26,7 @@ import { subjects as initialSubjects, teachers as initialTeachers, getMockUser, 
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday, startOfWeek, endOfWeek, isSameMonth, isValid } from 'date-fns';
 import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
@@ -573,6 +573,52 @@ function BookingPageComponent() {
     setBookings([]);
   }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router, isFirstClassWithTeacher]);
 
+  const getDaySlots = useCallback((dayAvailability: unknown): string[] => {
+    if (!Array.isArray(dayAvailability) || dayAvailability.length === 0) {
+      return [];
+    }
+
+    const slots: string[] = [];
+
+    dayAvailability.forEach((entry) => {
+      if (typeof entry === 'string') {
+        const parsed = parse(entry, 'HH:mm', new Date());
+        if (isValid(parsed)) {
+          slots.push(format(parsed, 'HH:mm'));
+        }
+        return;
+      }
+
+      if (!entry || typeof entry !== 'object') {
+        return;
+      }
+
+      const maybeRange = entry as { start?: unknown; end?: unknown };
+      const start = typeof maybeRange.start === 'string' ? maybeRange.start : '';
+      const end = typeof maybeRange.end === 'string' ? maybeRange.end : '';
+
+      if (!start || !end) {
+        return;
+      }
+
+      let currentTime = parse(start, 'HH:mm', new Date());
+      const endTime = parse(end, 'HH:mm', new Date());
+
+      if (!isValid(currentTime) || !isValid(endTime) || !isBefore(currentTime, endTime)) {
+        return;
+      }
+
+      let guard = 0;
+      while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime && guard < 64) {
+        slots.push(format(currentTime, 'HH:mm'));
+        currentTime = addMinutes(currentTime, 30);
+        guard++;
+      }
+    });
+
+    return Array.from(new Set(slots)).sort((a, b) => a.localeCompare(b));
+  }, []);
+
   const availableTimes = useMemo(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
     if (!selectedTeacher || selectedDates.length === 0 || !studentToBook) {
@@ -587,35 +633,33 @@ function BookingPageComponent() {
     (selectedDates || []).forEach(date => {
       const dayOfWeekIndex = getDay(date); 
       const dayOfWeekName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex] as keyof Teacher['availability'];
-      const dayAvailability = teacher.availability[dayOfWeekName];
+      const dayAvailability = teacher?.availability?.[dayOfWeekName];
+      const daySlots = getDaySlots(dayAvailability);
   
-      if (!dayAvailability) return;
-  
-      dayAvailability.forEach(range => {
-        let currentTime = parse(range.start, 'HH:mm', new Date());
-        const endTime = parse(range.end, 'HH:mm', new Date());
-  
-        while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime) {
-          const slotStart = new Date(date);
-          const [hours, minutes] = format(currentTime, 'HH:mm').split(':').map(Number);
-          slotStart.setHours(hours, minutes, 0, 0);
-          
-          const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
-  
-          const existingBookingConflict = bookings.some(b =>
-            (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-            (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
-          );
-  
-          if (isBefore(slotStart, new Date())) {
-            // Skip past times
-          } else if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
-            allTimes.push({
-              start: format(slotStart, 'HH:mm'),
-              end: format(slotEnd, 'HH:mm')
-            });
-          }
-          currentTime = addMinutes(currentTime, 30); // Correctly increment by 30 minutes
+      if (daySlots.length === 0) return;
+
+      daySlots.forEach(slot => {
+        const parsedSlot = parse(slot, 'HH:mm', new Date());
+        if (!isValid(parsedSlot)) return;
+
+        const slotStart = new Date(date);
+        slotStart.setHours(parsedSlot.getHours(), parsedSlot.getMinutes(), 0, 0);
+        const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
+
+        const existingBookingConflict = bookings.some(b =>
+          (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
+          (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
+        );
+
+        if (isBefore(slotStart, new Date())) {
+          return;
+        }
+
+        if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
+          allTimes.push({
+            start: format(slotStart, 'HH:mm'),
+            end: format(slotEnd, 'HH:mm')
+          });
         }
       });
     });
@@ -625,7 +669,7 @@ function BookingPageComponent() {
     }).sort((a, b) => a.start.localeCompare(b.start));
   
     return uniqueTimes;
-  }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser, studentIdParam, users]);
+  }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser, studentIdParam, users, getDaySlots]);
   
   useEffect(() => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
@@ -689,40 +733,36 @@ function BookingPageComponent() {
         
         const dayOfWeekIndex = getDay(day);
         const dayOfWeekName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex] as keyof Teacher['availability'];
-        const dayAvailability = teacher.availability[dayOfWeekName];
+        const dayAvailability = teacher?.availability?.[dayOfWeekName];
+        const daySlots = getDaySlots(dayAvailability);
 
-        if (!dayAvailability || dayAvailability.length === 0) return true;
+        if (daySlots.length === 0) return true;
 
         // Check if all slots for this day are taken
         let hasAvailableSlot = false;
-        for (const range of dayAvailability) {
-            let currentTime = parse(range.start, 'HH:mm', new Date());
-            const endTime = parse(range.end, 'HH:mm', new Date());
+        for (const slot of daySlots) {
+            const parsedSlot = parse(slot, 'HH:mm', new Date());
+            if (!isValid(parsedSlot)) continue;
 
-            while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime) {
-                const slotStart = new Date(day);
-                const [hours, minutes] = format(currentTime, 'HH:mm').split(':').map(Number);
-                slotStart.setHours(hours, minutes, 0, 0);
-                const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
+            const slotStart = new Date(day);
+            slotStart.setHours(parsedSlot.getHours(), parsedSlot.getMinutes(), 0, 0);
+            const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
 
-                const existingBookingConflict = bookings.some(b =>
-                    (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-                    (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
-                );
+            const existingBookingConflict = bookings.some(b =>
+                (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
+                (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
+            );
 
-                if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
-                    hasAvailableSlot = true;
-                    break;
-                }
-                currentTime = addMinutes(currentTime, 30);
+            if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
+                hasAvailableSlot = true;
+                break;
             }
-            if (hasAvailableSlot) break;
         }
         return !hasAvailableSlot;
     });
 
     return unavailableDays;
-  }, [selectedTeacher, teachers, scheduleEvents, bookings, studentIdParam, currentUser, users]);
+  }, [selectedTeacher, teachers, scheduleEvents, bookings, studentIdParam, currentUser, users, getDaySlots]);
 
   const disabledDays = useMemo(() => {
     return [

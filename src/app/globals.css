@@ -108,14 +108,6 @@
     scrollbar-color: hsl(var(--sidebar-accent)) hsl(var(--sidebar-background));
   }
   
-  .dragging {
-    @apply opacity-50 transform rotate-1 cursor-grabbing;
-  }
-  
-  .drag-over {
-    @apply bg-accent/20 ring-2 ring-accent;
-  }
-
   .animate-highlight {
     animation: highlight-border 2s ease-out;
   }

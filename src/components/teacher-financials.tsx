@@ -306,10 +306,10 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
                   Um registro de todos os pagamentos recebidos no período selecionado.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center gap-2 sm:w-auto">
                 <Label htmlFor="period-filter-teacher" className="sr-only">Filtrar Período</Label>
                 <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
-                  <SelectTrigger id="period-filter-teacher" className="w-[180px] justify-center text-center">
+                  <SelectTrigger id="period-filter-teacher" className="w-full justify-center text-center sm:w-[180px]">
                     <SelectValue placeholder="Selecione o período" />
                   </SelectTrigger>
                   <SelectContent>

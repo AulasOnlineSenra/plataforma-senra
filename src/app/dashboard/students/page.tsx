@@ -21,8 +21,18 @@ import {
 import { users as initialUsers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
 import { User, ScheduleEvent, UserRole, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
+import { MessageSquare, Trash2, CalendarCheck, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -166,6 +176,10 @@ function StudentList({
 export default function AdminStudentsPage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
+  const [isCreateStudentOpen, setIsCreateStudentOpen] = useState(false);
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentEmail, setNewStudentEmail] = useState('');
+  const [newStudentPassword, setNewStudentPassword] = useState('');
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
   
@@ -250,12 +264,78 @@ export default function AdminStudentsPage() {
     setStudentToDelete(null);
   };
 
+  const handleCreateStudent = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const normalizedEmail = newStudentEmail.trim().toLowerCase();
+    const trimmedName = newStudentName.trim();
+
+    if (!trimmedName || !normalizedEmail || !newStudentPassword.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos obrigatórios',
+        description: 'Preencha nome, email e senha para cadastrar o aluno.',
+      });
+      return;
+    }
+
+    const emailAlreadyExists = allUsers.some(
+      (user) => user.email.toLowerCase() === normalizedEmail
+    );
+
+    if (emailAlreadyExists) {
+      toast({
+        variant: 'destructive',
+        title: 'Email já cadastrado',
+        description: 'Já existe um usuário com esse email.',
+      });
+      return;
+    }
+
+    const newStudentId = `user-${Date.now()}`;
+    const newStudent: User = {
+      id: newStudentId,
+      name: trimmedName,
+      email: normalizedEmail,
+      avatarUrl: `https://picsum.photos/seed/${newStudentId}/200/200`,
+      role: 'student',
+      status: 'active',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      classCredits: 0,
+      activePackage: 'Nenhum pacote ativo',
+      ratings: [],
+      lastAccess: new Date().toISOString(),
+    };
+
+    const updatedUsers = [...allUsers, newStudent];
+    setAllUsers(updatedUsers);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    localStorage.setItem(`savedPassword-${normalizedEmail}`, newStudentPassword);
+    window.dispatchEvent(new Event('storage'));
+
+    setNewStudentName('');
+    setNewStudentEmail('');
+    setNewStudentPassword('');
+    setIsCreateStudentOpen(false);
+
+    toast({
+      title: 'Aluno criado com sucesso',
+      description: `${newStudent.name} foi cadastrado(a) como aluno(a).`,
+    });
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="font-headline text-2xl md:text-3xl font-bold">
           {pageTitle}
         </h1>
+        {currentUser?.role === 'admin' && (
+          <Button onClick={() => setIsCreateStudentOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Aluno
+          </Button>
+        )}
       </div>
       <div className="grid gap-6">
         <StudentList
@@ -274,6 +354,54 @@ export default function AdminStudentsPage() {
           teacherId={currentUser?.role === 'teacher' ? currentUser.id : undefined}
         />
       </div>
+
+      <Dialog open={isCreateStudentOpen} onOpenChange={setIsCreateStudentOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastro Interno de Aluno</DialogTitle>
+            <DialogDescription>
+              Preencha os dados para criar um novo aluno manualmente.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateStudent} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="student-name">Nome</Label>
+              <Input
+                id="student-name"
+                value={newStudentName}
+                onChange={(e) => setNewStudentName(e.target.value)}
+                placeholder="Nome completo"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="student-email">Email</Label>
+              <Input
+                id="student-email"
+                type="email"
+                value={newStudentEmail}
+                onChange={(e) => setNewStudentEmail(e.target.value)}
+                placeholder="aluno@email.com"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="student-password">Senha</Label>
+              <Input
+                id="student-password"
+                type="password"
+                value={newStudentPassword}
+                onChange={(e) => setNewStudentPassword(e.target.value)}
+                placeholder="Defina uma senha"
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit">Salvar Aluno</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!studentToDelete}

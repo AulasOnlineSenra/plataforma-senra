@@ -15,7 +15,7 @@ import { teachers as initialTeachers, subjects, getMockUser, scheduleEvents as i
 import { Teacher, UserRole, User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Mail, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, StarHalf } from 'lucide-react';
+import { Star, BookOpen, UserPlus, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, StarHalf } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -197,8 +197,11 @@ export default function TeachersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [isCreateTeacherDialogOpen, setIsCreateTeacherDialogOpen] = useState(false);
+  const [newTeacherName, setNewTeacherName] = useState('');
+  const [newTeacherEmail, setNewTeacherEmail] = useState('');
+  const [newTeacherPassword, setNewTeacherPassword] = useState('');
+  const [newTeacherSubject, setNewTeacherSubject] = useState('');
   const { toast } = useToast();
   const [selectedSubject, setSelectedSubject] = useState('all');
 
@@ -250,23 +253,83 @@ export default function TeachersPage() {
     }
   }, []);
 
-  const handleSendInvite = () => {
-    if (!inviteEmail) {
+  const handleCreateTeacher = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const trimmedName = newTeacherName.trim();
+    const normalizedEmail = newTeacherEmail.trim().toLowerCase();
+    const trimmedPassword = newTeacherPassword.trim();
+
+    if (!trimmedName || !normalizedEmail || !trimmedPassword || !newTeacherSubject) {
       toast({
         variant: 'destructive',
-        title: 'Email inválido',
-        description: 'Por favor, insira um endereço de email válido.',
+        title: 'Campos obrigatórios',
+        description: 'Preencha nome, email, senha e materia para cadastrar o professor.',
       });
       return;
     }
-    // In a real app, you would send an invitation email via a backend service.
-    console.log(`Sending invite to: ${'\'\''}${inviteEmail}`);
+
+    const emailAlreadyExists = teacherList.some(
+      (teacher) => teacher.email.toLowerCase() === normalizedEmail
+    );
+
+    if (emailAlreadyExists) {
+      toast({
+        variant: 'destructive',
+        title: 'Email já cadastrado',
+        description: 'Já existe um professor com esse email.',
+      });
+      return;
+    }
+
+    const newTeacherId = `teacher-${Date.now()}`;
+    const newTeacher: Teacher = {
+      id: newTeacherId,
+      name: trimmedName,
+      email: normalizedEmail,
+      avatarUrl: 'https://github.com/shadcn.png',
+      role: 'teacher',
+      subjects: [newTeacherSubject],
+      bio: 'Professor recém cadastrado na plataforma.',
+      education: [
+        {
+          id: `edu-${newTeacherId}`,
+          course: 'Ensino Superior',
+          university: 'Não informado',
+          type: 'Bacharelado',
+          conclusionYear: '',
+        },
+      ],
+      availability: {
+        monday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        tuesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        wednesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        thursday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+        friday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+      } as any,
+      classCredits: 0,
+      ratings: [],
+      status: 'active',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      lastAccess: new Date().toISOString(),
+    };
+
+    const updatedTeacherList = [...teacherList, newTeacher];
+    setTeacherList(updatedTeacherList);
+    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
+    localStorage.setItem(`savedPassword-${normalizedEmail}`, trimmedPassword);
+    window.dispatchEvent(new Event('storage'));
+
+    setNewTeacherName('');
+    setNewTeacherEmail('');
+    setNewTeacherPassword('');
+    setNewTeacherSubject('');
+    setIsCreateTeacherDialogOpen(false);
+
     toast({
-      title: 'Convite Enviado!',
-      description: `Um convite foi enviado para ${'\'\''}${inviteEmail}.`,
+      title: 'Professor criado com sucesso',
+      description: `${newTeacher.name} foi cadastrado(a) na plataforma.`,
     });
-    setInviteEmail('');
-    setIsInviteDialogOpen(false);
   };
 
   const cancelTeacherClasses = (teacherId: string) => {
@@ -388,11 +451,11 @@ export default function TeachersPage() {
             </Select>
             {currentUser?.role === 'admin' && (
               <Button
-                onClick={() => setIsInviteDialogOpen(true)}
+                onClick={() => setIsCreateTeacherDialogOpen(true)}
                 className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <UserPlus className="mr-2" />
-                Convidar
+                Novo Professor
               </Button>
             )}
           </div>
@@ -499,41 +562,75 @@ export default function TeachersPage() {
         )}
       </div>
 
-      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+      <Dialog open={isCreateTeacherDialogOpen} onOpenChange={setIsCreateTeacherDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Convidar Novo Professor</DialogTitle>
+            <DialogTitle>Novo Professor</DialogTitle>
             <DialogDescription>
-              Insira o email do professor que você deseja convidar para a
-              plataforma. Ele receberá um link para completar o cadastro.
+              Preencha os dados para cadastrar manualmente um novo professor.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <form onSubmit={handleCreateTeacher} className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="email-invite">Email do Professor</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email-invite"
-                  type="email"
-                  placeholder="nome.sobrenome@exemplo.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              <Label htmlFor="teacher-name">Nome</Label>
+              <Input
+                id="teacher-name"
+                value={newTeacherName}
+                onChange={(e) => setNewTeacherName(e.target.value)}
+                placeholder="Nome completo"
+                required
+              />
             </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button type="button" onClick={handleSendInvite}>
-              Enviar Convite
-            </Button>
-          </DialogFooter>
+            <div className="grid gap-2">
+              <Label htmlFor="teacher-email">Email</Label>
+              <Input
+                id="teacher-email"
+                type="email"
+                value={newTeacherEmail}
+                onChange={(e) => setNewTeacherEmail(e.target.value)}
+                placeholder="nome.sobrenome@exemplo.com"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="teacher-subject">Matéria Principal</Label>
+              <Select value={newTeacherSubject} onValueChange={setNewTeacherSubject}>
+                <SelectTrigger id="teacher-subject">
+                  <SelectValue placeholder="Selecione a matéria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="subj-1">Matemática</SelectItem>
+                  <SelectItem value="subj-3">Física</SelectItem>
+                  <SelectItem value="subj-6">Química</SelectItem>
+                  <SelectItem value="subj-2">Português</SelectItem>
+                  <SelectItem value="subj-4">Redação</SelectItem>
+                  <SelectItem value="subj-5">História</SelectItem>
+                  <SelectItem value="subj-9">Geografia</SelectItem>
+                  <SelectItem value="subj-10">Inglês</SelectItem>
+                  <SelectItem value="subj-12">Biologia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="teacher-password">Senha</Label>
+              <Input
+                id="teacher-password"
+                type="password"
+                value={newTeacherPassword}
+                onChange={(e) => setNewTeacherPassword(e.target.value)}
+                placeholder="Defina uma senha"
+                required
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button type="submit">Salvar Professor</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

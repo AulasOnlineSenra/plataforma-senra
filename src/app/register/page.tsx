@@ -164,7 +164,8 @@ export default function RegisterPage() {
 
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold font-headline text-slate-900 mb-2">
-          Criar conta de <span className="text-amber-500">{role === 'student' ? 'Aluno' : 'Professor'}</span>
+          Criar conta de <span className="text-amber-500">
+            {role === 'student' ? 'Aluno' : role === 'teacher' ? 'Professor': 'Administrador'}</span>
         </h1>
         <p className="text-slate-500 text-sm">
            Preencha seus dados para continuar
