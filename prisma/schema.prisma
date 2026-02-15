@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("student") // 'admin', 'teacher', ou 'student'
+  avatarUrl String?
+  status    String   @default("active")
+  
+  credits       Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
+  lessonsAsStudent Lesson[] @relation("StudentLessons")
+  lessonsAsTeacher Lesson[] @relation("TeacherLessons")
+}
+
+// Aulas (Alimenta os cards de agendadas/realizadas e a lista de Próximas Aulas)
+model Lesson {
+  id          String   @id @default(uuid())
+  studentId   String
+  teacherId   String
+  subject     String   // Ex: Matemática, Física, etc.
+  date        DateTime // Data e hora da aula
+  status      String   @default("scheduled") // 'scheduled', 'completed', 'cancelled'
+  price       Float?   // Preço cobrado pela aula (para o gráfico de Receita)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Liga a aula aos usuários
+  student     User     @relation("StudentLessons", fields: [studentId], references: [id])
+  teacher     User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+}
+
+// Planos/Pacotes (Baseado na sua tela de Gerenciar Planos)
+model Plan {
+  id            String   @id @default(uuid())
+  name          String   // Ex: "Pacote 4 Aulas"
+  lessonsCount  Int      // Ex: 4
+  price         Float    // Ex: 95.00
+  durationMins  Int      // Ex: 90
+  isPopular     Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

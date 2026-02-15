@@ -1,34 +1,14 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  CalendarDays,
-  BookOpenCheck,
-  MessageSquare,
-  WalletCards,
-  Settings,
-  KeyRound,
-  FileText,
-  LogOut,
-  Users,
-  Banknote,
-  History,
-  Briefcase,
-  TrendingUp,
-  HeartHandshake,
-  DollarSign,
-  Package,
-  Bot,
-  Lightbulb,
-  Gift,
-  GripVertical,
-  User as UserIcon,
-  Bell,
+  LayoutDashboard, CalendarDays, BookOpenCheck, MessageSquare,
+  WalletCards, Settings, KeyRound, FileText, LogOut, Users,
+  Banknote, History, Briefcase, TrendingUp, HeartHandshake,
+  DollarSign, Package, Bot, Lightbulb, Gift, GripVertical,
+  User as UserIcon, Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole, User, NavItem, Teacher, ChatContact, Suggestion, Notification, ScheduleEvent } from '@/lib/types';
@@ -47,14 +27,11 @@ const LAST_NOTIFICATIONS_VIEW_KEY = 'lastNotificationsViewTimestamp';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const DAILY_REMINDER_STORAGE_KEY = 'dailyReminderSent';
 
-
 const checkAndSendDailyReminder = (user: User | Teacher) => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const reminderKey = `${DAILY_REMINDER_STORAGE_KEY}_${user.id}_${todayStr}`;
 
-    if (localStorage.getItem(reminderKey)) {
-        return; // Reminder for today already sent
-    }
+    if (localStorage.getItem(reminderKey)) return;
 
     const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
     const schedule: ScheduleEvent[] = storedSchedule
@@ -62,12 +39,7 @@ const checkAndSendDailyReminder = (user: User | Teacher) => {
         : initialScheduleEvents;
     
     const userField = user.role === 'teacher' ? 'teacherId' : 'studentId';
-
-    const todaysClasses = schedule.filter(e => 
-        e[userField] === user.id && 
-        e.status === 'scheduled' && 
-        isToday(e.start)
-    );
+    const todaysClasses = schedule.filter(e => e[userField] === user.id && e.status === 'scheduled' && isToday(e.start));
 
     if (todaysClasses.length > 0) {
         let description = `Você tem ${todaysClasses.length} ${todaysClasses.length > 1 ? 'aulas agendadas' : 'aula agendada'} para hoje. Não se esqueça!`;
@@ -75,11 +47,8 @@ const checkAndSendDailyReminder = (user: User | Teacher) => {
         if (user.role === 'teacher') {
             const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
             const allStudents: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialUsers;
-            
             const studentIds = new Set(todaysClasses.map(c => c.studentId));
-            const studentNames = Array.from(studentIds)
-                .map(id => allStudents.find(s => s.id === id)?.name)
-                .filter(Boolean);
+            const studentNames = Array.from(studentIds).map(id => allStudents.find(s => s.id === id)?.name).filter(Boolean);
             
             if (studentNames.length > 0) {
                 description = `Você tem ${todaysClasses.length} ${todaysClasses.length > 1 ? 'aulas agendadas' : 'aula agendada'} hoje com: ${studentNames.join(', ')}.`;
@@ -96,16 +65,17 @@ const checkAndSendDailyReminder = (user: User | Teacher) => {
     }
 };
 
-
 export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  
+  // CORREÇÃO DO TYPESCRIPT AQUI: Aceita User ou Teacher
+  const [user, setUser] = useState<User | Teacher | null>(null);
+  
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [hasNewSuggestions, setHasNewSuggestions] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
-
 
   const updateUserAndNotifications = useCallback(() => {
     const role = localStorage.getItem('userRole') as UserRole | null;
@@ -122,8 +92,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
       if (foundUser) {
         setUser(foundUser);
-        localStorage.setItem('currentUser', JSON.stringify(foundUser));
-        // Run daily reminder check
+        
+        const currentUserInStorage = localStorage.getItem('currentUser');
+        if (!currentUserInStorage) {
+           localStorage.setItem('currentUser', JSON.stringify(foundUser));
+        }
         checkAndSendDailyReminder(foundUser);
       } else {
         const mockUser = getMockUser(role);
@@ -137,7 +110,6 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       const unread = contacts.some(c => c.unreadCount > 0);
       setHasNewMessages(unread);
 
-      // Handle general notifications
       const storedNotificationsStr = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
       const notifications: Notification[] = storedNotificationsStr ? JSON.parse(storedNotificationsStr).map((n:any) => ({...n, timestamp: new Date(n.timestamp)})) : initialNotifications;
       
@@ -148,14 +120,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       const unreadNotifications = relevantNotifications.some(n => !n.read);
       setHasUnreadNotifications(unreadNotifications);
 
-
       if (role === 'admin') {
         const storedSuggestionsStr = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
         const suggestions: Suggestion[] = storedSuggestionsStr ? JSON.parse(storedSuggestionsStr).map((s: any) => ({...s, timestamp: new Date(s.timestamp)})) : initialSuggestions;
-        
         const lastViewTimestamp = localStorage.getItem(LAST_SUGGESTIONS_VIEW_KEY);
         const lastViewDate = lastViewTimestamp ? new Date(parseInt(lastViewTimestamp)) : new Date(0);
-
         const newSuggestions = suggestions.some(s => s.status === 'received' && s.timestamp > lastViewDate);
         setHasNewSuggestions(newSuggestions);
       } else {
@@ -165,13 +134,13 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     } else {
       router.push('/login');
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     updateUserAndNotifications();
 
     const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'currentUser' || e.key === USERS_STORAGE_KEY || e.key === TEACHERS_STORAGE_KEY || e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === LAST_SUGGESTIONS_VIEW_KEY || e.key === NOTIFICATIONS_STORAGE_KEY || e.key === SCHEDULE_STORAGE_KEY) {
+        if (e.key === `chatContacts_${user?.id}` || e.key === SUGGESTIONS_STORAGE_KEY || e.key === NOTIFICATIONS_STORAGE_KEY) {
             updateUserAndNotifications();
         }
     };
@@ -182,9 +151,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     };
   }, [updateUserAndNotifications, user?.id]);
   
-  if (!userRole || !user) {
-    return null; 
-  }
+  if (!userRole || !user) return null; 
 
   const roleLabels: Record<UserRole, string> = {
     student: 'Aluno',
@@ -208,13 +175,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     return item;
   });
 
-  const filteredAdminNavItems =
-    userRole === 'admin'
-      ? defaultAdminNavItems.filter(item => item.roles.includes(userRole))
-      : [];
+  const filteredAdminNavItems = userRole === 'admin' ? defaultAdminNavItems.filter(item => item.roles.includes(userRole)) : [];
 
-  const settingsLink: NavItem =
-    userRole === 'admin'
+  const settingsLink: NavItem = userRole === 'admin'
       ? { href: '/dashboard/admin/settings', icon: Settings, label: 'Configurações', roles: ['admin'] }
       : { href: '/dashboard/profile', icon: UserIcon, label: 'Meu Perfil', roles: ['student', 'teacher'] };
 
@@ -231,14 +194,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       }
       if (isNotifications) {
         setHasUnreadNotifications(false);
-        // This is optimistic. In a real app, you might wait for page load to confirm.
         const storedNotificationsStr = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
         if (storedNotificationsStr && user) {
             let currentNotifications: Notification[] = JSON.parse(storedNotificationsStr);
             const readNotifications = currentNotifications.map(n => {
-                if(user.role === 'admin' || n.userId === user.id || !n.userId) {
-                    return {...n, read: true };
-                }
+                if(user.role === 'admin' || n.userId === user.id || !n.userId) return {...n, read: true };
                 return n;
             });
             localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
@@ -247,54 +207,28 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     };
     
     const LinkContent = (
-      <div
-        className={cn(
-          'relative flex items-center gap-4 rounded-lg px-3 py-2 transition-all',
-          'text-base group',
-          isActive
-            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-            : 'text-sidebar-foreground/80 hover:text-brand-yellow hover:bg-sidebar-accent',
-        )}
-      >
+      <div className={cn('relative flex items-center gap-4 rounded-lg px-3 py-2 transition-all text-base group', isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/80 hover:text-brand-yellow hover:bg-sidebar-accent')}>
         <item.icon className="h-5 w-5 shrink-0" />
         <span className={cn('font-medium')}>{item.label}</span>
-        {isChat && hasNewMessages && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
-        )}
-        {isSuggestions && hasNewSuggestions && userRole === 'admin' && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
-        )}
-        {isNotifications && hasUnreadNotifications && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />
-        )}
+        {isChat && hasNewMessages && <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />}
+        {isSuggestions && hasNewSuggestions && userRole === 'admin' && <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />}
+        {isNotifications && hasUnreadNotifications && <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-brand-yellow" />}
       </div>
     );
 
-    const WrapperComponent = (
-        <div
-            key={item.href}
-            data-href={item.href}
-        >
+    return (
+        <div key={item.href} data-href={item.href}>
         { isLogout ? (
-            <button onClick={handleLogout} className="w-full text-left">
-                {LinkContent}
-            </button>
+            <button onClick={handleLogout} className="w-full text-left">{LinkContent}</button>
         ) : (
-             <Link href={item.href} onClick={handleLinkClick}>
-              {LinkContent}
-            </Link>
+             <Link href={item.href} onClick={handleLinkClick}>{LinkContent}</Link>
         )}
       </div>
     );
-
-    return WrapperComponent;
   };
 
   return (
-    <aside className={cn(
-        "flex h-full max-h-screen flex-col w-full group", 
-        isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground',
-    )}>
+    <aside className={cn("flex h-full max-h-screen flex-col w-full group", isMobile ? '' : 'hidden sm:flex bg-sidebar text-sidebar-foreground')}>
         <Link href="/dashboard/profile" className={cn("block border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors")}>
           <div className={cn("flex h-auto items-center p-4 lg:h-auto")}>
               <div className={cn("flex items-center gap-3")}>
@@ -304,7 +238,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
                   </Avatar>
                   <div className={cn('flex flex-col')}>
                       <span className="font-semibold text-lg text-sidebar-foreground">{user.name}</span>
-                      <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role]}</span>
+                      <span className="text-sm text-sidebar-foreground/80">{roleLabels[user.role as UserRole]}</span>
                   </div>
               </div>
           </div>

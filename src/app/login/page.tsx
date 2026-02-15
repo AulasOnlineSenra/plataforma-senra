@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, Eye, EyeOff, UserCircle2, GraduationCap, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { loginUser } from '../actions/auth';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -247,9 +248,10 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent | React.MouseEvent) => {
+  const handleLogin = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     
+    // Mantemos a lógica do Visitante intacta
     if (role === null) {
       const visitorRole = 'student';
       localStorage.setItem('userRole', visitorRole);
@@ -279,100 +281,44 @@ export default function LoginPage() {
       return;
     }
 
-    const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-    const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
-    const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
-    const currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
-    const combinedUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
-    
-    let userToLogin: User | Teacher | null = null;
-    let isNewRegistration = false;
-    const newUserDataString = localStorage.getItem('newlyRegisteredUser');
+    const result = await loginUser({ email, password });
 
-    if (newUserDataString) {
-        try {
-            const newUser = JSON.parse(newUserDataString);
-            if (newUser.email.toLowerCase() === email.toLowerCase() && newUser.role === role) {
-                userToLogin = combinedUsers.find(u => u.id === newUser.id) || null;
-                isNewRegistration = true;
-            } else if (newUser.email.toLowerCase() === email.toLowerCase() && newUser.role !== role) {
-                 toast({
-                    variant: "destructive",
-                    title: "Perfil Incorreto",
-                    description: `Você se cadastrou como ${newUser.role}. Por favor, faça login com o perfil correto.`,
-                });
-                return;
-            }
-        } catch (error) {
-            console.error("Error parsing new user data during login:", error);
-        }
-    }
-    
-    if (!userToLogin) {
-        const foundUser = combinedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (foundUser) {
-            if (foundUser.role === role) {
-                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.email}`);
-                
-                if (storedPassword === password || (storedPassword === null && password === 'password')) {
-                    userToLogin = foundUser;
-                } else {
-                      toast({
-                        variant: "destructive",
-                        title: "Credenciais Inválidas",
-                        description: "Email ou senha incorretos para o perfil selecionado.",
-                    });
-                    return;
-                }
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Perfil Incorreto",
-                    description: `Este email está registrado como ${foundUser.role}. Por favor, selecione o perfil correto para entrar.`,
-                });
-                return;
-            }
-        }
-    }
-
-    if (userToLogin) {
-        const now = new Date().toISOString();
-        const updatedUser = { ...userToLogin, lastAccess: now };
-
-        if (updatedUser.role === 'teacher') {
-            const updatedTeachers = currentTeachers.map(t => t.id === updatedUser.id ? updatedUser as Teacher : t);
-            localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
-        } else {
-            const updatedUsers = currentUsers.map(u => u.id === updatedUser.id ? updatedUser as User : u);
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-        }
-
-        localStorage.setItem('userRole', updatedUser.role);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
-        localStorage.setItem(`savedPassword-${email}`, password);
-        localStorage.setItem('userId', updatedUser.id);
-
-        window.dispatchEvent(new Event('storage'));
-
-        if (isNewRegistration) {
-            localStorage.removeItem('newlyRegisteredUser');
-        }
-        
+    if (!result.success || !result.user) {
         toast({
-            title: "Login bem-sucedido!",
-            description: `Bem-vindo(a) de volta, ${updatedUser.name.split(' ')[0]}!`,
-        });
-        
-        router.push('/dashboard');
-    } else {
-         toast({
             variant: "destructive",
             title: "Credenciais Inválidas",
-            description: "Email ou senha incorretos para o perfil selecionado.",
+            description: result.error || "Email ou senha incorretos.",
         });
+        return;
     }
+
+    const loggedUser = result.user;
+
+    // Verifica se o usuário escolheu o perfil (card) correto na tela
+    if (loggedUser.role !== role) {
+        toast({
+            variant: "destructive",
+            title: "Perfil Incorreto",
+            description: `Este e-mail está registrado como ${loggedUser.role === 'teacher' ? 'Professor' : 'Aluno'}. Selecione o perfil correto.`,
+        });
+        return;
+    }
+
+    localStorage.setItem('userRole', loggedUser.role);
+    localStorage.setItem('currentUser', JSON.stringify(loggedUser));
+    localStorage.setItem(`savedEmail-${loggedUser.role}`, email);
+    localStorage.setItem(`savedPassword-${email}`, password);
+    localStorage.setItem('userId', String(loggedUser.id));
+
+    window.dispatchEvent(new Event('storage'));
+    localStorage.removeItem('newlyRegisteredUser'); // Limpa a memória temporária de registro
+    
+    toast({
+        title: "Login bem-sucedido!",
+        description: `Bem-vindo(a) de volta, ${loggedUser.name.split(' ')[0]}!`,
+    });
+    
+    router.push('/dashboard');
   };
 
   return (
