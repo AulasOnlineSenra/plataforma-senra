@@ -1,177 +1,58 @@
-
-
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
-import { teachers as initialTeachers, subjects, getMockUser, scheduleEvents as initialSchedule } from '@/lib/data';
-import { Teacher, UserRole, User, ScheduleEvent } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Star, BookOpen, UserPlus, Calendar, Edit, EyeOff, Eye, Trash2, RotateCcw, AlertTriangle, StarHalf } from 'lucide-react';
+import { BookOpen, UserPlus, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { subjects } from '@/lib/data'; // Importando a lista de matérias
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-function TeacherCard({
-  teacher,
-  currentUser,
-  onDelete,
-  onToggleVisibility,
-}: {
-  teacher: Teacher;
-  currentUser: User | null;
-  onDelete: (teacherId: string) => void;
-  onToggleVisibility: (teacherId: string) => void;
-}) {
-  const teacherSubjects = teacher.subjects
-    .map((subjectId) => subjects.find((s) => s.id === subjectId)?.name)
-    .filter(Boolean);
+// IMPORTANDO AS FUNÇÕES DO MOTOR
+import { getTeachers, createTeacher, updateTeacher, deleteTeacher } from '@/app/actions/users';
 
-  const averageRating = useMemo(() => {
-    if (!teacher.ratings || teacher.ratings.length < 5) {
-      return 5.0;
-    }
-    const sum = teacher.ratings.reduce((a, b) => a + b, 0);
-    return sum / teacher.ratings.length;
-  }, [teacher.ratings]);
-
-
+function TeacherCard({ teacher, currentUser, onEdit, onDelete }: { teacher: any; currentUser: any; onEdit: (t: any) => void; onDelete: (id: string) => void; }) {
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <Card className={cn(
-        "flex flex-col transition-all hover:ring-2 hover:ring-brand-yellow",
-        teacher.status === 'hidden' && 'opacity-60 bg-muted/50'
-    )}>
-      <CardHeader className="items-center text-center relative">
+    <Card className="flex flex-col transition-all hover:ring-2 hover:ring-brand-yellow relative overflow-hidden">
+      <CardHeader className="items-center text-center pb-2">
          {isAdmin && (
-            <div className="absolute top-2 right-2 flex gap-1">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/profile?userId=${'\'\''}${teacher.id}`}>
-                                    <Edit className="h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Ver / Editar Perfil</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleVisibility(teacher.id)}>
-                                {teacher.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>{teacher.status === 'active' ? 'Ocultar' : 'Mostrar'}</p></TooltipContent>
-                    </Tooltip>
-                     <AlertDialog>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Excluir Professor</p></TooltipContent>
-                        </Tooltip>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Esta ação moverá o professor para a lista de excluídos. Ele poderá ser restaurado ou excluído permanentemente mais tarde.
-                                O professor <span className="font-bold">{teacher.name}</span> não será mais visível para os alunos e suas aulas futuras serão canceladas.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(teacher.id)}>
-                                Mover para Excluídos
-                            </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </TooltipProvider>
+            <div className="absolute top-2 right-2 flex gap-1 z-10 bg-white/80 rounded-lg p-1 shadow-sm">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-brand-yellow hover:bg-amber-50" onClick={() => onEdit(teacher)} title="Editar Dados">
+                    <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => { if(confirm('Excluir este professor permanentemente?')) onDelete(teacher.id) }} title="Excluir Professor">
+                    <Trash2 className="h-4 w-4" />
+                </Button>
             </div>
         )}
-        <Avatar className="h-24 w-24 mb-4 mt-8 sm:mt-0">
+        <Avatar className="h-24 w-24 mb-3 shadow-md border-2 border-slate-100">
           <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-          <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+          <AvatarFallback className="text-2xl font-bold bg-amber-100 text-amber-700">{teacher.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <CardTitle className="font-headline text-xl">{teacher.name}</CardTitle>
-        <div className="flex flex-wrap justify-center gap-2 mt-1">
-          {teacherSubjects.map((subjectName) => (
-            <Badge key={subjectName} variant="secondary">
-              {subjectName}
-            </Badge>
-          ))}
+        <CardTitle className="font-headline text-xl text-slate-800">{teacher.name}</CardTitle>
+        <div className="mt-2">
+             <Badge variant="secondary" className="bg-brand-yellow/20 text-slate-800 border-none font-semibold">
+               Professor(a) {teacher.subject ? `de ${teacher.subject}` : ''}
+             </Badge>
         </div>
-        <div className="flex items-center gap-1 pt-3">
-          {Array(5).fill(0).map((_, i) => {
-                const ratingValue = i + 1;
-                if (averageRating >= ratingValue) {
-                    return <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />;
-                }
-                if (averageRating > i && averageRating < ratingValue) {
-                    return <StarHalf key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />;
-                }
-                return <Star key={i} className="h-4 w-4 text-gray-300" />;
-            })}
-            <span className="text-sm text-muted-foreground ml-1">
-                ({averageRating.toFixed(1)})
-            </span>
-        </div>
-        <CardDescription className="pt-1 h-5">
-            {teacher.education && teacher.education.length > 0 && 
-                `${'\'\''}${teacher.education[0].course} - ${'\'\''}${teacher.education[0].university}`
-            }
-        </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 text-center pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-3">
-          {teacher.bio}
-        </p>
+      <CardContent className="flex-1 text-center">
+        <p className="text-sm text-slate-500 truncate px-2">{teacher.email}</p>
       </CardContent>
-      <CardFooter className="flex-col gap-2">
+      <CardFooter className="flex-col gap-2 pt-0 pb-6 px-6">
         {!isAdmin && (
-          <Button asChild className="w-full bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
-            <Link href={`/dashboard/booking?teacherId=${'\'\''}${teacher.id}`}>Agendar</Link>
+          <Button asChild className="w-full bg-slate-900 text-white hover:bg-slate-800 shadow-md transition-all hover:scale-[1.02]">
+            <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>Agendar Aula</Link>
           </Button>
         )}
       </CardFooter>
@@ -179,456 +60,205 @@ function TeacherCard({
   );
 }
 
-const TEACHERS_STORAGE_KEY = 'teacherList';
-const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
-
-// Função para embaralhar um array
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-};
-
 
 export default function TeachersPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [teacherList, setTeacherList] = useState<Teacher[]>([]);
-  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
-  const [isCreateTeacherDialogOpen, setIsCreateTeacherDialogOpen] = useState(false);
-  const [newTeacherName, setNewTeacherName] = useState('');
-  const [newTeacherEmail, setNewTeacherEmail] = useState('');
-  const [newTeacherPassword, setNewTeacherPassword] = useState('');
-  const [newTeacherSubject, setNewTeacherSubject] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [teacherList, setTeacherList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const [selectedSubject, setSelectedSubject] = useState('all');
 
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  
+  // Agora o formulário guarda a matéria (subject)
+  const [formData, setFormData] = useState({ id: '', name: '', email: '', password: '', subject: '' });
 
-  const updateTeacherList = useCallback(() => {
-    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-    if (storedTeachers) {
-      try {
-        setTeacherList(JSON.parse(storedTeachers));
-      } catch (e) {
-        console.error("Failed to parse teachers from localStorage", e);
-        setTeacherList(initialTeachers);
+  const fetchDBTeachers = async () => {
+      setIsLoading(true);
+      const result = await getTeachers();
+      if (result.success && result.data) {
+          setTeacherList(result.data);
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível buscar os professores.' });
       }
-    } else {
-      setTeacherList(initialTeachers);
-    }
-
-    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-    setScheduleEvents(storedSchedule ? JSON.parse(storedSchedule) : initialSchedule);
-  }, []);
-
-
-  useEffect(() => {
-    const role = localStorage.getItem('userRole') as UserRole | null;
-    if (role) {
-      setCurrentUser(getMockUser(role));
-    }
-    
-    updateTeacherList();
-
-    window.addEventListener('storage', updateTeacherList);
-
-    return () => {
-      window.removeEventListener('storage', updateTeacherList);
-    };
-  }, [updateTeacherList]);
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash === '#teacher-list') {
-      const element = document.getElementById('teacher-list');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        element.classList.add('animate-highlight');
-        setTimeout(() => {
-          element.classList.remove('animate-highlight');
-        }, 2000);
-      }
-    }
-  }, []);
-
-  const handleCreateTeacher = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const trimmedName = newTeacherName.trim();
-    const normalizedEmail = newTeacherEmail.trim().toLowerCase();
-    const trimmedPassword = newTeacherPassword.trim();
-
-    if (!trimmedName || !normalizedEmail || !trimmedPassword || !newTeacherSubject) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Preencha nome, email, senha e materia para cadastrar o professor.',
-      });
-      return;
-    }
-
-    const emailAlreadyExists = teacherList.some(
-      (teacher) => teacher.email.toLowerCase() === normalizedEmail
-    );
-
-    if (emailAlreadyExists) {
-      toast({
-        variant: 'destructive',
-        title: 'Email já cadastrado',
-        description: 'Já existe um professor com esse email.',
-      });
-      return;
-    }
-
-    const newTeacherId = `teacher-${Date.now()}`;
-    const newTeacher: Teacher = {
-      id: newTeacherId,
-      name: trimmedName,
-      email: normalizedEmail,
-      avatarUrl: 'https://github.com/shadcn.png',
-      role: 'teacher',
-      subjects: [newTeacherSubject],
-      bio: 'Professor recém cadastrado na plataforma.',
-      education: [
-        {
-          id: `edu-${newTeacherId}`,
-          course: 'Ensino Superior',
-          university: 'Não informado',
-          type: 'Bacharelado',
-          conclusionYear: '',
-        },
-      ],
-      availability: {
-        monday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
-        tuesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
-        wednesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
-        thursday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
-        friday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
-      } as any,
-      classCredits: 0,
-      ratings: [],
-      status: 'active',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      lastAccess: new Date().toISOString(),
-    };
-
-    const updatedTeacherList = [...teacherList, newTeacher];
-    setTeacherList(updatedTeacherList);
-    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeacherList));
-    localStorage.setItem(`savedPassword-${normalizedEmail}`, trimmedPassword);
-    window.dispatchEvent(new Event('storage'));
-
-    setNewTeacherName('');
-    setNewTeacherEmail('');
-    setNewTeacherPassword('');
-    setNewTeacherSubject('');
-    setIsCreateTeacherDialogOpen(false);
-
-    toast({
-      title: 'Professor criado com sucesso',
-      description: `${newTeacher.name} foi cadastrado(a) na plataforma.`,
-    });
+      setIsLoading(false);
   };
 
-  const cancelTeacherClasses = (teacherId: string) => {
-    const updatedSchedule = scheduleEvents.map(event => {
-      if (event.teacherId === teacherId && event.status === 'scheduled') {
-        return { ...event, status: 'cancelled' as const };
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) setCurrentUser(JSON.parse(storedUser));
+    fetchDBTeachers();
+  }, []);
+
+  // CRIAR
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+      const result = await createTeacher({ name: formData.name, email: formData.email, password: formData.password, subject: formData.subject });
+      
+      if (result.success) {
+          toast({ title: 'Sucesso!', description: 'Professor cadastrado com sucesso.' });
+          setIsCreateOpen(false);
+          setFormData({ id: '', name: '', email: '', password: '', subject: '' });
+          fetchDBTeachers(); 
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: result.error });
       }
-      return event;
-    });
-    setScheduleEvents(updatedSchedule);
-    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
+      setIsSubmitting(false);
+  };
+
+  // ABRIR MODAL DE EDIÇÃO
+  const openEditModal = (teacher: any) => {
+      setFormData({ id: teacher.id, name: teacher.name, email: teacher.email, password: '', subject: teacher.subject || '' });
+      setIsEditOpen(true);
+  };
+
+  // SALVAR EDIÇÃO
+  const handleEditSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+      const result = await updateTeacher(formData.id, { name: formData.name, email: formData.email, subject: formData.subject });
+      
+      if (result.success) {
+          toast({ title: 'Sucesso!', description: 'Dados do professor atualizados.' });
+          setIsEditOpen(false);
+          fetchDBTeachers();
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: result.error });
+      }
+      setIsSubmitting(false);
+  };
+
+  const handleDelete = async (id: string) => {
+      const result = await deleteTeacher(id);
+      if (result.success) {
+          toast({ title: 'Excluído!', description: 'Professor removido da plataforma.' });
+          fetchDBTeachers();
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: result.error });
+      }
+  };
+
+  if (isLoading) {
+      return <div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Buscando professores...</div>;
   }
-
-  const handleDeleteTeacher = (teacherId: string) => {
-    cancelTeacherClasses(teacherId);
-    const updatedList = teacherList.map(t =>
-        t.id === teacherId ? { ...t, status: 'deleted' as const } : t
-    );
-    setTeacherList(updatedList);
-    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
-    toast({
-      title: 'Professor Movido para Excluídos',
-      description: 'O perfil do professor foi movido e suas aulas futuras foram canceladas.',
-    });
-  };
-
-  const handleToggleVisibility = (teacherId: string) => {
-    let toggledTeacher: Teacher | undefined;
-    
-    const listWithUpdatedStatus = teacherList.map(t => {
-      if (t.id === teacherId) {
-        toggledTeacher = { ...t, status: t.status === 'active' ? 'hidden' : 'active' };
-        return toggledTeacher;
-      }
-      return t;
-    });
-    
-    if (toggledTeacher) {
-        const remainingTeachers = listWithUpdatedStatus.filter(t => t.id !== teacherId);
-        const shuffledRemaining = shuffleArray(remainingTeachers);
-        
-        let finalList;
-        if (toggledTeacher.status === 'hidden') {
-             // Move hidden teacher to the end
-            finalList = [...shuffledRemaining, toggledTeacher];
-        } else {
-            // Randomly insert active teacher back
-            const randomIndex = Math.floor(Math.random() * (shuffledRemaining.length + 1));
-            shuffledRemaining.splice(randomIndex, 0, toggledTeacher);
-            finalList = shuffledRemaining;
-        }
-        
-        setTeacherList(finalList);
-        localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(finalList));
-    }
-  };
-
-  const handleRestoreTeacher = (teacherId: string) => {
-    const updatedList = teacherList.map(t =>
-        t.id === teacherId ? { ...t, status: 'active' as const } : t
-    );
-    setTeacherList(updatedList);
-    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    toast({
-      title: 'Professor Restaurado',
-      description: 'O perfil do professor está ativo novamente.',
-    });
-  };
-  
-  const handlePermanentDeleteTeacher = (teacherId: string) => {
-    cancelTeacherClasses(teacherId);
-    const updatedList = teacherList.filter(t => t.id !== teacherId);
-    setTeacherList(updatedList);
-    localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedList));
-    window.dispatchEvent(new Event('storage'));
-    toast({
-      variant: 'destructive',
-      title: 'Professor Excluído Permanentemente',
-      description: 'O perfil do professor e suas aulas foram removidos.',
-    });
-  };
-  
-  const visibleTeachers = useMemo(() => {
-    const baseList = currentUser?.role === 'admin'
-        ? teacherList.filter(t => t.status !== 'deleted')
-        : teacherList.filter(t => t.status === 'active');
-        
-    if (selectedSubject === 'all') {
-        return baseList;
-    }
-    
-    return baseList.filter(teacher => teacher.subjects.includes(selectedSubject));
-  }, [currentUser, teacherList, selectedSubject]);
-  
-  const deletedTeachers =
-    currentUser?.role === 'admin'
-      ? teacherList.filter(t => t.status === 'deleted')
-      : [];
 
   return (
     <>
-      <div id="teacher-list" className="flex flex-1 flex-col gap-4 md:gap-8">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="font-headline text-2xl md:text-3xl font-bold">
-            Nossos Professores
-          </h1>
+      <div id="teacher-list" className="flex flex-1 flex-col gap-4 md:gap-8 max-w-7xl mx-auto w-full p-4">
+        <div className="flex items-center justify-between gap-4 bg-white p-6 rounded-xl border shadow-sm">
+          <div>
+              <h1 className="font-headline text-2xl md:text-3xl font-bold text-slate-900">Corpo Docente</h1>
+              <p className="text-slate-500 mt-1">Gerencie a equipe de professores da plataforma.</p>
+          </div>
+          
           <div className="flex gap-2 items-center">
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrar por matéria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as Matérias</SelectItem>
-                {subjects.map(subject => (
-                  <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             {currentUser?.role === 'admin' && (
-              <Button
-                onClick={() => setIsCreateTeacherDialogOpen(true)}
-                className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              <Button 
+                onClick={() => { setFormData({ id: '', name: '', email: '', password: '', subject: '' }); setIsCreateOpen(true); }}
+                className="bg-brand-yellow text-slate-900 hover:bg-amber-400 font-bold shadow-md"
               >
-                <UserPlus className="mr-2" />
-                Novo Professor
+                <UserPlus className="mr-2 h-4 w-4" /> Novo Professor
               </Button>
             )}
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {visibleTeachers.map((teacher) => (
-            <TeacherCard
-              key={teacher.id}
-              teacher={teacher}
-              currentUser={currentUser}
-              onDelete={handleDeleteTeacher}
-              onToggleVisibility={handleToggleVisibility}
-            />
-          ))}
-        </div>
-        {currentUser?.role === 'admin' && (
-            <div className="mt-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Professores Excluídos</CardTitle>
-                        <CardDescription>
-                            Professores que foram removidos da plataforma. Você pode restaurá-los ou excluí-los permanentemente.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ScrollArea>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Professor</TableHead>
-                                    <TableHead className="hidden sm:table-cell">Email</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {deletedTeachers.length > 0 ? (
-                                    deletedTeachers.map(teacher => (
-                                        <TableRow key={teacher.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="h-10 w-10">
-                                                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                                                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="font-medium">{teacher.name}</div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">{teacher.email}</TableCell>
-                                            <TableCell className="text-right">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button variant="ghost" size="icon" onClick={() => handleRestoreTeacher(teacher.id)}>
-                                                                <RotateCcw className="h-4 w-4" />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent><p>Restaurar Professor</p></TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                                <AlertDialog>
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>Excluir Permanentemente</p></TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Esta ação não pode ser desfeita. O professor <span className="font-bold">{teacher.name}</span> será excluído para sempre. Todas as suas aulas futuras também serão canceladas.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handlePermanentDeleteTeacher(teacher.id)}>
-                                                                Excluir Permanentemente
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                                            Nenhum professor na lista de excluídos.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
+
+        {teacherList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 border-2 border-dashed rounded-2xl bg-slate-50/50 mt-4">
+                <BookOpen className="w-16 h-16 opacity-30 mb-4" />
+                <p className="text-lg font-medium text-slate-600">Nenhum professor encontrado.</p>
+                {currentUser?.role === 'admin' && <p className="text-sm mt-1">Clique em "Novo Professor" para cadastrar a equipe.</p>}
+            </div>
+        ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-4">
+            {teacherList.map((teacher) => (
+                <TeacherCard
+                    key={teacher.id}
+                    teacher={teacher}
+                    currentUser={currentUser}
+                    onEdit={openEditModal}
+                    onDelete={handleDelete}
+                />
+            ))}
             </div>
         )}
       </div>
 
-      <Dialog open={isCreateTeacherDialogOpen} onOpenChange={setIsCreateTeacherDialogOpen}>
+      {/* MODAL DE CRIAR PROFESSOR */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo Professor</DialogTitle>
-            <DialogDescription>
-              Preencha os dados para cadastrar manualmente um novo professor.
-            </DialogDescription>
+            <DialogTitle>Cadastrar Novo Professor</DialogTitle>
+            <DialogDescription>Crie o acesso de um novo professor na plataforma.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateTeacher} className="grid gap-4 py-4">
+          <form onSubmit={handleCreateSubmit} className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="teacher-name">Nome</Label>
-              <Input
-                id="teacher-name"
-                value={newTeacherName}
-                onChange={(e) => setNewTeacherName(e.target.value)}
-                placeholder="Nome completo"
-                required
-              />
+              <Label>Nome Completo</Label>
+              <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Ex: Maria Silva" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="teacher-email">Email</Label>
-              <Input
-                id="teacher-email"
-                type="email"
-                value={newTeacherEmail}
-                onChange={(e) => setNewTeacherEmail(e.target.value)}
-                placeholder="nome.sobrenome@exemplo.com"
-                required
-              />
+              <Label>E-mail de Acesso</Label>
+              <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="professor@senra.com" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="teacher-subject">Matéria Principal</Label>
-              <Select value={newTeacherSubject} onValueChange={setNewTeacherSubject}>
-                <SelectTrigger id="teacher-subject">
+              <Label>Matéria Principal</Label>
+              <Select value={formData.subject} onValueChange={v => setFormData({...formData, subject: v})}>
+                <SelectTrigger>
                   <SelectValue placeholder="Selecione a matéria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="subj-1">Matemática</SelectItem>
-                  <SelectItem value="subj-3">Física</SelectItem>
-                  <SelectItem value="subj-6">Química</SelectItem>
-                  <SelectItem value="subj-2">Português</SelectItem>
-                  <SelectItem value="subj-4">Redação</SelectItem>
-                  <SelectItem value="subj-5">História</SelectItem>
-                  <SelectItem value="subj-9">Geografia</SelectItem>
-                  <SelectItem value="subj-10">Inglês</SelectItem>
-                  <SelectItem value="subj-12">Biologia</SelectItem>
+                  {subjects.map(subj => (
+                    <SelectItem key={subj.id} value={subj.name}>{subj.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="teacher-password">Senha</Label>
-              <Input
-                id="teacher-password"
-                type="password"
-                value={newTeacherPassword}
-                onChange={(e) => setNewTeacherPassword(e.target.value)}
-                placeholder="Defina uma senha"
-                required
-              />
+              <Label>Senha Temporária</Label>
+              <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="******" required />
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button type="submit">Salvar Professor</Button>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-slate-900 text-white hover:bg-slate-800">{isSubmitting ? 'Salvando...' : 'Salvar Professor'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL DE EDITAR PROFESSOR */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Dados do Professor</DialogTitle>
+            <DialogDescription>Altere as informações de cadastro deste professor.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Nome Completo</Label>
+              <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+            </div>
+            <div className="grid gap-2">
+              <Label>E-mail</Label>
+              <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+            </div>
+            <div className="grid gap-2">
+              <Label>Matéria Principal</Label>
+              <Select value={formData.subject} onValueChange={v => setFormData({...formData, subject: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a matéria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map(subj => (
+                    <SelectItem key={subj.id} value={subj.name}>{subj.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-brand-yellow text-slate-900 hover:bg-amber-400 font-bold">{isSubmitting ? 'Atualizando...' : 'Atualizar Dados'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

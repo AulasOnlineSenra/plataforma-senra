@@ -20,6 +20,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  subject       String?
 
   // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
   lessonsAsStudent Lesson[] @relation("StudentLessons")

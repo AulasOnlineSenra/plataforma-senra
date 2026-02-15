@@ -7,11 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
-import { User, UserRole, Teacher } from '@/lib/types';
-import { teachers as initialTeachers, users as initialRegularUsers } from '@/lib/data';
+import { User, UserRole } from '@/lib/types';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft, Eye, EyeOff, UserCircle2, GraduationCap, School } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, GraduationCap, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { loginUser } from '../actions/auth';
 
@@ -27,8 +26,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
-const TEACHERS_STORAGE_KEY = 'teacherList';
-const USERS_STORAGE_KEY = 'userList';
 
 const LoginForm = ({
   role,
@@ -158,7 +155,7 @@ const LoginForm = ({
   );
 };
 
-const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.MouseEvent) => void;}) => {
+const RoleSelection = ({ onSelectRole }: { onSelectRole: (role: UserRole) => void; }) => {
   return (
   <div className="w-full animate-in fade-in zoom-in-95 duration-500">
     <div className="text-center mb-8">
@@ -199,23 +196,6 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
             Sou Administrador
         </Button>
 
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-4 text-slate-400 font-medium">ou</span>
-        </div>
-      </div>
-
-      <Button 
-        onClick={onLogin} 
-        className="h-14 w-full rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-lg shadow-slate-900/20 transition-all hover:scale-[1.02] text-base flex items-center justify-center gap-3"
-      >
-        <UserCircle2 className="w-5 h-5 text-amber-400" />
-        Acessar como Visitante
-      </Button>
-
       <div className="mt-8 text-center text-sm text-slate-500">
         Não tem uma conta?{' '}
         <Link href="/register" className="text-amber-600 font-bold hover:underline underline-offset-4">
@@ -248,45 +228,16 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = async (e: React.FormEvent | React.MouseEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mantemos a lógica do Visitante intacta
-    if (role === null) {
-      const visitorRole = 'student';
-      localStorage.setItem('userRole', visitorRole);
-
-      const visitorId = `visitor-${Date.now()}`;
-      const user: User = {
-        id: visitorId,
-        name: 'Visitante',
-        email: 'visitor@example.com',
-        avatarUrl: `https://picsum.photos/seed/${visitorId}/200/200`,
-        role: 'student',
-        status: 'active',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        classCredits: 0,
-        activePackage: 'Nenhum pacote ativo',
-        ratings: [],
-      };
-      
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('userId', user.id);
-      
-      toast({
-          title: "Acesso de Visitante",
-          description: `Você está acessando como Visitante.`,
-      });
-      router.push('/dashboard');
-      return;
-    }
-
+    // Login 100% Blindado no Banco de Dados
     const result = await loginUser({ email, password });
 
     if (!result.success || !result.user) {
         toast({
             variant: "destructive",
-            title: "Credenciais Inválidas",
+            title: "Acesso Negado",
             description: result.error || "Email ou senha incorretos.",
         });
         return;
@@ -294,16 +245,16 @@ export default function LoginPage() {
 
     const loggedUser = result.user;
 
-    // Verifica se o usuário escolheu o perfil (card) correto na tela
     if (loggedUser.role !== role) {
         toast({
             variant: "destructive",
             title: "Perfil Incorreto",
-            description: `Este e-mail está registrado como ${loggedUser.role === 'teacher' ? 'Professor' : 'Aluno'}. Selecione o perfil correto.`,
+            description: `Este e-mail pertence a um perfil de ${loggedUser.role === 'teacher' ? 'Professor' : loggedUser.role === 'admin' ? 'Administrador' : 'Aluno'}. Volte e selecione o perfil correto.`,
         });
         return;
     }
 
+    // Salva os dados na memória do navegador se a autenticação foi um sucesso
     localStorage.setItem('userRole', loggedUser.role);
     localStorage.setItem('currentUser', JSON.stringify(loggedUser));
     localStorage.setItem(`savedEmail-${loggedUser.role}`, email);
@@ -311,7 +262,7 @@ export default function LoginPage() {
     localStorage.setItem('userId', String(loggedUser.id));
 
     window.dispatchEvent(new Event('storage'));
-    localStorage.removeItem('newlyRegisteredUser'); // Limpa a memória temporária de registro
+    localStorage.removeItem('newlyRegisteredUser'); 
     
     toast({
         title: "Login bem-sucedido!",
@@ -358,7 +309,7 @@ export default function LoginPage() {
                         setPassword={setPassword}
                     />
                 ) : (
-                    <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
+                    <RoleSelection onSelectRole={setRole} />
                 )}
             </div>
             <p className="text-center text-slate-400 text-xs mt-8">

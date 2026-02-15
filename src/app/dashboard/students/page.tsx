@@ -1,55 +1,33 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { users as initialUsers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
-import { User, ScheduleEvent, UserRole, Teacher } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Trash2, CalendarCheck, Plus } from 'lucide-react';
+import { MessageSquare, Trash2, CalendarCheck, Plus, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ScheduleEvent } from '@/lib/types';
 
-const USERS_STORAGE_KEY = 'userList';
+// IMPORTANDO NOSSO MOTOR DO BANCO
+import { getStudents, addCreditsToStudent } from '@/app/actions/users';
+
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 
 function StudentList({
@@ -57,14 +35,14 @@ function StudentList({
   title,
   students,
   scheduleEvents,
-  onDeleteStudent,
+  onAddCredits,
   teacherId,
 }: {
   id?: string;
   title: string;
-  students: User[];
+  students: any[];
   scheduleEvents: ScheduleEvent[];
-  onDeleteStudent: (student: User) => void;
+  onAddCredits: (student: any) => void;
   teacherId?: string;
 }) {
   const router = useRouter();
@@ -74,7 +52,6 @@ function StudentList({
       (event) => {
         const isStudentMatch = event.studentId === studentId;
         const isScheduled = event.status === 'scheduled';
-        // If teacherId is provided, also filter by teacher
         const isTeacherMatch = teacherId ? event.teacherId === teacherId : true;
         return isStudentMatch && isScheduled && isTeacherMatch;
       }
@@ -92,8 +69,8 @@ function StudentList({
             <TableRow>
               <TableHead>Aluno</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
               <TableHead className="text-center hidden lg:table-cell">Aulas Agendadas</TableHead>
+              <TableHead className="text-center">Créditos</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -102,59 +79,59 @@ function StudentList({
                 students.map((student) => (
                   <TableRow key={student.id} 
                     onClick={() => router.push(`/dashboard/student/${student.id}`)}
-                    className="cursor-pointer group"
+                    className="cursor-pointer group hover:bg-slate-50 transition-colors"
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage
-                            src={student.avatarUrl}
-                            alt={student.name}
-                          />
-                          <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                        <Avatar className="h-10 w-10 border shadow-sm">
+                          <AvatarImage src={student.avatarUrl} alt={student.name} />
+                          <AvatarFallback className="bg-brand-yellow font-bold text-slate-800">{student.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className="font-medium">{student.name}</div>
+                        <div className="font-medium text-slate-800">{student.name}</div>
                       </div>
                     </TableCell>
-                    <TableCell
-                      className="hidden sm:table-cell"
-                    >
+                    <TableCell className="hidden sm:table-cell text-slate-500">
                       {student.email}
-                    </TableCell>
-                     <TableCell
-                      className="hidden md:table-cell text-muted-foreground"
-                    >
-                      {student.lastAccess ? format(new Date(student.lastAccess), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Nunca'}
                     </TableCell>
                     <TableCell className="text-center hidden lg:table-cell">
                       <div className="flex items-center justify-center gap-2">
-                        <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{getScheduledClassesCount(student.id)}</span>
+                        <CalendarCheck className="h-4 w-4 text-slate-400" />
+                        <span className="font-bold text-slate-700">{getScheduledClassesCount(student.id)}</span>
                       </div>
                     </TableCell>
+                    
+                    {/* COLUNA DE CRÉDITOS */}
+                    <TableCell className="text-center">
+                       <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 shadow-sm font-bold px-3 py-1">
+                         {student.credits || 0} Créditos
+                       </Badge>
+                    </TableCell>
+
                     <TableCell className="text-right">
+                      {/* BOTÃO ADICIONAR CRÉDITOS */}
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="ghost" size="icon"
+                        className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 mr-1"
+                        title="Adicionar Créditos"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddCredits(student);
+                        }}
+                      >
+                        <Coins className="h-5 w-5" />
+                        <span className="sr-only">Adicionar Créditos</span>
+                      </Button>
+
+                      <Button
+                        variant="ghost" size="icon"
+                        className="text-slate-400 hover:text-slate-800"
+                        title="Enviar Mensagem"
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/dashboard/chat?contactId=${student.id}`);
                         }}
                       >
                         <MessageSquare className="h-4 w-4" />
-                        <span className="sr-only">Enviar Mensagem</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteStudent(student);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Excluir</span>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -162,7 +139,7 @@ function StudentList({
             ) : (
                 <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        Nenhum aluno nesta categoria.
+                        Nenhum aluno encontrado no banco de dados.
                     </TableCell>
                 </TableRow>
             )}
@@ -174,45 +151,44 @@ function StudentList({
 }
 
 export default function AdminStudentsPage() {
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
-  const [isCreateStudentOpen, setIsCreateStudentOpen] = useState(false);
-  const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentEmail, setNewStudentEmail] = useState('');
-  const [newStudentPassword, setNewStudentPassword] = useState('');
+  
+  // Estados para o Modal de Créditos
+  const [selectedStudentForCredits, setSelectedStudentForCredits] = useState<any | null>(null);
+  const [creditsToAdd, setCreditsToAdd] = useState<number>(1);
+  const [isAddingCredits, setIsAddingCredits] = useState(false);
+  
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   
   useEffect(() => {
-    const updateData = () => {
-        const role = localStorage.getItem('userRole') as UserRole | null;
-        if (role) {
-            const storedUser = localStorage.getItem('currentUser');
-            setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
+    // Carrega o usuário atual
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) setCurrentUser(JSON.parse(storedUser));
+
+    // Carrega os alunos reais do Banco de Dados
+    const fetchDBStudents = async () => {
+        const result = await getStudents();
+        if (result.success && result.data) {
+            setAllUsers(result.data);
+        } else {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível buscar alunos.' });
         }
-
-        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        setAllUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
-        
-        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-        setScheduleEvents(storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) : initialSchedule);
     };
+    fetchDBStudents();
 
-    updateData();
-
-    window.addEventListener('storage', updateData);
-    return () => window.removeEventListener('storage', updateData);
+    // Mantém a agenda local por enquanto (até migrarmos)
+    const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    if (storedSchedule) {
+        setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
+    }
   }, []);
 
   const { activeStudents, inactiveStudents, pageTitle } = useMemo(() => {
     if (currentUser?.role === 'teacher') {
-      const myStudentIds = new Set(
-        scheduleEvents
-          .filter(event => event.teacherId === currentUser.id)
-          .map(event => event.studentId)
-      );
-
-      const myStudents = allUsers.filter(user => user.role === 'student' && myStudentIds.has(user.id));
+      const myStudentIds = new Set(scheduleEvents.filter(event => event.teacherId === currentUser.id).map(event => event.studentId));
+      const myStudents = allUsers.filter(user => myStudentIds.has(user.id));
       
       return {
         activeStudents: myStudents.filter(s => s.status === 'active'),
@@ -221,210 +197,93 @@ export default function AdminStudentsPage() {
       };
     }
 
-    // Default admin view
     return {
-      activeStudents: allUsers.filter(u => u.role === 'student' && u.status === 'active'),
-      inactiveStudents: allUsers.filter(u => u.role === 'student' && u.status === 'inactive'),
-      pageTitle: 'Gerenciar Alunos',
+      activeStudents: allUsers.filter(u => u.status === 'active'),
+      inactiveStudents: allUsers.filter(u => u.status === 'inactive'),
+      pageTitle: 'Gestão de Alunos e Créditos',
     };
   }, [currentUser, allUsers, scheduleEvents]);
 
 
-  const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
-  
-
-  const handleDeleteRequest = (student: User) => {
-    setStudentToDelete(student);
+  // Função para abrir o Modal de Créditos
+  const handleOpenCreditModal = (student: any) => {
+    setSelectedStudentForCredits(student);
+    setCreditsToAdd(1);
   };
 
-  const handleDeleteStudent = () => {
-    if (!studentToDelete) return;
-    
-    // Cancel future classes for the student being deleted
-    const updatedSchedule = scheduleEvents.map(event => {
-      if (event.studentId === studentToDelete.id && event.status === 'scheduled') {
-        return { ...event, status: 'cancelled' as const };
+  // Função que envia os créditos pro banco de dados
+  const submitCredits = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!selectedStudentForCredits || creditsToAdd <= 0) return;
+
+      setIsAddingCredits(true);
+      const result = await addCreditsToStudent(selectedStudentForCredits.id, creditsToAdd);
+
+      if (result.success) {
+          toast({ title: 'Créditos Adicionados! 💰', description: `${creditsToAdd} aulas foram injetadas na conta de ${selectedStudentForCredits.name}.` });
+          
+          // Atualiza a tela localmente para o Cleyton ver na hora
+          setAllUsers(prev => prev.map(u => u.id === selectedStudentForCredits.id ? { ...u, credits: result.newTotal } : u));
+          setSelectedStudentForCredits(null);
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: result.error });
       }
-      return event;
-    });
-    setScheduleEvents(updatedSchedule);
-    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
-    
-    // Remove user
-    const updatedUsers = allUsers.filter((user) => user.id !== studentToDelete.id);
-    setAllUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-    
-    window.dispatchEvent(new Event('storage'));
-
-    toast({
-      title: 'Aluno Excluído',
-      description: `O perfil de ${studentToDelete.name} foi removido e suas aulas futuras foram canceladas.`,
-    });
-    setStudentToDelete(null);
-  };
-
-  const handleCreateStudent = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const normalizedEmail = newStudentEmail.trim().toLowerCase();
-    const trimmedName = newStudentName.trim();
-
-    if (!trimmedName || !normalizedEmail || !newStudentPassword.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Preencha nome, email e senha para cadastrar o aluno.',
-      });
-      return;
-    }
-
-    const emailAlreadyExists = allUsers.some(
-      (user) => user.email.toLowerCase() === normalizedEmail
-    );
-
-    if (emailAlreadyExists) {
-      toast({
-        variant: 'destructive',
-        title: 'Email já cadastrado',
-        description: 'Já existe um usuário com esse email.',
-      });
-      return;
-    }
-
-    const newStudentId = `user-${Date.now()}`;
-    const newStudent: User = {
-      id: newStudentId,
-      name: trimmedName,
-      email: normalizedEmail,
-      avatarUrl: `https://picsum.photos/seed/${newStudentId}/200/200`,
-      role: 'student',
-      status: 'active',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      classCredits: 0,
-      activePackage: 'Nenhum pacote ativo',
-      ratings: [],
-      lastAccess: new Date().toISOString(),
-    };
-
-    const updatedUsers = [...allUsers, newStudent];
-    setAllUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-    localStorage.setItem(`savedPassword-${normalizedEmail}`, newStudentPassword);
-    window.dispatchEvent(new Event('storage'));
-
-    setNewStudentName('');
-    setNewStudentEmail('');
-    setNewStudentPassword('');
-    setIsCreateStudentOpen(false);
-
-    toast({
-      title: 'Aluno criado com sucesso',
-      description: `${newStudent.name} foi cadastrado(a) como aluno(a).`,
-    });
+      setIsAddingCredits(false);
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          {pageTitle}
-        </h1>
-        {currentUser?.role === 'admin' && (
-          <Button onClick={() => setIsCreateStudentOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Aluno
-          </Button>
-        )}
+    <div className="flex flex-1 flex-col gap-4 md:gap-8 max-w-7xl mx-auto w-full p-4">
+      <div className="flex items-center justify-between gap-4 bg-white p-6 rounded-xl border shadow-sm">
+        <div>
+           <h1 className="font-headline text-2xl md:text-3xl font-bold text-slate-900">{pageTitle}</h1>
+           <p className="text-slate-500 mt-1">Gerencie os acessos e injete aulas na conta dos alunos pagantes.</p>
+        </div>
       </div>
+
       <div className="grid gap-6">
         <StudentList
           id="active-students"
           title="Alunos Ativos"
           students={activeStudents}
           scheduleEvents={scheduleEvents}
-          onDeleteStudent={handleDeleteRequest}
-          teacherId={currentUser?.role === 'teacher' ? currentUser.id : undefined}
-        />
-        <StudentList
-          title="Alunos Inativos"
-          students={inactiveStudents}
-          scheduleEvents={scheduleEvents}
-          onDeleteStudent={handleDeleteRequest}
+          onAddCredits={handleOpenCreditModal}
           teacherId={currentUser?.role === 'teacher' ? currentUser.id : undefined}
         />
       </div>
 
-      <Dialog open={isCreateStudentOpen} onOpenChange={setIsCreateStudentOpen}>
+      {/* JANELA MODAL PARA ADICIONAR CRÉDITOS */}
+      <Dialog open={!!selectedStudentForCredits} onOpenChange={(open) => !open && setSelectedStudentForCredits(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Cadastro Interno de Aluno</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+               <Coins className="w-6 h-6 text-brand-yellow" /> Injetar Créditos
+            </DialogTitle>
             <DialogDescription>
-              Preencha os dados para criar um novo aluno manualmente.
+              Quantas aulas você deseja adicionar na conta de <strong className="text-slate-800">{selectedStudentForCredits?.name}</strong>?
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateStudent} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="student-name">Nome</Label>
-              <Input
-                id="student-name"
-                value={newStudentName}
-                onChange={(e) => setNewStudentName(e.target.value)}
-                placeholder="Nome completo"
-                required
-              />
+          <form onSubmit={submitCredits} className="grid gap-6 py-4">
+            
+            <div className="flex flex-col items-center justify-center p-6 bg-amber-50 rounded-xl border border-amber-100">
+               <Label htmlFor="credits-input" className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-3">Quantidade de Aulas</Label>
+               <Input
+                 id="credits-input" type="number" min="1"
+                 value={creditsToAdd}
+                 onChange={(e) => setCreditsToAdd(parseInt(e.target.value) || 0)}
+                 className="text-center text-4xl font-black h-20 w-32 border-2 border-brand-yellow focus:ring-brand-yellow shadow-inner bg-white"
+               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="student-email">Email</Label>
-              <Input
-                id="student-email"
-                type="email"
-                value={newStudentEmail}
-                onChange={(e) => setNewStudentEmail(e.target.value)}
-                placeholder="aluno@email.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="student-password">Senha</Label>
-              <Input
-                id="student-password"
-                type="password"
-                value={newStudentPassword}
-                onChange={(e) => setNewStudentPassword(e.target.value)}
-                placeholder="Defina uma senha"
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit">Salvar Aluno</Button>
+
+            <DialogFooter className="flex gap-2 sm:justify-between w-full">
+              <Button type="button" variant="outline" onClick={() => setSelectedStudentForCredits(null)} className="w-full">Cancelar</Button>
+              <Button type="submit" disabled={isAddingCredits} className="w-full bg-[#25D366] text-white hover:bg-[#1DA851] font-bold shadow-md">
+                {isAddingCredits ? 'Adicionando...' : 'Confirmar e Liberar'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={!!studentToDelete}
-        onOpenChange={() => setStudentToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-              perfil de{' '}
-              <span className="font-bold">{studentToDelete?.name}</span> e
-              removerá seus dados de nossos servidores. Todas as suas aulas futuras serão canceladas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteStudent}>
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
