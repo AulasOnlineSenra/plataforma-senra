@@ -1,17 +1,11 @@
-
-
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { users as initialUsers, getMockUser, scheduleEvents as initialSchedule, teachers as initialTeachers, subjects, simulados as initialSimulados } from '@/lib/data';
-import { User, ScheduleEvent, Teacher, Simulado } from '@/lib/types';
+import { getMockUser, scheduleEvents as initialSchedule, subjects, simulados as initialSimulados } from '@/lib/data';
+import { ScheduleEvent, Simulado } from '@/lib/types';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
+  Card, CardContent, CardHeader, CardTitle, CardDescription
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,30 +13,23 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, BookOpen, Plus, XCircle, ChevronRight, CalendarCheck, FileText, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, AlertCircle, Clock } from 'lucide-react';
+import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
+// MOTOR DO BANCO PARA BUSCAR O ALUNO
+import { getStudents } from '@/app/actions/users';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -61,10 +48,12 @@ function StudentDetailPageComponent() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const [student, setStudent] = useState<User | null>(null);
+    // ESTADOS
+    const [student, setStudent] = useState<any | null>(null);
     const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
-    const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
+    const [currentUser, setCurrentUser] = useState<any | null>(null);
     const [simulados, setSimulados] = useState<Simulado[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [editingClass, setEditingClass] = useState<ScheduleEvent | null>(null);
     const [editedTitle, setEditedTitle] = useState('');
@@ -74,11 +63,15 @@ function StudentDetailPageComponent() {
 
 
     useEffect(() => {
-        const updateData = () => {
-            const storedUsers = localStorage.getItem('userList');
-            const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-            const foundStudent = currentUsers.find(u => u.id === studentId);
-            setStudent(foundStudent || null);
+        const updateData = async () => {
+            setIsLoading(true);
+
+            // BUSCA O ALUNO DIRETO DO BANCO DE DADOS
+            const result = await getStudents();
+            if (result.success && result.data) {
+                const foundStudent = result.data.find(u => u.id === studentId);
+                setStudent(foundStudent || null);
+            }
 
             const storedSchedule = localStorage.getItem('scheduleEvents');
             const currentSchedule: ScheduleEvent[] = storedSchedule 
@@ -91,6 +84,8 @@ function StudentDetailPageComponent() {
 
             const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
             setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s:any) => ({...s, createdAt: new Date(s.createdAt), completedAt: s.completedAt ? new Date(s.completedAt) : undefined})) : initialSimulados);
+            
+            setIsLoading(false);
         }
         
         updateData();
@@ -106,14 +101,12 @@ function StudentDetailPageComponent() {
           e.status === 'scheduled' &&
           e.start > new Date();
     
-        // If the current user is a teacher, only show classes they are teaching to this student.
         if (currentUser.role === 'teacher') {
           return schedule
             .filter(e => baseFilter(e) && e.teacherId === currentUser.id)
             .sort((a, b) => a.start.getTime() - b.start.getTime());
         }
     
-        // For admin or the student themselves, show all their upcoming classes.
         return schedule
           .filter(baseFilter)
           .sort((a, b) => a.start.getTime() - b.start.getTime());
@@ -175,6 +168,10 @@ function StudentDetailPageComponent() {
         setIsFileUploadDialogOpen(true);
     };
 
+
+    if (isLoading) {
+        return <div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Carregando perfil do aluno...</div>;
+    }
 
     if (!student) {
         return (
@@ -257,59 +254,67 @@ function StudentDetailPageComponent() {
     
     return (
         <>
-            <div className="flex flex-1 flex-col gap-4 md:gap-8">
+            <div className="flex flex-1 flex-col gap-4 md:gap-8 max-w-5xl mx-auto w-full">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Link href="/dashboard/students" className="hover:underline">Meus Alunos</Link>
+                    <Link href="/dashboard/students" className="hover:underline">Alunos</Link>
                     <ChevronRight className="h-4 w-4" />
                     <span className="font-medium text-foreground">{student.name}</span>
                 </div>
                 
                 <Link href={`/dashboard/profile?userId=${student.id}`} className="group">
-                    <header className='flex items-center gap-4 rounded-lg p-2 -ml-2 group-hover:bg-accent/50 transition-colors'>
-                        <Avatar className="h-16 w-16 border-2 border-primary">
+                    <header className='flex items-center gap-4 rounded-xl p-4 bg-white border shadow-sm group-hover:shadow-md transition-all'>
+                        <Avatar className="h-16 w-16 border-2 border-brand-yellow">
                             <AvatarImage src={student.avatarUrl} alt={student.name} />
-                            <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="font-bold text-slate-800 bg-amber-100">{student.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <h1 className="text-2xl font-bold font-headline">{student.name}</h1>
-                            <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
-                                {student.status === 'active' ? 'Ativo' : 'Inativo'}
-                            </Badge>
+                            <h1 className="text-2xl font-bold font-headline text-slate-800">{student.name}</h1>
+                            <div className="flex gap-2 items-center mt-1">
+                                <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800 border-none' : ''}>
+                                    {student.status === 'active' ? 'Ativo' : 'Inativo'}
+                                </Badge>
+                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 shadow-sm font-bold">
+                                    {student.credits || 0} Créditos
+                                </Badge>
+                            </div>
                         </div>
                     </header>
                 </Link>
                 
                 <Tabs defaultValue="classes" className="w-full mt-4">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="classes">
-                        <CalendarCheck className="mr-2" />
+                <TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1">
+                    <TabsTrigger value="classes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <CalendarCheck className="mr-2 h-4 w-4" />
                         Aulas Agendadas
                     </TabsTrigger>
-                    <TabsTrigger value="completed">
-                        <BookOpen className="mr-2" />
+                    <TabsTrigger value="completed" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <BookOpen className="mr-2 h-4 w-4" />
                         Aulas Realizadas
                     </TabsTrigger>
-                    <TabsTrigger value="simulations">
-                        <BookCopy className="mr-2" />
+                    <TabsTrigger value="simulations" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <BookCopy className="mr-2 h-4 w-4" />
                         Simulados
                     </TabsTrigger>
                 </TabsList>
-                <TabsContent value="classes">
-                    <Card>
-                    <CardHeader>
-                        <CardTitle>Próximas Aulas</CardTitle>
+
+                {/* TAB DE AULAS AGENDADAS */}
+                <TabsContent value="classes" className="mt-4">
+                    <Card className="border-none shadow-md">
+                    <CardHeader className="bg-slate-50 border-b pb-4">
+                        <CardTitle className="text-xl text-slate-800">Próximas Aulas</CardTitle>
                         <CardDescription>
                         Aulas agendadas com {student.name}.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-4 pt-4">
                         {upcomingClasses.length > 0 ? (
                             upcomingClasses.map(c => (
-                                <div key={c.id} className="flex items-start justify-between rounded-md border p-4">
+                                <div key={c.id} className="flex items-start justify-between rounded-xl border p-5 bg-white hover:border-brand-yellow transition-colors shadow-sm">
                                     <div className="flex-1">
-                                        <p className="font-semibold">{c.title}</p>
-                                        {c.description && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{c.description}</p>}
-                                        <p className="text-sm text-muted-foreground mt-2">
+                                        <p className="font-bold text-lg text-slate-800">{c.title}</p>
+                                        {c.description && <p className="text-sm text-slate-600 mt-2 bg-slate-50 p-3 rounded-lg border">{c.description}</p>}
+                                        <p className="text-sm font-medium text-amber-700 mt-3 flex items-center gap-2">
+                                            <CalendarIcon className="h-4 w-4" />
                                             {c.subject} • {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
                                         </p>
                                     </div>
@@ -317,89 +322,97 @@ function StudentDetailPageComponent() {
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center py-10 text-muted-foreground">
-                                <p>Nenhuma aula futura agendada com este aluno.</p>
+                            <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-xl">
+                                <CalendarCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                <p className="font-medium text-slate-600">Nenhuma aula futura agendada com este aluno.</p>
                             </div>
                         )}
                     </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="completed">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Histórico de Aulas Realizadas</CardTitle>
+
+                {/* TAB DE AULAS REALIZADAS */}
+                <TabsContent value="completed" className="mt-4">
+                    <Card className="border-none shadow-md">
+                        <CardHeader className="bg-slate-50 border-b pb-4">
+                            <CardTitle className="text-xl text-slate-800">Histórico de Aulas Realizadas</CardTitle>
                             <CardDescription>Aulas que você já concluiu com {student.name}.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-4 pt-4">
                             {completedClasses.length > 0 ? (
                                 completedClasses.map(c => (
-                                    <div key={c.id} className="flex items-start justify-between rounded-md border p-4">
+                                    <div key={c.id} className="flex items-start justify-between rounded-xl border p-5 bg-white shadow-sm">
                                         <div className="flex-1">
-                                            <p className="font-semibold">{c.title}</p>
-                                            {c.description && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{c.description}</p>}
-                                            <p className="text-sm text-muted-foreground mt-2">
-                                                {c.subject} • {format(c.start, "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                            <p className="font-bold text-lg text-slate-800">{c.title}</p>
+                                            {c.description && <p className="text-sm text-slate-600 mt-2 bg-slate-50 p-3 rounded-lg border">{c.description}</p>}
+                                            <p className="text-sm font-medium text-slate-500 mt-3 flex items-center gap-2">
+                                                <Check className="h-4 w-4 text-green-500" />
+                                                {c.subject} • Concluída em {format(c.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                             </p>
                                         </div>
                                         {renderClassActions(c)}
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-10 text-muted-foreground">
-                                    <p>Nenhuma aula foi concluída com este aluno ainda.</p>
+                                <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-xl">
+                                    <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                    <p className="font-medium text-slate-600">Nenhuma aula foi concluída com este aluno ainda.</p>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="simulations">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Simulados</CardTitle>
+
+                {/* TAB DE SIMULADOS */}
+                <TabsContent value="simulations" className="mt-4">
+                    <Card className="border-none shadow-md">
+                        <CardHeader className="bg-slate-50 border-b pb-4">
+                            <CardTitle className="text-xl text-slate-800">Simulados</CardTitle>
                             <CardDescription>Simulados e exercícios propostos para {student.name}.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-4 pt-4">
                             {studentSimulados.length > 0 ? (
                                 studentSimulados.map(simulado => {
                                     const results = calculateSimuladoResults(simulado);
                                     return (
-                                        <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
+                                        <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-xl border p-5 bg-white shadow-sm gap-4 hover:border-brand-yellow transition-colors">
                                             <div className="flex-1">
-                                                <p className="font-semibold">{simulado.title}</p>
-                                                <p className="text-sm text-muted-foreground mt-1">
+                                                <p className="font-bold text-lg text-slate-800">{simulado.title}</p>
+                                                <p className="text-sm text-slate-500 mt-1 font-medium">
                                                     {getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões {simulado.timeLimitMinutes && `• ${simulado.timeLimitMinutes} min`}
                                                 </p>
                                             </div>
                                             {simulado.status === 'Concluído' ? (
-                                                <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
-                                                    <div className="flex items-center gap-2 text-green-600">
+                                                <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between bg-slate-50 p-3 rounded-lg border">
+                                                    <div className="flex items-center gap-2 text-green-600 font-bold">
                                                         <Check className="h-4 w-4" />
                                                         <span>{results.correct} Acertos</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-destructive">
+                                                    <div className="flex items-center gap-2 text-red-500 font-bold">
                                                         <XCircle className="h-4 w-4" />
                                                         <span>{results.incorrect} Erros</span>
                                                     </div>
                                                     {results.durationSeconds !== undefined && (
-                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                        <div className="flex items-center gap-1.5 text-slate-500 font-medium">
                                                             <Clock className="h-4 w-4" /> 
                                                             <span>{formatDuration(results.durationSeconds)}</span>
                                                         </div>
                                                     )}
-                                                     <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn(results.score >= 70 && 'bg-green-100 text-green-800')}>
+                                                     <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn("text-sm", results.score >= 70 && 'bg-green-100 text-green-800 border-none')}>
                                                         {results.score.toFixed(0)}%
                                                     </Badge>
-                                                    <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
+                                                    <Button variant="outline" size="sm" className="font-bold hover:bg-slate-200 border-slate-300" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
                                                 </div>
                                             ) : (
-                                                 <Badge>Pendente</Badge>
+                                                 <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-none px-3 py-1">Pendente</Badge>
                                             )}
                                         </div>
                                     )
                                 })
                             ) : (
-                                <div className="text-center py-10 text-muted-foreground">
-                                    <p>Nenhum simulado disponível no momento.</p>
+                                <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-xl">
+                                    <BookCopy className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                    <p className="font-medium text-slate-600">Nenhum simulado disponível no momento.</p>
                                 </div>
                             )}
                         </CardContent>
@@ -407,58 +420,44 @@ function StudentDetailPageComponent() {
                 </TabsContent>
                 </Tabs>
             </div>
+
             <Dialog open={!!editingClass} onOpenChange={() => setEditingClass(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Editar Aula</DialogTitle>
-                        <DialogDescription>
-                            Atualize o título e a descrição da aula de {editingClass?.subject}.
-                        </DialogDescription>
+                        <DialogDescription>Atualize o título e a descrição da aula de {editingClass?.subject}.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label htmlFor="class-title">Título da Aula</Label>
-                            <Input
-                                id="class-title"
-                                value={editedTitle}
-                                onChange={(e) => setEditedTitle(e.target.value)}
-                            />
+                            <Input id="class-title" value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="class-description">Descrição da Aula</Label>
-                            <Textarea
-                                id="class-description"
-                                value={editedDescription}
-                                onChange={(e) => setEditedDescription(e.target.value)}
-                                placeholder="Adicione observações, tópicos a serem abordados ou links importantes..."
-                                rows={5}
-                            />
+                            <Textarea id="class-description" value={editedDescription} onChange={(e) => setEditedDescription(e.target.value)} placeholder="Adicione observações, tópicos a serem abordados ou links importantes..." rows={5} />
                         </div>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button variant="outline">Cancelar</Button>
                         </DialogClose>
-                        <Button onClick={handleSaveChanges}>Salvar Alterações</Button>
+                        <Button onClick={handleSaveChanges} className="bg-brand-yellow text-slate-900 font-bold hover:bg-amber-400">Salvar Alterações</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
              <Dialog open={isFileUploadDialogOpen} onOpenChange={setIsFileUploadDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Anexar Arquivo</DialogTitle>
-                        <DialogDescription>
-                            Anexe um material para a aula de <span className="font-semibold">{selectedClassForMaterial?.subject}</span> do dia {selectedClassForMaterial && format(selectedClassForMaterial.start, 'dd/MM/yy')}.
-                        </DialogDescription>
+                        <DialogDescription>Anexe um material para a aula de <span className="font-semibold">{selectedClassForMaterial?.subject}</span> do dia {selectedClassForMaterial && format(selectedClassForMaterial.start, 'dd/MM/yy')}.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label htmlFor="file-upload">Arquivo</Label>
                             <div className="flex items-center gap-2">
-                                <Input id="file-upload" type="file" className="flex-1"/>
-                                <Button size="icon" variant="outline">
-                                    <UploadCloud className="h-4 w-4" />
-                                </Button>
+                                <Input id="file-upload" type="file" className="flex-1 cursor-pointer"/>
+                                <Button size="icon" variant="outline"><UploadCloud className="h-4 w-4" /></Button>
                             </div>
                             <p className="text-xs text-muted-foreground">PDFs, planilhas, vídeos, imagens, etc.</p>
                         </div>
@@ -467,10 +466,10 @@ function StudentDetailPageComponent() {
                         <DialogClose asChild>
                             <Button variant="secondary">Cancelar</Button>
                         </DialogClose>
-                         <Button onClick={() => {
+                         <Button className="bg-brand-yellow text-slate-900 font-bold hover:bg-amber-400" onClick={() => {
                             toast({ title: 'Arquivo Anexado!', description: 'O material foi adicionado à aula.' });
                             setIsFileUploadDialogOpen(false);
-                         }}>Anexar</Button>
+                         }}>Anexar Material</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -480,7 +479,7 @@ function StudentDetailPageComponent() {
 
 export default function StudentDetailPage() {
     return (
-        <Suspense fallback={<div>Carregando...</div>}>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center animate-pulse">Carregando...</div>}>
             <StudentDetailPageComponent />
         </Suspense>
     )

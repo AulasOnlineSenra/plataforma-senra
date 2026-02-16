@@ -11,17 +11,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday, startOfWeek, endOfWeek, isSameMonth, isValid } from 'date-fns';
+import { format, addMinutes, isBefore, startOfToday, getDay, parse, isToday, isSameMonth, isValid } from 'date-fns';
 import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
-// DADOS LOCAIS
-import { getMockUser, scheduleEvents as initialSchedule, users as initialUsers } from '@/lib/data';
-
-// MOTOR DO BANCO
-import { getTeachers } from '@/app/actions/users';
+// NOSSOS MOTORES DO BANCO DE DADOS
+import { getStudents, getTeachers, getUserById } from '@/app/actions/users';
+import { createBookings, getLessons } from '@/app/actions/bookings';
 
 interface Booking {
   id: string;
@@ -55,64 +53,80 @@ function BookingPageComponent() {
   const [recurrence, setRecurrence] = useState<Recurrence>('none');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timezoneDifference, setTimezoneDifference] = useState<string | null>(null);
-  const [scheduleEvents, setScheduleEvents] = useState<any[]>(initialSchedule);
+  const [scheduleEvents, setScheduleEvents] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]); 
-  const [users, setUsers] = useState<any[]>(initialUsers);
+  const [users, setUsers] = useState<any[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  
+  // Estado para o botão não ser clicado 2 vezes
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
     
-    const loadTeachers = async () => {
-        const res = await getTeachers();
-        if (res.success && res.data) {
-            const defaultAvailability = {
-                monday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
-                tuesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
-                wednesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
-                thursday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
-                friday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
-                saturday: ['09:00', '10:00', '11:00'],
-                sunday: []
-            };
-            const formattedTeachers = res.data.map(t => ({ ...t, availability: defaultAvailability }));
-            setTeachers(formattedTeachers);
+    const loadInitialData = async () => {
+      const defaultAvailability = {
+        monday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+        tuesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+        wednesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+        thursday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+        friday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+        saturday: ['09:00', '10:00', '11:00'],
+        sunday: [],
+      };
 
-            if (teacherIdParam) {
-                const teacherFromParam = formattedTeachers.find(t => t.id === teacherIdParam);
-                if (teacherFromParam && teacherFromParam.subject) {
-                    setSelectedTeacher(teacherIdParam);
-                    setSelectedSubject(teacherFromParam.subject);
-                }
-            }
+      const [teachersResult, studentsResult, lessonsResult] = await Promise.all([getTeachers(), getStudents(), getLessons()]);
+
+      if (teachersResult.success && teachersResult.data) {
+        const formattedTeachers = teachersResult.data.map((teacher) => ({
+          ...teacher,
+          availability: defaultAvailability,
+        }));
+        setTeachers(formattedTeachers);
+
+        if (teacherIdParam) {
+          const teacherFromParam = formattedTeachers.find((teacher) => teacher.id === teacherIdParam);
+          if (teacherFromParam?.subject) {
+            setSelectedTeacher(teacherIdParam);
+            setSelectedSubject(teacherFromParam.subject);
+          }
         }
+      }
+
+      if (studentsResult.success && studentsResult.data) {
+        setUsers(studentsResult.data);
+      }
+
+      if (lessonsResult.success && lessonsResult.data) {
+        setScheduleEvents(
+          lessonsResult.data.map((lesson) => ({
+            ...lesson,
+            start: new Date(lesson.date),
+            end: new Date(lesson.endDate),
+          }))
+        );
+      }
+
+      const loggedUserId = localStorage.getItem('userId');
+      if (!loggedUserId) return;
+
+      const loggedResult = await getUserById(loggedUserId);
+      if (!loggedResult.success || !loggedResult.data) return;
+
+      const loggedInUser = loggedResult.data;
+      const studentToBook =
+        studentIdParam && studentsResult.success && studentsResult.data
+          ? studentsResult.data.find((student) => student.id === studentIdParam)
+          : loggedInUser;
+
+      setCurrentUser(studentToBook || loggedInUser);
     };
 
-    loadTeachers();
-
-    const storedSchedule = localStorage.getItem('scheduleEvents');
-    if (storedSchedule) {
-        setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
-    }
-
-    const storedUsers = localStorage.getItem('userList');
-    const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-    setUsers(currentUsers);
-    
-    const loggedInUserStr = localStorage.getItem('currentUser');
-    let loggedInUser: any = null;
-    if (loggedInUserStr) {
-        loggedInUser = JSON.parse(loggedInUserStr);
-    } else {
-        loggedInUser = getMockUser('student');
-    }
-    
-    const studentToBook = studentIdParam ? currentUsers.find((u: any) => u.id === studentIdParam) : loggedInUser;
-    setCurrentUser(studentToBook || getMockUser('student'));
+    loadInitialData();
 
     const savedBookings = localStorage.getItem(PENDING_BOOKINGS_STORAGE_KEY);
     if (savedBookings) {
@@ -171,18 +185,23 @@ function BookingPageComponent() {
     }
   };
 
-  // Lida com a seleção de datas pro Calendário
   const handleDateSelection = (dates: Date[] | undefined) => {
     if (!dates) {
       setSelectedDates([]);
       return;
     }
-    if (isExperimentalOptionAvailable) {
+    if (!selectedTeacher || isExperimentalOptionAvailable) {
       setSelectedDates(dates.length > 0 ? [dates[dates.length - 1]] : []);
     } else {
       setSelectedDates(dates);
     }
   };
+
+  useEffect(() => {
+    if (!selectedTeacher && selectedDates.length > 1) {
+      setSelectedDates([selectedDates[selectedDates.length - 1]]);
+    }
+  }, [selectedTeacher, selectedDates]);
 
   const handleClearSelections = () => {
     setSelectedSubject(undefined);
@@ -271,59 +290,71 @@ function BookingPageComponent() {
     setBookings(bookings.filter((b) => b.id !== id));
   };
 
-  const handleConfirmAllBookings = useCallback(() => {
+  const handleConfirmAllBookings = useCallback(async () => {
     const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
     if (bookings.length === 0 || !studentToBook) return;
     
     const nonExperimentalBookings = bookings.filter(b => !b.isExperimental);
-    const experimentalBooking = bookings.find(b => b.isExperimental);
-    
-    // VERIFICAÇÃO DE CRÉDITOS DO BANCO
     const currentCredits = studentToBook.credits || 0; 
 
+    // Bloqueia se o aluno não tiver crédito suficiente na carteira
     if (currentCredits < nonExperimentalBookings.length) {
       const creditsNeeded = nonExperimentalBookings.length - currentCredits;
       toast({
         variant: 'destructive',
         title: 'Créditos Insuficientes',
-        description: `Você precisa de mais ${creditsNeeded} crédito(s) de aula. Estamos te redirecionando para a compra de pacotes.`,
+        description: `Você precisa de mais ${creditsNeeded} crédito(s) de aula. Compre mais pacotes para continuar.`,
       });
       localStorage.setItem(PENDING_BOOKINGS_STORAGE_KEY, JSON.stringify(bookings));
       router.push(`/dashboard/packages?needed=${creditsNeeded}`);
       return;
     }
 
-    const newScheduleEvents = bookings.map(b => ({
-      id: b.id,
-      title: `Aula de ${b.subjectId}`,
-      start: b.start,
-      end: b.end,
-      studentId: studentToBook!.id,
-      teacherId: b.teacherId,
-      subject: b.subjectId,
-      status: 'scheduled' as 'scheduled',
-      isExperimental: b.isExperimental,
-      subjectId: b.subjectId,
-    }));
-    
-    const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
-    localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
-    window.dispatchEvent(new Event('storage'));
+    setIsSubmitting(true);
 
-    toast({
-      title: 'Agendamentos Confirmados!',
-      description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
-    });
-    setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, teachers, users, toast, studentIdParam, router]);
+    // Prepara os dados para o Prisma
+    const payload = bookings.map(b => ({
+        subjectId: b.subjectId || 'Geral',
+        teacherId: b.teacherId,
+        start: b.start,
+        end: b.end,
+        isExperimental: !!b.isExperimental
+    }));
+
+    // Dispara a Action do Banco de Dados
+    const result = await createBookings(studentToBook.id, payload);
+
+    if (result.success) {
+        toast({
+          title: 'Aulas Confirmadas! 🎉',
+          description: `Seus agendamentos foram salvos e os créditos debitados com sucesso.`,
+        });
+        
+        setBookings([]);
+        localStorage.removeItem(PENDING_BOOKINGS_STORAGE_KEY);
+        
+        // Atualiza a carteira de créditos do aluno visualmente na hora
+        if (currentUser?.id === studentToBook.id) {
+            const updatedUser = { ...currentUser, credits: currentCredits - nonExperimentalBookings.length };
+            setCurrentUser(updatedUser);
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            window.dispatchEvent(new Event('storage')); // Dá um refresh na foto do Menu Lateral
+        }
+
+        router.push('/dashboard/schedule');
+    } else {
+        toast({ variant: 'destructive', title: 'Erro ao agendar', description: result.error });
+    }
+    
+    setIsSubmitting(false);
+
+  }, [bookings, currentUser, toast, studentIdParam, router, users]);
 
   const getDaySlots = useCallback((dayAvailability: unknown): string[] => {
     if (!Array.isArray(dayAvailability) || dayAvailability.length === 0) return [];
     const slots: string[] = [];
     dayAvailability.forEach((entry) => {
-      if (typeof entry === 'string') {
-        slots.push(entry);
-      }
+      if (typeof entry === 'string') slots.push(entry);
     });
     return Array.from(new Set(slots)).sort((a, b) => a.localeCompare(b));
   }, []);
@@ -390,29 +421,29 @@ function BookingPageComponent() {
             .map((booking) => {
             const teacher = teachers.find((t) => t.id === booking.teacherId);
             return (
-                <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4">
+                <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4 bg-slate-50">
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <Label>Disciplina</Label>
                         <div className="flex items-center gap-2">
-                           <p className="font-semibold">{booking.subjectId}</p>
-                           {booking.isExperimental && <Badge variant="secondary" className="bg-brand-yellow text-black">Experimental</Badge>}
+                           <p className="font-semibold text-slate-800">{booking.subjectId}</p>
+                           {booking.isExperimental && <Badge variant="secondary" className="bg-brand-yellow text-black font-bold">Experimental</Badge>}
                         </div>
                     </div>
                     <div>
                     <Label>Professor(a)</Label>
-                    <p className="font-semibold">{teacher?.name}</p>
+                    <p className="font-semibold text-slate-800">{teacher?.name}</p>
                     </div>
                     <div>
                     <Label>Data e Horário</Label>
-                    <p className="font-semibold">
+                    <p className="font-semibold text-brand-yellow">
                         {format(booking.start, "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(booking.end, 'HH:mm')}
                     </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 self-end sm:self-center">
-                    <Button variant="destructive" size="icon" onClick={() => handleRemoveBooking(booking.id)} title="Remover agendamento">
-                    <Trash2 className="h-4 w-4" />
+                    <Button variant="destructive" size="icon" onClick={() => handleRemoveBooking(booking.id)} title="Remover agendamento" className="shadow-sm">
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
                 </div>
@@ -420,52 +451,53 @@ function BookingPageComponent() {
             })}
         </div>
     ) : (
-        <div className="text-center py-8 text-muted-foreground">
-            <p>Nenhuma aula adicionada ao resumo ainda.</p>
+        <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-xl">
+            <CalendarIcon className="h-10 w-10 mx-auto mb-3 opacity-20" />
+            <p className="font-medium text-slate-600">Nenhuma aula adicionada ao resumo ainda.</p>
         </div>
     )
   );
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
+    <div className="flex flex-1 flex-col gap-4 md:gap-8 w-full max-w-6xl mx-auto">
       <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">{pageTitle}</h1>
+        <h1 className="font-headline text-2xl md:text-3xl font-bold text-slate-900">{pageTitle}</h1>
       </div>
 
       <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Passo 1: Selecione a Disciplina e Professor</CardTitle>
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50 border-b pb-4">
+            <CardTitle className="font-headline text-slate-800">Passo 1: Selecione a Disciplina e Professor</CardTitle>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6">
+          <CardContent className="grid md:grid-cols-2 gap-6 pt-6">
             <div className="grid gap-2">
-              <Label htmlFor="subject">Disciplina</Label>
+              <Label htmlFor="subject" className="font-bold text-slate-700">Disciplina</Label>
               <Select value={selectedSubject} onValueChange={handleSubjectChange}>
-                <SelectTrigger id="subject">
+                <SelectTrigger id="subject" className="h-12 border-slate-300">
                   <SelectValue placeholder="Escolha uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableSubjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    <SelectItem key={subject} value={subject} className="font-medium">{subject}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="teacher">Professor(a)</Label>
+              <Label htmlFor="teacher" className="font-bold text-slate-700">Professor(a)</Label>
               <Select value={selectedTeacher} onValueChange={handleTeacherChange} disabled={!selectedSubject}>
-                <SelectTrigger id="teacher">
+                <SelectTrigger id="teacher" className="h-12 border-slate-300">
                   <SelectValue placeholder="Escolha um(a) professor(a)" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableTeachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-7 w-7 border">
                           <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                          <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                          <AvatarFallback className="bg-brand-yellow font-bold text-xs">{teacher.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span>{teacher.name}</span>
+                        <span className="font-medium">{teacher.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -475,13 +507,13 @@ function BookingPageComponent() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Passo 2: Escolha as Datas e Horários</CardTitle>
-            <CardDescription>A duração de cada aula é de {CLASS_DURATION_MINUTES} minutos.</CardDescription>
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50 border-b pb-4">
+            <CardTitle className="font-headline text-slate-800">Passo 2: Escolha as Datas e Horários</CardTitle>
+            <CardDescription className="text-slate-500 font-medium">A duração de cada aula é de {CLASS_DURATION_MINUTES} minutos.</CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6 items-start">
-            <div className="flex justify-center">
+          <CardContent className="grid md:grid-cols-2 gap-6 items-start pt-6">
+            <div className="flex justify-center w-full">
               {isClient ? (
                 <Calendar
                   mode="multiple"
@@ -489,21 +521,21 @@ function BookingPageComponent() {
                   onSelect={handleDateSelection}
                   month={calendarMonth}
                   onMonthChange={setCalendarMonth}
-                  className="rounded-md border p-0 sm:p-3"
+                  className="rounded-xl border p-0 sm:p-4 w-full bg-white shadow-sm"
                   locale={ptBR}
                   disabled={disabledDays}
                 />
               ) : (
-                <div className="rounded-md border p-0 sm:p-3 w-full h-[345px] flex items-center justify-center bg-muted/50">Carregando...</div>
+                <div className="rounded-md border p-0 sm:p-3 w-full h-[345px] flex items-center justify-center bg-muted/50 animate-pulse">Carregando calendário...</div>
               )}
             </div>
             <div className="grid gap-4 self-start">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {availableTimes.map((time) => (
                   <Button
                     key={time.start} variant="outline"
                     onClick={() => setSelectedTime(time.start)}
-                    className={cn('text-sm', selectedTime === time.start ? 'bg-brand-yellow text-black hover:bg-brand-yellow/90' : '')}
+                    className={cn('text-sm h-12 font-bold transition-all', selectedTime === time.start ? 'bg-brand-yellow text-slate-900 hover:bg-amber-400 border-none shadow-md scale-105' : 'text-slate-600 hover:text-slate-900 border-slate-300')}
                     disabled={!selectedTeacher || selectedDates.length === 0}
                   >
                     {time.start} - {time.end}
@@ -512,28 +544,28 @@ function BookingPageComponent() {
               </div>
             </div>
           </CardContent>
-          <CardContent className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
-            <div className="flex gap-2 w-full justify-end">
-                <Button variant="ghost" onClick={handleClearSelections}><X className="mr-2" />Limpar</Button>
-                <Button onClick={handleAddBooking} className={cn(isExperimentalOptionAvailable ? 'bg-brand-yellow text-black' : 'bg-slate-900 text-white hover:bg-slate-800')}>
-                  Adicionar aula <Plus className="ml-2" />
+          <CardContent className="flex flex-col sm:flex-row items-center justify-end pt-2 pb-6 gap-4">
+            <div className="flex gap-3 w-full justify-end">
+                <Button variant="outline" onClick={handleClearSelections} className="h-12 px-6 font-bold text-slate-600"><X className="mr-2 h-5 w-5" />Limpar</Button>
+                <Button onClick={handleAddBooking} className={cn('h-12 px-8 font-bold shadow-md text-base transition-transform hover:scale-105', isExperimentalOptionAvailable ? 'bg-brand-yellow text-slate-900 hover:bg-amber-400' : 'bg-slate-900 text-white hover:bg-slate-800')}>
+                  Adicionar aula <Plus className="ml-2 h-5 w-5" />
                 </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-             <CardTitle className="font-headline">Passo 3: Resumo dos Agendamentos</CardTitle>
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50 border-b pb-4">
+             <CardTitle className="font-headline text-slate-800">Passo 3: Resumo dos Agendamentos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {renderListView()}
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button size="lg" onClick={handleConfirmAllBookings} disabled={bookings.length === 0} className="bg-brand-yellow text-slate-900 font-bold hover:bg-amber-400">
-            Confirmar Agendamentos ({bookings.length})
+        <div className="flex justify-end pt-4 pb-12">
+          <Button size="lg" disabled={bookings.length === 0 || isSubmitting} onClick={handleConfirmAllBookings} className="h-14 px-10 text-lg bg-brand-yellow text-slate-900 font-bold hover:bg-amber-400 shadow-lg hover:-translate-y-1 transition-all">
+            {isSubmitting ? 'Salvando no Banco...' : `Confirmar Agendamentos (${bookings.length})`}
           </Button>
         </div>
       </div>
@@ -543,7 +575,7 @@ function BookingPageComponent() {
 
 export default function BookingPage() {
     return (
-        <Suspense fallback={<div>Carregando...</div>}>
+        <Suspense fallback={<div className="flex h-[50vh] w-full items-center justify-center animate-pulse">Carregando sistema de agendamento...</div>}>
             <BookingPageComponent />
         </Suspense>
     );

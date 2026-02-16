@@ -26,24 +26,48 @@ model User {
   // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
   lessonsAsStudent Lesson[] @relation("StudentLessons")
   lessonsAsTeacher Lesson[] @relation("TeacherLessons")
+  sentMessages    ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  createdSimulados Simulado[] @relation("SimuladoCreator")
+  assignedSimulados Simulado[] @relation("SimuladoStudent")
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  createdAt  DateTime @default(now())
+  readAt     DateTime?
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, senderId, createdAt])
 }
 
 // Aulas (Alimenta os cards de agendadas/realizadas e a lista de Próximas Aulas)
 model Lesson {
-  id          String   @id @default(uuid())
-  studentId   String
-  teacherId   String
-  subject     String   // Ex: Matemática, Física, etc.
-  date        DateTime // Data e hora da aula
-  status      String   @default("scheduled") // 'scheduled', 'completed', 'cancelled'
-  price       Float?   // Preço cobrado pela aula (para o gráfico de Receita)
+  id             String   @id @default(uuid())
+  studentId      String
+  teacherId      String
+  subject        String   // Ex: Matemática, Física, etc.
+  
+  // NOSSAS DATAS (Início e Fim)
+  date           DateTime // Data e hora do INÍCIO da aula
+  endDate        DateTime @default(now()) // Data e hora do FIM da aula
+  
+  status         String   @default("scheduled") // 'scheduled', 'completed', 'cancelled'
+  price          Float?   // Preço cobrado pela aula
+  isExperimental Boolean  @default(false) // Define se é aula teste grátis
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Liga a aula aos usuários
-  student     User     @relation("StudentLessons", fields: [studentId], references: [id])
-  teacher     User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+  student        User     @relation("StudentLessons", fields: [studentId], references: [id])
+  teacher        User     @relation("TeacherLessons", fields: [teacherId], references: [id])
 }
 
 // Planos/Pacotes (Baseado na sua tela de Gerenciar Planos)
@@ -57,4 +81,26 @@ model Plan {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Simulado {
+  id               String   @id @default(uuid())
+  title            String
+  description      String
+  subject          String
+  creatorId        String
+  studentId        String
+  status           String   @default("Pendente")
+  maxAttempts      Int      @default(1)
+  timeLimitMinutes Int?
+  questions        Json
+  attempts         Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  creator User @relation("SimuladoCreator", fields: [creatorId], references: [id])
+  student User @relation("SimuladoStudent", fields: [studentId], references: [id])
+
+  @@index([creatorId, createdAt])
+  @@index([studentId, createdAt])
 }

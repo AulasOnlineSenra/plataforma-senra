@@ -1,209 +1,137 @@
-
-
 'use client';
 
-import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from '@/components/ui/card';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, ArrowRight, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
-import { simulados as initialSimulados, subjects as initialSubjects, getMockUser } from '@/lib/data';
-import { Simulado, Question } from '@/lib/types';
-import { AlertCircle, ArrowLeft, ArrowRight, Check, X, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { getSimuladoById, submitSimuladoAttempt } from '@/app/actions/simulados';
 
-const SIMULADOS_STORAGE_KEY = 'simuladosList';
+type QuestionOption = { id: string; text: string; isCorrect: boolean };
+type Question = { id: string; title: string; options: QuestionOption[] };
+type Attempt = { score: number; durationSeconds: number; userAnswers: Record<string, string> };
+type Simulado = {
+  id: string;
+  title: string;
+  description: string;
+  questions: Question[];
+  timeLimitMinutes?: number | null;
+  attempts: Attempt[];
+  maxAttempts: number;
+};
 
-type Answers = Record<string, string>;
-
-function formatDuration(seconds: number): string {
-    if (seconds < 60) {
-      return `${seconds} s`;
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
+function formatDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function StartSimuladoPageComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const simuladoId = searchParams.get('id');
   const { toast } = useToast();
 
+  const simuladoId = searchParams.get('id');
+
   const [simulado, setSimulado] = useState<Simulado | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answers>({});
-  const [isFinished, setIsFinished] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [startTime, setStartTime] = useState<Date | null>(null);
-  const [remainingTime, setRemainingTime] = useState<number | null>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const [submittedAttempt, setSubmittedAttempt] = useState<Attempt | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  
-  const handleFinish = () => {
-    if (!simulado || !startTime) return;
-
-    if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-    }
-
-    const endTime = new Date();
-    const durationInSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
-
-    let correctAnswers = 0;
-    simulado.questions.forEach(q => {
-        const correctOption = q.options.find(opt => opt.isCorrect);
-        if (correctOption && answers[q.id] === correctOption.id) {
-            correctAnswers++;
-        }
-    });
-
-    const calculatedScore = (correctAnswers / simulado.questions.length) * 100;
-    
-    const newAttempt = {
-        startedAt: startTime,
-        completedAt: endTime,
-        durationSeconds: durationInSeconds,
-        score: calculatedScore,
-        userAnswers: answers,
-    };
-    
-    const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-    let allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : [];
-    
-    const updatedSimulados = allSimulados.map(s => 
-      s.id === simulado.id 
-        ? { ...s, status: 'Concluído' as 'Concluído', attempts: [...s.attempts, newAttempt] } 
-        : s
-    );
-    localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
-    window.dispatchEvent(new Event('storage'));
-
-    setIsFinished(true);
-
-    toast({
-        title: "Simulado Finalizado!",
-        description: `Sua pontuação foi de ${calculatedScore.toFixed(0)}%.`
-    });
-  };
-  
-  useEffect(() => {
-    const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-    const allSimulados: Simulado[] = storedSimulados ? JSON.parse(storedSimulados) : initialSimulados;
-    const foundSimulado = allSimulados.find(s => s.id === simuladoId);
-    
-    if (foundSimulado) {
-        const canRetake = foundSimulado.attempts.length < foundSimulado.maxAttempts;
-        if (foundSimulado.status === 'Concluído' && !canRetake) {
-          setIsFinished(true);
-          setAnswers(foundSimulado.attempts[foundSimulado.attempts.length-1].userAnswers);
-        } else {
-          setIsFinished(false);
-          setAnswers({});
-          setCurrentQuestionIndex(0);
-          setStartTime(new Date());
-          if (foundSimulado.timeLimitMinutes) {
-            setRemainingTime(foundSimulado.timeLimitMinutes * 60);
-          }
-        }
-        setSimulado(foundSimulado);
-    } else {
-        setSimulado(null);
-    }
-
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-    };
-  }, [simuladoId]);
-  
-  useEffect(() => {
-    if (remainingTime === null || isFinished) {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+  const loadSimulado = async () => {
+    if (!simuladoId) {
+      setIsLoading(false);
       return;
     }
-    
-    if (remainingTime <= 0) {
-      toast({
-        variant: "destructive",
-        title: "Tempo Esgotado!",
-        description: "Seu simulado foi finalizado automaticamente.",
-      });
+    const result = await getSimuladoById(simuladoId);
+    if (!result.success || !result.data) {
+      setIsLoading(false);
+      return;
+    }
+
+    const dbSimulado = result.data as unknown as Simulado;
+    setSimulado(dbSimulado);
+    setStartTime(new Date());
+    if (dbSimulado.timeLimitMinutes) {
+      setRemainingSeconds(dbSimulado.timeLimitMinutes * 60);
+    }
+
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadSimulado();
+  }, [simuladoId]);
+
+  useEffect(() => {
+    if (remainingSeconds === null || submittedAttempt) return;
+
+    if (remainingSeconds <= 0) {
       handleFinish();
       return;
     }
 
-    timerIntervalRef.current = setInterval(() => {
-      setRemainingTime(prevTime => (prevTime ? prevTime - 1 : 0));
+    timerRef.current = setInterval(() => {
+      setRemainingSeconds((prev) => (prev ? prev - 1 : 0));
     }, 1000);
 
     return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remainingTime, isFinished]);
-  
-  const currentQuestion: Question | undefined = simulado?.questions[currentQuestionIndex];
-  const progress = simulado ? ((currentQuestionIndex + 1) / simulado.questions.length) * 100 : 0;
+  }, [remainingSeconds, submittedAttempt]);
 
-  const handleAnswerChange = (questionId: string, optionId: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
-  };
+  const currentQuestion = simulado?.questions[currentIndex];
+  const progress = useMemo(() => {
+    if (!simulado || simulado.questions.length === 0) return 0;
+    return ((currentIndex + 1) / simulado.questions.length) * 100;
+  }, [currentIndex, simulado]);
 
-  const handleNext = () => {
-    if (simulado && currentQuestionIndex < simulado.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+  const handleFinish = async () => {
+    if (!simulado || !startTime) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const endTime = new Date();
+    const result = await submitSimuladoAttempt({
+      simuladoId: simulado.id,
+      startedAt: startTime.toISOString(),
+      completedAt: endTime.toISOString(),
+      userAnswers: answers,
+    });
+
+    if (!result.success || !result.data) {
+      toast({ variant: 'destructive', title: 'Erro ao enviar', description: result.error || 'Falha ao enviar tentativa.' });
+      return;
     }
-  };
-  
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
+
+    const nextAttempt: Attempt = {
+      score: result.data.score,
+      durationSeconds: result.data.durationSeconds,
+      userAnswers: answers,
+    };
+    setSubmittedAttempt(nextAttempt);
+    toast({ title: 'Simulado finalizado', description: `Pontuacao: ${nextAttempt.score.toFixed(0)}%` });
   };
 
-  const formatRemainingTime = () => {
-    if (remainingTime === null) return '';
-    const minutes = Math.floor(remainingTime / 60);
-    const seconds = remainingTime % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  };
-
-  const latestAttempt = simulado?.attempts[simulado.attempts.length - 1];
+  if (isLoading) {
+    return <div className="flex h-[40vh] items-center justify-center text-slate-500">Carregando simulado...</div>;
+  }
 
   if (!simulado) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <Card>
+      <div className="flex h-[40vh] items-center justify-center">
+        <Card className="rounded-3xl border-slate-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="text-destructive" />
-              Simulado não encontrado
-            </CardTitle>
-            <CardDescription>
-              Não foi possível carregar o simulado. Verifique o link ou volte para a lista de simulados.
-            </CardDescription>
+            <CardTitle>Simulado não encontrado</CardTitle>
+            <CardDescription>O item solicitado não existe ou foi removido.</CardDescription>
           </CardHeader>
           <CardFooter>
             <Button onClick={() => router.push('/dashboard/simulados')}>Voltar</Button>
@@ -213,161 +141,142 @@ function StartSimuladoPageComponent() {
     );
   }
 
-  if(isFinished && latestAttempt) {
+  if (submittedAttempt) {
     return (
-        <div className="flex flex-1 flex-col p-4 md:p-6 relative bg-background">
-            <Button variant="ghost" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10 h-auto p-2">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para Simulados
-            </Button>
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4">
+        <Button variant="ghost" className="w-fit rounded-2xl" onClick={() => router.push('/dashboard/simulados')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
 
-            <div className="mx-auto w-full max-w-4xl pt-16">
-                 <Card className="mb-6 shadow-md">
-                    <CardHeader>
-                        <CardTitle className="text-2xl font-bold">{simulado.title}</CardTitle>
-                        <CardDescription>{simulado.description}</CardDescription>
-                    </CardHeader>
-                    <CardFooter className="flex flex-wrap justify-between items-center bg-muted/50 p-4 gap-4">
-                        <div className="flex items-center gap-4 text-sm">
-                           <div>
-                                <span className="font-semibold">Pontuação Final: </span>
-                                <span className={cn("font-bold text-lg", latestAttempt.score >= 70 ? "text-green-600" : "text-red-600")}>{latestAttempt.score.toFixed(0)}%</span>
-                           </div>
-                           <div className="flex items-center gap-2 text-muted-foreground">
-                               <Clock className="h-4 w-4" />
-                               <span>{formatDuration(latestAttempt.durationSeconds)}</span>
-                           </div>
-                        </div>
-                         <Button onClick={() => router.push('/dashboard/simulados')}>Finalizar Revisão</Button>
-                    </CardFooter>
-                </Card>
-
-                <ScrollArea className="h-[calc(100vh-20rem)]">
-                    <div className="space-y-6 pr-4">
-                        {simulado.questions.map((question, qIndex) => {
-                            const userAnswerId = answers[question.id];
-                            return (
-                                <Card key={question.id} className="shadow-sm">
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Questão {qIndex + 1}: {question.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                    {question.options.map((option, oIndex) => {
-                                        const isCorrect = option.isCorrect;
-                                        const isUserAnswer = userAnswerId === option.id;
-                                        const optionLabel = String.fromCharCode(97 + oIndex); // a, b, c...
-
-                                        return (
-                                        <div key={option.id} className={cn(
-                                            "flex items-start gap-3 rounded-md border p-3 text-sm transition-colors",
-                                            isCorrect ? "border-green-300 bg-green-50 dark:bg-green-900/30" : "border-transparent",
-                                            isUserAnswer && !isCorrect ? "border-red-300 bg-red-50 dark:bg-red-900/30" : ""
-                                        )}>
-                                            <div className="flex items-center gap-2 h-6">
-                                                {isUserAnswer && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
-                                                {isUserAnswer && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                                                {!isUserAnswer && isCorrect && <CheckCircle className="h-5 w-5 text-green-500/50" />}
-                                                {!isUserAnswer && !isCorrect && <div className="w-5 h-5" />}
-                                            </div>
-                                            <span className="font-bold">{optionLabel})</span>
-                                            <p className="flex-1">{option.text}</p>
-                                             {isUserAnswer && (
-                                                <Badge variant="outline" className="ml-auto bg-transparent">{isCorrect ? 'Sua Resposta (Correta)' : 'Sua Resposta'}</Badge>
-                                             )}
-                                             {!isUserAnswer && isCorrect && (
-                                                <Badge variant="outline" className="ml-auto bg-transparent">Resposta Correta</Badge>
-                                             )}
-                                        </div>
-                                        );
-                                    })}
-                                    </div>
-                                </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
+        <Card className="rounded-3xl border-slate-200 shadow-sm">
+          <CardHeader className="border-b bg-slate-50">
+            <CardTitle className="text-slate-900">{simulado.title}</CardTitle>
+            <CardDescription>{simulado.description}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 pt-4">
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-3">
+              <span className="text-sm text-slate-600">Pontuação final</span>
+              <Badge className="bg-[#FFC107] text-slate-900">{submittedAttempt.score.toFixed(0)}%</Badge>
             </div>
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-3">
+              <span className="text-sm text-slate-600">Duração</span>
+              <span className="font-semibold text-slate-900">{formatDuration(submittedAttempt.durationSeconds)}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-3">
+          {simulado.questions.map((question, questionIndex) => {
+            const selectedId = submittedAttempt.userAnswers[question.id];
+            return (
+              <Card key={question.id} className="rounded-2xl border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base text-slate-900">
+                    {questionIndex + 1}. {question.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {question.options.map((option) => {
+                    const isCorrect = option.isCorrect;
+                    const isSelected = selectedId === option.id;
+                    return (
+                      <div
+                        key={option.id}
+                        className={`flex items-center gap-2 rounded-xl border p-2 ${
+                          isCorrect
+                            ? 'border-green-300 bg-green-50'
+                            : isSelected
+                              ? 'border-red-300 bg-red-50'
+                              : 'border-slate-200'
+                        }`}
+                      >
+                        {isCorrect ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                        <span className="text-sm text-slate-700">{option.text}</span>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
-    )
+      </div>
+    );
   }
 
   return (
-      <div className="flex flex-1 flex-col p-4 md:p-6 relative">
-         <Button variant="ghost" onClick={() => router.push('/dashboard/simulados')} className="absolute top-4 left-4 z-10">
-            <ArrowLeft className="h-5 w-5" />
-            <span className="sr-only">Voltar</span>
+    <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center">
+      <Card className="w-full rounded-3xl border-slate-200 shadow-sm">
+        <CardHeader className="border-b bg-slate-50">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-slate-900">{simulado.title}</CardTitle>
+              <CardDescription>{simulado.description}</CardDescription>
+            </div>
+            {remainingSeconds !== null && (
+              <div className="flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm font-semibold text-slate-700">
+                <Clock className="h-4 w-4 text-[#FFC107]" />
+                {formatDuration(remainingSeconds)}
+              </div>
+            )}
+          </div>
+          <div className="pt-2">
+            <p className="mb-1 text-sm text-slate-600">
+              Questão {currentIndex + 1} de {simulado.questions.length}
+            </p>
+            <Progress value={progress} />
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          {currentQuestion ? (
+            <div className="space-y-4">
+              <p className="text-lg font-semibold text-slate-900">{currentQuestion.title}</p>
+              <RadioGroup value={answers[currentQuestion.id]} onValueChange={(value) => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }))}>
+                <div className="space-y-2">
+                  {currentQuestion.options.map((option) => (
+                    <div key={option.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
+                      <RadioGroupItem value={option.id} id={option.id} />
+                      <Label htmlFor={option.id} className="cursor-pointer text-slate-700">
+                        {option.text}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">Sem questões cadastradas.</p>
+          )}
+        </CardContent>
+
+        <CardFooter className="flex justify-between border-t bg-slate-50">
+          <Button variant="outline" onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))} disabled={currentIndex === 0}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Anterior
           </Button>
-        <div className="flex flex-1 items-center justify-center">
-            <Card className="w-full max-w-3xl">
-            <CardHeader>
-                <div className="flex items-start justify-between">
-                    <div>
-                        <CardTitle className="font-headline text-2xl">{simulado.title}</CardTitle>
-                        <CardDescription>{simulado.description}</CardDescription>
-                    </div>
-                    <div className="text-right">
-                        <p className="font-semibold">Questão {currentQuestionIndex + 1} de {simulado.questions.length}</p>
-                        <Progress value={progress} className="w-28 mt-2" />
-                    </div>
-                </div>
-                 {remainingTime !== null && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-lg font-mono font-semibold rounded-lg border bg-muted p-2">
-                        <Clock className="h-5 w-5"/>
-                        <span>{formatRemainingTime()}</span>
-                    </div>
-                )}
-            </CardHeader>
-            <CardContent>
-                {currentQuestion ? (
-                <div className="space-y-6">
-                    <p className="text-lg font-semibold">{currentQuestion.title}</p>
-                    <RadioGroup
-                    value={answers[currentQuestion.id]}
-                    onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                    className="space-y-3"
-                    >
-                    {currentQuestion.options.map(opt => (
-                        <div key={opt.id} className="flex items-center space-x-2">
-                        <RadioGroupItem value={opt.id} id={`opt-${opt.id}`} />
-                        <Label htmlFor={`opt-${opt.id}`} className="text-base cursor-pointer">
-                            {opt.text}
-                        </Label>
-                        </div>
-                    ))}
-                    </RadioGroup>
-                </div>
-                ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                        <p>Este simulado não contém nenhuma questão.</p>
-                    </div>
-                )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
-                    <ArrowLeft className="mr-2" /> Anterior
-                </Button>
-                {currentQuestionIndex < simulado.questions.length - 1 ? (
-                    <Button onClick={handleNext}>
-                        Próxima <ArrowRight className="ml-2" />
-                    </Button>
-                ) : (
-                    <Button onClick={handleFinish} className="bg-green-600 hover:bg-green-700">
-                        Finalizar Simulado
-                    </Button>
-                )}
-            </CardFooter>
-            </Card>
-        </div>
-      </div>
+          {currentIndex < simulado.questions.length - 1 ? (
+            <Button className="bg-slate-900 font-bold text-white hover:bg-slate-800" onClick={() => setCurrentIndex((index) => index + 1)}>
+              Próxima
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button className="bg-[#FFC107] font-bold text-slate-900 hover:bg-amber-300" onClick={handleFinish}>
+              Finalizar
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
 export default function StartSimuladoPage() {
-    return (
-        <Suspense fallback={<div>Carregando simulado...</div>}>
-            <StartSimuladoPageComponent />
-        </Suspense>
-    )
+  return (
+    <Suspense fallback={<div className="flex h-[40vh] items-center justify-center text-slate-500">Carregando...</div>}>
+      <StartSimuladoPageComponent />
+    </Suspense>
+  );
 }
+

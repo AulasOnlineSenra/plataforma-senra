@@ -1,821 +1,414 @@
-
-
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, CheckCircle, Copy, Circle, X, Edit, Check, XCircle, Clock, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import {
-  getMockUser,
-  subjects as initialSubjects,
-  users as initialUsers,
-  scheduleEvents as initialSchedule,
-  simulados as initialSimulados
-} from '@/lib/data';
-import { User, Teacher, Subject, ScheduleEvent, UserRole, Simulado, Question, QuestionOption } from '@/lib/types';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Trash2, ClipboardList } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { getStudents, getUserById } from '@/app/actions/users';
+import { deleteSimulado, listSimuladosForUser, upsertSimulado } from '@/app/actions/simulados';
 
-const SIMULADOS_STORAGE_KEY = 'simuladosList';
+type QuestionOption = { id: string; text: string; isCorrect: boolean };
+type Question = {
+  id: string;
+  title: string;
+  type: 'multiple-choice';
+  options: QuestionOption[];
+  isRequired: boolean;
+};
 
-function formatDuration(seconds: number): string {
-    if (seconds < 60) {
-      return `${seconds} s`;
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
-}
+type SimuladoItem = {
+  id: string;
+  title: string;
+  description: string;
+  subject: string;
+  studentId: string;
+  creatorId: string;
+  status: string;
+  maxAttempts: number;
+  timeLimitMinutes?: number | null;
+  questions: Question[];
+  attempts: Array<{ score: number }>;
+  createdAt: string | Date;
+  student?: { id: string; name: string } | null;
+};
+
+type StudentItem = { id: string; name: string };
+
+const SUBJECTS = ['Matematica', 'Fisica', 'Quimica', 'Portugues', 'Redacao', 'Biologia', 'Historia', 'Geografia', 'Ingles'];
 
 export default function SimuladosPage() {
-  const [currentUser, setCurrentUser] = useState<User | Teacher | null>(null);
-  const [simulados, setSimulados] = useState<Simulado[]>([]);
-  const [students, setStudents] = useState<User[]>([]);
-  const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
-  const [viewingSimulado, setViewingSimulado] = useState<Simulado | null>(null);
-  const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
-  const [isCreatingOrEditing, setIsCreatingOrEditing] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
-  // State for the new/edit simulado form
+  const [currentUserId, setCurrentUserId] = useState('');
+  const [currentRole, setCurrentRole] = useState<'admin' | 'teacher' | 'student' | ''>('');
+  const [simulados, setSimulados] = useState<SimuladoItem[]>([]);
+  const [students, setStudents] = useState<StudentItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState('');
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [subject, setSubject] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [maxAttempts, setMaxAttempts] = useState(1);
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState<number | undefined>(120);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(60);
+  const [questionText, setQuestionText] = useState('');
+  const [optionA, setOptionA] = useState('');
+  const [optionB, setOptionB] = useState('');
+  const [optionC, setOptionC] = useState('');
+  const [optionD, setOptionD] = useState('');
+  const [correctOptionIndex, setCorrectOptionIndex] = useState<'0' | '1' | '2' | '3'>('0');
 
-  const { toast } = useToast();
-  
-  const optionRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const loadAll = async () => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      router.push('/login');
+      return;
+    }
 
+    const userResult = await getUserById(userId);
+    if (!userResult.success || !userResult.data) {
+      router.push('/login');
+      return;
+    }
+
+    const dbUser = userResult.data as any;
+    setCurrentUserId(dbUser.id);
+    setCurrentRole(dbUser.role);
+
+    const [simuladosResult, studentsResult] = await Promise.all([
+      listSimuladosForUser(dbUser.id),
+      getStudents(),
+    ]);
+
+    if (simuladosResult.success && simuladosResult.data) {
+      setSimulados(simuladosResult.data as SimuladoItem[]);
+    }
+    if (studentsResult.success && studentsResult.data) {
+      setStudents((studentsResult.data as any[]).map((s) => ({ id: s.id, name: s.name })));
+    }
+
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    const updateData = () => {
-      const role = localStorage.getItem('userRole') as UserRole;
-      const storedUser = localStorage.getItem('currentUser');
-      setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
-
-      const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-      setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s: any) => ({...s, createdAt: new Date(s.createdAt)})) : initialSimulados);
-      
-      const storedUsers = localStorage.getItem('userList');
-      setStudents(storedUsers ? JSON.parse(storedUsers).filter((u:User) => u.role === 'student') : initialUsers.filter(u => u.role === 'student'));
-
-      setAllSubjects(initialSubjects);
-    };
-
-    updateData();
-    window.addEventListener('storage', updateData);
-    return () => window.removeEventListener('storage', updateData);
+    loadAll();
   }, []);
 
-  const myStudents = useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return students;
-    if (currentUser.role === 'teacher') {
-      const storedSchedule = localStorage.getItem('scheduleEvents');
-      const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule) : initialSchedule;
-      const myStudentIds = new Set(schedule.filter(e => e.teacherId === currentUser.id).map(e => e.studentId));
-      return students.filter(s => myStudentIds.has(s.id));
-    }
-    return [];
-  }, [currentUser, students]);
+  const pendingSimulados = useMemo(
+    () => simulados.filter((simulado) => simulado.status.toLowerCase().startsWith('pend')),
+    [simulados]
+  );
 
-  const availableSubjects = useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return allSubjects;
-    if (currentUser.role === 'teacher') {
-        const teacherUser = currentUser as Teacher;
-        return allSubjects.filter(sub => teacherUser.subjects.includes(sub.id));
-    }
-    return [];
-  }, [currentUser, allSubjects]);
-
-  useEffect(() => {
-    if (availableSubjects.length === 1 && !editingSimulado) {
-      setSelectedSubject(availableSubjects[0].id);
-    }
-  }, [availableSubjects, editingSimulado]);
-
-  const handleAddQuestion = () => {
-    const newQuestion: Question = {
-      id: `q-${Date.now()}`,
-      title: '',
-      type: 'multiple-choice',
-      options: [{ id: `opt-${Date.now()}`, text: '', isCorrect: true }],
-      isRequired: false,
-    };
-    setQuestions([...questions, newQuestion]);
-  };
-  
-  const handleQuestionChange = (qIndex: number, field: keyof Question, value: any) => {
-    const newQuestions = [...questions];
-    (newQuestions[qIndex] as any)[field] = value;
-    
-    // If changing to a type without options, ensure options array is handled
-    if (field === 'type' && value !== 'multiple-choice') {
-      newQuestions[qIndex].options = [];
-    } else if (field === 'type' && value === 'multiple-choice' && newQuestions[qIndex].options.length === 0) {
-      // If changing back to multiple-choice and there are no options, add a default one
-      newQuestions[qIndex].options.push({ id: `opt-${Date.now()}`, text: '', isCorrect: true });
-    }
-
-    setQuestions(newQuestions);
-  };
-  
-  const handleOptionChange = (qIndex: number, oIndex: number, text: string) => {
-    const newQuestions = [...questions];
-    newQuestions[qIndex].options[oIndex].text = text;
-    setQuestions(newQuestions);
-  };
-
-  const handleCorrectOptionChange = (qIndex: number, oIndex: number) => {
-    const newQuestions = [...questions];
-    newQuestions[qIndex].options.forEach((opt, index) => {
-      opt.isCorrect = index === oIndex;
-    });
-    setQuestions(newQuestions);
-  };
-  
-  const handleAddOption = (qIndex: number) => {
-    const newOptionId = `opt-${Date.now()}`;
-    const newQuestions = [...questions];
-    newQuestions[qIndex].options.push({ id: newOptionId, text: '', isCorrect: false });
-    setQuestions(newQuestions);
-
-    setTimeout(() => {
-      optionRefs.current.get(newOptionId)?.focus();
-    }, 0);
-  };
-  
-  const handleRemoveOption = (qIndex: number, oIndex: number) => {
-    const newQuestions = [...questions];
-    if (newQuestions[qIndex].options.length <= 1) return; // Must have at least one option
-    newQuestions[qIndex].options.splice(oIndex, 1);
-    setQuestions(newQuestions);
-  };
-
-  const handleRemoveQuestion = (qIndex: number) => {
-    const newQuestions = [...questions];
-    newQuestions.splice(qIndex, 1);
-    setQuestions(newQuestions);
-  };
-
-  const handleDuplicateQuestion = (qIndex: number) => {
-    const questionToDuplicate = questions[qIndex];
-    const duplicatedQuestion: Question = {
-      ...questionToDuplicate,
-      id: `q-${Date.now()}`,
-      options: questionToDuplicate.options.map(opt => ({
-        ...opt,
-        id: `opt-${Date.now()}-${Math.random()}`
-      }))
-    };
-
-    const newQuestions = [...questions];
-    newQuestions.splice(qIndex + 1, 0, duplicatedQuestion);
-    setQuestions(newQuestions);
-    toast({
-      title: 'Questão Duplicada!',
-      description: 'Uma cópia da questão foi criada logo abaixo.',
-    });
-  };
+  const answeredSimulados = useMemo(
+    () => simulados.filter((simulado) => !simulado.status.toLowerCase().startsWith('pend')),
+    [simulados]
+  );
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setSelectedSubject(availableSubjects.length === 1 ? availableSubjects[0].id : '');
-    setSelectedStudent('');
-    setQuestions([]);
+    setSubject('');
+    setStudentId('');
     setMaxAttempts(1);
-    setTimeLimitMinutes(120);
-    setEditingSimulado(null);
-    setIsCreatingOrEditing(false);
+    setTimeLimitMinutes(60);
+    setQuestionText('');
+    setOptionA('');
+    setOptionB('');
+    setOptionC('');
+    setOptionD('');
+    setCorrectOptionIndex('0');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !selectedSubject || !selectedStudent || !currentUser) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha título, disciplina e aluno.',
-      });
+  const handleCreate = async () => {
+    if (!title || !subject || !studentId || !questionText || !optionA || !optionB || !optionC || !optionD) {
+      toast({ variant: 'destructive', title: 'Campos obrigatorios', description: 'Preencha todos os dados do simulado.' });
       return;
     }
 
-    if (editingSimulado) {
-      // Update existing simulado
-      const updatedSimulado: Simulado = {
-        ...editingSimulado,
-        title,
-        description,
-        subjectId: selectedSubject,
-        studentId: selectedStudent,
-        questions,
-        maxAttempts,
-        timeLimitMinutes: timeLimitMinutes,
-      };
-      const updatedSimulados = simulados.map(s => s.id === editingSimulado.id ? updatedSimulado : s);
-      setSimulados(updatedSimulados);
-      localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
-      toast({
-        title: 'Simulado Atualizado!',
-        description: 'As alterações no simulado foram salvas.',
-      });
-    } else {
-      // Create new simulado
-      const newSimulado: Simulado = {
-        id: `sim-${Date.now()}`,
-        title,
-        description,
-        subjectId: selectedSubject,
-        studentId: selectedStudent,
-        creatorId: currentUser.id,
-        createdAt: new Date(),
-        status: 'Pendente',
-        questions,
-        maxAttempts,
-        timeLimitMinutes: timeLimitMinutes,
-        attempts: [],
-      };
-      const updatedSimulados = [...simulados, newSimulado];
-      setSimulados(updatedSimulados);
-      localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
-      toast({
-        title: 'Simulado Criado!',
-        description: 'O novo simulado foi adicionado à lista.',
-      });
-    }
-    
-    window.dispatchEvent(new Event('storage'));
-    resetForm();
-  };
+    const options = [optionA, optionB, optionC, optionD].map((text, index) => ({
+      id: `opt-${index}-${Date.now()}`,
+      text,
+      isCorrect: String(index) === correctOptionIndex,
+    }));
 
-  const handleDeleteSimulado = (id: string) => {
-    const updatedSimulados = simulados.filter(s => s.id !== id);
-    setSimulados(updatedSimulados);
-    localStorage.setItem(SIMULADOS_STORAGE_KEY, JSON.stringify(updatedSimulados));
-    window.dispatchEvent(new Event('storage'));
-    toast({
-      variant: 'destructive',
-      title: 'Simulado Excluído',
-      description: 'O simulado foi removido da lista.',
+    const questions: Question[] = [
+      {
+        id: `q-${Date.now()}`,
+        title: questionText,
+        type: 'multiple-choice',
+        options,
+        isRequired: true,
+      },
+    ];
+
+    const result = await upsertSimulado({
+      title,
+      description,
+      subject,
+      creatorId: currentUserId,
+      studentId,
+      maxAttempts,
+      timeLimitMinutes,
+      questions,
     });
+
+    if (!result.success) {
+      toast({ variant: 'destructive', title: 'Erro ao criar', description: result.error || 'Falha ao criar simulado.' });
+      return;
+    }
+
+    toast({ title: 'Simulado criado', description: 'O simulado foi salvo no banco de dados.' });
+    resetForm();
+    setIsCreating(false);
+    await loadAll();
   };
 
-  const handleEditClick = (simuladoToEdit: Simulado) => {
-    setEditingSimulado(simuladoToEdit);
-    setTitle(simuladoToEdit.title);
-    setDescription(simuladoToEdit.description);
-    setSelectedSubject(simuladoToEdit.subjectId);
-    setSelectedStudent(simuladoToEdit.studentId);
-    setQuestions(simuladoToEdit.questions);
-    setMaxAttempts(simuladoToEdit.maxAttempts || 1);
-    setTimeLimitMinutes(simuladoToEdit.timeLimitMinutes);
-    setIsCreatingOrEditing(true);
+  const handleDelete = async (simuladoId: string) => {
+    const result = await deleteSimulado(simuladoId);
+    if (!result.success) {
+      toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Falha ao excluir simulado.' });
+      return;
+    }
+    toast({ title: 'Simulado excluido', description: 'Registro removido com sucesso.' });
+    await loadAll();
+  };
+
+  if (isLoading) {
+    return <div className="flex h-[40vh] items-center justify-center text-slate-500">Carregando simulados...</div>;
   }
 
-  const handleDuplicateClick = (simuladoToDuplicate: Simulado) => {
-    setEditingSimulado(null); // Ensure we are in "create" mode
-    setTitle(`${simuladoToDuplicate.title} (Cópia)`);
-    setDescription(simuladoToDuplicate.description);
-    setSelectedSubject(simuladoToDuplicate.subjectId);
-    setQuestions(simuladoToDuplicate.questions.map(q => ({...q, id: `q-${Date.now()}-${Math.random()}`}))); // New IDs for questions
-    setMaxAttempts(simuladoToDuplicate.maxAttempts || 1);
-    setTimeLimitMinutes(simuladoToDuplicate.timeLimitMinutes);
-    setSelectedStudent(''); // Clear student selection
-    setIsCreatingOrEditing(true);
-    toast({
-      title: 'Simulado Copiado!',
-      description: 'Selecione um novo aluno e salve.',
-    });
-  };
-
-
-  const getSubjectName = (id: string) => allSubjects.find(s => s.id === id)?.name || 'Desconhecida';
-  const getStudentName = (id: string) => students.find(s => s.id === id)?.name || 'Desconhecido';
-
-  const displayedSimulados = useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return simulados;
-    if (currentUser.role === 'teacher') {
-        return simulados.filter(s => s.creatorId === currentUser.id);
-    }
-    return simulados.filter(s => s.studentId === currentUser.id);
-  }, [currentUser, simulados]);
-
-  const answeredSimulados = useMemo(() => {
-    return displayedSimulados.filter(s => s.status === 'Concluído').sort((a,b) => (b.attempts.length > 0 ? new Date(b.attempts[b.attempts.length-1].completedAt).getTime() : 0) - (a.attempts.length > 0 ? new Date(a.attempts[a.attempts.length-1].completedAt).getTime() : 0));
-  }, [displayedSimulados]);
-
-  const calculateSimuladoResults = (simulado: Simulado, attemptIndex = -1) => {
-    if (!simulado.attempts || simulado.attempts.length === 0) {
-      return { correct: 0, incorrect: simulado.questions.length, score: 0, durationSeconds: 0 };
-    }
-    const attempt = simulado.attempts[attemptIndex === -1 ? simulado.attempts.length - 1 : attemptIndex];
-    if (!attempt || !attempt.userAnswers) return { correct: 0, incorrect: 0, score: 0, durationSeconds: 0 };
-    
-    let correct = 0;
-    simulado.questions.forEach(q => {
-        const correctOption = q.options.find(opt => opt.isCorrect);
-        if (correctOption && attempt.userAnswers[q.id] === correctOption.id) {
-            correct++;
-        }
-    });
-    return {
-        correct,
-        incorrect: simulado.questions.length - correct,
-        score: attempt.score,
-        durationSeconds: attempt.durationSeconds,
-    };
-  };
-
-  const handleCreateNewClick = () => {
-    resetForm();
-    setIsCreatingOrEditing(true);
-  };
-  
-  const handleCancelCreation = () => {
-    resetForm();
-  }
-
-  if (!currentUser) {
-    return null; // Or a loading spinner
-  }
-
-  // Student View
-  if (currentUser.role === 'student') {
-     return (
-        <div className="flex flex-1 flex-col gap-4 md:gap-8">
-            <div className="flex items-center">
-                <h1 className="font-headline text-2xl md:text-3xl font-bold">Simulados</h1>
-            </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Simulados Atribuídos</CardTitle>
-                    <CardDescription>Lista de simulados que você precisa concluir.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {displayedSimulados.length > 0 ? (
-                        <div className="space-y-4">
-                        {displayedSimulados.map(sim => {
-                          if (sim.status === 'Concluído') {
-                              const results = calculateSimuladoResults(sim);
-                              const canRetake = sim.attempts.length < sim.maxAttempts;
-                              return (
-                                  <div key={sim.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
-                                      <div className="flex-1">
-                                          <p className="font-semibold">{sim.title}</p>
-                                          <p className="text-sm text-muted-foreground mt-1">
-                                            {getSubjectName(sim.subjectId)} • {sim.questions.length} questões {sim.timeLimitMinutes && `• ${sim.timeLimitMinutes} min`}
-                                          </p>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
-                                          <div className="flex items-center gap-2 text-green-600">
-                                              <Check className="h-4 w-4" />
-                                              <span>{results.correct} Acertos</span>
-                                          </div>
-                                          <div className="flex items-center gap-2 text-destructive">
-                                              <XCircle className="h-4 w-4" />
-                                              <span>{results.incorrect} Erros</span>
-                                          </div>
-                                           <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                  <Clock className="h-4 w-4" /> 
-                                                  <span>{formatDuration(results.durationSeconds)}</span>
-                                            </div>
-                                          <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn(results.score >= 70 && 'bg-green-100 text-green-800')}>
-                                              {results.score.toFixed(0)}%
-                                          </Badge>
-                                          {canRetake ? (
-                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>
-                                                <RefreshCw className="mr-2 h-4 w-4"/>
-                                                Refazer ({sim.maxAttempts - sim.attempts.length} restantes)
-                                            </Button>
-                                          ) : (
-                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
-                                          )}
-                                      </div>
-                                  </div>
-                              )
-                          }
-                          return (
-                            <div key={sim.id} className="rounded-lg border p-4 flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-semibold">{sim.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{getSubjectName(sim.subjectId)} • {sim.questions.length} questões {sim.timeLimitMinutes && `• ${sim.timeLimitMinutes} min`}</p>
-                                </div>
-                                <Button onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Iniciar</Button>
-                            </div>
-                          );
-                        })}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>Nenhum simulado atribuído a você no momento.</p>
-                        </div>
-                    )}
-                </CardContent>
-             </Card>
+  if (currentRole === 'student') {
+    return (
+      <div className="flex flex-1 flex-col gap-6">
+        <div>
+          <h1 className="font-headline text-3xl font-bold text-slate-900">Meus Simulados</h1>
+          <p className="text-sm text-slate-600">Seus simulados em andamento e concluídos.</p>
         </div>
-     )
-  }
-  
-  // Teacher/Admin View
-  return (
-    <>
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          Simulados
-        </h1>
-        {!isCreatingOrEditing && (
-            <Button onClick={handleCreateNewClick} className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">
-                <Plus className="mr-2" /> Criar Simulado
-            </Button>
-        )}
-      </div>
 
-      {isCreatingOrEditing ? (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
-            <CardHeader>
-                <CardTitle>{editingSimulado ? 'Editar Simulado' : 'Informações Gerais'}</CardTitle>
-                <CardDescription>
-                {editingSimulado ? 'Altere as informações do simulado abaixo.' : 'Crie um novo conjunto de exercícios para um aluno específico.'}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">Título do Simulado</Label>
-                        <Input
-                        id="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Ex: Revisão de Funções de 2º Grau"
-                        />
+        <Card className="rounded-3xl border-slate-200 shadow-sm">
+          <CardHeader className="border-b bg-slate-50">
+            <CardTitle>Pendentes</CardTitle>
+            <CardDescription>Simulados prontos para iniciar.</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-3">
+              {pendingSimulados.length === 0 ? (
+                <p className="text-sm text-slate-500">Nenhum simulado pendente.</p>
+              ) : (
+                pendingSimulados.map((simulado) => (
+                  <div key={simulado.id} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+                    <div>
+                      <p className="font-semibold text-slate-900">{simulado.title}</p>
+                      <p className="text-sm text-slate-500">{simulado.subject}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="subject">Disciplina</Label>
-                            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                            <SelectTrigger id="subject">
-                                <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableSubjects.map((sub) => (
-                                <SelectItem key={sub.id} value={sub.id}>
-                                    {sub.name}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="student">Aluno</Label>
-                            <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                            <SelectTrigger id="student">
-                                <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {myStudents.map((stu) => (
-                                <SelectItem key={stu.id} value={stu.id}>
-                                    {stu.name}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="description">Descrição/Instruções</Label>
-                    <Textarea
-                        id="description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Adicione instruções, links ou o conteúdo do exercício aqui."
-                        rows={2}
-                    />
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="max-attempts">Nº de Tentativas</Label>
-                        <Input
-                            id="max-attempts"
-                            type="number"
-                            value={maxAttempts}
-                            onChange={(e) => setMaxAttempts(Math.max(1, parseInt(e.target.value, 10)))}
-                            min="1"
-                        />
-                    </div>
-                     <div className="grid gap-2">
-                        <Label htmlFor="time-limit">Tempo Limite (minutos)</Label>
-                        <Input
-                            id="time-limit"
-                            type="number"
-                            value={timeLimitMinutes || ''}
-                            onChange={(e) => setTimeLimitMinutes(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                            placeholder="Ex: 120"
-                            min="1"
-                        />
-                    </div>
-                </div>
-            </CardContent>
-          </Card>
-
-          {questions.map((q, qIndex) => (
-          <Card key={q.id}>
-              <CardHeader className="flex flex-row items-start justify-between">
-                  <GripVertical className="cursor-move text-muted-foreground mt-2" />
-                  <Input 
-                      value={q.title} 
-                      onChange={(e) => handleQuestionChange(qIndex, 'title', e.target.value)} 
-                      placeholder="Pergunta sem título"
-                      className="flex-1 text-base mx-4 border-0 shadow-none focus-visible:ring-0"
-                  />
-                  <Select value={q.type} onValueChange={(val) => handleQuestionChange(qIndex, 'type', val)}>
-                      <SelectTrigger className="w-[180px]">
-                      <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
-                          <SelectItem value="short-answer">Resposta curta</SelectItem>
-                          <SelectItem value="paragraph" disabled>Parágrafo</SelectItem>
-                      </SelectContent>
-                  </Select>
-              </CardHeader>
-              <CardContent>
-                  <div className="space-y-3 pl-8">
-                  {q.type === 'multiple-choice' && q.options.map((opt, oIndex) => (
-                      <div key={opt.id} className="flex items-center gap-3">
-                          <input type="radio" name={`correct-opt-${q.id}`} checked={opt.isCorrect} onChange={() => handleCorrectOptionChange(qIndex, oIndex)} className="form-radio h-4 w-4 text-primary focus:ring-primary" />
-                          <Input
-                              ref={(el) => {
-                                if (el) optionRefs.current.set(opt.id, el);
-                                else optionRefs.current.delete(opt.id);
-                              }}
-                              value={opt.text}
-                              onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                              placeholder="Nova Opção"
-                              className="flex-1"
-                          />
-                          <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveOption(qIndex, oIndex)}>
-                              <X className="h-4 w-4 text-muted-foreground"/>
-                          </Button>
-                      </div>
-                  ))}
-                  {q.type === 'multiple-choice' && (
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <input type="radio" disabled className="form-radio h-4 w-4" />
-                        <Button type="button" variant="link" onClick={() => handleAddOption(qIndex)} className="p-0 h-auto">
-                            Adicionar opção
-                        </Button>
-                    </div>
-                  )}
-                  {q.type === 'short-answer' && (
-                      <Input disabled placeholder="O aluno irá digitar a resposta aqui..." />
-                  )}
+                    <Button
+                      className="rounded-2xl bg-[#FFC107] font-bold text-slate-900 hover:bg-amber-300"
+                      onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}
+                    >
+                      Iniciar
+                    </Button>
                   </div>
-              </CardContent>
-              <Separator />
-              <CardFooter className="p-4 flex justify-end items-center gap-4">
-                  <Button type="button" variant="ghost" size="icon" title="Copiar" onClick={() => handleDuplicateQuestion(qIndex)}><Copy className="h-5 w-5" /></Button>
-                  <Button type="button" variant="ghost" size="icon" title="Excluir Pergunta" onClick={() => handleRemoveQuestion(qIndex)}><Trash2 className="h-5 w-5 text-destructive" /></Button>
-                  <Separator orientation="vertical" className="h-6" />
-                  <div className="flex items-center gap-2">
-                      <Label htmlFor={`required-${q.id}`}>Obrigatória</Label>
-                      <Switch id={`required-${q.id}`} checked={q.isRequired} onCheckedChange={(checked) => handleQuestionChange(qIndex, 'isRequired', checked)} />
-                  </div>
-              </CardFooter>
-          </Card>
-          ))}
-
-          <Card>
-              <CardContent className="p-4 flex justify-center">
-                  <Button type="button" variant="outline" onClick={handleAddQuestion}>
-                      <Plus className="mr-2"/> Adicionar Pergunta
-                  </Button>
-              </CardContent>
-          </Card>
-          
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" className="hover:bg-brand-yellow hover:text-black" onClick={handleCancelCreation}>Cancelar</Button>
-            <Button type="submit" className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black">{editingSimulado ? 'Atualizar Simulado' : 'Salvar Simulado'}</Button>
-          </div>
-        </form>
-      ) : (
-        <Tabs defaultValue="list" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="list">Simulados Criados</TabsTrigger>
-                <TabsTrigger value="answers">Respostas</TabsTrigger>
-            </TabsList>
-            <TabsContent value="list" className="mt-6">
-            <Card>
-                <CardHeader>
-                <CardTitle>Seus Simulados</CardTitle>
-                <CardDescription>Lista de todos os simulados que você já criou. Clique em uma linha para ver os detalhes.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Título</TableHead>
-                        <TableHead>Aluno</TableHead>
-                        <TableHead>Disciplina</TableHead>
-                        <TableHead>Data de Criação</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {displayedSimulados.length > 0 ? (
-                        displayedSimulados.map((sim) => (
-                        <TableRow key={sim.id} onClick={() => setViewingSimulado(sim)} className="cursor-pointer">
-                            <TableCell className="font-medium max-w-xs truncate">{sim.title}</TableCell>
-                            <TableCell>{getStudentName(sim.studentId)}</TableCell>
-                            <TableCell>{getSubjectName(sim.subjectId)}</TableCell>
-                            <TableCell>{format(sim.createdAt, 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
-                            <TableCell>
-                                <Badge variant={sim.status === 'Concluído' ? 'secondary' : 'default'} className={cn(sim.status === 'Concluído' && 'bg-green-100 text-green-800')}>
-                                    {sim.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                            <Button type="button" variant="ghost" size="icon" title="Copiar para outro aluno" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleDuplicateClick(sim); }}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                            {sim.status === 'Pendente' && (
-                                <Button type="button" variant="ghost" size="icon" title="Editar" className="hover:bg-accent" onClick={(e) => { e.stopPropagation(); handleEditClick(sim); }}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                            )}
-                            <Button type="button" variant="ghost" size="icon" title="Excluir" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteSimulado(sim.id); }}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                            </TableCell>
-                        </TableRow>
-                        ))
-                    ) : (
-                        <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                            Nenhum simulado criado ainda.
-                        </TableCell>
-                        </TableRow>
-                    )}
-                    </TableBody>
-                </Table>
-                </CardContent>
-            </Card>
-            </TabsContent>
-            <TabsContent value="answers" className="mt-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Respostas dos Simulados</CardTitle>
-                    <CardDescription>Acompanhe o desempenho dos alunos nos simulados concluídos.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {answeredSimulados.length > 0 ? (
-                            answeredSimulados.map(sim => {
-                                const results = calculateSimuladoResults(sim);
-                                return (
-                                    <div key={`ans-${sim.id}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{sim.title}</p>
-                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                                                <span>{getStudentName(sim.studentId)}</span>
-                                                <span>•</span>
-                                                <span>{getSubjectName(sim.subjectId)}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
-                                            <div className="flex items-center gap-2 text-green-600">
-                                                <Check className="h-4 w-4" />
-                                                <span>{results.correct} Acertos</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-destructive">
-                                                <XCircle className="h-4 w-4" />
-                                                <span>{results.incorrect} Erros</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                    <Clock className="h-4 w-4" /> 
-                                                    <span>{formatDuration(results.durationSeconds)}</span>
-                                            </div>
-                                            <Badge variant={results.score >= 70 ? 'secondary' : 'destructive'} className={cn(results.score >= 70 && 'bg-green-100 text-green-800')}>
-                                                {results.score.toFixed(0)}%
-                                            </Badge>
-                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${sim.id}`)}>Ver Gabarito</Button>
-                                        </div>
-                                    </div>
-                                )
-                            })
-                        ) : (
-                            <div className="text-center py-10 text-muted-foreground">
-                                <p>Nenhum simulado foi respondido ainda.</p>
-                            </div>
-                        )}
-                    </div>
-            </CardContent>
-            </Card>
-            </TabsContent>
-        </Tabs>
-      )}
-    </div>
-    <Dialog open={!!viewingSimulado} onOpenChange={() => setViewingSimulado(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{viewingSimulado?.title}</DialogTitle>
-            <DialogDescription>
-              {viewingSimulado?.description || 'Simulado sem descrição.'}
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-6">
-            <div className="space-y-6 py-4">
-              {viewingSimulado?.questions.map((q, qIndex) => {
-                const latestAttempt = viewingSimulado.attempts[viewingSimulado.attempts.length - 1];
-                const userAnswerId = latestAttempt ? latestAttempt.userAnswers[q.id] : undefined;
-                return (
-                    <div key={q.id} className="space-y-3">
-                    <p className="font-semibold">{qIndex + 1}. {q.title} {q.isRequired && <span className="text-destructive">*</span>}</p>
-                    <div className="pl-4 space-y-2">
-                        {q.options.map(opt => {
-                            const isSelected = userAnswerId === opt.id;
-                            const isCorrect = opt.isCorrect;
-                            
-                            return (
-                                <div key={opt.id} className={cn(
-                                    "flex items-center gap-2 text-muted-foreground p-2 rounded-md",
-                                    isSelected && isCorrect && "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200",
-                                    isSelected && !isCorrect && "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200",
-                                    !isSelected && isCorrect && "bg-green-50 dark:bg-green-900/20"
-                                )}>
-                                    { isSelected ? (
-                                        isCorrect ? <CheckCircle className="h-4 w-4 text-green-600" /> : <X className="h-4 w-4 text-red-600" />
-                                    ) : (
-                                        isCorrect ? <CheckCircle className="h-4 w-4 text-green-500/50" /> : <Circle className="h-3 w-3" />
-                                    )}
-                                    <span>{opt.text}</span>
-                                    {isSelected && <Badge variant="outline" className="ml-auto bg-transparent">{isCorrect ? 'Sua Resposta (Correta)' : 'Sua Resposta'}</Badge>}
-                                    {!isSelected && isCorrect && <Badge variant="outline" className="ml-auto bg-transparent">Resposta Correta</Badge>}
-                                </div>
-                            )
-                        })}
-                    </div>
-                    </div>
-                );
-              })}
-              {viewingSimulado?.questions.length === 0 && (
-                <p className="text-muted-foreground text-center">Este simulado não tem nenhuma questão.</p>
+                ))
               )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-headline text-3xl font-bold text-slate-900">Simulados</h1>
+          <p className="text-sm text-slate-600">Gestão de provas com persistência real no banco.</p>
+        </div>
+        <Button className="rounded-2xl bg-slate-900 font-bold text-white hover:bg-slate-800" onClick={() => setIsCreating((v) => !v)}>
+          <Plus className="mr-2 h-4 w-4" />
+          {isCreating ? 'Cancelar' : 'Novo Simulado'}
+        </Button>
+      </div>
+
+      {isCreating && (
+        <Card className="rounded-3xl border-slate-200 shadow-sm">
+          <CardHeader className="border-b bg-slate-50">
+            <CardTitle>Criar Simulado</CardTitle>
+            <CardDescription>Template rápido para criação com 1 questão objetiva.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label>Título</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Aluno</Label>
+              <Select value={studentId} onValueChange={setStudentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o aluno" />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={student.id}>
+                      {student.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Disciplina</Label>
+              <Select value={subject} onValueChange={setSubject}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a disciplina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUBJECTS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Tentativas máximas</Label>
+              <Input type="number" min={1} value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Tempo limite (min)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={timeLimitMinutes}
+                onChange={(e) => setTimeLimitMinutes(Number(e.target.value))}
+              />
+            </div>
+            <div className="grid gap-2 md:col-span-2">
+              <Label>Descrição</Label>
+              <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+
+            <div className="grid gap-2 md:col-span-2">
+              <Label>Pergunta</Label>
+              <Input value={questionText} onChange={(e) => setQuestionText(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Alternativa A</Label>
+              <Input value={optionA} onChange={(e) => setOptionA(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Alternativa B</Label>
+              <Input value={optionB} onChange={(e) => setOptionB(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Alternativa C</Label>
+              <Input value={optionC} onChange={(e) => setOptionC(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Alternativa D</Label>
+              <Input value={optionD} onChange={(e) => setOptionD(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Resposta correta</Label>
+              <Select value={correctOptionIndex} onValueChange={(value) => setCorrectOptionIndex(value as '0' | '1' | '2' | '3')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">A</SelectItem>
+                  <SelectItem value="1">B</SelectItem>
+                  <SelectItem value="2">C</SelectItem>
+                  <SelectItem value="3">D</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="md:col-span-2">
+              <Button className="rounded-2xl bg-[#FFC107] font-bold text-slate-900 hover:bg-amber-300" onClick={handleCreate}>
+                Salvar Simulado
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="rounded-3xl border-slate-200 shadow-sm">
+        <CardHeader className="border-b bg-slate-50">
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-[#FFC107]" />
+            Simulados Cadastrados
+          </CardTitle>
+          <CardDescription>Histórico completo de criação e execução.</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <ScrollArea className="h-80">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Disciplina</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Criado em</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {simulados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                      Nenhum simulado cadastrado.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  simulados.map((simulado) => (
+                    <TableRow key={simulado.id}>
+                      <TableCell className="font-medium">{simulado.title}</TableCell>
+                      <TableCell>{simulado.student?.name || '-'}</TableCell>
+                      <TableCell>{simulado.subject}</TableCell>
+                      <TableCell>
+                        <Badge className={simulado.status.toLowerCase().startsWith('pend') ? 'bg-[#FFC107] text-slate-900' : ''}>
+                          {simulado.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{format(new Date(simulado.createdAt), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>
+                            Abrir
+                          </Button>
+                          <Button variant="destructive" size="icon" onClick={() => handleDelete(simulado.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    </>
+          {answeredSimulados.length > 0 && (
+            <p className="mt-3 text-xs text-slate-500">
+              {answeredSimulados.length} simulado(s) concluído(s) já possuem tentativas registradas.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+

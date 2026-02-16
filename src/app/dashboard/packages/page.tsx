@@ -32,8 +32,9 @@ const packageFeatures = [
   'Suporte via chat',
 ];
 
-// 📱 COLOQUE O NÚMERO DO WHATSAPP AQUI (Apenas números, com o DDD)
-const WHATSAPP_NUMBER = "558387180256"; 
+// COLOQUE O NÚMERO DO WHATSAPP AQUI (Apenas números, com o DDD)
+const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+const url = `https://wa.me/${whatsappNumber}?text=Olá...`;
 
 export default function PackagesPage() {
   const searchParams = useSearchParams();
@@ -120,13 +121,13 @@ export default function PackagesPage() {
   // GERADOR DE LINK DO WHATSAPP PARA OS PACOTES NORMAIS
   const getWhatsAppLink = (pkg: ClassPackage) => {
     const text = `Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento (PIX) e liberar meu acesso?`;
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
   };
 
   // GERADOR DE LINK DO WHATSAPP PARA A CALCULADORA
   const getCalculatorWhatsAppLink = () => {
     const text = `Olá! Fiz uma simulação na plataforma e gostaria de adquirir um *Pacote Personalizado* com ${calculatedPackage.totalClasses} aulas totais, no valor de R$ ${calculatedPackage.total.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento e liberar meu acesso?`;
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
   };
 
   if (isLoading) {

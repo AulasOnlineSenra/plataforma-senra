@@ -1,5 +1,14 @@
+import type { NextConfig } from 'next';
 
-import type {NextConfig} from 'next';
+const serverActionsAllowedOrigins = [
+  'localhost:9002',
+  '127.0.0.1:9002',
+  '*.devtunnels.ms',
+  '*.brs.devtunnels.ms',
+  ...(process.env.NEXT_SERVER_ACTIONS_ALLOWED_ORIGINS
+    ? process.env.NEXT_SERVER_ACTIONS_ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : []),
+];
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -8,6 +17,11 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: serverActionsAllowedOrigins,
+    },
   },
   images: {
     remotePatterns: [
