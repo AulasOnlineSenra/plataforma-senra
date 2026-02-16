@@ -100,7 +100,12 @@ const LoginForm = ({
           />
         </div>
         <div className="grid gap-2 relative">
-          <Label htmlFor="password" className="sr-only">Senha</Label>
+          <div className="flex items-center justify-between mb-1">
+             <Label htmlFor="password" className="font-bold text-slate-700">Senha</Label>
+             <Link href="/forgot-password" className="text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline">
+                Esqueci minha senha
+             </Link>
+          </div>
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
@@ -111,10 +116,8 @@ const LoginForm = ({
             onChange={(e) => setPassword(e.target.value)}
           />
           <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-400 hover:text-slate-600"
+            type="button" variant="ghost" size="icon"
+            className="absolute right-1 top-[38px] h-10 w-10 text-slate-400 hover:text-slate-600"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

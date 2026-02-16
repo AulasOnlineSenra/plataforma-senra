@@ -174,23 +174,21 @@ export async function getUserById(userId: string) {
   }
 }
 
-export async function updateUserProfile(
-  userId: string,
-  data: { name?: string; email?: string; avatarUrl?: string; subject?: string; status?: string }
-) {
+// Atualizar Perfil 
+export async function updateUserProfile(userId: string, data: { name: string; email: string }) {
   try {
-    const updated = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data,
+      data: {
+        name: data.name,
+        email: data.email,
+        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`
+      }
     });
-
-    revalidatePath('/dashboard/profile');
-    revalidatePath('/dashboard');
-
-    return { success: true, data: updated };
+    return { success: true, data: updatedUser };
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    return { success: false, error: 'Falha ao atualizar perfil.' };
+    console.error(error);
+    return { success: false, error: 'Ocorreu um erro ao atualizar o perfil. O e-mail já pode estar em uso.' };
   }
 }
 

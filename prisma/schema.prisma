@@ -16,6 +16,9 @@ model User {
   avatarUrl String?
   status    String   @default("active")
   
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  
   credits       Int       @default(0)
 
   createdAt DateTime @default(now())
