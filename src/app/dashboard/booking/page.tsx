@@ -186,14 +186,10 @@ function BookingPageComponent() {
   };
 
   const handleDateSelection = (dates: Date[] | undefined) => {
-    if (!dates) {
-      setSelectedDates([]);
-      return;
-    }
-    if (!selectedTeacher || isExperimentalOptionAvailable) {
-      setSelectedDates(dates.length > 0 ? [dates[dates.length - 1]] : []);
+    if (dates && dates.length > 0) {
+      setSelectedDates([dates[dates.length - 1]]);
     } else {
-      setSelectedDates(dates);
+      setSelectedDates([]);
     }
   };
 
