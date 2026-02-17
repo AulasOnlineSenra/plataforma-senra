@@ -41,3 +41,41 @@ export async function sendResetPasswordEmail(to: string, token: string) {
     return { success: false, error: 'Falha ao conectar com o servidor de e-mail.' };
   }
 }
+
+export async function sendNewBookingNotificationEmail(params: {
+  teacherEmail: string;
+  teacherName: string;
+  studentName: string;
+  subject: string;
+  startAt: Date;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+  const mailOptions = {
+    from: `"Plataforma Senra" <${process.env.SMTP_USER}>`,
+    to: params.teacherEmail,
+    subject: 'Nova aula agendada na Plataforma Senra',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <h2 style="color: #0f172a;">Nova marcacao de aula</h2>
+        <p style="color: #475569; font-size: 16px;">Ola, ${params.teacherName}!</p>
+        <p style="color: #475569; font-size: 16px;">Voce recebeu um novo agendamento.</p>
+        <ul style="color: #334155; font-size: 15px; line-height: 1.6;">
+          <li><strong>Aluno:</strong> ${params.studentName}</li>
+          <li><strong>Disciplina:</strong> ${params.subject}</li>
+          <li><strong>Data:</strong> ${params.startAt.toLocaleString('pt-BR')}</li>
+        </ul>
+        <div style="margin-top: 24px;">
+          <a href="${appUrl}/dashboard/minhas-aulas" style="background-color: #FFC107; color: #0f172a; padding: 12px 22px; text-decoration: none; border-radius: 8px; font-weight: bold;">Abrir Minhas Aulas</a>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao enviar e-mail de nova aula:', error);
+    return { success: false, error: 'Falha ao enviar notificacao de nova aula.' };
+  }
+}

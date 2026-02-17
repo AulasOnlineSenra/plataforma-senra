@@ -114,8 +114,14 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const scheduled = useMemo(() => lessons.filter((lesson) => lesson.status === 'scheduled'), [lessons]);
-  const completed = useMemo(() => lessons.filter((lesson) => lesson.status === 'completed'), [lessons]);
+  const scheduled = useMemo(
+    () => lessons.filter((lesson) => ['PENDING', 'CONFIRMED', 'scheduled'].includes(lesson.status)),
+    [lessons]
+  );
+  const completed = useMemo(
+    () => lessons.filter((lesson) => ['CONFIRMED', 'completed'].includes(lesson.status)),
+    [lessons]
+  );
 
   if (isLoading || !user) {
     return <div className="flex h-[40vh] items-center justify-center text-slate-500">Carregando dashboard...</div>;
@@ -152,14 +158,14 @@ export default function DashboardPage() {
               value={adminStats?.scheduled ?? 0}
               description="Total no sistema"
               icon={CalendarCheck}
-              href="/dashboard/schedule#scheduled-classes"
+              href="/dashboard/minhas-aulas"
             />
             <StatCard
               title="Aulas Concluídas"
               value={adminStats?.completed ?? 0}
               description="Histórico finalizado"
               icon={CheckCircle2}
-              href="/dashboard/schedule#completed-history"
+              href="/dashboard/minhas-aulas"
             />
           </div>
 
@@ -232,14 +238,14 @@ export default function DashboardPage() {
               value={scheduled.length}
               description="Compromissos futuros"
               icon={CalendarCheck}
-              href="/dashboard/schedule#scheduled-classes"
+              href="/dashboard/minhas-aulas"
             />
             <StatCard
               title="Aulas Concluídas"
               value={completed.length}
               description="Histórico total"
               icon={CheckCircle2}
-              href="/dashboard/schedule#completed-history"
+              href="/dashboard/historico"
             />
             <Card className="rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 shadow-sm">
               <CardContent className="flex h-full items-center justify-center p-6">
@@ -299,4 +305,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

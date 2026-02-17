@@ -4,9 +4,10 @@ import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { sendResetPasswordEmail } from '@/lib/mailer';
 import crypto from 'crypto';
+import { applyReferralOnSignup } from '@/app/actions/users';
 
 // REGISTRAR USUÁRIO (Com Criptografia)
-export async function registerUser(data: { name: string, email: string, password: string, role: string }) {
+export async function registerUser(data: { name: string, email: string, password: string, role: string, referralCode?: string }) {
   try {
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email }
@@ -29,6 +30,8 @@ export async function registerUser(data: { name: string, email: string, password
         status: 'active'
       }
     })
+
+    await applyReferralOnSignup(newUser.id, data.referralCode);
 
     return { success: true, user: newUser }
   } catch (error) {

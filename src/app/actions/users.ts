@@ -214,3 +214,141 @@ export async function updateUserPassword(userId: string, currentPassword: string
     return { success: false, error: 'Falha ao atualizar senha.' };
   }
 }
+
+export async function applyReferralOnSignup(newUserId: string, referralCode?: string) {
+  try {
+    const cleanedCode = referralCode?.trim();
+    if (!cleanedCode) return { success: true, applied: false };
+
+    const newUser = await prisma.user.findUnique({ where: { id: newUserId } });
+    if (!newUser) return { success: false, error: 'Novo usuario nao encontrado.' };
+
+    const owner = await prisma.user.findUnique({
+      where: { referralCode: cleanedCode },
+      select: { id: true },
+    });
+
+    if (!owner || owner.id === newUserId) {
+      return { success: true, applied: false };
+    }
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: newUserId },
+        data: { referredById: owner.id },
+      }),
+      prisma.user.update({
+        where: { id: owner.id },
+        data: { credits: { increment: 1 } },
+      }),
+    ]);
+
+    revalidatePath('/dashboard/indicacoes');
+    revalidatePath('/dashboard/marketing');
+    revalidatePath('/dashboard/financeiro');
+    return { success: true, applied: true };
+  } catch (error) {
+    console.error('Erro ao aplicar indicacao:', error);
+    return { success: false, error: 'Falha ao aplicar codigo de indicacao.' };
+  }
+}
+
+export async function getReferralSummary(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        referralCode: true,
+        referrals: {
+          select: { id: true, name: true, email: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!user) return { success: false, error: 'Usuario nao encontrado.' };
+    return { success: true, data: user };
+  } catch (error) {
+    console.error('Erro ao buscar resumo de indicacoes:', error);
+    return { success: false, error: 'Falha ao buscar indicacoes.' };
+  }
+}
+
+export async function getReferralRanking() {
+  try {
+    const ranking = await prisma.user.findMany({
+      where: { role: 'student' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        referralCode: true,
+        credits: true,
+        createdAt: true,
+        _count: { select: { referrals: true } },
+      },
+      orderBy: [{ referrals: { _count: 'desc' } }, { createdAt: 'asc' }],
+      take: 50,
+    });
+
+    return { success: true, data: ranking };
+  } catch (error) {
+    console.error('Erro ao buscar ranking de indicacoes:', error);
+    return { success: false, error: 'Falha ao buscar ranking.' };
+  }
+}
+
+export async function getCrmUsers() {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { success: true, data: users };
+  } catch (error) {
+    console.error('Erro ao buscar usuarios do CRM:', error);
+    return { success: false, error: 'Falha ao carregar usuarios.' };
+  }
+}
+
+export async function getStudentFinancialSummary(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        credits: true,
+      },
+    });
+    if (!user) return { success: false, error: 'Usuario nao encontrado.' };
+
+    const lessons = await prisma.lesson.findMany({
+      where: { studentId: userId, isExperimental: false },
+      select: {
+        id: true,
+        subject: true,
+        status: true,
+        date: true,
+        teacher: { select: { name: true } },
+      },
+      orderBy: { date: 'desc' },
+      take: 100,
+    });
+
+    return { success: true, data: { user, lessons } };
+  } catch (error) {
+    console.error('Erro ao buscar financeiro do aluno:', error);
+    return { success: false, error: 'Falha ao carregar financeiro do aluno.' };
+  }
+}

@@ -15,6 +15,8 @@ model User {
   role      String   @default("student") // 'admin', 'teacher', ou 'student'
   avatarUrl String?
   status    String   @default("active")
+  referralCode String @unique @default(cuid())
+  referredById String?
   
   resetToken       String?
   resetTokenExpiry DateTime?
@@ -29,6 +31,8 @@ model User {
   // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
   lessonsAsStudent Lesson[] @relation("StudentLessons")
   lessonsAsTeacher Lesson[] @relation("TeacherLessons")
+  referredBy       User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]   @relation("UserReferrals")
   sentMessages    ChatMessage[] @relation("SentMessages")
   receivedMessages ChatMessage[] @relation("ReceivedMessages")
   createdSimulados Simulado[] @relation("SimuladoCreator")
@@ -61,7 +65,8 @@ model Lesson {
   date           DateTime // Data e hora do INÍCIO da aula
   endDate        DateTime @default(now()) // Data e hora do FIM da aula
   
-  status         String   @default("scheduled") // 'scheduled', 'completed', 'cancelled'
+  status         String   @default("PENDING") // 'PENDING', 'CONFIRMED', 'CANCELLED'
+  meetingLink    String?
   price          Float?   // Preço cobrado pela aula
   isExperimental Boolean  @default(false) // Define se é aula teste grátis
 

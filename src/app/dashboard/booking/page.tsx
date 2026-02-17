@@ -209,7 +209,9 @@ function BookingPageComponent() {
   };
 
   const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
-    const activeScheduleEvents = scheduleEvents.filter(event => event.status === 'scheduled');
+    const activeScheduleEvents = scheduleEvents.filter((event) =>
+      ['PENDING', 'CONFIRMED', 'scheduled'].includes(event.status)
+    );
     return activeScheduleEvents.some(existingBooking => {
       const isTeacherBusy = existingBooking.teacherId === teacherId;
       const isStudentBusy = existingBooking.studentId === studentId;

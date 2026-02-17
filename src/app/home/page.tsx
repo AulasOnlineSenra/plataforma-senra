@@ -167,79 +167,62 @@ const handleSubscribe = async (e: React.FormEvent) => {
         </section>
 
         {/* Section 3: Problem & Solution */}
-        <section className="py-16 md:py-24 bg-card">
-          <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-            <div className="p-8 border rounded-lg bg-red-50 dark:bg-red-900/20">
-              <h2 className="text-2xl font-bold font-headline mb-4"><EditableText storageKey="home-problem-title">A Frustração de Ver o Potencial, Mas Não o Resultado?</EditableText></h2>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3"><XCircle className="h-6 w-6 text-red-500 mt-0.5" /><span><EditableText storageKey="home-problem-1">Dificuldade em uma matéria específica?</EditableText></span></li>
-                <li className="flex items-start gap-3"><XCircle className="h-6 w-6 text-red-500 mt-0.5" /><span><EditableText storageKey="home-problem-2">Falta de motivação e método de estudo?</EditableText></span></li>
-                <li className="flex items-start gap-3"><XCircle className="h-6 w-6 text-red-500 mt-0.5" /><span><EditableText storageKey="home-problem-3">Professores na escola não conseguem dar atenção individual?</EditableText></span></li>
-                <li className="flex items-start gap-3"><XCircle className="h-6 w-6 text-red-500 mt-0.5" /><span><EditableText storageKey="home-problem-4">Horários inflexíveis que não se encaixam na rotina?</EditableText></span></li>
+        <section className="py-16 md:py-24 bg-card relative overflow-hidden">
+          {/* Efeito de fundo sutil */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-full bg-slate-50/50 -z-10 rounded-[3rem] blur-3xl opacity-70 pointer-events-none"></div>
+
+          <div className="container mx-auto px-4 grid md:grid-cols-2 gap-8 items-stretch">
+            
+            {/* Bloco do Problema (Vermelho/Rosado) */}
+            <div className="p-8 md:p-10 border border-red-100 rounded-3xl bg-red-50/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300 relative top-0 hover:-top-1">
+              <h2 className="text-2xl md:text-3xl font-bold font-headline mb-6 text-red-900 leading-tight">
+                <EditableText storageKey="home-problem-title">A Frustração de Ver o Potencial, Mas Não o Resultado?</EditableText>
+              </h2>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-4">
+                  <XCircle className="h-6 w-6 text-red-500 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-red-800 font-medium text-lg"><EditableText storageKey="home-problem-1">Dificuldade em uma matéria específica?</EditableText></span>
+                </li>
+                <li className="flex items-start gap-4">
+                  <XCircle className="h-6 w-6 text-red-500 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-red-800 font-medium text-lg"><EditableText storageKey="home-problem-2">Falta de motivação e método de estudo?</EditableText></span>
+                </li>
+                <li className="flex items-start gap-4">
+                  <XCircle className="h-6 w-6 text-red-500 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-red-800 font-medium text-lg"><EditableText storageKey="home-problem-3">Professores na escola não conseguem dar atenção individual?</EditableText></span>
+                </li>
+                <li className="flex items-start gap-4">
+                  <XCircle className="h-6 w-6 text-red-500 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-red-800 font-medium text-lg"><EditableText storageKey="home-problem-4">Horários inflexíveis que não se encaixam na rotina?</EditableText></span>
+                </li>
               </ul>
             </div>
-            <div className="p-8 border rounded-lg bg-green-50 dark:bg-green-900/20">
-              <h2 className="text-2xl font-bold font-headline mb-4"><EditableText storageKey="home-solution-title">Nós Conectamos o Aluno ao Professor que Faz a Diferença.</EditableText></h2>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3"><CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5" /><span><EditableText storageKey="home-solution-1">Aulas Sob Medida para Suas Necessidades</EditableText></span></li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5" /><span><EditableText storageKey="home-solution-2">Mentores Especialistas e Apaixonados por Ensinar</EditableText></span></li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5" /><span><EditableText storageKey="home-solution-3">Plataforma Tudo-em-Um: Vídeo, Chat e Material</EditableText></span></li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5" /><span><EditableText storageKey="home-solution-4">Flexibilidade Total: Você Escolhe o Horário</EditableText></span></li>
+
+            {/* Bloco da Solução (Verde/Esmeralda) */}
+            <div className="p-8 md:p-10 border border-green-100 rounded-3xl bg-green-50/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300 relative top-0 hover:-top-1">
+              <h2 className="text-2xl md:text-3xl font-bold font-headline mb-6 text-green-900 leading-tight">
+                <EditableText storageKey="home-solution-title">Nós Conectamos o Aluno ao Professor que Faz a Diferença.</EditableText>
+              </h2>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-4">
+                  <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-green-800 font-medium text-lg"><EditableText storageKey="home-solution-1">Aulas Sob Medida para Suas Necessidades</EditableText></span>
+                </li>
+                <li className="flex items-start gap-4">
+                  <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-green-800 font-medium text-lg"><EditableText storageKey="home-solution-2">Mentores Especialistas e Apaixonados por Ensinar</EditableText></span>
+                </li>
+                <li className="flex items-start gap-4">
+                  <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-green-800 font-medium text-lg"><EditableText storageKey="home-solution-3">Plataforma Tudo-em-Um: Vídeo, Chat e Material</EditableText></span>
+                </li>
+                <li className="flex items-start gap-4">
+                  <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 shrink-0 drop-shadow-sm" />
+                  <span className="text-green-800 font-medium text-lg"><EditableText storageKey="home-solution-4">Flexibilidade Total: Você Escolhe o Horário</EditableText></span>
+                </li>
               </ul>
             </div>
-          </div>
-        </section>
 
-        {/* Section 4: How It Works */}
-        <section className="py-16 md:py-24 bg-background">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline mb-12">
-              <EditableText storageKey="home-howitworks-title">Do Desafio ao Sucesso em Apenas 3 Passos</EditableText>
-            </h2>
-            <div className="grid md:grid-cols-3 gap-8"> 
-                
-                <Card className="text-center bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1"> 
-                    <CardHeader>
-                        <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 relative">
-                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-md">1</span>
-                            <Target className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold"><EditableText storageKey="home-howitworks-step1-title">Conte Seu Objetivo</EditableText></h3>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground"><EditableText storageKey="home-howitworks-step1-text">Responda um quiz rápido para entendermos sua necessidade, estilo de aprendizado e disponibilidade.</EditableText></p>
-                    </CardContent>
-                </Card>
-
-                 <Card className="text-center bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
-                    <CardHeader>
-                        <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 relative">
-                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-md">2</span>
-                            <Bot className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold"><EditableText storageKey="home-howitworks-step2-title">Conheça Seu Tutor Ideal</EditableText></h3>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground"><EditableText storageKey="home-howitworks-step2-text">Nossa IA e nosso time especializado selecionam o professor perfeito para você. Veja o perfil e as avaliações.</EditableText></p>
-                    </CardContent>
-                </Card>
-
-                 <Card className="text-center bg-card border shadow-sm hover:shadow-md transition-all duration-200 relative top-0 hover:-top-1">
-                    <CardHeader>
-                        <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 relative">
-                            <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-md">3</span>
-                            <CalendarCheck className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold"><EditableText storageKey="home-howitworks-step3-title">Agende Sua Primeira Aula</EditableText></h3>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            <EditableText storageKey="home-howitworks-step3-text">Escolha o horário e comece sua jornada.</EditableText>
-                        </p>
-                    </CardContent>
-                </Card>
-
-            </div>
           </div>
         </section>
         
@@ -313,26 +296,26 @@ const handleSubscribe = async (e: React.FormEvent) => {
                   <EditableText storageKey="home-finalcta-title">Pronto para Transformar Sua Jornada de Aprendizado?</EditableText>
                   </h2>
                 <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto mb-10 leading-relaxed">
-                  <EditableText storageKey="home-finalcta-subtitle">A primeira aula-experiência é gratuita e sem compromisso. Sem cartão de crédito. Sem letras miúdas.</EditableText>
+                  <EditableText storageKey="home-finalcta-subtitle">A primeira aula é experimental e sem compromisso. Sem cartão de crédito. Sem letras miúdas.</EditableText>
                   </p>
 
-                  <form onSubmit={handleSubscribe} className="mt-8 max-w-lg mx-auto bg-white/10 p-2 rounded-full backdrop-blur-sm border border-white/20 flex flex-col sm:flex-row gap-2">
-          <Input 
+                  <form onSubmit={handleSubscribe} className="mt-8 w-full max-w-lg mx-auto bg-transparent sm:bg-white/10 sm:p-2 rounded-3xl sm:rounded-full sm:backdrop-blur-sm sm:border sm:border-white/20 flex flex-col sm:flex-row gap-3 sm:gap-2">
+            <Input 
               type="email" 
               placeholder="Seu melhor e-mail" 
-              className="h-12 bg-transparent border-none text-white placeholder:text-blue-200 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 rounded-full" 
+              className="h-14 sm:h-12 w-full bg-white/10 sm:bg-transparent border border-white/20 sm:border-none text-white placeholder:text-blue-200 focus-visible:ring-1 focus-visible:ring-amber-400 px-6 rounded-2xl sm:rounded-full" 
               value={leadEmail}
               onChange={(e) => setLeadEmail(e.target.value)} 
               disabled={isLoading}
-          />
+            />
             <Button 
                 type="submit"
                 size="lg" 
                 disabled={isLoading}
-                className="h-12 rounded-full px-8 bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-[0_0_20px_rgba(255,193,7,0.3)] transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="h-14 sm:h-12 w-full sm:w-auto rounded-2xl sm:rounded-full px-8 bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-[0_0_20px_rgba(255,193,7,0.3)] transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed shrink-0"
             >
                 {isLoading ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
+                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Enviando...</>
                 ) : (
                     <EditableText storageKey="home-finalcta-button">Quero Minha Aula! 🚀</EditableText>
                 )}

@@ -15,21 +15,21 @@ export async function getDashboardStats() {
 
     // Busca os totais de Aulas
     const scheduledLessons = await prisma.lesson.count({
-      where: { status: 'scheduled' }
+      where: { status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] } }
     });
 
     const completedLessons = await prisma.lesson.count({
-      where: { status: 'completed' }
+      where: { status: { in: ['CONFIRMED', 'completed'] } }
     });
 
     const cancelledLessons = await prisma.lesson.count({
-      where: { status: 'cancelled' }
+      where: { status: { in: ['CANCELLED', 'cancelled'] } }
     });
 
     // Busca as próximas 5 aulas agendadas (trazendo o nome do aluno e do professor junto)
     const upcomingLessons = await prisma.lesson.findMany({
       where: { 
-        status: 'scheduled',
+        status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
         date: { gte: new Date() } // Apenas aulas de hoje para frente
       },
       orderBy: { date: 'asc' },
@@ -43,7 +43,7 @@ export async function getDashboardStats() {
     // Calcula a Receita Total (Soma do preço de todas as aulas completadas)
     const revenue = await prisma.lesson.aggregate({
       _sum: { price: true },
-      where: { status: 'completed' }
+      where: { status: { in: ['CONFIRMED', 'completed'] } }
     });
 
     return {

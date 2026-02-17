@@ -12,20 +12,20 @@ export async function GET() {
     });
 
     const scheduledLessons = await prisma.lesson.count({
-      where: { status: 'scheduled' },
+      where: { status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] } },
     });
 
     const completedLessons = await prisma.lesson.count({
-      where: { status: 'completed' },
+      where: { status: { in: ['CONFIRMED', 'completed'] } },
     });
 
     const cancelledLessons = await prisma.lesson.count({
-      where: { status: 'cancelled' },
+      where: { status: { in: ['CANCELLED', 'cancelled'] } },
     });
 
     const upcomingLessons = await prisma.lesson.findMany({
       where: {
-        status: 'scheduled',
+        status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
         date: { gte: new Date() },
       },
       orderBy: { date: 'asc' },
@@ -38,7 +38,7 @@ export async function GET() {
 
     const revenue = await prisma.lesson.aggregate({
       _sum: { price: true },
-      where: { status: 'completed' },
+      where: { status: { in: ['CONFIRMED', 'completed'] } },
     });
 
     return NextResponse.json({

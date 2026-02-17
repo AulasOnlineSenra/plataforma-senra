@@ -96,7 +96,7 @@ function SchedulePageComponent() {
   }, [currentUser, userIdFilter, allAppUsers]);
 
   const filteredEvents = useMemo(() => {
-    let relevantEvents = filterEventsByUser(events.filter(e => e.status === 'scheduled'));
+    let relevantEvents = filterEventsByUser(events.filter(e => ['PENDING', 'CONFIRMED', 'scheduled'].includes(e.status)));
     if (teacherIdFilterParam) relevantEvents = relevantEvents.filter(e => e.teacherId === teacherIdFilterParam);
     if (!date) return relevantEvents.sort((a,b) => a.start.getTime() - b.start.getTime());
 
@@ -108,9 +108,9 @@ function SchedulePageComponent() {
     return relevantEvents.filter(e => isWithinInterval(e.start, interval)).sort((a,b) => a.start.getTime() - b.start.getTime());
   }, [date, filterType, events, teacherIdFilterParam, filterEventsByUser]);
   
-  const completedEvents = useMemo(() => filterEventsByUser(events.filter(e => e.status === 'completed')).sort((a, b) => b.start.getTime() - a.start.getTime()), [events, filterEventsByUser]);
-  const cancelledEvents = useMemo(() => filterEventsByUser(events.filter(e => e.status === 'cancelled')).sort((a, b) => b.start.getTime() - a.start.getTime()), [events, filterEventsByUser]);
-  const calendarMarkedDays = useMemo(() => filterEventsByUser(events.filter(e => e.status === 'scheduled')).map(e => e.start), [events, filterEventsByUser]);
+  const completedEvents = useMemo(() => filterEventsByUser(events.filter(e => ['CONFIRMED', 'completed'].includes(e.status))).sort((a, b) => b.start.getTime() - a.start.getTime()), [events, filterEventsByUser]);
+  const cancelledEvents = useMemo(() => filterEventsByUser(events.filter(e => ['CANCELLED', 'cancelled'].includes(e.status))).sort((a, b) => b.start.getTime() - a.start.getTime()), [events, filterEventsByUser]);
+  const calendarMarkedDays = useMemo(() => filterEventsByUser(events.filter(e => ['PENDING', 'CONFIRMED', 'scheduled'].includes(e.status))).map(e => e.start), [events, filterEventsByUser]);
 
   const getStudentById = (studentId: string): any | undefined => users.find(u => u.id === studentId);
   const getTeacherById = (teacherId: string): any | undefined => teachers.find(t => t.id === teacherId);

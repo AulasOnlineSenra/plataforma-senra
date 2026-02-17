@@ -40,6 +40,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,7 +60,8 @@ export default function RegisterPage() {
       name,
       email,
       password,
-      role
+      role,
+      referralCode,
     });
 
     if (!result.success) {
@@ -178,6 +180,17 @@ export default function RegisterPage() {
             className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="referral-code" className="sr-only">Codigo de indicacao</Label>
+          <Input
+            id="referral-code"
+            type="text"
+            placeholder="Codigo de indicacao (opcional)"
+            className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value)}
           />
         </div>
 
