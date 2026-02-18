@@ -26,7 +26,7 @@ export interface User {
   email: string;
   avatarUrl: string;
   role: UserRole;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'hidden' | 'deleted';
   timezone?: string;
   nickname?: string;
   phone?: string;
@@ -79,7 +79,7 @@ export interface ScheduleEvent {
   studentId: string;
   teacherId: string;
   subject: string;
-  subjectId: string;
+  subjectId?: string;
   status: 'completed' | 'scheduled' | 'cancelled';
   studentHasRated?: boolean;
   teacherHasRated?: boolean;
@@ -132,6 +132,9 @@ export interface Simulado {
   questions: Question[];
   maxAttempts: number;
   timeLimitMinutes?: number;
+  userAnswers?: Record<string, string>;
+  score?: number;
+  durationSeconds?: number;
   attempts: {
     startedAt: Date;
     completedAt: Date;

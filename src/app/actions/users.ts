@@ -91,6 +91,59 @@ export async function getTeachers() {
   }
 }
 
+export async function getSubjects() {
+  try {
+    let subjectsTable: { id: string; name: string }[] = [];
+    try {
+      subjectsTable = await prisma.subject.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      });
+    } catch (error) {
+      console.warn('Tabela Subject indisponivel. Usando fallback por professores.', error);
+    }
+
+    const teacherSubjects = await prisma.user.findMany({
+      where: {
+        role: 'teacher',
+        status: 'active',
+        subject: { not: null },
+      },
+      select: { subject: true },
+    });
+
+    const normalized = new Map<string, { id: string; name: string }>();
+
+    for (const subject of subjectsTable) {
+      const name = subject.name.trim();
+      if (!name) continue;
+      normalized.set(name.toLocaleLowerCase('pt-BR'), { id: subject.id, name });
+    }
+
+    for (const teacher of teacherSubjects) {
+      const name = (teacher.subject || '').trim();
+      if (!name) continue;
+      const key = name.toLocaleLowerCase('pt-BR');
+      if (!normalized.has(key)) {
+        normalized.set(key, {
+          id: `teacher-subject-${key.replace(/\s+/g, '-')}`,
+          name,
+        });
+      }
+    }
+
+    const subjects = Array.from(normalized.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR')
+    );
+
+    return { success: true, data: subjects };
+  } catch (error) {
+    console.error('Erro ao buscar disciplinas:', error);
+    return { success: false, error: 'Falha ao buscar disciplinas do banco de dados.' };
+  }
+}
+
 export async function createTeacher(data: { name: string; email: string; password: string; subject: string }) {
   try {
     const newTeacher = await prisma.user.create({

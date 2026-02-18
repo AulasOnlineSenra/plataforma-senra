@@ -112,3 +112,15 @@ model Simulado {
   @@index([creatorId, createdAt])
   @@index([studentId, createdAt])
 }
+
+// Tabela Oficial de Disciplinas
+model Subject {
+  id          String   @id @default(uuid())
+  name        String   @unique // Ex: "Matemática", "Física"
+  description String?  // Opcional
+  icon        String?  // Nome do ícone (ex: 'Calculator', 'Atom')
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

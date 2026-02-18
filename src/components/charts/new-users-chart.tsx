@@ -117,7 +117,7 @@ export function NewUsersChart({ selectedMonth }: NewUsersChartProps) {
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            interval="auto"
+            interval={0}
           />
           <YAxis
             tickLine={false}

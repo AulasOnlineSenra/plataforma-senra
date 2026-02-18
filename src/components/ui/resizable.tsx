@@ -4,7 +4,6 @@
 import * as React from "react"
 import { GripVertical } from "lucide-react"
 import {
-  ImperativePanelHandle,
   Panel as ResizablePrimitivePanel,
   PanelGroup as ResizablePrimitivePanelGroup,
   PanelResizeHandle as ResizablePrimitivePanelResizeHandle,
@@ -13,7 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const ResizablePanelGroup = React.forwardRef<
-  ImperativePanelHandle,
+  React.ElementRef<typeof ResizablePrimitivePanelGroup>,
   React.ComponentProps<typeof ResizablePrimitivePanelGroup>
 >(({ className, ...props }, ref) => (
   <ResizablePrimitivePanelGroup
@@ -29,14 +28,14 @@ ResizablePanelGroup.displayName = "ResizablePanelGroup"
 
 const ResizablePanel = ResizablePrimitivePanel
 
-const ResizableHandle = React.forwardRef<
-  ImperativePanelHandle,
-  React.ComponentProps<typeof ResizablePrimitivePanelResizeHandle> & {
-    withHandle?: boolean
-  }
->(({ className, withHandle, ...props }, ref) => (
+const ResizableHandle = ({
+  className,
+  withHandle,
+  ...props
+}: React.ComponentProps<typeof ResizablePrimitivePanelResizeHandle> & {
+  withHandle?: boolean
+}) => (
   <ResizablePrimitivePanelResizeHandle
-    ref={ref}
     className={cn(
       "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 [&[data-panel-group-direction=vertical]>div]:rotate-90",
       className
@@ -49,7 +48,6 @@ const ResizableHandle = React.forwardRef<
       </div>
     )}
   </ResizablePrimitivePanelResizeHandle>
-))
-ResizableHandle.displayName = "ResizableHandle"
+)
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle }

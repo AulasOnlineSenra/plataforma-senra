@@ -191,7 +191,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             }
             
             const storedMonthlyCosts = localStorage.getItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY);
-            let allCosts = {};
+            let allCosts: Record<string, MarketingCosts> = {};
             if (storedMonthlyCosts) {
                 allCosts = JSON.parse(storedMonthlyCosts);
                 setMarketingCosts(allCosts[selectedMonth] || DEFAULT_COSTS);
