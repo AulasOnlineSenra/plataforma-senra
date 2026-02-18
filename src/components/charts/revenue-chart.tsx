@@ -143,7 +143,7 @@ export function RevenueChart({ filter }: RevenueChartProps) {
             tickLine={false}
             tickMargin={10}
             axisLine={false}
-            interval={filter === 'week' ? 4 : 'auto'} // Show fewer labels for weeks
+            interval={filter === 'week' ? 4 : 0} // Show fewer labels for weeks
           />
           <YAxis
             tickLine={false}

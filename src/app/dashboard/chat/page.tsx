@@ -1,756 +1,397 @@
-
-
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback, Suspense, FormEvent } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { ArrowLeft, Check, CheckCheck, Send } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Send, Paperclip, Clock, X, MessageSquare, File as FileIcon, Smile, Upload, Mic, CircleDot, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
-import { chatContacts as initialChatContacts, chatMessages as initialChatMessages, getMockUser, users as initialRegularUsers, teachers as initialTeachers, logActivity } from '@/lib/data';
-import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { User, UserRole, ChatMessage, ChatContact, Teacher, ScheduleEvent } from '@/lib/types';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Textarea } from '@/components/ui/textarea';
-import { useCollection, useFirebase, useUser, useMemoFirebase, useAuth, useFirestore } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker } from '@/components/ui/time-picker';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { getChatMessagesForUser, getChatUsers, markConversationAsRead, sendChatMessage } from '@/app/actions/chat';
 
+type UserRole = 'admin' | 'student' | 'teacher' | string;
 
-const roleLabels: Record<UserRole, string> = {
-  admin: 'Admin',
-  student: 'Aluno',
-  teacher: 'Professor',
-};
-
-type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly';
-
-interface ScheduledMessage {
-    id: string;
-    creatorId: string;
-    contactId: string;
-    date: Date;
-    content: string;
-    title?: string;
-    recurrence: RecurrenceType;
+interface ChatUser {
+  id: string;
+  name: string;
+  role: UserRole;
+  avatarUrl?: string | null;
 }
 
-function ChatPageComponent() {
-    const searchParams = useSearchParams();
-    const contactIdParam = searchParams.get('contactId');
-    const { user: currentUser, isUserLoading } = useUser();
-    const auth = useAuth();
-    const firestore = useFirestore();
-    const { toast } = useToast();
+interface ChatMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  createdAt: string | Date;
+  readAt: string | Date | null;
+}
 
-    const [activeChatPartner, setActiveChatPartner] = useState<User | Teacher | null>(null);
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    
-    // State for the scheduling dialog
-    const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-    const [messageTitle, setMessageTitle] = useState('');
-    const [messageContent, setMessageContent] = useState('');
-    const [scheduledDate, setScheduledDate] = useState<Date | undefined>(new Date());
-    const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
-    const [isRecording, setIsRecording] = useState(false);
+const CURRENT_USER_KEY = 'currentUser';
+const POLLING_MS = 4000;
 
-    
-    const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
-    const [chatContacts, setChatContacts] = useState<ChatContact[]>([]);
-    const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
+function safeParseJson<T>(value: string | null, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    const parsed = JSON.parse(value);
+    return (parsed ?? fallback) as T;
+  } catch {
+    return fallback;
+  }
+}
 
-    
-    const getAllUsers = useCallback((): (User | Teacher)[] => {
-        const storedUsers = localStorage.getItem('userList');
-        const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialRegularUsers;
+function toDate(value: unknown): Date {
+  const date = value instanceof Date ? value : new Date(String(value ?? ''));
+  return Number.isNaN(date.getTime()) ? new Date(0) : date;
+}
 
-        const storedTeachers = localStorage.getItem('teacherList');
-        const currentTeachers = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
+function formatTime(value: unknown): string {
+  const date = toDate(value);
+  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
 
-        return [...currentUsers, ...currentTeachers];
-    }, []);
-
-    useEffect(() => {
-        const users = getAllUsers();
-        setAllUsers(users);
-
-        const storedMessages = localStorage.getItem('chatMessages');
-        setAllMessages(storedMessages ? JSON.parse(storedMessages).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages);
-
-        if (currentUser) {
-            const userContactsKey = `chatContacts_${'\'\''}${currentUser.id}`;
-            const storedContactsStr = localStorage.getItem(userContactsKey);
-            const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : [];
-            const contactsMap = new Map(contactsData.map(c => [c.id, c]));
-        
-            let potentialPartners: (User | Teacher)[] = [];
-        
-            if (currentUser.role === 'admin') {
-                potentialPartners = users.filter(u => u.id !== currentUser.id);
-            } else if (currentUser.role === 'student') {
-                potentialPartners = users.filter(u => u.role === 'teacher' || u.role === 'admin');
-            } else if (currentUser.role === 'teacher') {
-                potentialPartners = users.filter(u => u.role === 'student' || u.role === 'admin');
-            }
-        
-            const fullContactList: ChatContact[] = potentialPartners.map(partner => {
-                const existingContact = contactsMap.get(partner.id);
-                return {
-                    id: partner.id,
-                    name: partner.name,
-                    avatarUrl: partner.avatarUrl,
-                    role: partner.role,
-                    lastMessage: existingContact?.lastMessage || 'Nenhuma mensagem ainda.',
-                    lastMessageTimestamp: existingContact?.lastMessageTimestamp || new Date(0),
-                    unreadCount: existingContact?.unreadCount || 0,
-                };
-            }).sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-        
-            setChatContacts(fullContactList);
-        }
-    }, [currentUser, getAllUsers]);
-
-    const handleContactSelect = useCallback((contactId: string) => {
-        const contact = allUsers.find(u => u.id === contactId);
-
-        if (contact && currentUser) {
-            setActiveChatPartner(contact);
-
-            const userContactsKey = `chatContacts_${'\'\''}${currentUser.id}`;
-            const storedContacts = localStorage.getItem(userContactsKey);
-            let currentContacts: ChatContact[] = storedContacts ? JSON.parse(storedContacts).map((c: any) => ({...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp)})) : [];
-            
-            let contactFound = false;
-            const updatedContacts = currentContacts.map((c: ChatContact) => {
-            if (c.id === contactId) {
-                contactFound = true;
-                return c.unreadCount && c.unreadCount > 0 ? { ...c, unreadCount: 0 } : c;
-            }
-            return c;
-            });
-
-            if (!contactFound && contact) {
-                updatedContacts.push({
-                    id: contact.id,
-                    name: contact.name,
-                    avatarUrl: contact.avatarUrl,
-                    role: contact.role,
-                    lastMessage: 'Nenhuma mensagem ainda.',
-                    lastMessageTimestamp: new Date(0),
-                    unreadCount: 0,
-                });
-            }
-
-            localStorage.setItem(userContactsKey, JSON.stringify(updatedContacts));
-            window.dispatchEvent(new Event('storage')); 
-        }
-    }, [currentUser, allUsers]);
-    
-    useEffect(() => {
-        if (contactIdParam && allUsers.length > 0) {
-            handleContactSelect(contactIdParam);
-        }
-    }, [contactIdParam, handleContactSelect, allUsers]);
-
-
-    useEffect(() => {
-        if (viewportRef.current) {
-            viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
-        }
-    }, [activeChatPartner, allMessages]);
-    
-    const groupedMessages = useMemo(() => {
-        if (!currentUser || !activeChatPartner) return {};
-        
-        return allMessages
-            .filter(m => 
-                (m.senderId === currentUser.id && m.receiverId === activeChatPartner.id) ||
-                (m.senderId === activeChatPartner.id && m.receiverId === currentUser.id)
-            )
-            .reduce((acc, message) => {
-                const date = format(message.timestamp, 'yyyy-MM-dd');
-                if (!acc[date]) {
-                    acc[date] = [];
-                }
-                acc[date].push(message);
-                return acc;
-            }, {} as Record<string, ChatMessage[]>);
-    }, [allMessages, currentUser, activeChatPartner]);
-
-    const formatDateSeparator = (dateStr: string) => {
-      const date = new Date(dateStr + 'T00:00:00');
-      if (isToday(date)) return 'Hoje';
-      if (isYesterday(date)) return 'Ontem';
-      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    }
-    
-    
-    const sendMessage = useCallback((senderId: string, receiverId: string, content: string) => {
-      const newMessage: ChatMessage = {
-        id: `msg-${'\'\''}${Date.now()}`,
-        senderId: senderId,
-        receiverId: receiverId,
-        content: content,
-        timestamp: new Date(),
-      };
-  
-      const currentMessagesStr = localStorage.getItem('chatMessages');
-      const currentMessages: ChatMessage[] = currentMessagesStr ? JSON.parse(currentMessagesStr).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages;
-      const updatedMessages = [...currentMessages, newMessage];
-      localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
-      
-      const updateUserContacts = (
-          ownerId: string,
-          partnerId: string,
-          isReceiver: boolean
-      ) => {
-          const userContactsKey = `chatContacts_${'\'\''}${ownerId}`;
-          const allCurrentContactsStr = localStorage.getItem(userContactsKey);
-          let allCurrentContacts: ChatContact[] = allCurrentContactsStr 
-              ? JSON.parse(allCurrentContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) }))
-              : [];
-
-          const partnerDetails = allUsers.find(u => u.id === partnerId);
-          if (!partnerDetails) return;
-
-          let contactExists = false;
-          const updatedList = allCurrentContacts.map(c => {
-              if (c.id === partnerId) {
-                  contactExists = true;
-                  return {
-                      ...c,
-                      lastMessage: newMessage.content.startsWith('file::') ? 'Arquivo enviado' : newMessage.content,
-                      lastMessageTimestamp: newMessage.timestamp,
-                      unreadCount: isReceiver && c.unreadCount !== undefined ? c.unreadCount + 1 : (c.unreadCount || 0),
-                  };
-              }
-              return c;
-          });
-
-          if (!contactExists) {
-               updatedList.push({
-                  id: partnerDetails.id,
-                  name: partnerDetails.name,
-                  avatarUrl: partnerDetails.avatarUrl,
-                  role: partnerDetails.role,
-                  lastMessage: newMessage.content.startsWith('file::') ? 'Arquivo enviado' : newMessage.content,
-                  lastMessageTimestamp: newMessage.timestamp,
-                  unreadCount: isReceiver ? 1 : 0,
-              });
-          }
-          
-          const sortedList = updatedList.sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-          localStorage.setItem(userContactsKey, JSON.stringify(sortedList));
-      };
-      
-      updateUserContacts(newMessage.senderId, newMessage.receiverId, false);
-      updateUserContacts(newMessage.receiverId, newMessage.senderId, true);
-      
-      const receiver = allUsers.find(u => u.id === receiverId);
-      if (receiver) {
-        logActivity(`Enviou uma mensagem para ${'\'\''}${receiver.name}`);
-      }
-
-      window.dispatchEvent(new Event('storage'));
-    }, [allUsers]);
-
-    const [messageInput, setMessageInput] = useState('');
-
-    const handleSendMessage = (e?: React.FormEvent, content?: string) => {
-      if (e) e.preventDefault();
-      
-      const messageToSend = content || messageInput;
-      if (!messageToSend.trim() || !activeChatPartner || !currentUser) return;
-  
-      sendMessage(currentUser.id, activeChatPartner.id, messageToSend);
-      
-      if (!content) {
-          setMessageInput('');
-      }
-    };
-    
-      const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          handleSendMessage();
-        }
-      };
-      
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (loadEvent) => {
-                const dataUrl = loadEvent.target?.result as string;
-                const fileMessage = `file::${'\'\''}${file.name}::${'\'\''}${dataUrl}`;
-                handleSendMessage(undefined, fileMessage);
-            };
-            reader.readAsDataURL(file);
-
-            if(fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
-    };
-    
-    const renderMessageContent = (message: ChatMessage) => {
-        if (message.content.startsWith('file::')) {
-            const [, fileName, dataUrl] = message.content.split('::');
-            const isAudio = fileName.endsWith('.mp3') || fileName.endsWith('.ogg') || fileName.endsWith('.webm');
-            if (isAudio) {
-                return (
-                    <audio controls src={dataUrl} className="w-full max-w-xs">
-                        Seu navegador não suporta o elemento de áudio.
-                    </audio>
-                )
-            }
-            return (
-                <a href={dataUrl} download={fileName} className="flex items-center gap-2 underline text-current">
-                    <FileIcon className="h-4 w-4" />
-                    <span>{fileName}</span>
-                </a>
-            );
-        }
-        return <p className="break-words whitespace-pre-wrap">{message.content}</p>;
-    };
-
-    const scheduledMessagesQuery = useMemoFirebase(() => {
-        if (!firestore || !currentUser?.id) return null;
-        return collection(firestore, 'users', currentUser.id, 'scheduledMessages');
-    }, [firestore, currentUser?.id]);
-
-    const { data: scheduledMessagesForDisplay } = useCollection<ScheduledMessage>(scheduledMessagesQuery);
-
-    const handleRemoveScheduledMessage = async (id: string) => {
-        if (!currentUser?.id || !firestore) return;
-        const messageRef = doc(firestore, 'users', currentUser.id, 'scheduledMessages', id);
-        await deleteDoc(messageRef);
-    };
-
-    const handleScheduleMessage = async (e: FormEvent) => {
-        e.preventDefault();
-        
-        const authUser = auth.currentUser;
-        if (!authUser?.uid || !activeChatPartner?.id) {
-            toast({
-                variant: 'destructive',
-                title: 'Erro de Autenticação',
-                description: 'Você precisa estar logado e ter um chat ativo para agendar mensagens.',
-            });
-            return;
-        }
-        
-        if (!messageContent.trim() && !messageContent.includes('file::')) {
-            toast({
-                variant: 'destructive',
-                title: 'Campos Incompletos',
-                description: 'Por favor, escreva uma mensagem, anexe um arquivo ou grave um áudio.',
-            });
-            return;
-        }
-
-        const messageData = {
-            creatorId: authUser.uid,
-            contactId: activeChatPartner.id,
-            title: messageTitle,
-            content: messageContent,
-            date: scheduledDate,
-            recurrence: recurrence,
-        };
-
-        const collectionRef = collection(firestore, 'users', authUser.uid, 'scheduledMessages');
-        try {
-            await addDoc(collectionRef, messageData);
-            toast({
-                title: 'Mensagem Agendada',
-                description: `Sua mensagem para ${'\'\''}${activeChatPartner.name} foi agendada para ${'\'\''}${format(scheduledDate!, "'dia' dd/MM 'às' HH:mm")}.`,
-            });
-
-            // Reset form and close dialog
-            setMessageTitle('');
-            setMessageContent('');
-            setScheduledDate(new Date());
-            setRecurrence('none');
-            setIsScheduleDialogOpen(false);
-        } catch (error) {
-            const contextualError = new FirestorePermissionError({
-                path: collectionRef.path,
-                operation: 'create',
-                requestResourceData: messageData,
-            });
-            errorEmitter.emit('permission-error', contextualError);
-        }
-    };
-
-    const handleScheduleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (loadEvent) => {
-                const dataUrl = loadEvent.target?.result as string;
-                const fileIdentifier = `file::${'\'\''}${file.name}::${'\'\''}${dataUrl}`;
-                setMessageContent(prev => prev ? `${'\'\''}${prev}\n${'\'\''}${fileIdentifier}` : fileIdentifier);
-            };
-            reader.readAsDataURL(file);
-
-            if(fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
-    };
-    
-    const handleToggleRecording = () => {
-        setIsRecording(!isRecording);
-        const audioIdentifier = `file::audio-gravado-${'\'\''}${Date.now()}.mp3::data:audio/mpeg;base64,SUQz...`;
-        if (!isRecording) { // When starting recording
-            toast({ title: 'Gravação Iniciada', description: 'Clique novamente para parar.' });
-        } else { // When stopping recording
-            setMessageContent(prev => prev ? `${'\'\''}${prev}\n${'\'\''}${audioIdentifier}` : audioIdentifier);
-            toast({ title: 'Gravação Finalizada', description: 'Áudio anexado à mensagem.' });
-        }
-    };
-
-
-    if (isUserLoading) {
-        return <div>Carregando...</div>;
-    }
-    if (!currentUser) {
-        return null;
-    }
-
-
-    return (
-      <>
-        <div className="grid flex-1 w-full grid-cols-1 md:grid-cols-[450px_1fr] gap-4">
-            <div
-                className={cn(
-                'flex flex-col',
-                activeChatPartner ? 'hidden md:flex' : 'flex'
-                )}
-            >
-                <Card className="flex flex-col rounded-lg border max-h-[calc(100vh-8rem)] w-full">
-                  <div className="p-4 border-b">
-                      <h2 className="font-headline text-xl font-bold">Conversas</h2>
-                      <div className="relative mt-2">
-                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="Pesquisar..." className="pl-8" />
-                      </div>
-                  </div>
-                  <ScrollArea className="flex-1">
-                      <div className="p-2">
-                          {chatContacts.map(contact => {
-                              if (!contact || contact.id === currentUser?.id) return null;
-                              
-                              return (
-                              <button key={contact.id} onClick={() => handleContactSelect(contact.id)} className={cn(
-                                  "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-all hover:bg-accent/50",
-                                  activeChatPartner && contact.id === activeChatPartner.id ? "bg-accent/70" : ""
-                              )}>
-                                  <Avatar className="h-10 w-10">
-                                      <AvatarImage src={contact.avatarUrl} alt={contact.name} />
-                                      <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 overflow-hidden">
-                                      <div className="flex items-start justify-between">
-                                          <div className="flex flex-col">
-                                            <div className='flex items-center gap-2'>
-                                              <p className="font-semibold truncate">{contact.name}</p>
-                                              {contact.role && <Badge variant="secondary" className="text-xs">{roleLabels[contact.role]}</Badge>}
-                                            </div>
-                                            <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
-                                          </div>
-                                          <p className="text-xs text-muted-foreground shrink-0 pt-1">
-                                              {contact.lastMessageTimestamp > new Date(0) ? formatDistanceToNow(contact.lastMessageTimestamp, { locale: ptBR, addSuffix: true }).replace('cerca de ', '') : ''}
-                                          </p>
-                                      </div>
-                                       {contact.unreadCount > 0 && (
-                                          <div className="flex justify-end mt-1">
-                                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{contact.unreadCount}</span>
-                                          </div>
-                                      )}
-                                  </div>
-                              </button>
-                          )})}
-                      </div>
-                  </ScrollArea>
-                </Card>
-            </div>
-            <div
-              className={cn(
-                'flex flex-col',
-                !activeChatPartner ? 'hidden md:flex' : 'flex'
-              )}
-            >
-              { activeChatPartner ? (
-                  <Card className="flex flex-col rounded-lg border bg-card max-h-[calc(100vh-8rem)]" style={{
-                      backgroundImage: "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABOUlEQVR4Ae3ToY1EMRCF0UvUf2wB3sImsQvsQ7AP2Ics2EWwBwuwC+xCGSBD5jZ5Y+Pj/yc5CZvMk49KKaXEV4/iXkCgGvA5sAV4IwsQ7wJ0fQc8oYoSnGQCbAN2eAI8EucK9xTQZwJ8ATY5wE0S53pHcAJMHeAJsMkBfCVx/sYJcALMHeAIsMkBfCdxvsYJcALMfeAIsMkBCv5KOXeMOcA+gCvAJgf4k4RznZwD7AO4wJuE8wacA+wDuMA3necMHARwD+D/e+3u4BwR7gFc4Pu88xacA/gL4MG88zYcBGRI2LwJMO8ARpiAnwJ3AON+gK0J9zVwFaDvAkyb4C/A1sT5GjgL0HcCbE24/wE2Jc4V7inAcYjsBdgK3LvAFYlzdY0dK6WU/At/AD5ZUU6Z2QJRAAAAAElFTkSuQmCC')",
-                      backgroundRepeat: 'repeat',
-                      backgroundSize: '200px',
-                    }}>
-                      <div className="flex items-center gap-4 p-4 border-b bg-card">
-                          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setActiveChatPartner(null)}>
-                              <ArrowLeft className="h-5 w-5" />
-                          </Button>
-                          <Avatar className="h-10 w-10">
-                              <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
-                              <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                              <p className="font-semibold">{activeChatPartner.name}</p>
-                              <p className="text-sm text-muted-foreground">Online</p>
-                          </div>
-                      </div>
-                      <ScrollArea className="flex-1 p-4" viewportRef={viewportRef}>
-                          <div className="flex flex-col gap-2">
-                          {Object.keys(groupedMessages).sort().map(date => (
-                              <div key={date}>
-                                  <div className="flex justify-center my-4">
-                                  <div className="text-xs text-muted-foreground bg-card px-3 py-1 rounded-full border">
-                                      {formatDateSeparator(date)}
-                                  </div>
-                                  </div>
-                                  <div className="flex flex-col gap-4">
-                                  {groupedMessages[date].map(message => (
-                                      <div key={message.id} className={cn(
-                                          "flex w-full items-end gap-2",
-                                          message.senderId === currentUser?.id ? "justify-end" : "justify-start"
-                                      )}>
-                                          {message.senderId !== currentUser?.id && activeChatPartner && (
-                                              <Avatar className="h-8 w-8 self-end">
-                                                  <AvatarImage src={activeChatPartner.avatarUrl} alt={activeChatPartner.name} />
-                                                  <AvatarFallback>{activeChatPartner.name.charAt(0)}</AvatarFallback>
-                                              </Avatar>
-                                          )}
-                                          <div className={cn(
-                                              "relative max-w-[75%] md:max-w-[60%] rounded-lg p-3 text-sm flex flex-col shadow",
-                                              message.senderId === currentUser?.id ? "bg-[#D0EFB1] text-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none"
-                                          )}>
-                                              <div className={cn(
-                                                  'absolute w-3 h-3',
-                                                  message.senderId === currentUser?.id ? '-right-2 bottom-0 bg-[#D0EFB1] text-foreground' : '-left-2 bottom-0 bg-card'
-                                              )}
-                                               style={{
-                                                    clipPath: message.senderId === currentUser?.id
-                                                    ? 'polygon(100% 100%, 0 0, 100% 0)'
-                                                    : 'polygon(0 0, 100% 100%, 0 100%)',
-                                                }}
-                                              />
-                                              {renderMessageContent(message)}
-                                              <p className={cn(
-                                                  "text-xs shrink-0 self-end pt-1",
-                                                  message.senderId === currentUser?.id ? "text-foreground/70" : "text-muted-foreground"
-                                              )}>
-                                                  {format(new Date(message.timestamp), 'HH:mm')}
-                                              </p>
-                                          </div>
-                                      </div>
-                                  ))}
-                                  </div>
-                              </div>
-                          ))}
-                          </div>
-                      </ScrollArea>
-                      <div className="p-4 border-t bg-card">
-                          {(scheduledMessagesForDisplay || []).filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser?.id).length > 0 && (
-                            <div className="space-y-2 mb-2">
-                                {(scheduledMessagesForDisplay || [])
-                                    .filter(m => m.contactId === activeChatPartner.id && m.creatorId === currentUser?.id)
-                                    .map((msg) => (
-                                  <div key={msg.id} className="flex items-center justify-between bg-accent/50 text-accent-foreground p-2 rounded-md text-sm">
-                                      <div className="flex items-center gap-2 overflow-hidden">
-                                          <Clock className="h-4 w-4 shrink-0" />
-                                          <span className="truncate">"{msg.content}" para {format(new Date(msg.date), "dd/MM 'às' HH:mm")}</span>
-                                      </div>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveScheduledMessage(msg.id)}>
-                                          <X className="h-4 w-4" />
-                                      </Button>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                          <form onSubmit={handleSendMessage} className="relative">
-                              <Input
-                                  type="file"
-                                  ref={fileInputRef}
-                                  onChange={handleFileSelect}
-                                  className="hidden"
-                                  accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,audio/*"
-                              />
-                              <Input 
-                                  placeholder="Digite uma mensagem..." 
-                                  className="pr-32"
-                                  value={messageInput}
-                                  onChange={(e) => setMessageInput(e.target.value)}
-                                  onKeyDown={handleKeyDown}
-                              />
-                              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                                  <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
-                                      <Paperclip className="h-5 w-5 text-muted-foreground" />
-                                      <span className="sr-only">Anexar</span>
-                                  </Button>
-                                   <Button type="button" size="icon" variant="ghost" onClick={() => setIsScheduleDialogOpen(true)}>
-                                      <Clock className="h-5 w-5 text-muted-foreground" />
-                                      <span className="sr-only">Agendar</span>
-                                  </Button>
-                                  <Button type="submit" size="icon" variant="ghost" className="h-8 w-8">
-                                      <Send className="h-5 w-5 text-muted-foreground" />
-                                      <span className="sr-only">Enviar</span>
-                                  </Button>
-                              </div>
-                          </form>
-                      </div>
-                  </Card>
-              ) : (
-                  <Card className="flex flex-col items-center justify-center h-full rounded-lg border bg-card/80 backdrop-blur-sm">
-                      <CardHeader className="text-center">
-                          <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit">
-                              <MessageSquare className="h-10 w-10 text-primary" />
-                          </div>
-                          <CardTitle className="mt-4 text-xl font-headline">Bem-vindo ao Chat</CardTitle>
-                          <p className="text-muted-foreground">
-                              Selecione um contato para começar a conversar.
-                          </p>
-                      </CardHeader>
-                  </Card>
-              )}
-            </div>
-        </div>
-        {activeChatPartner && (
-            <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-                <DialogContent className="sm:max-w-4xl">
-                    <form onSubmit={handleScheduleMessage}>
-                        <DialogHeader>
-                            <DialogTitle>Criar Agendamento</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-6 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="scheduled-message-title">Título (Opcional)</Label>
-                                <Input
-                                    id="scheduled-message-title"
-                                    value={messageTitle}
-                                    onChange={(e) => setMessageTitle(e.target.value)}
-                                    placeholder="Ex: Lembrete de aula"
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="scheduled-message-content">Mensagem</Label>
-                                <Textarea
-                                    id="scheduled-message-content"
-                                    value={messageContent}
-                                    onChange={(e) => setMessageContent(e.target.value)}
-                                    placeholder="Escreva sua mensagem, anexe um arquivo ou grave um áudio..."
-                                    rows={5}
-                                />
-                                <div className="flex items-center gap-2 mt-2">
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleScheduleFileSelect}
-                                        className="hidden"
-                                        accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,audio/*"
-                                    />
-                                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                                        <Upload className="mr-2" /> Adicionar Mídia
-                                    </Button>
-                                    <Button type="button" variant="outline" size="sm" onClick={handleToggleRecording}>
-                                        <Mic className={cn("mr-2", isRecording && "text-red-500 animate-pulse")} />
-                                        {isRecording ? 'Parar Gravação' : 'Gravar Áudio'}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="grid md:grid-cols-3 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="scheduled-date">Data</Label>
-                                    <DatePicker date={scheduledDate} setDate={setScheduledDate} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="scheduled-time">Hora</Label>
-                                    <TimePicker date={scheduledDate} setDate={setScheduledDate} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="recurrence">Recorrência</Label>
-                                    <Select value={recurrence} onValueChange={(value) => setRecurrence(value as RecurrenceType)}>
-                                        <SelectTrigger id="recurrence">
-                                            <SelectValue placeholder="Selecione" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">Não repetir</SelectItem>
-                                            <SelectItem value="daily">Diariamente</SelectItem>
-                                            <SelectItem value="weekly">Semanalmente</SelectItem>
-                                            <SelectItem value="monthly">Mensalmente</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="secondary">Cancelar</Button>
-                            </DialogClose>
-                            <Button type="submit">
-                                Criar
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        )}
-      </>
-    )
+function normalizeUser(raw: any): ChatUser | null {
+  if (!raw || typeof raw !== 'object' || !raw.id) return null;
+  return {
+    id: String(raw.id),
+    name: String(raw.name || 'Usuario'),
+    role: String(raw.role || ''),
+    avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : null,
+  };
 }
 
 export default function ChatPage() {
-    return (
-        <Suspense fallback={<div>Carregando...</div>}>
-            <ChatPageComponent />
-        </Suspense>
-    )
+  const searchParams = useSearchParams();
+  const initialContactId = searchParams.get('contactId');
+  const { toast } = useToast();
+
+  const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
+  const [allUsers, setAllUsers] = useState<ChatUser[]>([]);
+  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
+  const [activeContactId, setActiveContactId] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastUnreadTotalRef = useRef(0);
+
+  const loadUsers = useCallback(async () => {
+    const result = await getChatUsers();
+    if (!result.success || !result.data) return;
+    setAllUsers(result.data.map(normalizeUser).filter((u): u is ChatUser => !!u));
+  }, []);
+
+  const loadMessages = useCallback(
+    async (userId: string, showNewMessageToast: boolean) => {
+      const result = await getChatMessagesForUser(userId);
+      if (!result.success || !result.data) return;
+
+      const normalizedMessages: ChatMessage[] = result.data.map((message: any) => ({
+        id: String(message.id),
+        senderId: String(message.senderId),
+        receiverId: String(message.receiverId),
+        content: String(message.content || ''),
+        createdAt: message.createdAt,
+        readAt: message.readAt,
+      }));
+
+      if (showNewMessageToast) {
+        const currentUnread = normalizedMessages.filter(
+          (m) => m.receiverId === userId && !m.readAt
+        ).length;
+        if (currentUnread > lastUnreadTotalRef.current) {
+          toast({
+            title: 'Nova mensagem',
+            description: 'Voce recebeu uma nova mensagem no chat.',
+          });
+        }
+        lastUnreadTotalRef.current = currentUnread;
+      } else {
+        lastUnreadTotalRef.current = normalizedMessages.filter(
+          (m) => m.receiverId === userId && !m.readAt
+        ).length;
+      }
+
+      setAllMessages(normalizedMessages);
+    },
+    [toast]
+  );
+
+  useEffect(() => {
+    const rawCurrentUser = safeParseJson<any>(localStorage.getItem(CURRENT_USER_KEY), null);
+    const normalizedCurrent = normalizeUser(rawCurrentUser);
+    setCurrentUser(normalizedCurrent);
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let mounted = true;
+
+    const bootstrap = async () => {
+      setIsLoading(true);
+      await Promise.all([loadUsers(), loadMessages(currentUser.id, false)]);
+      if (mounted) setIsLoading(false);
+    };
+
+    bootstrap();
+
+    interval = setInterval(() => {
+      loadUsers();
+      loadMessages(currentUser.id, true);
+    }, POLLING_MS);
+
+    return () => {
+      mounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [currentUser?.id, loadMessages, loadUsers]);
+
+  const contacts = useMemo(() => {
+    if (!currentUser) return [];
+    const list = allUsers.filter((u) => u.id !== currentUser.id);
+
+    if (currentUser.role === 'admin') return list;
+    if (currentUser.role === 'student') {
+      return list.filter((u) => u.role === 'teacher' || u.role === 'admin');
+    }
+    if (currentUser.role === 'teacher') {
+      return list.filter((u) => u.role === 'student' || u.role === 'admin');
+    }
+    return [];
+  }, [allUsers, currentUser]);
+
+  useEffect(() => {
+    if (!contacts.length) return;
+    if (initialContactId && contacts.some((c) => c.id === initialContactId)) {
+      setActiveContactId(initialContactId);
+      return;
+    }
+    if (!activeContactId) {
+      setActiveContactId(contacts[0].id);
+    }
+  }, [activeContactId, contacts, initialContactId]);
+
+  const activeContact = useMemo(
+    () => contacts.find((c) => c.id === activeContactId) || null,
+    [contacts, activeContactId]
+  );
+
+  const unreadCountByContact = useMemo(() => {
+    if (!currentUser?.id) return {} as Record<string, number>;
+    return allMessages.reduce((acc, message) => {
+      if (message.receiverId === currentUser.id && !message.readAt) {
+        acc[message.senderId] = (acc[message.senderId] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+  }, [allMessages, currentUser?.id]);
+
+  const conversation = useMemo(() => {
+    if (!currentUser?.id || !activeContact?.id) return [];
+    return allMessages
+      .filter(
+        (m) =>
+          (m.senderId === currentUser.id && m.receiverId === activeContact.id) ||
+          (m.senderId === activeContact.id && m.receiverId === currentUser.id)
+      )
+      .sort((a, b) => toDate(a.createdAt).getTime() - toDate(b.createdAt).getTime());
+  }, [allMessages, activeContact?.id, currentUser?.id]);
+
+  const markAsRead = useCallback(async () => {
+    if (!currentUser?.id || !activeContact?.id) return;
+    const result = await markConversationAsRead(currentUser.id, activeContact.id);
+    if (!result.success) return;
+    await loadMessages(currentUser.id, false);
+  }, [activeContact?.id, currentUser?.id, loadMessages]);
+
+  useEffect(() => {
+    markAsRead();
+  }, [markAsRead, conversation.length]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversation.length, activeContactId]);
+
+  const handleSend = async (e: FormEvent) => {
+    e.preventDefault();
+    const content = inputValue.trim();
+    if (!content || !currentUser?.id || !activeContact?.id || isSending) return;
+
+    setIsSending(true);
+    const result = await sendChatMessage({
+      senderId: currentUser.id,
+      receiverId: activeContact.id,
+      content,
+    });
+
+    if (!result.success) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar',
+        description: result.error || 'Nao foi possivel enviar a mensagem.',
+      });
+      setIsSending(false);
+      return;
+    }
+
+    setInputValue('');
+    await loadMessages(currentUser.id, false);
+    setIsSending(false);
+  };
+
+  return (
+    <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-[340px_1fr]">
+      <section
+        className={`${activeContact ? 'hidden md:flex' : 'flex'} flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-sm`}
+      >
+        <div className="border-b border-border/70 bg-muted/20 px-4 py-4">
+          <h1 className="text-lg font-semibold tracking-tight">Conversas</h1>
+        </div>
+        <ScrollArea className="h-[calc(100vh-10rem)] flex-1">
+          {isLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">Carregando contatos...</p>
+          ) : contacts.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">Nenhum contato disponivel.</p>
+          ) : (
+            contacts.map((contact) => {
+              const isActive = contact.id === activeContactId;
+              const name = contact.name || 'Usuario';
+              return (
+                <Button
+                  key={contact.id}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setActiveContactId(contact.id)}
+                  className={`mx-2 my-1 h-auto w-[calc(100%-1rem)] justify-start gap-3 rounded-xl border-l-4 px-3 py-3 text-left ${
+                    isActive
+                      ? 'border-primary bg-muted/50 text-foreground hover:bg-muted/60'
+                      : 'border-transparent hover:bg-muted/40'
+                  }`}
+                >
+                  <Avatar className="h-10 w-10 border border-border/60">
+                    <AvatarImage src={contact.avatarUrl || undefined} alt={name} />
+                    <AvatarFallback className="bg-muted text-foreground">
+                      {name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground/90">{contact.role || 'contato'}</p>
+                  </div>
+                  {(unreadCountByContact[contact.id] || 0) > 0 && (
+                    <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-medium text-white">
+                      {unreadCountByContact[contact.id]}
+                    </span>
+                  )}
+                </Button>
+              );
+            })
+          )}
+        </ScrollArea>
+      </section>
+
+      <section
+        className={`${!activeContact ? 'hidden md:flex' : 'flex'} flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm`}
+      >
+        {!currentUser ? (
+          <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+            Usuario atual nao encontrado. Faca login novamente.
+          </div>
+        ) : !activeContact ? (
+          <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+            Selecione um contato para iniciar a conversa.
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 border-b border-border/70 bg-muted/20 px-4 py-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setActiveContactId(null)}
+                aria-label="Voltar"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Avatar className="h-10 w-10 border border-border/60">
+                <AvatarImage src={activeContact.avatarUrl || undefined} alt={activeContact.name || 'Usuario'} />
+                <AvatarFallback className="bg-muted text-foreground">
+                  {(activeContact.name || 'U').charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-semibold">{activeContact.name || 'Usuario'}</p>
+                <p className="text-xs text-muted-foreground">{activeContact.role || 'contato'}</p>
+              </div>
+            </div>
+
+            <ScrollArea className="h-[calc(100vh-16rem)] flex-1 bg-background">
+              <div className="space-y-2 p-4">
+                {conversation.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda.</p>
+                ) : (
+                  conversation.map((message) => {
+                    const isMine = message.senderId === currentUser.id;
+                    return (
+                      <div
+                        key={message.id}
+                        className={`mb-2 flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[82%] px-3 py-2.5 text-sm shadow-sm ${
+                            isMine
+                              ? 'rounded-2xl rounded-br-sm bg-primary text-primary-foreground'
+                              : 'rounded-2xl rounded-bl-sm bg-muted text-foreground'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap break-words">{message.content || ''}</p>
+                          <div
+                            className={`mt-1 flex items-center justify-end gap-1 text-[11px] ${
+                              isMine ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                            }`}
+                          >
+                            <span>{formatTime(message.createdAt)}</span>
+                            {isMine &&
+                              (message.readAt ? (
+                                <CheckCheck className="h-3 w-3 text-blue-500" />
+                              ) : (
+                                <Check className="h-3 w-3 text-muted-foreground" />
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            <form onSubmit={handleSend} className="border-t border-border/70 bg-card p-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Digite uma mensagem..."
+                  className="h-11 flex-1 rounded-md border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isSending}
+                  className="h-11 w-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Send className="h-5 w-5" strokeWidth={2.4} />
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
+      </section>
+    </div>
+  );
 }
-
-    
-
-    
-
-
-
-
-    
-
-
-
-
-    
-
-
-
-    
-
-    

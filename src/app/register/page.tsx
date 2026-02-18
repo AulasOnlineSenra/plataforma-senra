@@ -10,6 +10,8 @@ import { SenraLogo } from '@/components/senra-logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowLeft, GraduationCap, School, UserCircle2, Check } from 'lucide-react'; 
+import { registerUser } from '@/app/actions/auth';
+import { loginUser } from '@/app/actions/auth';
 import { User, UserRole, Teacher } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { teachers as initialTeachers, users as initialUsers, logNotification } from '@/lib/data';
@@ -38,6 +40,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,65 +49,35 @@ export default function RegisterPage() {
     }
   }, [roleParam]);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!role) {
       toast({ variant: "destructive", title: "Erro", description: "Selecione um perfil." });
       return;
     }
 
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    const currentUsers: User[] = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-    const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-    const currentTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
-    const allExistingUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
-
-    const emailExists = allExistingUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (emailExists) {
-      toast({ variant: "destructive", title: "Email já existe", description: "Tente fazer login." });
-      return;
-    }
-
-    let newUser: any;
-    const baseUser = {
-      id: `user-${Date.now()}`,
-      name, email,
-      avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`,
+    const result = await registerUser({
+      name,
+      email,
+      password,
       role,
-      status: 'active',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      ratings: [],
-    };
+      referralCode,
+    });
 
-    if (role === 'teacher') {
-      newUser = {
-        ...baseUser,
-        id: `teacher-${Date.now()}`,
-        role: 'teacher',
-        subjects: [],
-        bio: 'Novo professor!',
-        education: [],
-        availability: {},
-        classCredits: 0,
-      } as Teacher;
-      localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify([...currentTeachers, newUser]));
-    } else {
-      newUser = { ...baseUser, role };
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify([...currentUsers, newUser]));
+    if (!result.success) {
+      toast({ variant: "destructive", title: "Erro", description: result.error });
+      return;
     }
 
     const roleLabels: Record<string, string> = { student: 'Aluno', teacher: 'Professor', admin: 'Admin' };
     logNotification({
       type: 'new_user_registered',
       title: `Novo ${roleLabels[role]}`,
-      description: `${newUser.name} se cadastrou.`,
-      userId: newUser.id,
+      description: `${result.user?.name} se cadastrou.`,
+      userId: result.user?.id || '0',
     });
 
-    window.dispatchEvent(new Event('storage'));
-    localStorage.setItem('newlyRegisteredUser', JSON.stringify(newUser));
-    toast({ title: "Sucesso!", description: "Conta criada. Redirecionando..." });
+    toast({ title: "Sucesso!", description: "Conta criada no Banco de Dados! Redirecionando..." });
     router.push('/login');
   };
 
@@ -207,6 +180,17 @@ export default function RegisterPage() {
             className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="referral-code" className="sr-only">Codigo de indicacao</Label>
+          <Input
+            id="referral-code"
+            type="text"
+            placeholder="Codigo de indicacao (opcional)"
+            className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value)}
           />
         </div>
 

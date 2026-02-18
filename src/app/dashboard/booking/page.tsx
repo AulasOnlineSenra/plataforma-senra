@@ -1,1135 +1,460 @@
-
-
 'use client';
 
-import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar } from '@/components/ui/calendar';
-import { subjects as initialSubjects, teachers as initialTeachers, getMockUser, scheduleEvents as initialSchedule, users as initialUsers, chatContacts as initialChatContacts, chatMessages as initialChatMessages, logActivity, logNotification } from '@/lib/data';
+import { addMinutes, format, getDay, isBefore, parse, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { SearchX, Star } from 'lucide-react';
+
+import { createBookings, getLessons } from '@/app/actions/bookings';
+import { getStudents, getSubjects, getTeachers, getUserById } from '@/app/actions/users';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, isBefore, startOfToday, getDay, setHours, setMinutes, parse, getDaysInMonth, startOfMonth, eachDayOfInterval, endOfMonth, isToday, startOfWeek, endOfWeek, isSameMonth, isValid } from 'date-fns';
-import { Plus, Trash2, Repeat, X, AlertTriangle, List, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { User, Teacher, ScheduleEvent, Subject, ChatMessage, ChatContact } from '@/lib/types';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 
-
-interface Booking {
+type Teacher = {
   id: string;
-  subjectId: string;
-  teacherId: string;
-  studentId: string;
-  start: Date;
-  end: Date;
-  isExperimental?: boolean;
-}
+  name: string;
+  avatarUrl: string | null;
+  subject: string | null;
+};
 
-type Recurrence = 'none' | 'weekly' | 'biweekly' | 'monthly';
-type ViewMode = 'list' | 'calendar';
+type Student = {
+  id: string;
+  name: string;
+  credits: number;
+};
+
+type Subject = {
+  id: string;
+  name: string;
+};
+
+type Lesson = {
+  studentId: string;
+  teacherId: string;
+  date: Date;
+  endDate: Date;
+  status: string;
+};
 
 const CLASS_DURATION_MINUTES = 90;
-const PENDING_BOOKINGS_STORAGE_KEY = 'pendingBookings';
-
+const DEFAULT_AVAILABILITY: Record<string, string[]> = {
+  monday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+  tuesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+  wednesday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+  thursday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+  friday: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+  saturday: ['09:00', '10:00', '11:00'],
+  sunday: [],
+};
 
 function BookingPageComponent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
   const studentIdParam = searchParams.get('studentId');
   const teacherIdParam = searchParams.get('teacherId');
   const studentName = searchParams.get('studentName');
-  const pageTitle = studentName ? `Agendar Nova Aula - ${studentName}` : 'Agendar Nova Aula';
-  
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
-  const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
-  const [selectedTeacher, setSelectedTeacher] = useState<string | undefined>(undefined);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [selectedTime, setSelectedTime] = useState<string | undefined>();
-  const [recurrence, setRecurrence] = useState<Recurrence>('none');
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [timezoneDifference, setTimezoneDifference] = useState<string | null>(null);
-  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(initialSchedule);
-  const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [allUsers, setAllUsers] = useState<(User | Teacher)[]>([]);
-  const [isClient, setIsClient] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const updateData = () => {
-        const storedSchedule = localStorage.getItem('scheduleEvents');
-        if (storedSchedule) {
-            setScheduleEvents(JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
-        } else {
-            setScheduleEvents(initialSchedule);
-        }
-
-        const storedTeachers = localStorage.getItem('teacherList');
-        let currentTeachers: Teacher[] = [];
-        if (storedTeachers) {
-            currentTeachers = JSON.parse(storedTeachers);
-            setTeachers(currentTeachers);
-        } else {
-            currentTeachers = initialTeachers;
-            setTeachers(initialTeachers);
-        }
-
-        const storedUsers = localStorage.getItem('userList');
-        const currentUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
-        setUsers(currentUsers);
-        
-        setAllUsers([...currentUsers, ...currentTeachers]);
-        
-        const loggedInUserStr = localStorage.getItem('currentUser');
-        let loggedInUser: User | null = null;
-        if (loggedInUserStr) {
-            loggedInUser = JSON.parse(loggedInUserStr);
-        } else {
-            loggedInUser = getMockUser('student');
-        }
-        
-        const studentToBook = studentIdParam ? currentUsers.find((u: User) => u.id === studentIdParam) : loggedInUser;
-        setCurrentUser(studentToBook || getMockUser('student'));
-
-
-        if (teacherIdParam) {
-            const teacherFromParam = currentTeachers.find(t => t.id === teacherIdParam);
-            if (teacherFromParam && teacherFromParam.subjects.length > 0) {
-                setSelectedTeacher(teacherIdParam);
-                setSelectedSubject(teacherFromParam.subjects[0]);
-            }
-        }
-        
-        const savedBookings = localStorage.getItem(PENDING_BOOKINGS_STORAGE_KEY);
-        if (savedBookings) {
-            setBookings(JSON.parse(savedBookings).map((b: any) => ({...b, start: new Date(b.start), end: new Date(b.end)})));
-        }
-
-    };
-
-    updateData();
-    window.addEventListener('storage', updateData);
-    return () => window.removeEventListener('storage', updateData);
-  }, [studentIdParam, teacherIdParam]);
-  
-  useEffect(() => {
-    if (bookings.length > 0) {
-        localStorage.setItem(PENDING_BOOKINGS_STORAGE_KEY, JSON.stringify(bookings));
-    } else {
-        localStorage.removeItem(PENDING_BOOKINGS_STORAGE_KEY);
-    }
-  }, [bookings]);
-
-
-  const availableTeachers = useMemo(() => {
-    if (!selectedSubject) {
-      return teachers.filter(t => t.status === 'active');
-    }
-    return teachers.filter((t) => t.subjects.includes(selectedSubject) && t.status === 'active');
-  }, [selectedSubject, teachers]);
-  
-  const availableSubjects = useMemo(() => {
-    if (!selectedTeacher) {
-      return subjects;
-    }
-    const teacher = teachers.find(t => t.id === selectedTeacher);
-    if (!teacher) {
-      return subjects;
-    }
-    return subjects.filter(s => teacher.subjects.includes(s.id));
-  }, [selectedTeacher, teachers, subjects]);
-
-  const isFirstClassWithTeacher = useMemo(() => {
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (!studentToBook || !selectedTeacher) {
-      return false;
-    }
-    const hasPreviousClasses = scheduleEvents.some(
-      (event) =>
-        event.studentId === studentToBook.id &&
-        event.teacherId === selectedTeacher
-    );
-    return !hasPreviousClasses;
-  }, [currentUser, selectedTeacher, scheduleEvents, studentIdParam, users]);
-
-  const isExperimentalOptionAvailable = useMemo(() => {
-    return isFirstClassWithTeacher && !bookings.some(b => b.isExperimental);
-  }, [isFirstClassWithTeacher, bookings]);
-
-
-  const handleSubjectChange = (subjectId: string) => {
-    setSelectedSubject(subjectId);
-    // If the currently selected teacher doesn't teach this subject, deselect them
-    const currentTeacher = teachers.find(t => t.id === selectedTeacher);
-    if (currentTeacher && !currentTeacher.subjects.includes(subjectId)) {
-        setSelectedTeacher(undefined);
-    }
-  };
-
-  const handleTeacherChange = (teacherId: string) => {
-    setSelectedTeacher(teacherId);
-    
-    // Check if current subject is taught by new teacher, if not, deselect it
-    const newTeacher = teachers.find(t => t.id === teacherId);
-    if (newTeacher && selectedSubject && !newTeacher.subjects.includes(selectedSubject)) {
-        setSelectedSubject(undefined);
-    }
-  };
-
-  const handleClearSelections = () => {
-    setSelectedSubject(undefined);
-    setSelectedTeacher(undefined);
-    setSelectedDates([]);
-    setSelectedTime(undefined);
-    setRecurrence('none');
-    setBookings([]);
-  };
-
-  const isConflict = (newBookingStart: Date, newBookingEnd: Date, studentId: string, teacherId: string): boolean => {
-    const activeScheduleEvents = scheduleEvents.filter(event => event.status === 'scheduled');
-
-    return activeScheduleEvents.some(existingBooking => {
-      const isTeacherBusy = existingBooking.teacherId === teacherId;
-      const isStudentBusy = existingBooking.studentId === studentId;
-      
-      if (!isTeacherBusy && !isStudentBusy) {
-        return false;
-      }
-
-      const existingStarts = new Date(existingBooking.start).getTime();
-      const existingEnds = new Date(existingBooking.end).getTime();
-
-      return (newBookingStart.getTime() < existingEnds && newBookingEnd.getTime() > existingStarts);
-    });
-  }
-
-
-  const handleAddBooking = () => {
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-
-    if (
-      !selectedSubject ||
-      !selectedTeacher ||
-      selectedDates.length === 0 ||
-      !selectedTime ||
-      !studentToBook
-    ) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos Incompletos',
-        description:
-          'Por favor, selecione disciplina, professor, pelo menos uma data e um horário.',
-      });
-      return;
-    }
-    
-    const isAddingExperimental = isExperimentalOptionAvailable;
-
-    if (isAddingExperimental && recurrence !== 'none') {
-        toast({
-            variant: 'destructive',
-            title: 'Ação Inválida',
-            description: 'Aulas experimentais não podem ser recorrentes.',
-        });
-        return;
-    }
-
-
-    const newBookings: Booking[] = [];
-    let conflictFound = false;
-
-    selectedDates.forEach(date => {
-        if (conflictFound) return;
-        
-        const [hours, minutes] = selectedTime.split(':').map(Number);
-        const startDate = new Date(date);
-        startDate.setHours(hours, minutes, 0, 0);
-
-        if (isBefore(startDate, startOfToday())) {
-            toast({
-                variant: 'destructive',
-                title: 'Data Inválida',
-                description: `Não é possível agendar aulas em datas passadas.`,
-            });
-            conflictFound = true;
-            return;
-        }
-
-        const endDate = addMinutes(startDate, CLASS_DURATION_MINUTES);
-
-        const bookingConflict = bookings.some(b => 
-            (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-            (startDate.getTime() < b.end.getTime() && endDate.getTime() > b.start.getTime())
-        );
-        
-        if (isConflict(startDate, endDate, studentToBook.id, selectedTeacher) || bookingConflict) {
-             toast({
-                variant: 'destructive',
-                title: 'Conflito de Horário',
-                description: `Já existe uma aula agendada (sua ou do professor) que entra em conflito com ${format(startDate, "dd/MM 'às' HH:mm")}.`,
-            });
-            conflictFound = true;
-        } else {
-             const newBooking: Booking = {
-                id: `booking-${startDate.getTime()}-${Math.random()}`,
-                subjectId: selectedSubject,
-                teacherId: selectedTeacher,
-                studentId: studentToBook.id,
-                isExperimental: isAddingExperimental,
-                start: startDate,
-                end: endDate,
-             };
-             newBookings.push(newBooking);
-        }
-    });
-
-    if (conflictFound) {
-        return; 
-    }
-
-    if (recurrence !== 'none') {
-      const repeatCount = 4;
-      const originalDates = [...newBookings];
-      let recurrenceConflictFound = false;
-
-      for (let i = 1; i <= repeatCount; i++) {
-        if (recurrenceConflictFound) break;
-
-        originalDates.forEach((booking) => {
-          if (recurrenceConflictFound) return;
-
-          const newStartDate = new Date(booking.start);
-          if (recurrence === 'weekly') {
-            newStartDate.setDate(newStartDate.getDate() + 7 * i);
-          } else if (recurrence === 'biweekly') {
-            newStartDate.setDate(newStartDate.getDate() + 14 * i);
-          } else if (recurrence === 'monthly') {
-            newStartDate.setMonth(newStartDate.getMonth() + i);
-          }
-           const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES);
-           
-           const recurringConflict = newBookings.some(b => 
-                (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-                (newStartDate.getTime() < b.end.getTime() && newEndDate.getTime() > b.start.getTime())
-           );
-           
-           if (isConflict(newStartDate, newEndDate, studentToBook.id, selectedTeacher) || recurringConflict) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Conflito de Horário na Recorrência',
-                    description: `Não foi possível agendar a aula recorrente em ${format(newStartDate, "dd/MM 'às' HH:mm")}.`,
-                });
-                recurrenceConflictFound = true;
-           } else {
-               const recurringBooking: Booking = {
-                 ...booking,
-                 id: `booking-${newStartDate.getTime()}-${Math.random()}`,
-                 start: newStartDate,
-                 end: newEndDate,
-               };
-               newBookings.push(recurringBooking);
-           }
-        });
-      }
-    }
-
-
-    setBookings((prev) => [...prev, ...newBookings].sort((a, b) => a.start.getTime() - b.start.getTime()));
-    setSelectedDates([]);
-    setSelectedTime(undefined);
-    setRecurrence('none');
-
-
-    toast({
-      title: 'Aula(s) Adicionada(s)!',
-      description: `${newBookings.length} aula(s) foram adicionadas ao resumo.`,
-    });
-  };
-
-  const handleRemoveBooking = (id: string) => {
-    setBookings(bookings.filter((b) => b.id !== id));
-  };
-
-  const handleRepeatBooking = (booking: Booking) => {
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (!studentToBook || !selectedTeacher) return;
-    const newStartDate = addMinutes(booking.end, 15);
-    const newEndDate = addMinutes(newStartDate, CLASS_DURATION_MINUTES)
-    
-    const bookingConflict = bookings.some(b => 
-        (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-        (newStartDate.getTime() < b.end.getTime() && newEndDate.getTime() > b.start.getTime())
-    );
-
-    if(isConflict(newStartDate, newEndDate, studentToBook.id, selectedTeacher) || bookingConflict) {
-        toast({
-            variant: 'destructive',
-            title: 'Conflito de Horário',
-            description: `Não foi possível duplicar a aula para ${format(newStartDate, "dd/MM 'às' HH:mm")}.`,
-        });
-        return;
-    }
-
-    const newBooking: Booking = {
-      ...booking,
-      id: `booking-${newStartDate.getTime()}-${Math.random()}`,
-      start: newStartDate,
-      end: newEndDate
-    };
-
-    setBookings((prev) => [...prev, newBooking].sort((a, b) => a.start.getTime() - b.start.getTime()));
-    toast({
-      title: 'Aula Duplicada!',
-      description: 'Um novo agendamento idêntico foi adicionado.',
-    });
-  };
-
-  const sendNotification = useCallback((senderId: string, receiverId: string, content: string) => {
-    const allMessagesStr = localStorage.getItem('chatMessages');
-    const allContactsStr = localStorage.getItem('chatContacts');
-    let allMessages: ChatMessage[] = allMessagesStr ? JSON.parse(allMessagesStr).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) : initialChatMessages;
-    let allContacts: ChatContact[] = allContactsStr ? JSON.parse(allContactsStr).map((c: any) => ({ ...c, lastMessageTimestamp: new Date(c.lastMessageTimestamp) })) : initialChatContacts;
-
-    const newMessage: ChatMessage = {
-        id: `msg-${Date.now()}-${Math.random()}`,
-        senderId,
-        receiverId,
-        content,
-        timestamp: new Date(),
-    };
-    allMessages.push(newMessage);
-
-    const updateContact = (contactOwnerId: string, partnerId: string) => {
-        const partnerDetails = allUsers.find(u => u.id === partnerId);
-        if (!partnerDetails) return;
-
-        let contactList = allContacts.filter(c => c.id !== partnerId);
-        const existingContact = allContacts.find(c => c.id === partnerId);
-        
-        const newContactEntry: ChatContact = {
-            id: partnerDetails.id,
-            name: partnerDetails.name,
-            avatarUrl: partnerDetails.avatarUrl,
-            lastMessage: content,
-            lastMessageTimestamp: newMessage.timestamp,
-            unreadCount: (existingContact?.id === partnerId && newMessage.receiverId === contactOwnerId) ? (existingContact.unreadCount || 0) + 1 : (existingContact?.unreadCount || 0),
-        };
-
-        allContacts = [newContactEntry, ...contactList].sort((a,b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
-    };
-
-    updateContact(receiverId, senderId);
-    updateContact(senderId, receiverId);
-
-    localStorage.setItem('chatMessages', JSON.stringify(allMessages));
-    localStorage.setItem('chatContacts', JSON.stringify(allContacts));
-  }, [allUsers]);
-
-  const handleConfirmAllBookings = useCallback(() => {
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (bookings.length === 0 || !studentToBook) {
-      toast({
-        variant: 'destructive',
-        title: 'Nenhuma aula no resumo',
-        description: 'Adicione pelo menos uma aula antes de confirmar.',
-      });
-      return;
-    }
-    
-    const nonExperimentalBookings = bookings.filter(b => !b.isExperimental);
-    const experimentalBooking = bookings.find(b => b.isExperimental);
-    
-    if (experimentalBooking && !isFirstClassWithTeacher) {
-        toast({
-            variant: 'destructive',
-            title: 'Aula Experimental Inválida',
-            description: 'Você já teve aulas com este professor. A aula experimental não é permitida.',
-        });
-        return;
-    }
-
-
-    const currentCredits = studentToBook.classCredits || 0;
-    if (currentCredits < nonExperimentalBookings.length) {
-      const creditsNeeded = nonExperimentalBookings.length - currentCredits;
-      toast({
-        variant: 'destructive',
-        title: 'Créditos Insuficientes',
-        description: `Você precisa de mais ${creditsNeeded} crédito(s) de aula. Estamos te redirecionando para a compra de pacotes.`,
-      });
-      localStorage.setItem(PENDING_BOOKINGS_STORAGE_KEY, JSON.stringify(bookings));
-      router.push(`/dashboard/packages?needed=${creditsNeeded}`);
-      return;
-    }
-
-    const storedSubjectsStr = localStorage.getItem('subjects');
-    const currentSubjects: Subject[] = storedSubjectsStr ? JSON.parse(storedSubjectsStr) : initialSubjects;
-
-
-    const newScheduleEvents = bookings.map(b => ({
-      id: b.id,
-      title: `Aula de ${currentSubjects.find(s => s.id === b.subjectId)?.name}`,
-      start: b.start,
-      end: b.end,
-      studentId: studentToBook!.id,
-      teacherId: b.teacherId,
-      subject: currentSubjects.find(s => s.id === b.subjectId)?.name || 'Desconhecida',
-      status: 'scheduled' as 'scheduled',
-      isExperimental: b.isExperimental,
-      subjectId: b.subjectId,
-    }));
-    
-    const updatedSchedule = [...scheduleEvents, ...newScheduleEvents];
-    localStorage.setItem('scheduleEvents', JSON.stringify(updatedSchedule));
-    
-    const updatedUsers = users.map(u => u.id === studentToBook.id ? { ...u, classCredits: currentCredits - nonExperimentalBookings.length } : u);
-    localStorage.setItem('userList', JSON.stringify(updatedUsers));
-    localStorage.setItem('currentUser', JSON.stringify(updatedUsers.find(u => u.id === studentToBook.id)));
-
-
-    const adminUser = allUsers.find(u => u.role === 'admin');
-    if (!adminUser) {
-        console.error("Admin user not found for notifications");
-        return;
-    }
-    
-    if (newScheduleEvents.length > 1) {
-        const student = users.find(u => u.id === newScheduleEvents[0].studentId);
-        const eventDetails = newScheduleEvents.map(event => {
-            const teacher = teachers.find(t => t.id === event.teacherId);
-            return {
-                subject: event.subject,
-                teacher: teacher?.name || 'N/A',
-                date: event.start,
-            };
-        });
-        logNotification({
-            type: 'group_class_scheduled',
-            title: 'Novo grupo de aulas agendado',
-            description: `${student?.name} agendou ${newScheduleEvents.length} novas aulas.`,
-            userId: student?.id,
-            events: eventDetails,
-        });
-
-    } else if (newScheduleEvents.length === 1) {
-        const event = newScheduleEvents[0];
-        const teacher = teachers.find(t => t.id === event.teacherId);
-        const student = users.find(u => u.id === event.studentId);
-        const description = `${student?.name} agendou uma nova aula de ${event.subject} com o professor(a) ${teacher?.name}.`;
-        logNotification({
-            type: 'class_scheduled',
-            title: 'Nova Aula Agendada',
-            description: description,
-            userId: student?.id,
-        });
-    }
-
-
-    newScheduleEvents.forEach(event => {
-        const teacher = teachers.find(t => t.id === event.teacherId);
-        const student = users.find(u => u.id === event.studentId);
-        const dateStr = format(event.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-        
-        sendNotification(adminUser.id, event.teacherId, `Olá, ${teacher?.name}. Uma nova aula de ${event.subject} com ${student?.name} foi agendada para ${dateStr}.`);
-        sendNotification(adminUser.id, event.studentId, `Olá, ${student?.name}. Sua aula de ${event.subject} com ${teacher?.name} foi confirmada para ${dateStr}.`);
-
-        logActivity(`Agendou uma aula de ${event.subject} com ${teacher?.name}`);
-    });
-
-    window.dispatchEvent(new Event('storage'));
-
-    toast({
-      title: 'Agendamentos Confirmados!',
-      description: `Suas ${bookings.length} aulas foram agendadas com sucesso.`,
-    });
-    setBookings([]);
-  }, [bookings, currentUser, scheduleEvents, allUsers, teachers, users, toast, sendNotification, studentIdParam, router, isFirstClassWithTeacher]);
-
-  const getDaySlots = useCallback((dayAvailability: unknown): string[] => {
-    if (!Array.isArray(dayAvailability) || dayAvailability.length === 0) {
-      return [];
-    }
-
-    const slots: string[] = [];
-
-    dayAvailability.forEach((entry) => {
-      if (typeof entry === 'string') {
-        const parsed = parse(entry, 'HH:mm', new Date());
-        if (isValid(parsed)) {
-          slots.push(format(parsed, 'HH:mm'));
-        }
-        return;
-      }
-
-      if (!entry || typeof entry !== 'object') {
-        return;
-      }
-
-      const maybeRange = entry as { start?: unknown; end?: unknown };
-      const start = typeof maybeRange.start === 'string' ? maybeRange.start : '';
-      const end = typeof maybeRange.end === 'string' ? maybeRange.end : '';
-
-      if (!start || !end) {
-        return;
-      }
-
-      let currentTime = parse(start, 'HH:mm', new Date());
-      const endTime = parse(end, 'HH:mm', new Date());
-
-      if (!isValid(currentTime) || !isValid(endTime) || !isBefore(currentTime, endTime)) {
-        return;
-      }
-
-      let guard = 0;
-      while (addMinutes(currentTime, CLASS_DURATION_MINUTES) <= endTime && guard < 64) {
-        slots.push(format(currentTime, 'HH:mm'));
-        currentTime = addMinutes(currentTime, 30);
-        guard++;
-      }
-    });
-
-    return Array.from(new Set(slots)).sort((a, b) => a.localeCompare(b));
-  }, []);
-
-  const availableTimes = useMemo(() => {
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (!selectedTeacher || selectedDates.length === 0 || !studentToBook) {
-      return [];
-    }
-  
-    const teacher = teachers.find(t => t.id === selectedTeacher);
-    if (!teacher || !teacher.availability) return [];
-  
-    const allTimes: { start: string; end: string }[] = [];
-  
-    (selectedDates || []).forEach(date => {
-      const dayOfWeekIndex = getDay(date); 
-      const dayOfWeekName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex] as keyof Teacher['availability'];
-      const dayAvailability = teacher?.availability?.[dayOfWeekName];
-      const daySlots = getDaySlots(dayAvailability);
-  
-      if (daySlots.length === 0) return;
-
-      daySlots.forEach(slot => {
-        const parsedSlot = parse(slot, 'HH:mm', new Date());
-        if (!isValid(parsedSlot)) return;
-
-        const slotStart = new Date(date);
-        slotStart.setHours(parsedSlot.getHours(), parsedSlot.getMinutes(), 0, 0);
-        const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
-
-        const existingBookingConflict = bookings.some(b =>
-          (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-          (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
-        );
-
-        if (isBefore(slotStart, new Date())) {
-          return;
-        }
-
-        if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
-          allTimes.push({
-            start: format(slotStart, 'HH:mm'),
-            end: format(slotEnd, 'HH:mm')
-          });
-        }
-      });
-    });
-  
-    const uniqueTimes = Array.from(new Set(allTimes.map(t => t.start))).map(start => {
-      return allTimes.find(t => t.start === start)!
-    }).sort((a, b) => a.start.localeCompare(b.start));
-  
-    return uniqueTimes;
-  }, [selectedTeacher, selectedDates, teachers, scheduleEvents, bookings, currentUser, studentIdParam, users, getDaySlots]);
-  
-  useEffect(() => {
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (!selectedTeacher || !studentToBook) {
-      setTimezoneDifference(null);
-      return;
-    }
-
-    const teacher = teachers.find(t => t.id === selectedTeacher);
-    const studentTimezone = studentToBook.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const teacherTimezone = teacher?.timezone;
-
-    if (teacherTimezone && studentTimezone !== teacherTimezone) {
-      const now = new Date();
-      const studentTime = now.toLocaleString('pt-BR', { timeZone: studentTimezone, hour: '2-digit', minute: '2-digit', hour12: false });
-      const teacherTime = now.toLocaleString('pt-BR', { timeZone: teacherTimezone, hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short' });
-      
-      setTimezoneDifference(`Atualmente são ${studentTime} para você e ${teacherTime} para o professor(a) ${teacher.name}. Os horários são mostrados na hora local do professor.`);
-    } else {
-      setTimezoneDifference(null);
-    }
-  }, [selectedTeacher, currentUser, teachers, studentIdParam, users]);
-  
-  const handleDateSelection = (dates: Date | Date[] | undefined) => {
-    if (isExperimentalOptionAvailable) {
-        if (Array.isArray(dates)) {
-            // Should not happen in single mode, but as a fallback
-            setSelectedDates(dates.length > 0 ? [dates[0]] : []);
-        } else if (dates) {
-            setSelectedDates([dates]);
-        } else {
-            setSelectedDates([]);
-        }
-    } else {
-        if (Array.isArray(dates)) {
-            setSelectedDates(dates);
-        } else if (dates) {
-            setSelectedDates([dates]);
-        } else {
-            setSelectedDates([]);
-        }
-    }
-  };
-
-  const getUnavailableDaysForMonth = useCallback((month: Date): Date[] => {
-    if (!selectedTeacher) return [];
-
-    const teacher = teachers.find(t => t.id === selectedTeacher);
-    if (!teacher || !teacher.availability) return [];
-
-    const studentToBook = studentIdParam ? users.find(u => u.id === studentIdParam) : currentUser;
-    if (!studentToBook) return [];
-
-    const daysInMonth = eachDayOfInterval({
-        start: startOfMonth(month),
-        end: endOfMonth(month),
-    });
-
-    const unavailableDays = daysInMonth.filter(day => {
-        if (isBefore(day, startOfToday())) return true;
-        
-        const dayOfWeekIndex = getDay(day);
-        const dayOfWeekName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex] as keyof Teacher['availability'];
-        const dayAvailability = teacher?.availability?.[dayOfWeekName];
-        const daySlots = getDaySlots(dayAvailability);
-
-        if (daySlots.length === 0) return true;
-
-        // Check if all slots for this day are taken
-        let hasAvailableSlot = false;
-        for (const slot of daySlots) {
-            const parsedSlot = parse(slot, 'HH:mm', new Date());
-            if (!isValid(parsedSlot)) continue;
-
-            const slotStart = new Date(day);
-            slotStart.setHours(parsedSlot.getHours(), parsedSlot.getMinutes(), 0, 0);
-            const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
-
-            const existingBookingConflict = bookings.some(b =>
-                (b.teacherId === selectedTeacher || b.studentId === studentToBook.id) &&
-                (slotStart.getTime() < b.end.getTime() && slotEnd.getTime() > b.start.getTime())
-            );
-
-            if (!isConflict(slotStart, slotEnd, studentToBook.id, selectedTeacher) && !existingBookingConflict) {
-                hasAvailableSlot = true;
-                break;
-            }
-        }
-        return !hasAvailableSlot;
-    });
-
-    return unavailableDays;
-  }, [selectedTeacher, teachers, scheduleEvents, bookings, studentIdParam, currentUser, users, getDaySlots]);
-
-  const disabledDays = useMemo(() => {
-    return [
-      { before: startOfToday() },
-      ...getUnavailableDaysForMonth(calendarMonth),
-    ];
-  }, [calendarMonth, getUnavailableDaysForMonth]);
-  
-  const renderListView = () => (
-    bookings.length > 0 ? (
-        <div className="space-y-4">
-        {bookings
-            .sort((a, b) => a.start.getTime() - b.start.getTime())
-            .map((booking) => {
-            const subject = subjects.find(
-                (s) => s.id === booking.subjectId
-            );
-            const teacher = teachers.find(
-                (t) => t.id === booking.teacherId
-            );
-            return (
-                <div
-                key={booking.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4 gap-4"
-                >
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <Label>Disciplina</Label>
-                        <div className="flex items-center gap-2">
-                           <p className="font-semibold">{subject?.name}</p>
-                           {booking.isExperimental && <Badge variant="secondary" className="bg-brand-yellow text-black hover:bg-brand-yellow/90">Experimental</Badge>}
-                        </div>
-                    </div>
-                    <div>
-                    <Label>Professor(a)</Label>
-                    <p className="font-semibold">{teacher?.name}</p>
-                    </div>
-                    <div>
-                    <Label>Data e Horário</Label>
-                    <p className="font-semibold">
-                        {format(booking.start, "EEEE, dd/MM/yyyy 'às' HH:mm", {
-                        locale: ptBR,
-                        })}{' '}
-                        - {format(booking.end, 'HH:mm')}
-                    </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                    <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleRepeatBooking(booking)}
-                    title="Repetir agendamento"
-                    >
-                    <Repeat className="h-4 w-4" />
-                    </Button>
-                    <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleRemoveBooking(booking.id)}
-                    title="Remover agendamento"
-                    >
-                    <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-                </div>
-            );
-            })}
-        </div>
-    ) : (
-        <div className="text-center py-8 text-muted-foreground">
-            <p>Nenhuma aula adicionada ao resumo ainda.</p>
-            <p className="text-sm">
-                Use o formulário acima para começar a agendar.
-            </p>
-        </div>
-    )
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [currentUser, setCurrentUser] = useState<Student | null>(null);
+
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string>('');
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const subjectNameById = useMemo(
+    () => new Map(subjects.map((subject) => [subject.id, subject.name])),
+    [subjects]
   );
 
-  const renderCalendarView = () => {
-    const calendarMonth = bookings.length > 0 ? startOfMonth(bookings[0].start) : startOfMonth(new Date());
-    const firstDay = startOfWeek(calendarMonth);
-    const lastDay = endOfWeek(endOfMonth(calendarMonth));
-    const daysInGrid = eachDayOfInterval({ start: firstDay, end: lastDay });
+  const selectedSubjectName = selectedSubjectId ? subjectNameById.get(selectedSubjectId) : undefined;
 
-    const bookingsByDay = bookings.reduce((acc, booking) => {
-        const day = format(booking.start, 'yyyy-MM-dd');
-        if (!acc[day]) {
-            acc[day] = [];
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      const [subjectsResult, teachersResult, lessonsResult, studentsResult] = await Promise.all([
+        getSubjects(),
+        getTeachers(),
+        getLessons(),
+        getStudents(),
+      ]);
+
+      const loadedSubjects = subjectsResult.success && subjectsResult.data ? subjectsResult.data : [];
+      const loadedTeachers = teachersResult.success && teachersResult.data ? teachersResult.data : [];
+      const fallbackSubjectsFromTeachers = Array.from(
+        new Set(
+          loadedTeachers
+            .map((teacher) => (teacher.subject || '').trim())
+            .filter(Boolean)
+        )
+      )
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+        .map((name) => ({
+          id: `teacher-subject-${name.toLocaleLowerCase('pt-BR').replace(/\s+/g, '-')}`,
+          name,
+        }));
+
+      const mergedSubjectsMap = new Map<string, Subject>();
+      [...loadedSubjects, ...fallbackSubjectsFromTeachers].forEach((subject) => {
+        mergedSubjectsMap.set(subject.name.toLocaleLowerCase('pt-BR'), subject);
+      });
+      const normalizedSubjects = Array.from(mergedSubjectsMap.values()).sort((a, b) =>
+        a.name.localeCompare(b.name, 'pt-BR')
+      );
+      const loadedLessons =
+        lessonsResult.success && lessonsResult.data
+          ? lessonsResult.data.map((lesson) => ({
+              studentId: lesson.studentId,
+              teacherId: lesson.teacherId,
+              date: new Date(lesson.date),
+              endDate: new Date(lesson.endDate),
+              status: lesson.status,
+            }))
+          : [];
+      const loadedStudents = studentsResult.success && studentsResult.data ? studentsResult.data : [];
+
+      setSubjects(normalizedSubjects);
+      setTeachers(loadedTeachers);
+      setLessons(loadedLessons);
+      setStudents(loadedStudents);
+
+      const loggedUserId = localStorage.getItem('userId');
+      if (loggedUserId) {
+        const userResult = await getUserById(loggedUserId);
+        if (userResult.success && userResult.data) {
+          const targetStudent =
+            studentIdParam && loadedStudents.length > 0
+              ? loadedStudents.find((student) => student.id === studentIdParam)
+              : userResult.data;
+
+          setCurrentUser((targetStudent || userResult.data) as Student);
         }
-        acc[day].push(booking);
-        return acc;
-    }, {} as Record<string, Booking[]>);
+      }
 
-    return (
-         bookings.length > 0 ? (
-            <div className="grid grid-cols-7 border-t border-l">
-                {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map(day => (
-                    <div key={day} className="p-2 text-center font-semibold text-xs border-b border-r bg-muted/50">{day}</div>
-                ))}
-                {daysInGrid.map(day => {
-                    const dayKey = format(day, 'yyyy-MM-dd');
-                    const dayBookings = bookingsByDay[dayKey] || [];
-                    const isCurrentMonth = isSameMonth(day, calendarMonth);
-                    return (
-                        <div key={dayKey} className={cn("h-40 border-b border-r p-2 flex flex-col overflow-hidden", !isCurrentMonth && "bg-muted/30")}>
-                            <span className={cn(
-                                "font-semibold text-sm",
-                                isToday(day) && "text-primary",
-                                !isCurrentMonth && "text-muted-foreground/50"
-                            )}>
-                                {format(day, 'd') === '1' ? format(day, 'd MMM', { locale: ptBR }) : format(day, 'd')}
-                            </span>
-                            <div className="flex-1 overflow-y-auto text-xs mt-1 space-y-1 pr-1">
-                                {dayBookings.map(booking => {
-                                    const teacher = teachers.find(t => t.id === booking.teacherId);
-                                    return (
-                                        <div key={booking.id} className={cn("p-1 rounded", booking.isExperimental ? "bg-purple-100 dark:bg-purple-900/50" : "bg-blue-100 dark:bg-blue-900/50")}>
-                                            <p className="font-semibold truncate">{format(booking.start, 'HH:mm')} - {subjects.find(s => s.id === booking.subjectId)?.name}</p>
-                                            <p className="text-muted-foreground truncate">{teacher?.name}</p>
-                                            {booking.isExperimental && <Badge variant="secondary" className="mt-1 text-xs">Exp.</Badge>}
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-         ) : (
-             <div className="text-center py-8 text-muted-foreground">
-                <p>Nenhuma aula adicionada ao resumo para exibir no calendário.</p>
-             </div>
-         )
-    )
+      if (teacherIdParam) {
+        const teacher = loadedTeachers.find((item) => item.id === teacherIdParam);
+        if (teacher) {
+          setSelectedTeacherId(teacher.id);
+          if (teacher.subject) {
+            const matchedSubject = normalizedSubjects.find((subject) => subject.name === teacher.subject);
+            if (matchedSubject) {
+              setSelectedSubjectId(matchedSubject.id);
+            }
+          }
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [studentIdParam, teacherIdParam]);
+
+  const availableTeachers = useMemo(() => {
+    if (!selectedSubjectName) return [];
+    return teachers.filter((teacher) => teacher.subject === selectedSubjectName);
+  }, [teachers, selectedSubjectName]);
+
+  const availableTimes = useMemo(() => {
+    if (!selectedDate || !selectedTeacherId || !currentUser) return [];
+
+    const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][getDay(selectedDate)];
+    const baseSlots = DEFAULT_AVAILABILITY[weekday] || [];
+
+    return baseSlots
+      .map((slot) => {
+        const parsed = parse(slot, 'HH:mm', new Date());
+        const start = new Date(selectedDate);
+        start.setHours(parsed.getHours(), parsed.getMinutes(), 0, 0);
+        const end = addMinutes(start, CLASS_DURATION_MINUTES);
+
+        if (isBefore(start, new Date())) return null;
+
+        const conflicts = lessons.some((lesson) => {
+          if (!['PENDING', 'CONFIRMED', 'scheduled'].includes(lesson.status)) return false;
+          const teacherConflict = lesson.teacherId === selectedTeacherId;
+          const studentConflict = lesson.studentId === currentUser.id;
+          if (!teacherConflict && !studentConflict) return false;
+          return start < lesson.endDate && end > lesson.date;
+        });
+
+        if (conflicts) return null;
+
+        return { start: format(start, 'HH:mm'), end: format(end, 'HH:mm') };
+      })
+      .filter((slot): slot is { start: string; end: string } => Boolean(slot));
+  }, [selectedDate, selectedTeacherId, currentUser, lessons]);
+
+  const handleScheduleClass = async () => {
+    if (!currentUser || !selectedSubjectName || !selectedTeacherId || !selectedDate || !selectedTime) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos incompletos',
+        description: 'Selecione disciplina, professor, data e horário.',
+      });
+      return;
+    }
+
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const start = new Date(selectedDate);
+    start.setHours(hours, minutes, 0, 0);
+    const end = addMinutes(start, CLASS_DURATION_MINUTES);
+
+    if (isBefore(start, startOfToday())) {
+      toast({
+        variant: 'destructive',
+        title: 'Data inválida',
+        description: 'Não é possível agendar aulas no passado.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const result = await createBookings(currentUser.id, [
+      {
+        subjectId: selectedSubjectName,
+        teacherId: selectedTeacherId,
+        start,
+        end,
+        isExperimental: false,
+      },
+    ]);
+
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao agendar',
+        description: result.error || 'Não foi possível concluir o agendamento.',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Aula agendada com sucesso',
+      description: 'Seu agendamento foi salvo e já está no calendário.',
+    });
+
+    router.push('/dashboard/schedule');
   };
 
+  const pageTitle = studentName ? `Agendamento de Aulas - ${studentName}` : 'Agendamento de Aulas';
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">{pageTitle}</h1>
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 bg-slate-50 p-4 md:p-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">{pageTitle}</h1>
+        <p className="mt-1 text-sm text-slate-500">Escolha disciplina, professor e horário para confirmar sua aula.</p>
       </div>
 
-      <div className="grid gap-6">
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-headline">
-              Passo 1: Selecione a Disciplina e Professor
-            </CardTitle>
+            <CardTitle className="text-slate-900">Novo agendamento</CardTitle>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="subject">Disciplina</Label>
-              <Select
-                value={selectedSubject}
-                onValueChange={handleSubjectChange}
-              >
-                <SelectTrigger id="subject">
-                  <SelectValue placeholder="Escolha uma disciplina" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSubjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="teacher">Professor(a)</Label>
-              <Select
-                value={selectedTeacher}
-                onValueChange={handleTeacherChange}
-                disabled={!selectedSubject}
-              >
-                <SelectTrigger id="teacher">
-                  <SelectValue placeholder="Escolha um(a) professor(a)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTeachers.map((teacher) => (
-                    <SelectItem key={teacher.id} value={teacher.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage
-                            src={teacher.avatarUrl}
-                            alt={teacher.name}
-                          />
-                          <AvatarFallback>
-                            {teacher.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{teacher.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-             {timezoneDifference && (
-              <div className="md:col-span-2">
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Atenção ao Fuso Horário!</AlertTitle>
-                  <AlertDescription>
-                    {timezoneDifference}
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">
-              Passo 2: Escolha as Datas e Horários
-            </CardTitle>
-            <CardDescription>
-              {isExperimentalOptionAvailable
-                ? "Selecione um dia e horário para sua aula experimental."
-                : "Você pode selecionar múltiplos dias no calendário. Os horários exibidos são baseados na disponibilidade do professor."}
-              {' '}A duração de cada aula é de {CLASS_DURATION_MINUTES} minutos.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6 items-start">
-            <div className="flex justify-center">
-              {isClient ? (
-                <Calendar
-                  mode={isExperimentalOptionAvailable ? 'single' : 'multiple'}
-                  selected={selectedDates}
-                  onSelect={(dates) => handleDateSelection(dates as Date[] | Date | undefined)}
-                  month={calendarMonth}
-                  onMonthChange={setCalendarMonth}
-                  className="rounded-md border p-0 sm:p-3"
-                  locale={ptBR}
-                  disabled={disabledDays}
-                  classNames={{
-                    root: 'w-full',
-                    months: 'w-full',
-                    month: 'w-full',
-                    caption_label: 'font-headline text-lg mb-2',
-                    head_row: 'w-full flex',
-                    head_cell: 'flex-1',
-                    row: 'w-full flex mt-2',
-                    cell: 'flex-1',
-                  }}
-                />
-              ) : (
-                <div className="rounded-md border p-0 sm:p-3 w-full h-[345px] flex items-center justify-center bg-muted/50">
-                  Carregando calendário...
-                </div>
-              )}
-            </div>
-            <div className="grid gap-4 self-start">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {availableTimes.map((time) => (
-                  <Button
-                    key={time.start}
-                    variant="outline"
-                    onClick={() => setSelectedTime(time.start)}
-                    className={cn(
-                      'text-sm',
-                      selectedTime === time.start ? 'bg-brand-yellow text-black hover:bg-brand-yellow/90' : ''
-                    )}
-                    disabled={!selectedTeacher || selectedDates.length === 0}
-                  >
-                    {time.start} - {time.end}
-                  </Button>
-                ))}
-                {availableTimes.length === 0 && selectedTeacher && selectedDates.length > 0 && (
-                    <p className='col-span-full text-sm text-muted-foreground'>Não há horários disponíveis para este professor no dia selecionado.</p>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="recurrence">Repetir Agendamento</Label>
+          <CardContent className="space-y-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="subject" className="text-sm font-semibold text-slate-700">
+                  Disciplina
+                </Label>
                 <Select
-                  value={recurrence}
-                  onValueChange={(value) => setRecurrence(value as Recurrence)}
-                  disabled={isExperimentalOptionAvailable}
+                  value={selectedSubjectId}
+                  onValueChange={(value) => {
+                    setSelectedSubjectId(value);
+                    setSelectedTeacherId('');
+                    setSelectedTime('');
+                  }}
                 >
-                  <SelectTrigger id="recurrence">
-                    <SelectValue placeholder="Não repetir" />
+                  <SelectTrigger
+                    id="subject"
+                    className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0"
+                  >
+                    <SelectValue placeholder={isLoading ? 'Carregando disciplinas...' : 'Selecione uma disciplina'} />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Não repetir</SelectItem>
-                    <SelectItem value="weekly">
-                      Semanalmente (próximas 4 semanas)
-                    </SelectItem>
-                    <SelectItem value="biweekly">
-                      Quinzenalmente (próximas 4 ocorrências)
-                    </SelectItem>
-                    <SelectItem value="monthly">
-                      Mensalmente (próximos 4 meses)
-                    </SelectItem>
+                  <SelectContent className="rounded-2xl border-slate-200">
+                    {subjects.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="teacher" className="text-sm font-semibold text-slate-700">
+                  Professor
+                </Label>
+                <Select
+                  value={selectedTeacherId}
+                  onValueChange={(value) => {
+                    setSelectedTeacherId(value);
+                    setSelectedTime('');
+                  }}
+                  disabled={!selectedSubjectId}
+                >
+                  <SelectTrigger
+                    id="teacher"
+                    className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0"
+                  >
+                    <SelectValue placeholder="Selecione um professor" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200">
+                    {availableTeachers.map((teacher) => (
+                      <SelectItem key={teacher.id} value={teacher.id}>
+                        {teacher.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-          </CardContent>
-          <CardContent className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
-            <div className="flex gap-2 w-full justify-end">
-                <Button variant="ghost" onClick={handleClearSelections}>
-                  <X className="mr-2" />
-                  Limpar
-                </Button>
-                <Button onClick={handleAddBooking} className={cn(isExperimentalOptionAvailable ? 'bg-brand-yellow text-black hover:bg-brand-yellow/90' : 'bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground')}>
-                  {isExperimentalOptionAvailable ? (
-                    <>
-                      <CheckCircle className="mr-2" />
-                      Adicionar aula experimental
-                    </>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">Data</Label>
+                <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+                  <Calendar
+                    mode="single"
+                    locale={ptBR}
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      setSelectedDate(date);
+                      setSelectedTime('');
+                    }}
+                    disabled={{ before: startOfToday() }}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">Horários disponíveis</Label>
+                <div className="grid max-h-[340px] grid-cols-1 gap-2 overflow-auto rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-2">
+                  {availableTimes.length > 0 ? (
+                    availableTimes.map((time) => (
+                      <button
+                        key={time.start}
+                        type="button"
+                        onClick={() => setSelectedTime(time.start)}
+                        className={cn(
+                          'h-12 rounded-xl border text-sm font-semibold transition',
+                          selectedTime === time.start
+                            ? 'border-[#FFC107] bg-[#FFC107] text-slate-900'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-slate-900'
+                        )}
+                      >
+                        {time.start} - {time.end}
+                      </button>
+                    ))
                   ) : (
-                    <>
-                      Adicionar aula <Plus className="ml-2" />
-                    </>
+                    <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+                      Selecione disciplina, professor e data para ver os horários.
+                    </div>
                   )}
-                </Button>
+                </div>
+              </div>
             </div>
+
+            <Button
+              onClick={handleScheduleClass}
+              disabled={isSubmitting || !selectedSubjectId || !selectedTeacherId || !selectedDate || !selectedTime}
+              className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60"
+            >
+              {isSubmitting ? 'Agendando...' : 'Agendar Aula'}
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
           <CardHeader>
-             <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                <div>
-                    <CardTitle className="font-headline">
-                    Passo 3: Resumo dos Agendamentos
-                    </CardTitle>
-                    <CardDescription>
-                    Confira as aulas adicionadas antes de confirmar.
-                    </CardDescription>
-                </div>
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full sm:w-auto">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="list"><List className="mr-2 h-4 w-4" />Lista</TabsTrigger>
-                        <TabsTrigger value="calendar"><CalendarIcon className="mr-2 h-4 w-4" />Calendário</TabsTrigger>
-                    </TabsList>
-                </Tabs>
-            </div>
+            <CardTitle className="text-slate-900">Professores disponíveis</CardTitle>
           </CardHeader>
           <CardContent>
-            {viewMode === 'list' ? renderListView() : renderCalendarView()}
+            {!selectedSubjectId ? (
+              <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+                Selecione uma disciplina para visualizar os professores.
+              </p>
+            ) : availableTeachers.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+                <SearchX className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+                <p className="font-semibold text-slate-700">Nenhum professor encontrado para esta disciplina.</p>
+                <p className="mt-1 text-sm text-slate-500">Tente selecionar outra matéria para continuar.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableTeachers.map((teacher) => (
+                  <button
+                    key={teacher.id}
+                    type="button"
+                    onClick={() => setSelectedTeacherId(teacher.id)}
+                    className={cn(
+                      'w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition',
+                      selectedTeacherId === teacher.id
+                        ? 'ring-2 ring-amber-400'
+                        : 'hover:-translate-y-0.5 hover:border-slate-200'
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12 border border-slate-100">
+                        <AvatarImage src={teacher.avatarUrl || ''} alt={teacher.name} />
+                        <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
+                          {teacher.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-slate-900">{teacher.name}</p>
+                        <p className="truncate text-xs text-slate-500">{teacher.subject || 'Disciplina não informada'}</p>
+                        <div className="mt-2 flex items-center gap-1 text-amber-500">
+                          <Star className="h-4 w-4 fill-current" />
+                          <Star className="h-4 w-4 fill-current" />
+                          <Star className="h-4 w-4 fill-current" />
+                          <Star className="h-4 w-4 fill-current" />
+                          <Star className="h-4 w-4" />
+                          <span className="ml-1 text-xs font-semibold text-slate-600">4.8</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        <div className="flex justify-end">
-          <Button
-            size="lg"
-            onClick={handleConfirmAllBookings}
-            disabled={bookings.length === 0}
-            className="bg-sidebar text-sidebar-foreground hover:bg-brand-yellow hover:text-black"
-          >
-            Confirmar Todos os Agendamentos ({bookings.length})
-          </Button>
-        </div>
       </div>
     </div>
   );
 }
 
 export default function BookingPage() {
-    return (
-        <Suspense fallback={<div>Carregando...</div>}>
-            <BookingPageComponent />
-        </Suspense>
-    );
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[50vh] w-full items-center justify-center bg-slate-50 text-slate-500">
+          Carregando agendamentos...
+        </div>
+      }
+    >
+      <BookingPageComponent />
+    </Suspense>
+  );
 }
-

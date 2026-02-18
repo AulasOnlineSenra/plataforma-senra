@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
-import { User, UserRole, Teacher } from '@/lib/types';
-import { teachers as initialTeachers, users as initialRegularUsers } from '@/lib/data';
+import { User, UserRole } from '@/lib/types';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft, Eye, EyeOff, UserCircle2, GraduationCap, School } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, GraduationCap, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { loginUser } from '../actions/auth';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -26,8 +26,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
-const TEACHERS_STORAGE_KEY = 'teacherList';
-const USERS_STORAGE_KEY = 'userList';
 
 const LoginForm = ({
   role,
@@ -102,7 +100,12 @@ const LoginForm = ({
           />
         </div>
         <div className="grid gap-2 relative">
-          <Label htmlFor="password" className="sr-only">Senha</Label>
+          <div className="flex items-center justify-between mb-1">
+             <Label htmlFor="password" className="font-bold text-slate-700">Senha</Label>
+             <Link href="/forgot-password" className="text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline">
+                Esqueci minha senha
+             </Link>
+          </div>
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
@@ -113,10 +116,8 @@ const LoginForm = ({
             onChange={(e) => setPassword(e.target.value)}
           />
           <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-400 hover:text-slate-600"
+            type="button" variant="ghost" size="icon"
+            className="absolute right-1 top-[38px] h-10 w-10 text-slate-400 hover:text-slate-600"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -157,7 +158,7 @@ const LoginForm = ({
   );
 };
 
-const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRole) => void; onLogin: (e: React.MouseEvent) => void;}) => {
+const RoleSelection = ({ onSelectRole }: { onSelectRole: (role: UserRole) => void; }) => {
   return (
   <div className="w-full animate-in fade-in zoom-in-95 duration-500">
     <div className="text-center mb-8">
@@ -198,23 +199,6 @@ const RoleSelection = ({ onSelectRole, onLogin }: { onSelectRole: (role: UserRol
             Sou Administrador
         </Button>
 
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-4 text-slate-400 font-medium">ou</span>
-        </div>
-      </div>
-
-      <Button 
-        onClick={onLogin} 
-        className="h-14 w-full rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-lg shadow-slate-900/20 transition-all hover:scale-[1.02] text-base flex items-center justify-center gap-3"
-      >
-        <UserCircle2 className="w-5 h-5 text-amber-400" />
-        Acessar como Visitante
-      </Button>
-
       <div className="mt-8 text-center text-sm text-slate-500">
         Não tem uma conta?{' '}
         <Link href="/register" className="text-amber-600 font-bold hover:underline underline-offset-4">
@@ -247,132 +231,48 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent | React.MouseEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (role === null) {
-      const visitorRole = 'student';
-      localStorage.setItem('userRole', visitorRole);
+    // Login 100% Blindado no Banco de Dados
+    const result = await loginUser({ email, password });
 
-      const visitorId = `visitor-${Date.now()}`;
-      const user: User = {
-        id: visitorId,
-        name: 'Visitante',
-        email: 'visitor@example.com',
-        avatarUrl: `https://picsum.photos/seed/${visitorId}/200/200`,
-        role: 'student',
-        status: 'active',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        classCredits: 0,
-        activePackage: 'Nenhum pacote ativo',
-        ratings: [],
-      };
-      
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('userId', user.id);
-      
-      toast({
-          title: "Acesso de Visitante",
-          description: `Você está acessando como Visitante.`,
-      });
-      router.push('/dashboard');
-      return;
-    }
-
-    const storedUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-    const currentUsers: User[] = storedUsersStr ? JSON.parse(storedUsersStr) : initialRegularUsers;
-    const storedTeachersStr = localStorage.getItem(TEACHERS_STORAGE_KEY);
-    const currentTeachers: Teacher[] = storedTeachersStr ? JSON.parse(storedTeachersStr) : initialTeachers;
-    const combinedUsers: (User | Teacher)[] = [...currentUsers, ...currentTeachers];
-    
-    let userToLogin: User | Teacher | null = null;
-    let isNewRegistration = false;
-    const newUserDataString = localStorage.getItem('newlyRegisteredUser');
-
-    if (newUserDataString) {
-        try {
-            const newUser = JSON.parse(newUserDataString);
-            if (newUser.email.toLowerCase() === email.toLowerCase() && newUser.role === role) {
-                userToLogin = combinedUsers.find(u => u.id === newUser.id) || null;
-                isNewRegistration = true;
-            } else if (newUser.email.toLowerCase() === email.toLowerCase() && newUser.role !== role) {
-                 toast({
-                    variant: "destructive",
-                    title: "Perfil Incorreto",
-                    description: `Você se cadastrou como ${newUser.role}. Por favor, faça login com o perfil correto.`,
-                });
-                return;
-            }
-        } catch (error) {
-            console.error("Error parsing new user data during login:", error);
-        }
-    }
-    
-    if (!userToLogin) {
-        const foundUser = combinedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (foundUser) {
-            if (foundUser.role === role) {
-                const storedPassword = localStorage.getItem(`savedPassword-${foundUser.email}`);
-                
-                if (storedPassword === password || (storedPassword === null && password === 'password')) {
-                    userToLogin = foundUser;
-                } else {
-                      toast({
-                        variant: "destructive",
-                        title: "Credenciais Inválidas",
-                        description: "Email ou senha incorretos para o perfil selecionado.",
-                    });
-                    return;
-                }
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Perfil Incorreto",
-                    description: `Este email está registrado como ${foundUser.role}. Por favor, selecione o perfil correto para entrar.`,
-                });
-                return;
-            }
-        }
-    }
-
-    if (userToLogin) {
-        const now = new Date().toISOString();
-        const updatedUser = { ...userToLogin, lastAccess: now };
-
-        if (updatedUser.role === 'teacher') {
-            const updatedTeachers = currentTeachers.map(t => t.id === updatedUser.id ? updatedUser as Teacher : t);
-            localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(updatedTeachers));
-        } else {
-            const updatedUsers = currentUsers.map(u => u.id === updatedUser.id ? updatedUser as User : u);
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-        }
-
-        localStorage.setItem('userRole', updatedUser.role);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        localStorage.setItem(`savedEmail-${updatedUser.role}`, email);
-        localStorage.setItem(`savedPassword-${email}`, password);
-        localStorage.setItem('userId', updatedUser.id);
-
-        window.dispatchEvent(new Event('storage'));
-
-        if (isNewRegistration) {
-            localStorage.removeItem('newlyRegisteredUser');
-        }
-        
+    if (!result.success || !result.user) {
         toast({
-            title: "Login bem-sucedido!",
-            description: `Bem-vindo(a) de volta, ${updatedUser.name.split(' ')[0]}!`,
-        });
-        
-        router.push('/dashboard');
-    } else {
-         toast({
             variant: "destructive",
-            title: "Credenciais Inválidas",
-            description: "Email ou senha incorretos para o perfil selecionado.",
+            title: "Acesso Negado",
+            description: result.error || "Email ou senha incorretos.",
         });
+        return;
     }
+
+    const loggedUser = result.user;
+
+    if (loggedUser.role !== role) {
+        toast({
+            variant: "destructive",
+            title: "Perfil Incorreto",
+            description: `Este e-mail pertence a um perfil de ${loggedUser.role === 'teacher' ? 'Professor' : loggedUser.role === 'admin' ? 'Administrador' : 'Aluno'}. Volte e selecione o perfil correto.`,
+        });
+        return;
+    }
+
+    // Salva os dados na memória do navegador se a autenticação foi um sucesso
+    localStorage.setItem('userRole', loggedUser.role);
+    localStorage.setItem('currentUser', JSON.stringify(loggedUser));
+    localStorage.setItem(`savedEmail-${loggedUser.role}`, email);
+    localStorage.setItem(`savedPassword-${email}`, password);
+    localStorage.setItem('userId', String(loggedUser.id));
+
+    window.dispatchEvent(new Event('storage'));
+    localStorage.removeItem('newlyRegisteredUser'); 
+    
+    toast({
+        title: "Login bem-sucedido!",
+        description: `Bem-vindo(a) de volta, ${loggedUser.name.split(' ')[0]}!`,
+    });
+    
+    router.push('/dashboard');
   };
 
   return (
@@ -412,7 +312,7 @@ export default function LoginPage() {
                         setPassword={setPassword}
                     />
                 ) : (
-                    <RoleSelection onSelectRole={setRole} onLogin={handleLogin} />
+                    <RoleSelection onSelectRole={setRole} />
                 )}
             </div>
             <p className="text-center text-slate-400 text-xs mt-8">

@@ -235,7 +235,7 @@ export const getContactsForUser = (currentUser: User): ChatContact[] => {
   // It reads from a separate localStorage key `chatContacts` which might not be what's desired.
   // It should probably read from a user-specific key e.g. `chatContacts_${'\'\''}${currentUser.id}`
   const storedContactsStr = localStorage.getItem('chatContacts');
-  const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : initialChatContacts;
+  const contactsData: ChatContact[] = storedContactsStr ? JSON.parse(storedContactsStr) : chatContacts;
   const contactsMap = new Map(contactsData.map(c => [c.id, c]));
 
   const fullContactList = potentialPartners.map(partner => {

@@ -1,7 +1,6 @@
 
 'use client';
 
-import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
@@ -32,12 +31,9 @@ export function Header({ isCollapsed, toggleCollapse }: HeaderProps) {
       </Sheet>
       <div className="flex w-full items-center justify-between sm:justify-end">
         <div className="sm:hidden">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 font-semibold"
-          >
+          <div className="flex items-center gap-2 font-semibold">
             <SenraLogo className="h-10 w-auto" />
-          </Link>
+          </div>
         </div>
       </div>
     </header>

@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("student") // 'admin', 'teacher', ou 'student'
+  avatarUrl String?
+  status    String   @default("active")
+  referralCode String @unique @default(cuid())
+  referredById String?
+  
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  
+  credits       Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  subject       String?
+
+  // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
+  lessonsAsStudent Lesson[] @relation("StudentLessons")
+  lessonsAsTeacher Lesson[] @relation("TeacherLessons")
+  referredBy       User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]   @relation("UserReferrals")
+  sentMessages    ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  createdSimulados Simulado[] @relation("SimuladoCreator")
+  assignedSimulados Simulado[] @relation("SimuladoStudent")
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  createdAt  DateTime @default(now())
+  readAt     DateTime?
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, senderId, createdAt])
+}
+
+// Aulas (Alimenta os cards de agendadas/realizadas e a lista de Próximas Aulas)
+model Lesson {
+  id             String   @id @default(uuid())
+  studentId      String
+  teacherId      String
+  subject        String   // Ex: Matemática, Física, etc.
+  
+  // NOSSAS DATAS (Início e Fim)
+  date           DateTime // Data e hora do INÍCIO da aula
+  endDate        DateTime @default(now()) // Data e hora do FIM da aula
+  
+  status         String   @default("PENDING") // 'PENDING', 'CONFIRMED', 'CANCELLED'
+  meetingLink    String?
+  price          Float?   // Preço cobrado pela aula
+  isExperimental Boolean  @default(false) // Define se é aula teste grátis
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Liga a aula aos usuários
+  student        User     @relation("StudentLessons", fields: [studentId], references: [id])
+  teacher        User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+}
+
+// Planos/Pacotes (Baseado na sua tela de Gerenciar Planos)
+model Plan {
+  id            String   @id @default(uuid())
+  name          String   // Ex: "Pacote 4 Aulas"
+  lessonsCount  Int      // Ex: 4
+  price         Float    // Ex: 95.00
+  durationMins  Int      // Ex: 90
+  isPopular     Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Simulado {
+  id               String   @id @default(uuid())
+  title            String
+  description      String
+  subject          String
+  creatorId        String
+  studentId        String
+  status           String   @default("Pendente")
+  maxAttempts      Int      @default(1)
+  timeLimitMinutes Int?
+  questions        Json
+  attempts         Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  creator User @relation("SimuladoCreator", fields: [creatorId], references: [id])
+  student User @relation("SimuladoStudent", fields: [studentId], references: [id])
+
+  @@index([creatorId, createdAt])
+  @@index([studentId, createdAt])
+}
+
+// Tabela Oficial de Disciplinas
+model Subject {
+  id          String   @id @default(uuid())
+  name        String   @unique // Ex: "Matemática", "Física"
+  description String?  // Opcional
+  icon        String?  // Nome do ícone (ex: 'Calculator', 'Atom')
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -82,7 +82,7 @@ export async function sendDueScheduledMessages() {
  * @param now The current time.
  * @returns A QuerySnapshot of the due messages.
  */
-async function queryDueMessages(db: FirebaseFirestore.Firestore, now: Date) {
+async function queryDueMessages(db: any, now: Date) {
   const messagesRef = collectionGroup(db, 'scheduledMessages');
   const q = query(
     messagesRef,
@@ -98,7 +98,7 @@ async function queryDueMessages(db: FirebaseFirestore.Firestore, now: Date) {
  * @param db The Firestore database instance.
  * @param message The message data to be sent.
  */
-async function sendMessage(db: FirebaseFirestore.Firestore, message: FirebaseFirestore.DocumentData) {
+async function sendMessage(db: any, message: any) {
   console.log(
     `Sending message from [${message.creatorId}] to [${message.contactId}]: "${message.content}"`
   );
@@ -123,9 +123,9 @@ async function sendMessage(db: FirebaseFirestore.Firestore, message: FirebaseFir
  * @param message The data of the message.
  */
 function updateOrDeleteSentMessage(
-  batch: FirebaseFirestore.WriteBatch,
-  messageRef: FirebaseFirestore.DocumentReference,
-  message: FirebaseFirestore.DocumentData
+  batch: any,
+  messageRef: any,
+  message: any
 ) {
   if (message.recurrence === 'none') {
     // It's a one-time message, so delete it.
@@ -133,7 +133,7 @@ function updateOrDeleteSentMessage(
     console.log(`Deleting one-time message: ${messageRef.path}`);
   } else {
     // It's a recurring message, so update its next send date.
-    let nextDate = (message.date as Timestamp).toDate();
+    let nextDate = (message.date as any).toDate();
     switch (message.recurrence) {
       case 'daily':
         nextDate = addDays(nextDate, 1);
