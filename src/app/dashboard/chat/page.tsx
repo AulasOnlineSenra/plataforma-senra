@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, CheckCheck, Send } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -61,7 +61,7 @@ function normalizeUser(raw: any): ChatUser | null {
   };
 }
 
-export default function ChatPage() {
+function ChatContent() {
   const searchParams = useSearchParams();
   const initialContactId = searchParams.get('contactId');
   const { toast } = useToast();
@@ -393,5 +393,13 @@ export default function ChatPage() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Carregando mensagens...</div>}>
+      <ChatContent />
+    </Suspense>
   );
 }
