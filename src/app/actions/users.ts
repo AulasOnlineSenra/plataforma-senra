@@ -405,3 +405,17 @@ export async function getStudentFinancialSummary(userId: string) {
     return { success: false, error: 'Falha ao carregar financeiro do aluno.' };
   }
 }
+
+// Ação para promover um Aluno a Professor
+export async function promoteToTeacherAction(userId: string) {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: 'teacher' }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao promover usuário:", error);
+    return { success: false, error: 'Falha ao atualizar o cargo do usuário.' };
+  }
+}

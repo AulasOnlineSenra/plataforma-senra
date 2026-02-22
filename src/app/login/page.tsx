@@ -295,9 +295,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-md">
             <div className="flex justify-center mb-8">
-                <Link href="/home">
-                    <SenraLogo />
-                </Link>
+                <SenraLogo />
             </div>
             <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>

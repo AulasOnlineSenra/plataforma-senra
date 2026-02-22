@@ -126,8 +126,9 @@ export default function HomePage() {
                 ))}
               </nav>
               <div className="absolute bottom-6 left-6 right-6">
-                <Button asChild className="w-full">
-                  <Link href="/login">
+                <Button asChild className="w-full h-14 rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all active:scale-95 gap-2 font-bold border border-slate-800 text-lg">
+                  <Link href="/login" className="flex items-center justify-center">
+                    <LogIn className="w-5 h-5 text-amber-400 mr-2" />
                     <EditableText storageKey="home-login-button-mobile">Acessar Plataforma</EditableText>
                   </Link>
                 </Button>
