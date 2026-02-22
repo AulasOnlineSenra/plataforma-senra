@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter,
@@ -34,9 +35,8 @@ const packageFeatures = [
 
 // COLOQUE O NÚMERO DO WHATSAPP AQUI (Apenas números, com o DDD)
 const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-const url = `https://wa.me/${whatsappNumber}?text=Olá...`;
 
-export default function PackagesPage() {
+function PackagesContent() {
   const searchParams = useSearchParams();
   const neededCredits = searchParams.get('needed');
   
@@ -109,14 +109,6 @@ export default function PackagesPage() {
       tier: tier,
     };
   }, [classesPerWeek, numberOfWeeks, tiers]);
-  
-  const getPeriodLabel = () => {
-    if (numberOfWeeks % 4 === 0) {
-      const months = numberOfWeeks / 4;
-      return `${months} ${months > 1 ? 'meses' : 'mês'}`;
-    }
-    return `${numberOfWeeks} ${numberOfWeeks > 1 ? 'semanas' : 'semana'}`;
-  }
 
   // GERADOR DE LINK DO WHATSAPP PARA OS PACOTES NORMAIS
   const getWhatsAppLink = (pkg: ClassPackage) => {
@@ -231,5 +223,13 @@ export default function PackagesPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function PackagesPage() {
+  return (
+    <Suspense fallback={<div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Carregando vitrine de pacotes...</div>}>
+      <PackagesContent />
+    </Suspense>
   );
 }
