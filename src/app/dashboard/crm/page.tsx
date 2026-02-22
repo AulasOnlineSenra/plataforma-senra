@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users2 } from 'lucide-react';
-import { getCrmUsers } from '@/app/actions/users';
+import { Users2, GraduationCap } from 'lucide-react';
+import { getCrmUsers, promoteToTeacherAction } from '@/app/actions/users';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 type CrmUser = {
   id: string;
@@ -21,17 +23,33 @@ type CrmUser = {
 export default function CrmPage() {
   const [users, setUsers] = useState<CrmUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [promoting, setPromoting] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const loadUsers = async () => {
+    const result = await getCrmUsers();
+    if (result.success && result.data) {
+      setUsers(result.data as CrmUser[]);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const load = async () => {
-      const result = await getCrmUsers();
-      if (result.success && result.data) {
-        setUsers(result.data as CrmUser[]);
-      }
-      setLoading(false);
-    };
-    load();
+    loadUsers();
   }, []);
+
+  const handlePromote = async (userId: string) => {
+    setPromoting(userId);
+    const result = await promoteToTeacherAction(userId);
+    
+    if (result.success) {
+      toast({ title: "Sucesso!", description: "Usuário promovido a Professor com sucesso!", className: "bg-green-600 text-white" });
+      await loadUsers(); // Recarrega a lista para mostrar o novo cargo
+    } else {
+      toast({ variant: "destructive", title: "Erro", description: "Não foi possível promover o usuário." });
+    }
+    setPromoting(null);
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -42,18 +60,18 @@ export default function CrmPage() {
             CRM Senra
           </CardTitle>
           <CardDescription className="text-slate-300">
-            Base premium de usuarios para operacao administrativa.
+            Base premium de usuários para operação administrativa.
           </CardDescription>
         </CardHeader>
       </Card>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardHeader className="border-b border-slate-200">
-          <CardTitle className="text-slate-900">Usuarios cadastrados</CardTitle>
+          <CardTitle className="text-slate-900">Usuários cadastrados</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <p className="p-6 text-sm text-slate-500">Carregando usuarios...</p>
+            <p className="p-6 text-sm text-slate-500">Carregando usuários...</p>
           ) : (
             <Table>
               <TableHeader>
@@ -62,14 +80,15 @@ export default function CrmPage() {
                   <TableHead>E-mail</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Cadastro</TableHead>
+                  <TableHead>Cadastro</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-slate-500">
-                      Nenhum usuario encontrado.
+                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                      Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
                 )}
@@ -85,8 +104,22 @@ export default function CrmPage() {
                     <TableCell>
                       <Badge className={user.status === 'active' ? 'bg-[#FFC107] text-slate-900' : ''}>{user.status}</Badge>
                     </TableCell>
-                    <TableCell className="text-right text-slate-600">
-                      {format(new Date(user.createdAt), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}
+                    <TableCell className="text-slate-600 text-sm">
+                      {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {user.role === 'student' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handlePromote(user.id)}
+                          disabled={promoting === user.id}
+                          className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <GraduationCap className="w-4 h-4 mr-2" />
+                          {promoting === user.id ? 'Promovendo...' : 'Virar Professor'}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
