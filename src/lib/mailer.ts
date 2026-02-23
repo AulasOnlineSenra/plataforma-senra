@@ -12,7 +12,8 @@ export const transporter = nodemailer.createTransport({
 
 export async function sendResetPasswordEmail(to: string, token: string) {
   // Esse é o link que o aluno vai clicar no e-mail 
-  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/reset-password?token=${token}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
   const mailOptions = {
     from: `"Plataforma Senra" <${process.env.SMTP_USER}>`,
