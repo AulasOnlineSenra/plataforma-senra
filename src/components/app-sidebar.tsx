@@ -108,14 +108,14 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         className={cn(
           'relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all',
           isActive
-            ? 'bg-[#FFC107] text-slate-900 shadow-sm'
-            : 'text-slate-200 hover:bg-slate-800 hover:text-[#FFC107]'
+            ? 'bg-brand-yellow text-slate-900 shadow-sm'
+            : 'text-slate-200 hover:bg-slate-800 hover:text-brand-yellow'
         )}
       >
         <item.icon className="h-4 w-4 shrink-0" />
         <span className="font-semibold">{item.label}</span>
         {isChat && hasNewMessages && (
-          <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-[#FFC107]" />
+          <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-brand-yellow" />
         )}
       </div>
     );
@@ -144,9 +144,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     >
       <Link href="/dashboard/profile" className="border-b border-slate-800 p-4 transition-colors hover:bg-slate-800/60">
         <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 border-2 border-[#FFC107]">
+          <Avatar className="h-12 w-12 border-2 border-brand-yellow">
             <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
-            <AvatarFallback className="bg-slate-700 text-[#FFC107]">{user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-slate-700 text-brand-yellow">{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="truncate font-bold text-slate-100">{user.name}</p>
@@ -155,7 +155,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </div>
       </Link>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
         <nav className="grid gap-1">
           {filteredNavItems.map((item) => renderLink(item))}
           {filteredAdminNavItems.length > 0 && <div className="my-2 border-t border-slate-800" />}
@@ -172,4 +172,3 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     </aside>
   );
 }
-

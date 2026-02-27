@@ -6,9 +6,15 @@ import { sendResetPasswordEmail } from '@/lib/mailer';
 import crypto from 'crypto';
 import { applyReferralOnSignup } from '@/app/actions/users';
 
+const ALLOWED_ROLES = new Set(['student', 'teacher']);
+
 // REGISTRAR USUÁRIO (Com Criptografia)
 export async function registerUser(data: { name: string, email: string, password: string, role: string, referralCode?: string }) {
   try {
+    if (data.role === 'admin') {
+      return { success: false, error: 'Ação não permitida.' }
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email }
     })
@@ -20,14 +26,17 @@ export async function registerUser(data: { name: string, email: string, password
     // MÁGICA DA SEGURANÇA: Embaralhando a senha antes de salvar
     const hashedPassword = await bcrypt.hash(data.password, 10)
 
+    const normalizedRole = ALLOWED_ROLES.has(data.role) ? data.role : 'student';
+
     const newUser = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: hashedPassword, // Salva o hash (ex: $2a$10$wY... ), ninguém nunca saberá a senha real
-        role: data.role,
+        role: normalizedRole,
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`, 
-        status: 'active'
+        ...(normalizedRole === 'teacher' ? { isValidated: false } : {}),
+        status: normalizedRole === 'teacher' ? 'pending' : 'active'
       }
     })
 

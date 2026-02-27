@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock } from 'lucide-react';
+import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock, Video } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 // MOTOR DO BANCO PARA BUSCAR O ALUNO
-import { getStudents } from '@/app/actions/users';
+import { getUserById } from '@/app/actions/users';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -40,6 +40,13 @@ function formatDuration(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
+}
+
+function formatBirthDate(value?: string | Date | null): string {
+    if (!value) return 'Nao informado';
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Nao informado';
+    return format(parsed, 'dd/MM/yyyy', { locale: ptBR });
 }
 
 function StudentDetailPageComponent() {
@@ -67,10 +74,11 @@ function StudentDetailPageComponent() {
             setIsLoading(true);
 
             // BUSCA O ALUNO DIRETO DO BANCO DE DADOS
-            const result = await getStudents();
+            const result = await getUserById(studentId);
             if (result.success && result.data) {
-                const foundStudent = result.data.find(u => u.id === studentId);
-                setStudent(foundStudent || null);
+                setStudent(result.data);
+            } else {
+                setStudent(null);
             }
 
             const storedSchedule = localStorage.getItem('scheduleEvents');
@@ -261,26 +269,74 @@ function StudentDetailPageComponent() {
                     <span className="font-medium text-foreground">{student.name}</span>
                 </div>
                 
-                <Link href={`/dashboard/profile?userId=${student.id}`} className="group">
-                    <header className='flex items-center gap-4 rounded-xl p-4 bg-white border shadow-sm group-hover:shadow-md transition-all'>
-                        <Avatar className="h-16 w-16 border-2 border-brand-yellow">
-                            <AvatarImage src={student.avatarUrl} alt={student.name} />
-                            <AvatarFallback className="font-bold text-slate-800 bg-amber-100">{student.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <h1 className="text-2xl font-bold font-headline text-slate-800">{student.name}</h1>
-                            <div className="flex gap-2 items-center mt-1">
-                                <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800 border-none' : ''}>
-                                    {student.status === 'active' ? 'Ativo' : 'Inativo'}
-                                </Badge>
-                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 shadow-sm font-bold">
-                                    {student.credits || 0} Créditos
-                                </Badge>
+                <header className='flex items-center gap-4 rounded-xl p-4 bg-white border shadow-sm'>
+    <Avatar className="h-16 w-16 border-2 border-brand-yellow">
+        <AvatarImage src={student.avatarUrl} alt={student.name} />
+        <AvatarFallback className="font-bold text-slate-800 bg-amber-100">{student.name.charAt(0)}</AvatarFallback>
+    </Avatar>
+    <div>
+        <h1 className="text-2xl font-bold font-headline text-slate-800">{student.name}</h1>
+        <div className="flex gap-2 items-center mt-1">
+            <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={student.status === 'active' ? 'bg-green-100 text-green-800 border-none' : ''}>
+                {student.status === 'active' ? 'Ativo' : 'Inativo'}
+            </Badge>
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 shadow-sm font-bold">
+                {student.credits || 0} Créditos
+            </Badge>
+        </div>
+    </div>
+</header>
+                
+                <Card className="border-none shadow-md mt-2">
+                    <CardHeader className="bg-slate-50 border-b pb-4">
+                        <CardTitle className="text-xl text-slate-800">Dados Cadastrais</CardTitle>
+                        <CardDescription>Informacoes de cadastro do usuario.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="rounded-lg border bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">CPF</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{student.cpf ? student.cpf : 'Nao informado'}</p>
+                            </div>
+                            <div className="rounded-lg border bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Data de nascimento</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{formatBirthDate(student.birthDate)}</p>
+                            </div>
+                            <div className="rounded-lg border bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">CEP</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{student.cep ? student.cep : 'Nao informado'}</p>
+                            </div>
+                            <div className="rounded-lg border bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{student.state ? student.state : 'Nao informado'}</p>
+                            </div>
+                            <div className="rounded-lg border bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Bairro</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{student.neighborhood ? student.neighborhood : 'Nao informado'}</p>
+                            </div>
+                            <div className="rounded-lg border bg-white p-4 md:col-span-2 lg:col-span-1">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rua</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{student.street ? student.street : 'Nao informado'}</p>
+                            </div>
+                            <div className="rounded-lg border bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Numero</p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">{student.number ? student.number : 'Nao informado'}</p>
                             </div>
                         </div>
-                    </header>
-                </Link>
-                
+
+                        {student.role === 'teacher' && student.videoUrl && (
+                            <div className="flex justify-start">
+                                <Button asChild variant="outline" className="font-semibold">
+                                    <a href={student.videoUrl} target="_blank" rel="noopener noreferrer">
+                                        <Video className="mr-2 h-4 w-4" />
+                                        Ver vídeo de apresentação
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 <Tabs defaultValue="classes" className="w-full mt-4">
                 <TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1">
                     <TabsTrigger value="classes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">

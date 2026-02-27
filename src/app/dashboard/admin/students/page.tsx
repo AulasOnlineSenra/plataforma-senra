@@ -1,12 +1,9 @@
-
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,9 +16,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { users as initialUsers, scheduleEvents as initialSchedule, getMockUser } from '@/lib/data';
-import { User, ScheduleEvent, UserRole } from '@/lib/types';
+import { ScheduleEvent, User, UserRole } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
+import { CalendarCheck, MessageSquare, MoreHorizontal, Trash2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -38,6 +35,12 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const USERS_STORAGE_KEY = 'userList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
@@ -72,81 +75,84 @@ function StudentList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Aluno</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
-              <TableHead className="text-center hidden lg:table-cell">Aulas Agendadas</TableHead>
+              <TableHead className="w-16">Foto</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Último Acesso</TableHead>
+              <TableHead className="text-center">Aulas Agendadas</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {students.length > 0 ? (
-                students.map((student) => (
-                  <TableRow key={student.id} 
-                    onClick={() => router.push(`/dashboard/student/${student.id}`)}
-                    className="cursor-pointer group"
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage
-                            src={student.avatarUrl}
-                            alt={student.name}
-                          />
-                          <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="font-medium">{student.name}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell
-                      className="hidden sm:table-cell"
+              students.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell>
+                    <Link
+                      href={`/dashboard/student/${student.id}`}
+                      className="inline-flex"
+                      aria-label={`Abrir perfil de ${student.name}`}
                     >
-                      {student.email}
-                    </TableCell>
-                     <TableCell
-                      className="hidden md:table-cell text-muted-foreground"
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={student.avatarUrl} alt={student.name} />
+                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/dashboard/student/${student.id}`}
+                      className="font-medium transition-colors hover:text-brand-yellow"
                     >
-                      {student.lastAccess ? format(new Date(student.lastAccess), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Nunca'}
-                    </TableCell>
-                    <TableCell className="text-center hidden lg:table-cell">
-                      <div className="flex items-center justify-center gap-2">
-                        <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{getScheduledClassesCount(student.id)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/dashboard/chat?contactId=${student.id}`);
-                        }}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="sr-only">Enviar Mensagem</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteStudent(student);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Excluir</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-            ) : (
-                <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        Nenhum aluno nesta categoria.
-                    </TableCell>
+                      {student.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{student.email}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {student.lastAccess
+                      ? format(new Date(student.lastAccess), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })
+                      : 'Nunca'}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{getScheduledClassesCount(student.id)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label={`Ações para ${student.name}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/student/${student.id}`)}>
+                          <Wallet className="mr-2 h-4 w-4" />
+                          Adicionar créditos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/chat?contactId=${student.id}`)}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Chat
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => onDeleteStudent(student)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir perfil
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  Nenhum aluno nesta categoria.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
@@ -160,24 +166,31 @@ export default function AdminStudentsPage() {
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  
+
   useEffect(() => {
     const updateData = () => {
-        const role = localStorage.getItem('userRole') as UserRole | null;
-        if (role) {
-            const storedUser = localStorage.getItem('currentUser');
-            setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
-        }
+      const role = localStorage.getItem('userRole') as UserRole | null;
+      if (role) {
+        const storedUser = localStorage.getItem('currentUser');
+        setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser(role));
+      }
 
-        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        setAllUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
-        
-        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-        setScheduleEvents(storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) : initialSchedule);
+      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+      setAllUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
+
+      const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      setScheduleEvents(
+        storedSchedule
+          ? JSON.parse(storedSchedule).map((event: any) => ({
+              ...event,
+              start: new Date(event.start),
+              end: new Date(event.end),
+            }))
+          : initialSchedule
+      );
     };
 
     updateData();
-
     window.addEventListener('storage', updateData);
     return () => window.removeEventListener('storage', updateData);
   }, []);
@@ -186,30 +199,29 @@ export default function AdminStudentsPage() {
     if (currentUser?.role === 'teacher') {
       const myStudentIds = new Set(
         scheduleEvents
-          .filter(event => event.teacherId === currentUser.id)
-          .map(event => event.studentId)
+          .filter((event) => event.teacherId === currentUser.id)
+          .map((event) => event.studentId)
       );
 
-      const myStudents = allUsers.filter(user => user.role === 'student' && myStudentIds.has(user.id));
-      
+      const myStudents = allUsers.filter(
+        (user) => user.role === 'student' && myStudentIds.has(user.id)
+      );
+
       return {
-        activeStudents: myStudents.filter(s => s.status === 'active'),
-        inactiveStudents: myStudents.filter(s => s.status === 'inactive'),
+        activeStudents: myStudents.filter((student) => student.status === 'active'),
+        inactiveStudents: myStudents.filter((student) => student.status === 'inactive'),
         pageTitle: 'Meus Alunos',
       };
     }
 
-    // Default admin view
     return {
-      activeStudents: allUsers.filter(u => u.role === 'student' && u.status === 'active'),
-      inactiveStudents: allUsers.filter(u => u.role === 'student' && u.status === 'inactive'),
+      activeStudents: allUsers.filter((user) => user.role === 'student' && user.status === 'active'),
+      inactiveStudents: allUsers.filter((user) => user.role === 'student' && user.status === 'inactive'),
       pageTitle: 'Gerenciar Alunos',
     };
-  }, [currentUser, allUsers, scheduleEvents]);
-
+  }, [allUsers, currentUser, scheduleEvents]);
 
   const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
-  
 
   const handleDeleteRequest = (student: User) => {
     setStudentToDelete(student);
@@ -217,9 +229,8 @@ export default function AdminStudentsPage() {
 
   const handleDeleteStudent = () => {
     if (!studentToDelete) return;
-    
-    // Cancel future classes for the student being deleted
-    const updatedSchedule = scheduleEvents.map(event => {
+
+    const updatedSchedule = scheduleEvents.map((event) => {
       if (event.studentId === studentToDelete.id && event.status === 'scheduled') {
         return { ...event, status: 'cancelled' as const };
       }
@@ -227,16 +238,15 @@ export default function AdminStudentsPage() {
     });
     setScheduleEvents(updatedSchedule);
     localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(updatedSchedule));
-    
-    // Remove user
+
     const updatedUsers = allUsers.filter((user) => user.id !== studentToDelete.id);
     setAllUsers(updatedUsers);
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-    
+
     window.dispatchEvent(new Event('storage'));
 
     toast({
-      title: 'Aluno Excluído',
+      title: 'Aluno Excluido',
       description: `O perfil de ${studentToDelete.name} foi removido e suas aulas futuras foram canceladas.`,
     });
     setStudentToDelete(null);
@@ -245,9 +255,7 @@ export default function AdminStudentsPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">
-          {pageTitle}
-        </h1>
+        <h1 className="font-headline text-2xl font-bold md:text-3xl">{pageTitle}</h1>
       </div>
       <div className="grid gap-6">
         <StudentList
@@ -265,25 +273,19 @@ export default function AdminStudentsPage() {
         />
       </div>
 
-      <AlertDialog
-        open={!!studentToDelete}
-        onOpenChange={() => setStudentToDelete(null)}
-      >
+      <AlertDialog open={!!studentToDelete} onOpenChange={() => setStudentToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogTitle>Voce tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-              perfil de{' '}
-              <span className="font-bold">{studentToDelete?.name}</span> e
-              removerá seus dados de nossos servidores. Todas as suas aulas futuras serão canceladas.
+              Esta acao nao pode ser desfeita. Isso excluira permanentemente o perfil de{' '}
+              <span className="font-bold">{studentToDelete?.name}</span> e removera seus dados de
+              nossos servidores. Todas as suas aulas futuras serao canceladas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteStudent}>
-              Excluir
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteStudent}>Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

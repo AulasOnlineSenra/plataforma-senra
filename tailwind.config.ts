@@ -22,6 +22,7 @@ export default {
         headline: ['Belleza', 'sans-serif'],
       },
       colors: {
+        senra: '#f5b000',
         'brand-yellow': 'hsl(var(--brand-yellow))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
