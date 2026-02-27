@@ -2,12 +2,16 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { Prisma } from '@prisma/client';
 
 // Buscar todos os alunos
 export async function getStudents() {
   try {
     const students = await prisma.user.findMany({
-      where: { role: 'student' },
+      where: {
+        role: 'student',
+        status: { not: 'deleted' },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return { success: true, data: students };
@@ -74,13 +78,38 @@ export async function toggleStudentStatus(studentId: string, newStatus: 'active'
   }
 }
 
+export async function deleteStudentProfile(studentId: string) {
+  try {
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, role: 'student' },
+      select: { id: true },
+    });
+
+    if (!student) {
+      return { success: false, error: 'Aluno nao encontrado.' };
+    }
+
+    await prisma.user.update({
+      where: { id: studentId },
+      data: { status: 'deleted' },
+    });
+
+    revalidatePath('/dashboard/students');
+    revalidatePath('/dashboard/admin/students');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao excluir perfil do aluno:', error);
+    return { success: false, error: 'Falha ao excluir o perfil do aluno.' };
+  }
+}
+
 // Buscar apenas professores ativos
 export async function getTeachers() {
   try {
     const teachers = await prisma.user.findMany({
       where: {
         role: 'teacher',
-        status: 'active',
+        status: { not: 'deleted' },
       },
       orderBy: { name: 'asc' },
     });
@@ -88,6 +117,34 @@ export async function getTeachers() {
   } catch (error) {
     console.error('Erro ao buscar professores:', error);
     return { success: false, error: 'Falha ao buscar professores do banco de dados.' };
+  }
+}
+
+export async function approveTeacher(teacherId: string) {
+  try {
+    const teacher = await prisma.user.findFirst({
+      where: { id: teacherId, role: 'teacher' },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return { success: false, error: 'Professor nao encontrado.' };
+    }
+
+    await prisma.user.update({
+      where: { id: teacherId },
+      data: {
+        status: 'active',
+        isValidated: true,
+      },
+    });
+
+    revalidatePath('/dashboard/teachers');
+    revalidatePath('/dashboard/admin/teachers');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao aprovar professor:', error);
+    return { success: false, error: 'Falha ao aprovar professor.' };
   }
 }
 
@@ -227,17 +284,62 @@ export async function getUserById(userId: string) {
   }
 }
 
+type UpdateUserProfileInput = {
+  name: string;
+  email: string;
+  avatarUrl?: string | null;
+  cpf?: string | null;
+  birthDate?: string | Date | null;
+  cep?: string | null;
+  state?: string | null;
+  neighborhood?: string | null;
+  street?: string | null;
+  number?: string | null;
+  videoUrl?: string | null;
+};
+
+function normalizeOptionalText(value?: string | null) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
 // Atualizar Perfil 
-export async function updateUserProfile(userId: string, data: { name: string; email: string }) {
+export async function updateUserProfile(userId: string, data: UpdateUserProfileInput) {
   try {
+    const parsedBirthDate =
+      data.birthDate instanceof Date
+        ? data.birthDate
+        : typeof data.birthDate === 'string' && data.birthDate
+        ? new Date(data.birthDate)
+        : null;
+
+    if (parsedBirthDate && Number.isNaN(parsedBirthDate.getTime())) {
+      return { success: false, error: 'Data de nascimento invalida.' };
+    }
+
+    const updateData: Prisma.UserUpdateInput = {
+      name: data.name,
+      email: data.email,
+      avatarUrl:
+        data.avatarUrl === undefined
+          ? `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`
+          : data.avatarUrl,
+    };
+
+    if (data.cpf !== undefined) updateData.cpf = normalizeOptionalText(data.cpf);
+    if (data.birthDate !== undefined) updateData.birthDate = parsedBirthDate;
+    if (data.cep !== undefined) updateData.cep = normalizeOptionalText(data.cep);
+    if (data.state !== undefined) updateData.state = normalizeOptionalText(data.state);
+    if (data.neighborhood !== undefined) updateData.neighborhood = normalizeOptionalText(data.neighborhood);
+    if (data.street !== undefined) updateData.street = normalizeOptionalText(data.street);
+    if (data.number !== undefined) updateData.number = normalizeOptionalText(data.number);
+    if (data.videoUrl !== undefined) updateData.videoUrl = normalizeOptionalText(data.videoUrl);
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        name: data.name,
-        email: data.email,
-        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`
-      }
+      data: updateData,
     });
+    revalidatePath('/dashboard/profile');
     return { success: true, data: updatedUser };
   } catch (error) {
     console.error(error);

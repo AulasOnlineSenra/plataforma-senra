@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SenraLogo } from '@/components/senra-logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowLeft } from 'lucide-react'; 
+import { ArrowLeft } from 'lucide-react';
 import { registerUser } from '@/app/actions/auth';
 import { useToast } from '@/hooks/use-toast';
 import { logNotification } from '@/lib/data';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+type PublicRole = 'student' | 'teacher';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -25,14 +33,27 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-const loginImage = PlaceHolderImages.find(img => img.id === 'hero-image-1');
+const loginImage = PlaceHolderImages.find((img) => img.id === 'hero-image-1');
+const roleLabel: Record<PublicRole, string> = {
+  student: 'Aluno',
+  teacher: 'Professor',
+};
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialRole = useMemo(() => {
+    const queryRole = searchParams.get('role');
+    return queryRole === 'teacher' || queryRole === 'student'
+      ? queryRole
+      : 'student';
+  }, [searchParams]);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  const [role, setRole] = useState<PublicRole>(initialRole as PublicRole);
   const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -42,31 +63,36 @@ export default function RegisterPage() {
       name,
       email,
       password,
-      role: 'student', // Força todo mundo a ser aluno!
+      role,
       referralCode,
     });
 
     if (!result.success) {
-      toast({ variant: "destructive", title: "Erro", description: result.error });
+      toast({ variant: 'destructive', title: 'Erro', description: result.error });
       return;
     }
 
     logNotification({
       type: 'new_user_registered',
-      title: `Novo Aluno`,
+      title: `Novo ${roleLabel[role]}`,
       description: `${result.user?.name} se cadastrou.`,
       userId: result.user?.id || '0',
     });
 
-    toast({ title: "Sucesso!", description: "Conta criada! Redirecionando..." });
+    localStorage.setItem('newlyRegisteredUser', JSON.stringify(result.user));
+    toast({ title: 'Sucesso!', description: 'Conta criada! Redirecionando...' });
     router.push('/login');
   };
 
   return (
     <div className="flex min-h-screen w-full bg-slate-50">
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 relative">
-        <div className="absolute top-6 left-6 md:top-10 md:left-10 z-10">
-          <Button asChild variant="ghost" className="text-slate-500 hover:text-amber-600 hover:bg-amber-50 gap-2 transition-colors">
+      <div className="relative flex w-full items-center justify-center p-8 md:w-1/2">
+        <div className="absolute left-6 top-6 z-10 md:left-10 md:top-10">
+          <Button
+            asChild
+            variant="ghost"
+            className="gap-2 text-slate-500 transition-colors hover:bg-amber-50 hover:text-amber-600"
+          >
             <Link href="/home">
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Voltar ao site</span>
@@ -76,57 +102,97 @@ export default function RegisterPage() {
         </div>
 
         <div className="w-full max-w-md">
-          <div className="flex justify-center mb-8">
+          <div className="mb-8 flex justify-center">
             <SenraLogo />
           </div>
-          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>
-            
+          <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-8 shadow-xl md:p-10">
+            <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300" />
+
             <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-500">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold font-headline text-slate-900 mb-2">
-                  Criar sua conta
-                </h1>
-                <p className="text-slate-500 text-sm">
-                   Preencha seus dados para acessar a plataforma
-                </p>
+              <div className="mb-8 text-center">
+                <h1 className="mb-2 font-headline text-2xl font-bold text-slate-900">Criar sua conta</h1>
+                <p className="text-sm text-slate-500">Preencha seus dados para acessar a plataforma</p>
               </div>
 
               <form onSubmit={handleRegister} className="grid gap-5">
                 <div className="grid gap-2">
-                  <Label htmlFor="name" className="sr-only">Nome Completo</Label>
+                  <Label htmlFor="role" className="sr-only">
+                    Perfil
+                  </Label>
+                  <Select value={role} onValueChange={(value) => setRole(value as PublicRole)}>
+                    <SelectTrigger
+                      id="role"
+                      className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:border-brand-yellow focus:ring-brand-yellow"
+                    >
+                      <SelectValue placeholder="Selecione o perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Aluno</SelectItem>
+                      <SelectItem value="teacher">Professor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="name" className="sr-only">
+                    Nome Completo
+                  </Label>
                   <Input
-                    id="name" type="text" placeholder="Seu nome completo" required
-                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
-                    value={name} onChange={(e) => setName(e.target.value)}
+                    id="name"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    required
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email" className="sr-only">E-mail</Label>
+                  <Label htmlFor="email" className="sr-only">
+                    E-mail
+                  </Label>
                   <Input
-                    id="email" type="email" placeholder="Seu melhor e-mail" required
-                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
-                    value={email} onChange={(e) => setEmail(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="Seu melhor e-mail"
+                    required
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="password" className="sr-only">Senha</Label>
+                  <Label htmlFor="password" className="sr-only">
+                    Senha
+                  </Label>
                   <Input
-                    id="password" type="password" placeholder="Crie uma senha segura" required
-                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
-                    value={password} onChange={(e) => setPassword(e.target.value)}
+                    id="password"
+                    type="password"
+                    placeholder="Crie uma senha segura"
+                    required
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="referral-code" className="sr-only">Codigo de indicacao</Label>
+                  <Label htmlFor="referral-code" className="sr-only">
+                    Codigo de indicacao
+                  </Label>
                   <Input
-                    id="referral-code" type="text" placeholder="Código de indicação (opcional)"
-                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:border-amber-400 focus:ring-amber-400 transition-all"
-                    value={referralCode} onChange={(e) => setReferralCode(e.target.value)}
+                    id="referral-code"
+                    type="text"
+                    placeholder="Codigo de indicacao (opcional)"
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
                   />
                 </div>
 
-                <Button type="submit" className="h-12 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-lg shadow-amber-500/20 text-lg transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <Button
+                  type="submit"
+                  className="h-12 w-full rounded-xl bg-brand-yellow text-lg font-bold text-slate-900 shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] hover:bg-brand-yellow/90 active:scale-[0.98]"
+                >
                   Criar Conta
                 </Button>
               </form>
@@ -136,44 +202,54 @@ export default function RegisterPage() {
                   <span className="w-full border-t border-slate-200" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-4 text-slate-400 font-medium">ou continue com</span>
+                  <span className="bg-white px-4 font-medium text-slate-400">ou continue com</span>
                 </div>
               </div>
 
               <div className="grid gap-4">
-                <Button variant="outline" className="h-12 w-full rounded-xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 font-medium text-slate-600">
+                <Button
+                  variant="outline"
+                  className="h-12 w-full rounded-xl border-slate-200 font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                >
                   <GoogleIcon className="mr-3 h-5 w-5" /> Google
                 </Button>
               </div>
 
               <div className="mt-8 text-center text-sm text-slate-500">
-                Já tem uma conta?{' '}
-                <Link href="/login" className="text-amber-600 font-bold hover:underline underline-offset-4">
+                Ja tem uma conta?{' '}
+                <Link href="/login" className="font-bold text-amber-600 hover:underline underline-offset-4">
                   Fazer login
                 </Link>
               </div>
             </div>
-
           </div>
-          <p className="text-center text-slate-400 text-xs mt-8">
+          <p className="mt-8 text-center text-xs text-slate-400">
             &copy; {new Date().getFullYear()} Senra Aulas Online. Todos os direitos reservados.
           </p>
         </div>
       </div>
 
-      <div className="hidden md:flex w-1/2 bg-slate-900 relative items-center justify-center text-center p-12 overflow-hidden">
+      <div className="relative hidden w-1/2 items-center justify-center overflow-hidden bg-slate-900 p-12 text-center md:flex">
         {loginImage && (
           <>
-            <Image src={loginImage.imageUrl} alt="Estudante feliz" fill className="object-cover opacity-40 mix-blend-overlay" priority />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30"></div>
+            <Image
+              src={loginImage.imageUrl}
+              alt="Estudante feliz"
+              fill
+              className="object-cover opacity-40 mix-blend-overlay"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30" />
           </>
         )}
         <div className="relative z-10 max-w-lg">
-          <h2 className="text-4xl md:text-5xl font-bold font-headline text-white mb-6 leading-tight">
-             Aulas que inspiram.<br/>Resultados que impressionam.
+          <h2 className="mb-6 font-headline text-4xl font-bold leading-tight text-white md:text-5xl">
+            Aulas que inspiram.
+            <br />
+            Resultados que impressionam.
           </h2>
-          <p className="text-lg text-slate-300 leading-relaxed">
-             Junte-se a milhares de alunos que estão transformando suas notas e conquistando seus sonhos com nossos mentores.
+          <p className="text-lg leading-relaxed text-slate-300">
+            Junte-se a milhares de alunos que estao transformando suas notas e conquistando seus sonhos com nossos mentores.
           </p>
         </div>
       </div>

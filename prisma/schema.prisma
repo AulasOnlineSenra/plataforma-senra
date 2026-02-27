@@ -8,32 +8,43 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("student") // 'admin', 'teacher', ou 'student'
-  avatarUrl String?
-  status    String   @default("active")
-  referralCode String @unique @default(cuid())
-  referredById String?
+  id               String   @id @default(uuid())
+  name             String
+  email            String   @unique
+  password         String
+  role             String   @default("student") // 'admin', 'teacher', ou 'student'
+  avatarUrl        String?
+  status           String   @default("active")
+  referralCode     String   @unique @default(cuid())
+  referredById     String?
   
   resetToken       String?
   resetTokenExpiry DateTime?
   
-  credits       Int       @default(0)
+  credits          Int      @default(0)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
-  subject       String?
+  subject          String?
+
+  cpf              String?  @unique
+  birthDate        DateTime?
+  cep              String?
+  state            String?
+  neighborhood     String?
+  street           String?
+  number           String?
+  
+  videoUrl         String?  // Vídeo de apresentação do Professor
+  isValidated      Boolean  @default(false) // Controle de aprovação do Admin
 
   // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
   lessonsAsStudent Lesson[] @relation("StudentLessons")
   lessonsAsTeacher Lesson[] @relation("TeacherLessons")
   referredBy       User?    @relation("UserReferrals", fields: [referredById], references: [id])
   referrals        User[]   @relation("UserReferrals")
-  sentMessages    ChatMessage[] @relation("SentMessages")
+  sentMessages     ChatMessage[] @relation("SentMessages")
   receivedMessages ChatMessage[] @relation("ReceivedMessages")
   createdSimulados Simulado[] @relation("SimuladoCreator")
   assignedSimulados Simulado[] @relation("SimuladoStudent")

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { BookOpen, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { BookOpen, UserPlus, Edit, Trash2, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {
@@ -17,20 +18,57 @@ import { subjects } from '@/lib/data'; // Importando a lista de matérias
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // IMPORTANDO AS FUNÇÕES DO MOTOR
-import { getTeachers, createTeacher, updateTeacher, deleteTeacher } from '@/app/actions/users';
+import { getTeachers, createTeacher, updateTeacher, deleteTeacher, approveTeacher } from '@/app/actions/users';
 
-function TeacherCard({ teacher, currentUser, onEdit, onDelete }: { teacher: any; currentUser: any; onEdit: (t: any) => void; onDelete: (id: string) => void; }) {
+function TeacherCard({
+  teacher,
+  currentUser,
+  onEdit,
+  onDelete,
+  onApprove,
+  onOpenDetails,
+}: {
+  teacher: any;
+  currentUser: any;
+  onEdit: (t: any) => void;
+  onDelete: (id: string) => void;
+  onApprove: (id: string) => void;
+  onOpenDetails: (id: string) => void;
+}) {
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <Card className="flex flex-col transition-all hover:ring-2 hover:ring-brand-yellow relative overflow-hidden">
+    <Card
+      className="flex flex-col transition-all hover:ring-2 hover:ring-brand-yellow relative overflow-hidden"
+      onClick={() => isAdmin && onOpenDetails(teacher.id)}
+      role={isAdmin ? 'button' : undefined}
+      tabIndex={isAdmin ? 0 : -1}
+      onKeyDown={(event) => {
+        if (!isAdmin) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpenDetails(teacher.id);
+        }
+      }}
+    >
       <CardHeader className="items-center text-center pb-2">
          {isAdmin && (
             <div className="absolute top-2 right-2 flex gap-1 z-10 bg-white/80 rounded-lg p-1 shadow-sm">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-brand-yellow hover:bg-amber-50" onClick={() => onEdit(teacher)} title="Editar Dados">
+                {teacher.status === 'pending' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={(e) => { e.stopPropagation(); onApprove(teacher.id); }}
+                    title="Aprovar Professor"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-brand-yellow hover:bg-amber-50" onClick={(e) => { e.stopPropagation(); onEdit(teacher); }} title="Editar Dados">
                     <Edit className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => { if(confirm('Excluir este professor permanentemente?')) onDelete(teacher.id) }} title="Excluir Professor">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); if(confirm('Excluir este professor permanentemente?')) onDelete(teacher.id); }} title="Excluir Professor">
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
@@ -44,6 +82,11 @@ function TeacherCard({ teacher, currentUser, onEdit, onDelete }: { teacher: any;
              <Badge variant="secondary" className="bg-brand-yellow/20 text-slate-800 border-none font-semibold">
                Professor(a) {teacher.subject ? `de ${teacher.subject}` : ''}
              </Badge>
+             {teacher.status === 'pending' && (
+               <Badge className="ml-2 bg-amber-100 text-amber-800 border-none font-semibold">
+                 Pendente
+               </Badge>
+             )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 text-center">
@@ -62,6 +105,7 @@ function TeacherCard({ teacher, currentUser, onEdit, onDelete }: { teacher: any;
 
 
 export default function TeachersPage() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [teacherList, setTeacherList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -140,6 +184,16 @@ export default function TeachersPage() {
       }
   };
 
+  const handleApprove = async (id: string) => {
+      const result = await approveTeacher(id);
+      if (result.success) {
+          toast({ title: 'Sucesso!', description: 'Professor aprovado com sucesso.' });
+          fetchDBTeachers();
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Falha ao aprovar professor.' });
+      }
+  };
+
   if (isLoading) {
       return <div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Buscando professores...</div>;
   }
@@ -180,6 +234,8 @@ export default function TeachersPage() {
                     currentUser={currentUser}
                     onEdit={openEditModal}
                     onDelete={handleDelete}
+                    onApprove={handleApprove}
+                    onOpenDetails={(teacherId) => router.push(`/dashboard/student/${teacherId}`)}
                 />
             ))}
             </div>

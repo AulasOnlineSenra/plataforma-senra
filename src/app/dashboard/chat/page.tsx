@@ -243,9 +243,9 @@ function ChatContent() {
   };
 
   return (
-    <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-[340px_1fr]">
+    <div className="grid h-[calc(100vh-10rem)] w-full grid-cols-1 gap-4 overflow-hidden md:grid-cols-[340px_1fr]">
       <section
-        className={`${activeContact ? 'hidden md:flex' : 'flex'} flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-sm`}
+        className={`${activeContact ? 'hidden md:flex' : 'flex'} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-sm`}
       >
         <div className="border-b border-border/70 bg-muted/20 px-4 py-4">
           <h1 className="text-lg font-semibold tracking-tight">Conversas</h1>
@@ -294,7 +294,7 @@ function ChatContent() {
       </section>
 
       <section
-        className={`${!activeContact ? 'hidden md:flex' : 'flex'} flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm`}
+        className={`${!activeContact ? 'hidden md:flex' : 'flex'} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm`}
       >
         {!currentUser ? (
           <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">
@@ -329,7 +329,7 @@ function ChatContent() {
               </div>
             </div>
 
-            <ScrollArea className="h-[calc(100vh-16rem)] flex-1 bg-background">
+            <ScrollArea className="max-h-[calc(100vh-16rem)] flex-1 bg-background">
               <div className="space-y-2 p-4">
                 {conversation.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda.</p>
