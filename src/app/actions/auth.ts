@@ -70,6 +70,22 @@ export async function loginUser(data: { email: string, password: string }) {
       return { success: false, error: 'Senha incorreta. Tente novamente.' }
     }
 
+    // Validando o status ANTES de deixar entrar
+    if (user.status === 'pending') {
+      return { 
+        success: false, 
+        error: 'Sua conta está em análise! Aguarde a aprovação do administrador para acessar o sistema.' 
+      }
+    }
+
+    if (user.status === 'inactive') {
+      return { 
+        success: false, 
+        error: 'Sua conta foi desativada. Entre em contato com o suporte para mais informações.' 
+      }
+    }
+
+    // Se a senha tá certa e o status tá 'active', portas abertas!
     return { success: true, user }
   } catch (error) {
     console.error('Erro ao iniciar sessão:', error)

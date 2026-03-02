@@ -48,6 +48,7 @@ model User {
   receivedMessages ChatMessage[] @relation("ReceivedMessages")
   createdSimulados Simulado[] @relation("SimuladoCreator")
   assignedSimulados Simulado[] @relation("SimuladoStudent")
+  transactions     Transaction[] @relation("StudentTransactions")
 }
 
 model ChatMessage {
@@ -134,4 +135,35 @@ model Subject {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AppSetting {
+  id            String   @id @default("global")
+  whatsapp      String   @default("")
+  classValue    String   @default("50.00")
+  referralBonus String   @default("1")
+  updatedAt     DateTime @updatedAt
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  studentId     String
+  planName      String   // Ex: "Pacote 4 Aulas" ou "Adição Manual"
+  creditsAdded  Int
+  amountPaid    Float
+  paymentMethod String   @default("PIX")
+  status        String   @default("COMPROVADO")
+  createdAt     DateTime @default(now())
+
+  student       User     @relation("StudentTransactions", fields: [studentId], references: [id])
+}
+
+model MarketingCost {
+  id                 String   @id @default(uuid())
+  month              String   @unique // Formato: "yyyy-MM"
+  ads                Float    @default(0)
+  team               Float    @default(0)
+  organicCommissions Float    @default(0)
+  paidCommissions    Float    @default(0)
+  updatedAt          DateTime @updatedAt
 }

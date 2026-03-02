@@ -52,7 +52,7 @@ export async function listSimuladosForUser(userId: string) {
     });
 
     if (!user) {
-      return { success: false, error: 'Usuario nao encontrado.' };
+      return { success: false, error: 'Usuario não encontrado.' };
     }
 
     const where =
@@ -95,7 +95,7 @@ export async function getSimuladoById(simuladoId: string) {
     });
 
     if (!simulado) {
-      return { success: false, error: 'Simulado nao encontrado.' };
+      return { success: false, error: 'Simulado não encontrado.' };
     }
 
     return {
@@ -136,7 +136,7 @@ export async function upsertSimulado(input: UpsertSimuladoInput) {
     if (input.id) {
       const existing = await prisma.simulado.findUnique({ where: { id: input.id } });
       if (!existing) {
-        return { success: false, error: 'Simulado nao encontrado para edicao.' };
+        return { success: false, error: 'Simulado não encontrado para edicao.' };
       }
 
       const updated = await prisma.simulado.update({
@@ -183,7 +183,7 @@ export async function submitSimuladoAttempt(params: {
     });
 
     if (!simulado) {
-      return { success: false, error: 'Simulado nao encontrado.' };
+      return { success: false, error: 'Simulado não encontrado.' };
     }
 
     const questions = asQuestions(simulado.questions);

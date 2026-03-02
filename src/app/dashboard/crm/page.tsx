@@ -3,13 +3,11 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users2, GraduationCap } from 'lucide-react';
-import { getCrmUsers, promoteToTeacherAction } from '@/app/actions/users';
+import { Users2 } from 'lucide-react';
+import { getCrmUsers } from '@/app/actions/users';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 
 type CrmUser = {
   id: string;
@@ -23,8 +21,6 @@ type CrmUser = {
 export default function CrmPage() {
   const [users, setUsers] = useState<CrmUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [promoting, setPromoting] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const loadUsers = async () => {
     const result = await getCrmUsers();
@@ -37,19 +33,6 @@ export default function CrmPage() {
   useEffect(() => {
     loadUsers();
   }, []);
-
-  const handlePromote = async (userId: string) => {
-    setPromoting(userId);
-    const result = await promoteToTeacherAction(userId);
-    
-    if (result.success) {
-      toast({ title: "Sucesso!", description: "Usuário promovido a Professor com sucesso!", className: "bg-green-600 text-white" });
-      await loadUsers(); // Recarrega a lista para mostrar o novo cargo
-    } else {
-      toast({ variant: "destructive", title: "Erro", description: "Não foi possível promover o usuário." });
-    }
-    setPromoting(null);
-  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -81,13 +64,12 @@ export default function CrmPage() {
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Cadastro</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                    <TableCell colSpan={5} className="h-24 text-center text-slate-500">
                       Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
@@ -106,20 +88,6 @@ export default function CrmPage() {
                     </TableCell>
                     <TableCell className="text-slate-600 text-sm">
                       {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {user.role === 'student' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handlePromote(user.id)}
-                          disabled={promoting === user.id}
-                          className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
-                        >
-                          <GraduationCap className="w-4 h-4 mr-2" />
-                          {promoting === user.id ? 'Promovendo...' : 'Virar Professor'}
-                        </Button>
-                      )}
                     </TableCell>
                   </TableRow>
                 ))}

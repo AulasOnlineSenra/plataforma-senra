@@ -1,15 +1,7 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, UserPlus, CalendarCheck, Package, XCircle, Trash2, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
@@ -31,13 +23,14 @@ const notificationIcons: Record<NotificationType, React.ElementType> = {
   group_class_scheduled: CalendarCheck,
 };
 
+// Cores modernizadas para cada tipo de evento
 const notificationColors: Record<NotificationType, string> = {
-    new_user_registered: 'border-blue-500/80 bg-blue-500/10',
-    class_scheduled: 'border-green-500/80 bg-green-500/10',
-    group_class_scheduled: 'border-green-500/80 bg-green-500/10',
-    package_purchased: 'border-purple-500/80 bg-purple-500/10',
-    class_cancelled: 'border-red-500/80 bg-red-500/10',
-    class_rescheduled: 'border-yellow-500/80 bg-yellow-500/10',
+    new_user_registered: 'bg-blue-100 text-blue-600 border-blue-100',
+    class_scheduled: 'bg-amber-100 text-amber-600 border-amber-100',
+    group_class_scheduled: 'bg-amber-100 text-amber-600 border-amber-100',
+    package_purchased: 'bg-emerald-100 text-emerald-600 border-emerald-100',
+    class_cancelled: 'bg-red-100 text-red-600 border-red-100',
+    class_rescheduled: 'bg-purple-100 text-purple-600 border-purple-100',
 };
 
 
@@ -57,7 +50,6 @@ export default function NotificationsPage() {
     if (currentUser.role === 'admin') {
       return notifications;
     }
-    // For students and teachers, show notifications specifically for them OR global notifications (without a userId)
     return notifications.filter(n => n.userId === currentUser.id || !n.userId);
   }, [currentUser, notifications]);
 
@@ -90,7 +82,7 @@ export default function NotificationsPage() {
             if (hasChanges) {
                 localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(readNotifications));
                 setNotifications(readNotifications.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp), events: n.events?.map((e:any) => ({...e, date: new Date(e.date)})) })));
-                window.dispatchEvent(new Event('storage')); // Notify sidebar
+                window.dispatchEvent(new Event('storage'));
             }
         }
     };
@@ -146,26 +138,45 @@ export default function NotificationsPage() {
   const unreadCount = useMemo(() => relevantNotifications.filter(n => !n.read).length, [relevantNotifications]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Bell className="h-8 w-8 text-primary" />
-          <h1 className="font-headline text-2xl md:text-3xl font-bold">
-            Notificações
-            {unreadCount > 0 && <Badge className="ml-3">{unreadCount} Nova(s)</Badge>}
-          </h1>
+    <div className="flex flex-1 flex-col gap-6 md:gap-8 w-full max-w-7xl mx-auto">
+      
+      {/* CABEÇALHO */}
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center mt-2">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3">
+            <h1 className="font-headline text-3xl font-bold text-slate-900 tracking-tight">
+              Central de Notificações
+            </h1>
+            {unreadCount > 0 && (
+              <Badge className="border-none bg-brand-yellow px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-slate-900 shadow-sm">
+                {unreadCount} Novas
+              </Badge>
+            )}
+          </div>
+          <p className="mt-1 text-slate-500">Acompanhe as atualizações, agendamentos e avisos da plataforma.</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => setShowUnreadOnly(!showUnreadOnly)} className="w-1/2 sm:w-auto">
-                {showUnreadOnly ? <EyeOff className="mr-2" /> : <Eye className="mr-2" />}
-                {showUnreadOnly ? 'Mostrar Todas' : 'Mostrar Não Lidas'}
+
+        <div className="flex w-full gap-3 sm:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowUnreadOnly(!showUnreadOnly)} 
+              className="w-1/2 sm:w-auto h-11 rounded-xl border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 shadow-sm transition-all"
+            >
+                {showUnreadOnly ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                {showUnreadOnly ? 'Ver Todas' : 'Apenas Não Lidas'}
             </Button>
-            <Button onClick={handleMarkAllAsRead} disabled={unreadCount === 0} className="w-1/2 sm:w-auto">
-                Marcar todas como lidas
+            <Button 
+              onClick={handleMarkAllAsRead} 
+              disabled={unreadCount === 0} 
+              className="w-1/2 sm:w-auto h-11 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm hover:scale-105 hover:bg-brand-yellow/90 transition-all"
+            >
+                Marcar todas lidas
             </Button>
         </div>
       </div>
-      <Card>
+
+      {/* LISTA DE NOTIFICAÇÕES */}
+      <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <CardContent className="p-0">
           <div className="flex flex-col">
             {filteredNotifications.length > 0 ? (
@@ -179,63 +190,76 @@ export default function NotificationsPage() {
                     open={openCollapsible === notification.id}
                     onOpenChange={(isOpen) => setOpenCollapsible(isOpen ? notification.id : null)}
                     className={cn(
-                      'flex flex-col items-start gap-4 transition-colors hover:bg-accent/50',
-                      !notification.read && 'bg-primary/5',
-                      index < filteredNotifications.length - 1 && 'border-b'
+                      'flex flex-col items-start gap-4 transition-colors hover:bg-slate-50/80 px-4 md:px-8',
+                      !notification.read && 'bg-amber-50/30',
+                      index < filteredNotifications.length - 1 && 'border-b border-slate-100'
                     )}
                   >
-                    <div className="flex w-full items-start p-4">
+                    <div className="flex w-full items-start py-6">
+                      
+                      {/* ÍCONE */}
                       <div className={cn(
-                          'hidden sm:flex items-center justify-center h-12 w-12 rounded-full border',
+                          'hidden h-14 w-14 items-center justify-center rounded-2xl border sm:flex shadow-sm shrink-0',
                           notificationColors[notification.type]
                       )}>
                           <Icon className="h-6 w-6" />
                       </div>
-                      <div className="flex-1 ml-4">
-                        <p className="font-semibold">{notification.title}</p>
-                        <p className="text-sm text-muted-foreground">{formatDescription(notification.description)}</p>
+                      
+                      {/* TEXTO */}
+                      <div className="ml-0 sm:ml-5 flex-1 pt-1">
+                        <p className="text-base font-bold text-slate-800 tracking-tight leading-snug">{notification.title}</p>
+                        <p className="text-sm font-medium text-slate-500 mt-1">{formatDescription(notification.description)}</p>
                       </div>
-                      <div className="flex flex-col items-end gap-2 text-right self-stretch justify-between">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      
+                      {/* AÇÕES E TEMPO */}
+                      <div className="flex self-stretch flex-col items-end justify-between pl-4 gap-2 text-right">
+                        <span className="whitespace-nowrap text-xs font-bold uppercase tracking-wider text-slate-400">
                           {formatDistanceToNow(notification.timestamp, { addSuffix: true, locale: ptBR })}
                         </span>
+                        
                         <div className="flex gap-1">
                               <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-10 w-10 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                                   title={notification.read ? 'Marcar como não lida' : 'Marcar como lida'}
                                   onClick={(e) => { e.stopPropagation(); handleToggleRead(notification.id); }}
                               >
-                                  {notification.read ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  {notification.read ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                               </Button>
                               <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  className="h-10 w-10 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                                   title="Excluir notificação"
                                   onClick={(e) => { e.stopPropagation(); handleDeleteNotification(notification.id); }}
                               >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-5 w-5" />
                               </Button>
+                              
                               {isGrouped && (
                                 <CollapsibleTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        {openCollapsible === notification.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors">
+                                        {openCollapsible === notification.id ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                                     </Button>
                                 </CollapsibleTrigger>
                               )}
                         </div>
                       </div>
                     </div>
+
+                    {/* CONTEÚDO EXPANSÍVEL (Agendamentos em grupo) */}
                     {isGrouped && (
-                      <CollapsibleContent className="w-full px-4 pb-4 pl-20">
-                          <div className="border-t pt-3 mt-2 space-y-2">
-                             <h4 className="font-semibold text-sm">Aulas Agendadas no Grupo:</h4>
-                             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                      <CollapsibleContent className="w-full pb-6 sm:pl-20">
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 shadow-inner">
+                             <h4 className="text-sm font-bold uppercase tracking-wider text-slate-600 mb-3">Aulas Agendadas neste pacote:</h4>
+                             <ul className="space-y-2 text-sm text-slate-600">
                                 {notification.events?.map((event, i) => (
-                                    <li key={i}>
-                                        <span className="font-medium text-foreground">{event.subject}</span> com {event.teacher} em {format(event.date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                    <li key={i} className="flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-brand-yellow"></div>
+                                        <span>
+                                          <strong className="font-bold text-slate-900">{event.subject}</strong> com {event.teacher} em <strong className="font-bold text-slate-800">{format(event.date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</strong>
+                                        </span>
                                     </li>
                                 ))}
                              </ul>
@@ -246,9 +270,15 @@ export default function NotificationsPage() {
                 );
               })
             ) : (
-              <div className="p-8 text-center text-muted-foreground">
-                <Bell className="mx-auto h-12 w-12" />
-                <p className="mt-4">Nenhuma notificação por aqui.</p>
+              // EMPTY STATE
+              <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
+                <div className="rounded-full bg-slate-50 p-6 mb-4">
+                  <Bell className="h-12 w-12 text-slate-300" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-700">Tudo limpo por aqui!</h3>
+                <p className="mt-2 text-slate-500 max-w-sm">
+                  Você não tem nenhuma notificação no momento. Avisaremos quando houver novidades.
+                </p>
               </div>
             )}
           </div>

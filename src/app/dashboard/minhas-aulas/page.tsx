@@ -46,7 +46,7 @@ export default function MinhasAulasPage() {
     if (response.success && response.data) {
       setLessons(response.data as LessonItem[]);
     } else {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Nao foi possivel carregar as aulas.' });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possivel carregar as aulas.' });
     }
     setLoading(false);
   };

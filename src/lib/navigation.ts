@@ -19,7 +19,7 @@ import {
 
 export const navItems: NavItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['student', 'teacher', 'admin'] },
-  { href: '/dashboard/notifications', icon: Bell, label: 'Notificacoes', roles: ['student', 'teacher', 'admin'] },
+  { href: '/dashboard/notifications', icon: Bell, label: 'Notificações', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/minhas-aulas', icon: CalendarDays, label: 'Minhas Aulas', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/booking', icon: BookOpenCheck, label: 'Agendar Aula', roles: ['student', 'admin'] },
   { href: '/dashboard/chat', icon: MessageSquare, label: 'Chat', roles: ['student', 'teacher', 'admin'] },
@@ -30,7 +30,7 @@ export const navItems: NavItem[] = [
   { href: '/dashboard/simulados', icon: FileText, label: 'Simulados', roles: ['teacher', 'admin', 'student'] },
   { href: '/dashboard/packages', icon: WalletCards, label: 'Pacotes', roles: ['student'] },
   { href: '/dashboard/financeiro', icon: DollarSign, label: 'Financeiro', roles: ['student', 'teacher', 'admin'] },
-  { href: '/dashboard/indicacoes', icon: Gift, label: 'Indicacoes', roles: ['student', 'teacher', 'admin'] },
+  { href: '/dashboard/indicacoes', icon: Gift, label: 'Indicações', roles: ['student', 'teacher', 'admin'] },
 ];
 
 export const adminNavItems: NavItem[] = [

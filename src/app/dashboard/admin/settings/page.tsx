@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getSettings, updateSettings } from '@/app/actions/settings';
 
-const APP_SETTINGS_KEY = 'appSettings';
 const DEFAULT_SETTINGS = {
   whatsapp: '5583999999999',
   teacherClassValue: '50.00',
@@ -23,21 +23,25 @@ export default function SettingsPage() {
   const [referralBonus, setReferralBonus] = useState(DEFAULT_SETTINGS.referralBonus);
 
   useEffect(() => {
-    const stored = localStorage.getItem(APP_SETTINGS_KEY);
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored);
-      setWhatsapp(parsed.whatsapp || DEFAULT_SETTINGS.whatsapp);
-      setTeacherClassValue(parsed.teacherClassValue || DEFAULT_SETTINGS.teacherClassValue);
-      setReferralBonus(parsed.referralBonus || DEFAULT_SETTINGS.referralBonus);
-    } catch {
-      setWhatsapp(DEFAULT_SETTINGS.whatsapp);
-      setTeacherClassValue(DEFAULT_SETTINGS.teacherClassValue);
-      setReferralBonus(DEFAULT_SETTINGS.referralBonus);
-    }
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      const result = await getSettings();
+      if (!isMounted || !result.success || !result.data) return;
+
+      setWhatsapp(result.data.whatsapp || DEFAULT_SETTINGS.whatsapp);
+      setTeacherClassValue(result.data.classValue || DEFAULT_SETTINGS.teacherClassValue);
+      setReferralBonus(result.data.referralBonus || DEFAULT_SETTINGS.referralBonus);
+    };
+
+    loadSettings();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsLoading(true);
     const nextSettings = {
       whatsapp: whatsapp.trim(),
@@ -45,13 +49,18 @@ export default function SettingsPage() {
       referralBonus: referralBonus.trim(),
     };
 
-    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
-    window.dispatchEvent(new Event('storage'));
-
+    const result = await updateSettings({
+      whatsapp: nextSettings.whatsapp,
+      classValue: nextSettings.teacherClassValue,
+      referralBonus: nextSettings.referralBonus,
+    });
     setIsLoading(false);
+
+    if (!result.success) return;
+
     toast({
       title: 'Sucesso!',
-      description: 'Configuracoes do sistema atualizadas.',
+      description: 'Configurações do sistema atualizadas.',
       className: 'border-none bg-green-600 text-white',
     });
   };
@@ -63,7 +72,7 @@ export default function SettingsPage() {
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-center gap-3 text-2xl text-slate-50">
             <Settings className="h-7 w-7 text-brand-yellow" />
-            Configuracoes do Sistema
+            Configurações do Sistema
           </CardTitle>
           <CardDescription className="mt-2 text-base text-slate-300">
             Gerencie as variaveis operacionais e regras de negocio da Plataforma Senra.
@@ -87,7 +96,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="whatsapp" className="font-medium text-slate-700">
-                Numero do WhatsApp (com DDI e DDD)
+                Número do WhatsApp (com DDI e DDD)
               </Label>
               <Input
                 id="whatsapp"
@@ -97,7 +106,7 @@ export default function SettingsPage() {
                 placeholder="Ex: 5583999999999"
               />
               <p className="mt-2 text-sm text-slate-500">
-                Os links de "Comprar Plano" e "Falar com Suporte" redirecionarao para este numero.
+                Os links de "Comprar Plano" e "Falar com Suporte" redirecionarao para este número.
               </p>
             </div>
           </CardContent>
@@ -132,7 +141,7 @@ export default function SettingsPage() {
                 />
               </div>
               <p className="mt-2 text-sm text-slate-500">
-                Usado para calcular quanto a plataforma deve aos tutores no fechamento do mes.
+                Usado para calcular quanto a plataforma deve aos tutores no fechamento do mês.
               </p>
             </div>
           </CardContent>
@@ -145,7 +154,7 @@ export default function SettingsPage() {
                 <Gift className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-xl text-slate-900">Marketing de Indicacao</CardTitle>
+                <CardTitle className="text-xl text-slate-900">Marketing de Indicação</CardTitle>
                 <CardDescription>Regras para novos cadastros por convite</CardDescription>
               </div>
             </div>
@@ -153,7 +162,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="referral" className="font-medium text-slate-700">
-                Creditos por Indicacao Bem-sucedida
+                Créditos por Indicacao Bem-sucedida
               </Label>
               <Input
                 id="referral"
@@ -182,7 +191,7 @@ export default function SettingsPage() {
           ) : (
             <>
               <Save className="mr-2 h-5 w-5" />
-              Salvar Configuracoes
+              Salvar Configurações
             </>
           )}
         </Button>

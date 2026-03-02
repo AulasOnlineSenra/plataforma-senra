@@ -14,6 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { getPlans } from '@/app/actions/plans';
+import { getSettings } from '@/app/actions/settings';
 
 type ClassPackage = {
   id: string;
@@ -26,12 +27,11 @@ type ClassPackage = {
 
 const packageFeatures = [
   'Aulas individuais e personalizadas',
-  'Flexibilidade de horarios',
+  'Flexibilidade de horários',
   'Professores especialistas',
   'Suporte via chat',
 ];
 
-const APP_SETTINGS_KEY = 'appSettings';
 const DEFAULT_WHATSAPP_NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '').replace(/\D/g, '');
 
 function PackagesContent() {
@@ -42,14 +42,15 @@ function PackagesContent() {
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
   const [classPackages, setClassPackages] = useState<ClassPackage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
 
   useEffect(() => {
     const fetchDatabasePlans = async () => {
       setIsLoading(true);
-      const result = await getPlans();
+      const [plansResult, settingsResult] = await Promise.all([getPlans(), getSettings()]);
 
-      if (result.success && result.data) {
-        const formattedPackages: ClassPackage[] = result.data.map((plan) => ({
+      if (plansResult.success && plansResult.data) {
+        const formattedPackages: ClassPackage[] = plansResult.data.map((plan) => ({
           id: plan.id,
           name: plan.name,
           numClasses: plan.lessonsCount,
@@ -59,6 +60,14 @@ function PackagesContent() {
         }));
         setClassPackages(formattedPackages);
       }
+
+      if (settingsResult.success && settingsResult.data) {
+        const normalizedNumber = (settingsResult.data.whatsapp || '').replace(/\D/g, '');
+        if (normalizedNumber) {
+          setWhatsappNumber(normalizedNumber);
+        }
+      }
+
       setIsLoading(false);
     };
 
@@ -111,131 +120,132 @@ function PackagesContent() {
   }, [classesPerWeek, numberOfWeeks, tiers]);
 
   const handleWhatsAppClick = (text: string) => {
-    let targetWhatsapp = DEFAULT_WHATSAPP_NUMBER;
-
-    try {
-      const rawSettings = localStorage.getItem(APP_SETTINGS_KEY);
-      if (rawSettings) {
-        const parsed = JSON.parse(rawSettings) as { whatsapp?: string };
-        const normalizedNumber = (parsed.whatsapp || '').replace(/\D/g, '');
-        if (normalizedNumber) {
-          targetWhatsapp = normalizedNumber;
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar WhatsApp das configuracoes:', error);
-    }
-
+    const targetWhatsapp = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
     const url = `https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
   const getPackageWhatsAppText = (pkg: ClassPackage) => {
-    return `Ola! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faco para realizar o pagamento (PIX) e liberar meu acesso?`;
+    return `Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento (PIX) e liberar meu acesso?`;
   };
 
   const getCalculatorWhatsAppText = () => {
-    return `Ola! Fiz uma simulacao na plataforma e gostaria de adquirir um *Pacote Personalizado* com ${calculatedPackage.totalClasses} aulas totais, no valor de R$ ${calculatedPackage.total.toFixed(2).replace('.', ',')}. Como faco para realizar o pagamento e liberar meu acesso?`;
+    return `Olá! Fiz uma simulação na plataforma e gostaria de adquirir um *Pacote Personalizado* com ${calculatedPackage.totalClasses} aulas totais, no valor de R$ ${calculatedPackage.total.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento e liberar meu acesso?`;
   };
 
   if (isLoading) {
-    return <div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Carregando vitrine de pacotes...</div>;
+    return <div className="flex h-[50vh] items-center justify-center text-slate-400 font-medium animate-pulse">Carregando vitrine de pacotes...</div>;
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex flex-col items-center text-center">
-        <h1 className="font-headline text-3xl md:text-4xl font-bold">Pacotes de Aulas</h1>
-        <p className="max-w-2xl text-muted-foreground mt-2">
-          Escolha o pacote ideal, envie uma mensagem para o nosso suporte e libere seu acesso na hora.
+    <div className="flex flex-1 flex-col gap-8 lg:gap-12">
+      {/* CABEÇALHO */}
+      <div className="flex flex-col items-center text-center mt-4">
+        <h1 className="font-headline text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">Pacotes de Aulas</h1>
+        <p className="mt-4 max-w-2xl text-lg text-slate-500">
+          Escolha o pacote ideal, envie uma mensagem para o nosso suporte e libere seu acesso imediatamente.
         </p>
       </div>
 
       {classPackages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed rounded-xl max-w-4xl mx-auto w-full">
-          <PackageOpen className="w-16 h-16 opacity-20 mb-4" />
-          <p className="text-lg font-medium">Os pacotes estao sendo atualizados.</p>
-          <p className="text-sm">Volte em instantes para ver as novas ofertas.</p>
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 py-24 text-slate-500">
+          <PackageOpen className="mb-4 h-16 w-16 text-slate-300" />
+          <p className="text-xl font-bold text-slate-700">Vitrine em atualização</p>
+          <p className="text-base text-slate-500 mt-1">Volte em instantes para ver nossas novas ofertas.</p>
         </div>
       ) : (
         <>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8 max-w-7xl mx-auto">
+          {/* GRID DE PACOTES */}
+          <div className="mx-auto mt-4 grid max-w-7xl gap-8 lg:gap-10 md:grid-cols-2 lg:grid-cols-3 items-center">
             {classPackages.map((pkg) => (
               <Card
                 key={pkg.id}
                 className={cn(
-                  'flex flex-col relative',
-                  pkg.popular ? 'border-brand-yellow border-2 ring-2 ring-brand-yellow/20 shadow-lg scale-105 z-10' : ''
+                  'relative flex flex-col rounded-3xl bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-xl',
+                  pkg.popular 
+                    ? 'z-10 border-2 border-brand-yellow shadow-lg scale-100 lg:scale-105' 
+                    : 'border border-slate-200 shadow-sm'
                 )}
               >
-                <CardHeader className="items-center text-center pt-8">
-                  {pkg.popular && (
-                    <div className="absolute -top-4 text-sm font-bold bg-brand-yellow text-slate-900 px-4 py-1 rounded-full shadow-sm uppercase tracking-wide">
-                      Mais Popular
-                    </div>
-                  )}
-                  <CardTitle className="font-headline text-2xl text-slate-800">{pkg.name}</CardTitle>
-                  <div className="flex items-baseline gap-1 mt-2">
-                    <span className="text-5xl font-extrabold text-slate-900">R${pkg.totalPrice.toFixed(2).replace('.', ',')}</span>
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-brand-yellow px-6 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-900 shadow-sm">
+                    Mais Popular
                   </div>
-                  <p className="text-slate-500 font-semibold text-lg mt-1">R$ {pkg.pricePerClass.toFixed(2).replace('.', ',')} / aula</p>
+                )}
+                
+                <CardHeader className="items-center pt-10 text-center pb-6">
+                  <CardTitle className="font-headline text-2xl text-slate-900">{pkg.name}</CardTitle>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-5xl font-extrabold text-slate-900 tracking-tight">
+                      R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-base font-semibold text-slate-500">R$ {pkg.pricePerClass.toFixed(2).replace('.', ',')} / aula</p>
                 </CardHeader>
-                <CardContent className="flex-1 mt-4">
-                  <ul className="grid gap-4 text-sm bg-slate-50 rounded-xl p-5">
-                    <li className="flex items-center font-bold text-base text-slate-800">
-                      <Check className="h-5 w-5 mr-3 text-green-500" />
+                
+                <CardContent className="mt-2 flex-1 px-8">
+                  <ul className="grid gap-4 rounded-2xl bg-slate-50 p-6 text-sm border border-slate-100">
+                    <li className="flex items-center text-base font-bold text-slate-800 mb-1">
+                      <div className="rounded-full bg-green-100 p-1 mr-3">
+                        <Check className="h-4 w-4 text-green-600" />
+                      </div>
                       <span>{pkg.numClasses} {pkg.numClasses > 1 ? 'aulas garantidas' : 'aula garantida'}</span>
                     </li>
                     {packageFeatures.map((feature) => (
-                      <li key={feature} className="flex items-center text-slate-600 font-medium">
-                        <ArrowRight className="h-4 w-4 mr-3 text-brand-yellow" />
+                      <li key={feature} className="flex items-center font-medium text-slate-600">
+                        <ArrowRight className="mr-3 h-4 w-4 text-brand-yellow" />
                         {feature}
                       </li>
                     ))}
                   </ul>
                 </CardContent>
-                <CardFooter className="flex-col gap-3 px-6 pb-8 pt-0">
+                
+                <CardFooter className="flex-col gap-3 px-8 pb-8 pt-4">
                   <Button
-                    className="w-full h-12 text-base font-bold bg-[#25D366] text-white hover:bg-[#1DA851] shadow-md transition-all"
+                    className="h-14 w-full rounded-2xl text-base font-bold text-white shadow-sm transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-[1.02]"
                     onClick={() => handleWhatsAppClick(getPackageWhatsAppText(pkg))}
                   >
-                    <MessageCircle className="w-5 h-5 mr-2" /> Comprar via WhatsApp
+                    <MessageCircle className="mr-2 h-5 w-5" /> Comprar via WhatsApp
                   </Button>
                 </CardFooter>
               </Card>
             ))}
           </div>
 
-          <div className="mt-16" id="calculator">
-            <Card className="max-w-4xl mx-auto border-slate-200 shadow-sm">
-              <CardHeader className="text-center pb-2">
-                <CardTitle className="font-headline text-2xl text-slate-800">Calculadora de Pacotes</CardTitle>
-                <CardDescription className="text-base mt-2">
-                  Nao encontrou o pacote ideal? Monte o seu! O desconto e progressivo.
+          {/* CALCULADORA */}
+          <div className="mt-8 lg:mt-16" id="calculator">
+            <Card className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="text-center pb-6 pt-10 px-8">
+                <CardTitle className="font-headline text-3xl font-bold text-slate-900 tracking-tight">Calculadora de Pacotes</CardTitle>
+                <CardDescription className="mt-3 text-lg text-slate-500 max-w-xl mx-auto">
+                  Não encontrou o pacote ideal? Monte o seu plano personalizado. Nosso desconto é progressivo!
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid lg:grid-cols-2 items-center justify-center gap-8 text-center p-6 md:p-8">
-                <div className="grid grid-cols-1 gap-8 items-center bg-slate-50 p-6 rounded-2xl">
+              
+              <CardContent className="grid lg:grid-cols-2 items-center justify-center gap-8 text-center p-8 pt-4">
+                
+                <div className="grid grid-cols-1 gap-8 rounded-3xl border border-slate-100 bg-slate-50/80 p-8">
                   <div className="grid gap-3 text-center">
-                    <Label htmlFor="classes-per-week" className="text-sm font-bold text-slate-700 uppercase tracking-wider">Aulas por Semana</Label>
+                    <Label htmlFor="classes-per-week" className="text-xs font-bold uppercase tracking-widest text-slate-500">Aulas por Semana</Label>
                     <Input
                       id="classes-per-week"
                       type="number"
                       value={classesPerWeek}
                       onChange={(e) => setClassesPerWeek(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                      className="w-32 text-center text-xl font-bold h-14 mx-auto border-slate-300 focus:border-brand-yellow focus:ring-brand-yellow"
+                      className="mx-auto h-16 w-32 rounded-2xl border-slate-200 text-center text-3xl font-extrabold text-slate-900 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/20"
                       min="1"
                     />
                   </div>
+                  
                   <div className="grid gap-3 text-center">
-                    <Label htmlFor="number-of-weeks" className="text-sm font-bold text-slate-700 uppercase tracking-wider">Durante</Label>
+                    <Label htmlFor="number-of-weeks" className="text-xs font-bold uppercase tracking-widest text-slate-500">Duração</Label>
                     <Select value={String(numberOfWeeks)} onValueChange={(value) => setNumberOfWeeks(Number(value))}>
-                      <SelectTrigger className="w-48 text-lg font-medium h-14 mx-auto justify-center border-slate-300 focus:ring-brand-yellow">
-                        <SelectValue placeholder="Selecione o periodo" />
+                      <SelectTrigger className="mx-auto h-16 w-48 justify-center rounded-2xl border-slate-200 text-xl font-bold text-slate-900 focus:ring-2 focus:ring-brand-yellow/20">
+                        <SelectValue placeholder="Selecione o período" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-2xl">
                         {[1, 2, 3, 4, 8, 12, 16, 24].map((w) => (
-                          <SelectItem key={w} value={String(w)} className="text-base font-medium">
+                          <SelectItem key={w} value={String(w)} className="text-lg font-medium cursor-pointer">
                             {w} {w > 1 ? 'semanas' : 'semana'}
                           </SelectItem>
                         ))}
@@ -244,21 +254,25 @@ function PackagesContent() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-brand-yellow/10 border border-brand-yellow/30 text-center min-h-[250px]">
-                  <p className="text-slate-700 font-bold uppercase tracking-wider text-sm mb-2">{calculatedPackage.totalClasses} aulas no total</p>
-                  <p className="text-5xl font-extrabold text-slate-900 my-2">R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}</p>
-                  <p className="text-slate-600 font-medium bg-white px-3 py-1 rounded-full text-sm shadow-sm">
-                    R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula
+                <div className="flex min-h-[100%] flex-col items-center justify-center rounded-3xl bg-brand-yellow p-8 text-center shadow-inner">
+                  <p className="mb-2 text-sm font-bold uppercase tracking-widest text-slate-800/70">{calculatedPackage.totalClasses} aulas no total</p>
+                  <p className="my-2 text-6xl font-extrabold text-slate-900 tracking-tighter">
+                    R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}
+                  </p>
+                  <p className="mt-4 rounded-full bg-white/50 backdrop-blur-sm px-4 py-1.5 text-sm font-bold text-slate-800">
+                    Apenas R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula
                   </p>
                 </div>
+                
               </CardContent>
-              <CardFooter className="flex-col gap-2 pt-2 pb-8">
+              
+              <CardFooter className="flex-col gap-2 pb-10 px-8 pt-0">
                 <Button
                   size="lg"
-                  className="w-full max-w-sm mx-auto h-14 text-lg font-bold bg-[#25D366] text-white hover:bg-[#1DA851] shadow-md transition-transform hover:scale-105"
+                  className="mx-auto h-16 w-full max-w-md rounded-2xl text-lg font-bold text-white shadow-lg transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-105"
                   onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())}
                 >
-                  <MessageCircle className="w-5 h-5 mr-2" /> Contratar via WhatsApp
+                  <MessageCircle className="mr-3 h-6 w-6" /> Contratar Pacote Personalizado
                 </Button>
               </CardFooter>
             </Card>
@@ -271,7 +285,7 @@ function PackagesContent() {
 
 export default function PackagesPage() {
   return (
-    <Suspense fallback={<div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse">Carregando vitrine de pacotes...</div>}>
+    <Suspense fallback={<div className="flex h-[50vh] items-center justify-center text-slate-400 font-medium animate-pulse">Carregando vitrine de pacotes...</div>}>
       <PackagesContent />
     </Suspense>
   );

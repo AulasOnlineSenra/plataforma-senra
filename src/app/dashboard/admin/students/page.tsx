@@ -278,7 +278,7 @@ export default function AdminStudentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Voce tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acao nao pode ser desfeita. Isso excluira permanentemente o perfil de{' '}
+              Esta acao não pode ser desfeita. Isso excluira permanentemente o perfil de{' '}
               <span className="font-bold">{studentToDelete?.name}</span> e removera seus dados de
               nossos servidores. Todas as suas aulas futuras serao canceladas.
             </AlertDialogDescription>

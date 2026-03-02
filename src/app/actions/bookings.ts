@@ -19,7 +19,7 @@ export async function createBookings(studentId: string, bookings: BookingInput[]
     }
 
     const student = await prisma.user.findUnique({ where: { id: studentId } });
-    if (!student) return { success: false, error: 'Aluno nao encontrado.' };
+    if (!student) return { success: false, error: 'Aluno não encontrado.' };
 
     const teacherIds = Array.from(new Set(bookings.map((booking) => booking.teacherId)));
     const teachers = await prisma.user.findMany({
@@ -28,14 +28,14 @@ export async function createBookings(studentId: string, bookings: BookingInput[]
     });
 
     if (teachers.length !== teacherIds.length) {
-      return { success: false, error: 'Um ou mais professores nao foram encontrados.' };
+      return { success: false, error: 'Um ou mais professores não foram encontrados.' };
     }
 
     const teachersById = new Map(teachers.map((teacher) => [teacher.id, teacher]));
     const nonExperimentalCount = bookings.filter((booking) => !booking.isExperimental).length;
 
     if (student.credits < nonExperimentalCount) {
-      return { success: false, error: 'Voce nao tem creditos suficientes para este agendamento.' };
+      return { success: false, error: 'Voce não tem créditos suficientes para este agendamento.' };
     }
 
     await prisma.$transaction(async (tx) => {
@@ -112,7 +112,7 @@ export async function confirmLesson(lessonId: string, teacherId: string, meeting
     });
 
     if (!lesson) {
-      return { success: false, error: 'Aula nao encontrada para este professor.' };
+      return { success: false, error: 'Aula não encontrada para este professor.' };
     }
 
     const updatedLesson = await prisma.lesson.update({
@@ -128,7 +128,7 @@ export async function confirmLesson(lessonId: string, teacherId: string, meeting
     return { success: true, data: updatedLesson };
   } catch (error) {
     console.error('Erro ao confirmar aula:', error);
-    return { success: false, error: 'Nao foi possivel confirmar a aula.' };
+    return { success: false, error: 'Não foi possivel confirmar a aula.' };
   }
 }
 

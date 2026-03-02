@@ -44,7 +44,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   const settingsLink: NavItem =
     userRole === 'admin'
-      ? { href: '/dashboard/admin/settings', icon: Settings, label: 'Configuracoes', roles: ['admin'] }
+      ? { href: '/dashboard/admin/settings', icon: Settings, label: 'Configurações', roles: ['admin'] }
       : { href: '/dashboard/profile', icon: UserIcon, label: 'Meu Perfil', roles: ['student', 'teacher'] };
 
   useEffect(() => {

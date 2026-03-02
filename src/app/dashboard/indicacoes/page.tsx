@@ -51,7 +51,7 @@ export default function IndicacoesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-slate-50">
             <Gift className="h-5 w-5 text-[#FFC107]" />
-            Programa de Indicacoes
+            Programa de Indicações
           </CardTitle>
           <CardDescription className="text-slate-300">
             Cada novo aluno com seu codigo gera +1 credito na sua conta.
