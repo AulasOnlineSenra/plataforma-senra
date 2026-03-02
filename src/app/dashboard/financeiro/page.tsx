@@ -3,131 +3,205 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Coins, Receipt } from 'lucide-react';
-import { getStudentFinancialSummary } from '@/app/actions/users';
+import { Coins, ReceiptText, Wallet } from 'lucide-react';
+import { getStudentTransactions } from '@/app/actions/finance';
+import { getUserById } from '@/app/actions/users';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 
-type LessonHistory = {
+type TransactionHistory = {
   id: string;
-  subject: string;
+  planName: string;
+  creditsAdded: number;
+  amountPaid: number;
+  paymentMethod: string;
   status: string;
-  date: string | Date;
-  teacher: { name: string };
+  createdAt: string | Date;
 };
 
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
+function formatDateTime(value: string | Date) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return format(date, 'dd/MM/yyyy HH:mm', { locale: ptBR });
+}
+
+function getStatusBadgeClass(status: string) {
+  const normalized = status.toUpperCase();
+
+  if (normalized === 'COMPROVADO') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  }
+
+  if (normalized === 'PENDENTE') {
+    return 'border-amber-200 bg-amber-50 text-amber-700';
+  }
+
+  if (normalized === 'CANCELADO') {
+    return 'border-rose-200 bg-rose-50 text-rose-700';
+  }
+
+  return 'border-slate-200 bg-slate-50 text-slate-700';
+}
+
 export default function FinanceiroPage() {
-  const [role, setRole] = useState<string | null>(null);
-  const [credits, setCredits] = useState(0);
-  const [history, setHistory] = useState<LessonHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [creditsAvailable, setCreditsAvailable] = useState(0);
+  const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
 
   useEffect(() => {
-    const load = async () => {
-      const currentRole = localStorage.getItem('userRole');
-      const userId = localStorage.getItem('userId');
-      setRole(currentRole);
+    let isMounted = true;
 
-      if (!userId || currentRole !== 'student') {
-        setLoading(false);
+    const loadFinancialData = async () => {
+      setLoading(true);
+      setError(null);
+
+      const studentId = localStorage.getItem('userId');
+      if (!studentId) {
+        if (isMounted) {
+          setError('Nao foi possivel identificar o aluno atual.');
+          setLoading(false);
+        }
         return;
       }
 
-      const result = await getStudentFinancialSummary(userId);
-      if (result.success && result.data) {
-        setCredits(result.data.user.credits);
-        setHistory(result.data.lessons as LessonHistory[]);
+      const [transactionsResult, userResult] = await Promise.all([
+        getStudentTransactions(studentId),
+        getUserById(studentId),
+      ]);
+
+      if (!isMounted) return;
+
+      if (transactionsResult.success && transactionsResult.data) {
+        setTransactions(transactionsResult.data as TransactionHistory[]);
+      } else {
+        setError(transactionsResult.error || 'Falha ao carregar historico de compras.');
       }
+
+      if (userResult.success && userResult.data) {
+        setCreditsAvailable(userResult.data.credits ?? 0);
+      }
+
       setLoading(false);
     };
-    load();
+
+    loadFinancialData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const consumedClasses = useMemo(() => history.length, [history]);
-
-  if (loading) {
-    return <p className="text-sm text-slate-500">Carregando financeiro...</p>;
-  }
-
-  if (role !== 'student') {
-    return (
-      <Card className="rounded-3xl border-slate-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-slate-900">Financeiro</CardTitle>
-          <CardDescription>Esta visao detalhada de creditos e consumo e exclusiva para alunos.</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const totalInvested = useMemo(() => {
+    return transactions.reduce((sum, transaction) => sum + (transaction.amountPaid || 0), 0);
+  }, [transactions]);
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
+    <div className="flex flex-1 flex-col gap-6 bg-slate-50/50">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-slate-900">Painel Financeiro</h1>
+        <p className="text-sm text-slate-500">
+          Acompanhe seus creditos e o historico completo de compras da sua conta.
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-50">
-              <Coins className="h-5 w-5 text-[#FFC107]" />
-              Saldo de Creditos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-5xl font-bold text-[#FFC107]">{credits}</p>
-            <p className="mt-1 text-sm text-slate-300">Disponiveis para novos agendamentos.</p>
+        <Card className="border-slate-200 bg-white shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-500">Creditos Disponiveis</p>
+                <p className="text-3xl font-bold text-slate-900">{creditsAvailable}</p>
+                <p className="text-xs text-slate-500">Prontos para novos agendamentos.</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+                <Coins className="h-5 w-5 text-amber-600" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-slate-200 bg-slate-50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-900">
-              <Receipt className="h-5 w-5 text-[#FFC107]" />
-              Consumo Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-5xl font-bold text-slate-900">{consumedClasses}</p>
-            <p className="mt-1 text-sm text-slate-600">Aulas debitadas da carteira.</p>
+        <Card className="border-slate-200 bg-white shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-500">Total Investido</p>
+                <p className="text-3xl font-bold text-slate-900">{currencyFormatter.format(totalInvested)}</p>
+                <p className="text-xs text-slate-500">Soma de todas as transacoes confirmadas.</p>
+              </div>
+              <div className="rounded-xl border border-sky-200 bg-sky-50 p-2.5">
+                <Wallet className="h-5 w-5 text-sky-600" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="rounded-3xl border-slate-200 shadow-sm">
+      <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader className="border-b border-slate-200">
-          <CardTitle className="text-slate-900">Historico de Consumo</CardTitle>
-          <CardDescription>Registro real das aulas vinculadas aos seus creditos.</CardDescription>
+          <CardTitle className="text-slate-900">Historico de Compras</CardTitle>
+          <CardDescription>
+            Aqui voce pode ver um registro de todos os pacotes de aulas que voce adquiriu.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Disciplina</TableHead>
-                <TableHead>Professor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Data</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.length === 0 && (
+          {loading ? (
+            <div className="p-8 text-sm text-slate-500">Carregando transacoes...</div>
+          ) : error ? (
+            <div className="p-8 text-sm text-rose-600">{error}</div>
+          ) : transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <ReceiptText className="h-6 w-6 text-slate-500" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">Ainda nao ha compras registradas</h3>
+              <p className="max-w-md text-sm text-slate-500">
+                Assim que voce adquirir um pacote, as transacoes aparecerao aqui com data, metodo de
+                pagamento, status e valor.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    Nenhum consumo de credito registrado.
-                  </TableCell>
+                  <TableHead>Pacote</TableHead>
+                  <TableHead>Data da Compra</TableHead>
+                  <TableHead>Metodo de Pagamento</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Creditos</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
                 </TableRow>
-              )}
-              {history.map((lesson) => (
-                <TableRow key={lesson.id}>
-                  <TableCell className="font-semibold text-slate-900">{lesson.subject}</TableCell>
-                  <TableCell className="text-slate-600">{lesson.teacher?.name || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{lesson.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right text-slate-600">
-                    {format(new Date(lesson.date), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-semibold text-slate-900">{transaction.planName}</TableCell>
+                    <TableCell className="text-slate-600">{formatDateTime(transaction.createdAt)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+                        {transaction.paymentMethod}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getStatusBadgeClass(transaction.status)}>
+                        {transaction.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium text-amber-500">+{transaction.creditsAdded}</TableCell>
+                    <TableCell className="text-right font-medium text-slate-700">
+                      {currencyFormatter.format(transaction.amountPaid)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

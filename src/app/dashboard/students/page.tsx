@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 import { createStudent, deleteStudentProfile, getStudents } from '@/app/actions/users';
+import { addTransactionAndCredits } from '@/app/actions/finance';
 import { getLessons } from '@/app/actions/bookings';
 
 type StudentRow = {
@@ -71,12 +73,14 @@ function StudentList({
   title,
   students,
   scheduledCountByStudent,
+  onAddCredits,
   onDeleteStudent,
 }: {
   id?: string;
   title: string;
   students: StudentRow[];
   scheduledCountByStudent: Record<string, number>;
+  onAddCredits: (student: StudentRow) => void;
   onDeleteStudent: (student: StudentRow) => void;
 }) {
   const router = useRouter();
@@ -140,7 +144,7 @@ function StudentList({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/student/${student.id}`)}>
+                        <DropdownMenuItem onSelect={() => onAddCredits(student)}>
                           <Wallet className="mr-2 h-4 w-4" />
                           Adicionar créditos
                         </DropdownMenuItem>
@@ -186,6 +190,15 @@ export default function AdminStudentsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [isAddCreditsOpen, setIsAddCreditsOpen] = useState(false);
+  const [isAddingCredits, setIsAddingCredits] = useState(false);
+  const [studentToCredit, setStudentToCredit] = useState<StudentRow | null>(null);
+  const [creditForm, setCreditForm] = useState({
+    planName: '',
+    amountPaid: '',
+    paymentMethod: 'PIX',
+    credits: '1',
+  });
 
   const { toast } = useToast();
 
@@ -248,6 +261,70 @@ export default function AdminStudentsPage() {
     setIsSubmitting(false);
   };
 
+  const openAddCreditsModal = (student: StudentRow) => {
+    setStudentToCredit(student);
+    setCreditForm({
+      planName: 'Pacote 4 Aulas',
+      amountPaid: '',
+      paymentMethod: 'PIX',
+      credits: '4',
+    });
+    setIsAddCreditsOpen(true);
+  };
+
+  const handleAddCreditsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentToCredit || isAddingCredits) return;
+
+    const planName = creditForm.planName.trim();
+    const normalizedAmount = Number(creditForm.amountPaid.replace(',', '.'));
+    const normalizedCredits = Number.parseInt(creditForm.credits, 10);
+
+    if (!planName) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Informe o nome do pacote/plano.' });
+      return;
+    }
+
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Informe um valor pago valido.' });
+      return;
+    }
+
+    if (!Number.isInteger(normalizedCredits) || normalizedCredits <= 0) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Informe uma quantidade de creditos valida.' });
+      return;
+    }
+
+    setIsAddingCredits(true);
+
+    try {
+      const result = await addTransactionAndCredits(
+        studentToCredit.id,
+        normalizedCredits,
+        planName,
+        normalizedAmount,
+        creditForm.paymentMethod
+      );
+
+      if (result.success) {
+        toast({
+          title: 'Sucesso',
+          description: `Transacao registrada e ${normalizedCredits} creditos adicionados para ${studentToCredit.name}.`,
+        });
+        setIsAddCreditsOpen(false);
+        setStudentToCredit(null);
+        await fetchData();
+      } else {
+        toast({ variant: 'destructive', title: 'Erro', description: result.error });
+      }
+    } catch (error) {
+      console.error('Erro ao registrar transacao de credito:', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Falha inesperada ao registrar transacao.' });
+    } finally {
+      setIsAddingCredits(false);
+    }
+  };
+
   const handleDeleteStudent = async () => {
     if (!studentToDelete || isDeleting) return;
     setIsDeleting(true);
@@ -304,6 +381,7 @@ export default function AdminStudentsPage() {
           title="Alunos Ativos"
           students={activeStudents}
           scheduledCountByStudent={scheduledCountByStudent}
+          onAddCredits={openAddCreditsModal}
           onDeleteStudent={setStudentToDelete}
         />
         <StudentList
@@ -311,6 +389,7 @@ export default function AdminStudentsPage() {
           title="Alunos Inativos"
           students={inactiveStudents}
           scheduledCountByStudent={scheduledCountByStudent}
+          onAddCredits={openAddCreditsModal}
           onDeleteStudent={setStudentToDelete}
         />
       </div>
@@ -360,6 +439,92 @@ export default function AdminStudentsPage() {
               </Button>
               <Button type="submit" disabled={isSubmitting} className="bg-slate-900 text-white hover:bg-slate-800">
                 {isSubmitting ? 'Salvando...' : 'Salvar Aluno'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isAddCreditsOpen}
+        onOpenChange={(open) => {
+          if (isAddingCredits) return;
+          setIsAddCreditsOpen(open);
+          if (!open) {
+            setStudentToCredit(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar Creditos</DialogTitle>
+            <DialogDescription>
+              Registre a transacao da compra via WhatsApp para liberar creditos para{' '}
+              <span className="font-semibold">{studentToCredit?.name || 'o aluno'}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddCreditsSubmit} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="credit-plan-name">Nome do Pacote/Plano</Label>
+              <Input
+                id="credit-plan-name"
+                value={creditForm.planName}
+                onChange={(e) => setCreditForm((prev) => ({ ...prev, planName: e.target.value }))}
+                placeholder="Ex: Pacote 4 Aulas"
+                required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="credit-amount-paid">Valor Pago em R$</Label>
+              <Input
+                id="credit-amount-paid"
+                type="text"
+                inputMode="decimal"
+                value={creditForm.amountPaid}
+                onChange={(e) => setCreditForm((prev) => ({ ...prev, amountPaid: e.target.value }))}
+                placeholder="Ex: 380.00"
+                required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="credit-payment-method">Metodo de Pagamento</Label>
+              <Select
+                value={creditForm.paymentMethod}
+                onValueChange={(value) => setCreditForm((prev) => ({ ...prev, paymentMethod: value }))}
+              >
+                <SelectTrigger id="credit-payment-method">
+                  <SelectValue placeholder="Selecione o metodo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="Cartao de Credito">Cartao de Credito</SelectItem>
+                  <SelectItem value="Transferencia">Transferencia</SelectItem>
+                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="credit-quantity">Quantidade de Creditos a adicionar</Label>
+              <Input
+                id="credit-quantity"
+                type="number"
+                min={1}
+                step={1}
+                value={creditForm.credits}
+                onChange={(e) => setCreditForm((prev) => ({ ...prev, credits: e.target.value }))}
+                required
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddCreditsOpen(false)} disabled={isAddingCredits}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isAddingCredits} className="bg-slate-900 text-white hover:bg-slate-800">
+                {isAddingCredits ? 'Registrando...' : 'Registrar Transacao'}
               </Button>
             </DialogFooter>
           </form>

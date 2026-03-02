@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getSettings, updateSettings } from '@/app/actions/settings';
 
-const APP_SETTINGS_KEY = 'appSettings';
 const DEFAULT_SETTINGS = {
   whatsapp: '5583999999999',
   teacherClassValue: '50.00',
@@ -23,21 +23,25 @@ export default function SettingsPage() {
   const [referralBonus, setReferralBonus] = useState(DEFAULT_SETTINGS.referralBonus);
 
   useEffect(() => {
-    const stored = localStorage.getItem(APP_SETTINGS_KEY);
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored);
-      setWhatsapp(parsed.whatsapp || DEFAULT_SETTINGS.whatsapp);
-      setTeacherClassValue(parsed.teacherClassValue || DEFAULT_SETTINGS.teacherClassValue);
-      setReferralBonus(parsed.referralBonus || DEFAULT_SETTINGS.referralBonus);
-    } catch {
-      setWhatsapp(DEFAULT_SETTINGS.whatsapp);
-      setTeacherClassValue(DEFAULT_SETTINGS.teacherClassValue);
-      setReferralBonus(DEFAULT_SETTINGS.referralBonus);
-    }
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      const result = await getSettings();
+      if (!isMounted || !result.success || !result.data) return;
+
+      setWhatsapp(result.data.whatsapp || DEFAULT_SETTINGS.whatsapp);
+      setTeacherClassValue(result.data.classValue || DEFAULT_SETTINGS.teacherClassValue);
+      setReferralBonus(result.data.referralBonus || DEFAULT_SETTINGS.referralBonus);
+    };
+
+    loadSettings();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsLoading(true);
     const nextSettings = {
       whatsapp: whatsapp.trim(),
@@ -45,10 +49,15 @@ export default function SettingsPage() {
       referralBonus: referralBonus.trim(),
     };
 
-    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
-    window.dispatchEvent(new Event('storage'));
-
+    const result = await updateSettings({
+      whatsapp: nextSettings.whatsapp,
+      classValue: nextSettings.teacherClassValue,
+      referralBonus: nextSettings.referralBonus,
+    });
     setIsLoading(false);
+
+    if (!result.success) return;
+
     toast({
       title: 'Sucesso!',
       description: 'Configuracoes do sistema atualizadas.',

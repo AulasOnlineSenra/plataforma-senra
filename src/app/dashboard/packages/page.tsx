@@ -14,6 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { getPlans } from '@/app/actions/plans';
+import { getSettings } from '@/app/actions/settings';
 
 type ClassPackage = {
   id: string;
@@ -31,7 +32,6 @@ const packageFeatures = [
   'Suporte via chat',
 ];
 
-const APP_SETTINGS_KEY = 'appSettings';
 const DEFAULT_WHATSAPP_NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '').replace(/\D/g, '');
 
 function PackagesContent() {
@@ -42,14 +42,15 @@ function PackagesContent() {
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
   const [classPackages, setClassPackages] = useState<ClassPackage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
 
   useEffect(() => {
     const fetchDatabasePlans = async () => {
       setIsLoading(true);
-      const result = await getPlans();
+      const [plansResult, settingsResult] = await Promise.all([getPlans(), getSettings()]);
 
-      if (result.success && result.data) {
-        const formattedPackages: ClassPackage[] = result.data.map((plan) => ({
+      if (plansResult.success && plansResult.data) {
+        const formattedPackages: ClassPackage[] = plansResult.data.map((plan) => ({
           id: plan.id,
           name: plan.name,
           numClasses: plan.lessonsCount,
@@ -59,6 +60,14 @@ function PackagesContent() {
         }));
         setClassPackages(formattedPackages);
       }
+
+      if (settingsResult.success && settingsResult.data) {
+        const normalizedNumber = (settingsResult.data.whatsapp || '').replace(/\D/g, '');
+        if (normalizedNumber) {
+          setWhatsappNumber(normalizedNumber);
+        }
+      }
+
       setIsLoading(false);
     };
 
@@ -111,21 +120,7 @@ function PackagesContent() {
   }, [classesPerWeek, numberOfWeeks, tiers]);
 
   const handleWhatsAppClick = (text: string) => {
-    let targetWhatsapp = DEFAULT_WHATSAPP_NUMBER;
-
-    try {
-      const rawSettings = localStorage.getItem(APP_SETTINGS_KEY);
-      if (rawSettings) {
-        const parsed = JSON.parse(rawSettings) as { whatsapp?: string };
-        const normalizedNumber = (parsed.whatsapp || '').replace(/\D/g, '');
-        if (normalizedNumber) {
-          targetWhatsapp = normalizedNumber;
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar WhatsApp das configuracoes:', error);
-    }
-
+    const targetWhatsapp = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
     const url = `https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
