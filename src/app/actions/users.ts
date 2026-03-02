@@ -42,7 +42,7 @@ export async function addCreditsToStudent(studentId: string, creditsToAdd: numbe
     });
 
     if (!student) {
-      return { success: false, error: 'Aluno nao encontrado.' };
+      return { success: false, error: 'Aluno não encontrado.' };
     }
 
     const updatedStudent = await prisma.user.update({
@@ -58,7 +58,7 @@ export async function addCreditsToStudent(studentId: string, creditsToAdd: numbe
     return { success: true, newTotal: updatedStudent.credits };
   } catch (error) {
     console.error('Erro ao adicionar creditos:', error);
-    return { success: false, error: 'Nao foi possivel adicionar os creditos ao aluno.' };
+    return { success: false, error: 'Não foi possivel adicionar os créditos ao aluno.' };
   }
 }
 
@@ -86,7 +86,7 @@ export async function deleteStudentProfile(studentId: string) {
     });
 
     if (!student) {
-      return { success: false, error: 'Aluno nao encontrado.' };
+      return { success: false, error: 'Aluno não encontrado.' };
     }
 
     await prisma.user.update({
@@ -128,7 +128,7 @@ export async function approveTeacher(teacherId: string) {
     });
 
     if (!teacher) {
-      return { success: false, error: 'Professor nao encontrado.' };
+      return { success: false, error: 'Professor não encontrado.' };
     }
 
     await prisma.user.update({
@@ -244,7 +244,7 @@ export async function deleteTeacher(id: string) {
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Nao foi possivel deletar. Podem haver aulas atreladas a ele.' };
+    return { success: false, error: 'Não foi possivel deletar. Podem haver aulas atreladas a ele.' };
   }
 }
 
@@ -275,7 +275,7 @@ export async function getUserById(userId: string) {
       where: { id: userId },
     });
     if (!user) {
-      return { success: false, error: 'Usuario nao encontrado.' };
+      return { success: false, error: 'Usuario não encontrado.' };
     }
     return { success: true, data: user };
   } catch (error) {
@@ -351,7 +351,7 @@ export async function updateUserPassword(userId: string, currentPassword: string
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      return { success: false, error: 'Usuario nao encontrado.' };
+      return { success: false, error: 'Usuario não encontrado.' };
     }
 
     if (user.password !== currentPassword) {
@@ -376,7 +376,7 @@ export async function applyReferralOnSignup(newUserId: string, referralCode?: st
     if (!cleanedCode) return { success: true, applied: false };
 
     const newUser = await prisma.user.findUnique({ where: { id: newUserId } });
-    if (!newUser) return { success: false, error: 'Novo usuario nao encontrado.' };
+    if (!newUser) return { success: false, error: 'Novo usuario não encontrado.' };
 
     const owner = await prisma.user.findUnique({
       where: { referralCode: cleanedCode },
@@ -423,11 +423,11 @@ export async function getReferralSummary(userId: string) {
       },
     });
 
-    if (!user) return { success: false, error: 'Usuario nao encontrado.' };
+    if (!user) return { success: false, error: 'Usuario não encontrado.' };
     return { success: true, data: user };
   } catch (error) {
     console.error('Erro ao buscar resumo de indicacoes:', error);
-    return { success: false, error: 'Falha ao buscar indicacoes.' };
+    return { success: false, error: 'Falha ao buscar indicações.' };
   }
 }
 
@@ -486,7 +486,7 @@ export async function getStudentFinancialSummary(userId: string) {
         credits: true,
       },
     });
-    if (!user) return { success: false, error: 'Usuario nao encontrado.' };
+    if (!user) return { success: false, error: 'Usuario não encontrado.' };
 
     const lessons = await prisma.lesson.findMany({
       where: { studentId: userId, isExperimental: false },
@@ -505,19 +505,5 @@ export async function getStudentFinancialSummary(userId: string) {
   } catch (error) {
     console.error('Erro ao buscar financeiro do aluno:', error);
     return { success: false, error: 'Falha ao carregar financeiro do aluno.' };
-  }
-}
-
-// Ação para promover um Aluno a Professor
-export async function promoteToTeacherAction(userId: string) {
-  try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { role: 'teacher' }
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Erro ao promover usuário:", error);
-    return { success: false, error: 'Falha ao atualizar o cargo do usuário.' };
   }
 }

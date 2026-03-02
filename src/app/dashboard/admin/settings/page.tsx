@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
     toast({
       title: 'Sucesso!',
-      description: 'Configuracoes do sistema atualizadas.',
+      description: 'Configurações do sistema atualizadas.',
       className: 'border-none bg-green-600 text-white',
     });
   };
@@ -72,7 +72,7 @@ export default function SettingsPage() {
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-center gap-3 text-2xl text-slate-50">
             <Settings className="h-7 w-7 text-brand-yellow" />
-            Configuracoes do Sistema
+            Configurações do Sistema
           </CardTitle>
           <CardDescription className="mt-2 text-base text-slate-300">
             Gerencie as variaveis operacionais e regras de negocio da Plataforma Senra.
@@ -96,7 +96,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="whatsapp" className="font-medium text-slate-700">
-                Numero do WhatsApp (com DDI e DDD)
+                Número do WhatsApp (com DDI e DDD)
               </Label>
               <Input
                 id="whatsapp"
@@ -106,7 +106,7 @@ export default function SettingsPage() {
                 placeholder="Ex: 5583999999999"
               />
               <p className="mt-2 text-sm text-slate-500">
-                Os links de "Comprar Plano" e "Falar com Suporte" redirecionarao para este numero.
+                Os links de "Comprar Plano" e "Falar com Suporte" redirecionarao para este número.
               </p>
             </div>
           </CardContent>
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 />
               </div>
               <p className="mt-2 text-sm text-slate-500">
-                Usado para calcular quanto a plataforma deve aos tutores no fechamento do mes.
+                Usado para calcular quanto a plataforma deve aos tutores no fechamento do mês.
               </p>
             </div>
           </CardContent>
@@ -154,7 +154,7 @@ export default function SettingsPage() {
                 <Gift className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-xl text-slate-900">Marketing de Indicacao</CardTitle>
+                <CardTitle className="text-xl text-slate-900">Marketing de Indicação</CardTitle>
                 <CardDescription>Regras para novos cadastros por convite</CardDescription>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="referral" className="font-medium text-slate-700">
-                Creditos por Indicacao Bem-sucedida
+                Créditos por Indicacao Bem-sucedida
               </Label>
               <Input
                 id="referral"
@@ -191,7 +191,7 @@ export default function SettingsPage() {
           ) : (
             <>
               <Save className="mr-2 h-5 w-5" />
-              Salvar Configuracoes
+              Salvar Configurações
             </>
           )}
         </Button>

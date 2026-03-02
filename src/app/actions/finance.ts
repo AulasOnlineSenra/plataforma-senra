@@ -13,7 +13,7 @@ export async function getStudentTransactions(studentId: string) {
     return { success: true, data: transactions };
   } catch (error) {
     console.error('Erro ao buscar transacoes do aluno:', error);
-    return { success: false, error: 'Falha ao carregar historico de compras.' };
+    return { success: false, error: 'Falha ao carregar histórico de compras.' };
   }
 }
 
@@ -58,6 +58,6 @@ export async function addTransactionAndCredits(
     };
   } catch (error) {
     console.error('Erro ao registrar transacao e adicionar creditos:', error);
-    return { success: false, error: 'Falha ao registrar transacao.' };
+    return { success: false, error: 'Falha ao registrar transação.' };
   }
 }

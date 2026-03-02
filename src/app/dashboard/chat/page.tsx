@@ -231,7 +231,7 @@ function ChatContent() {
       toast({
         variant: 'destructive',
         title: 'Erro ao enviar',
-        description: result.error || 'Nao foi possivel enviar a mensagem.',
+        description: result.error || 'Não foi possivel enviar a mensagem.',
       });
       setIsSending(false);
       return;
@@ -298,7 +298,7 @@ function ChatContent() {
       >
         {!currentUser ? (
           <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">
-            Usuario atual nao encontrado. Faca login novamente.
+            Usuario atual não encontrado. Faca login novamente.
           </div>
         ) : !activeContact ? (
           <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">

@@ -24,7 +24,7 @@ export async function getSettings() {
     return { success: true, data: settings };
   } catch (error) {
     console.error('Erro ao buscar configuracoes:', error);
-    return { success: false, error: 'Falha ao buscar configuracoes do sistema.' };
+    return { success: false, error: 'Falha ao buscar configurações do sistema.' };
   }
 }
 
@@ -51,6 +51,6 @@ export async function updateSettings(data: SettingsInput) {
     return { success: true, data: settings };
   } catch (error) {
     console.error('Erro ao atualizar configuracoes:', error);
-    return { success: false, error: 'Falha ao atualizar configuracoes do sistema.' };
+    return { success: false, error: 'Falha ao atualizar configurações do sistema.' };
   }
 }

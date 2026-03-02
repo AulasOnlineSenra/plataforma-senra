@@ -164,7 +164,7 @@ export default function ProfilePage() {
     }
 
     if (!currentUser?.id) {
-      toast({ variant: 'destructive', title: 'Erro de sessao', description: 'Usuario nao encontrado na sessao atual.' });
+      toast({ variant: 'destructive', title: 'Erro de sessao', description: 'Usuario não encontrado na sessao atual.' });
       return;
     }
 
@@ -191,7 +191,7 @@ export default function ProfilePage() {
       localStorage.setItem('currentUser', JSON.stringify(updated));
       window.dispatchEvent(new Event('storage'));
     } else {
-      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: result.error || 'Nao foi possivel atualizar o perfil.' });
+      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: result.error || 'Não foi possivel atualizar o perfil.' });
     }
     setIsSavingProfile(false);
   };
@@ -204,7 +204,7 @@ export default function ProfilePage() {
     }
 
     if (newPassword !== confirmPassword) {
-      toast({ variant: 'destructive', title: 'As senhas nao coincidem', description: 'A nova senha e a confirmacao devem ser iguais.' });
+      toast({ variant: 'destructive', title: 'As senhas não coincidem', description: 'A nova senha e a confirmacao devem ser iguais.' });
       return;
     }
 
@@ -214,7 +214,7 @@ export default function ProfilePage() {
     }
 
     if (!currentUser?.id) {
-      toast({ variant: 'destructive', title: 'Erro de sessao', description: 'Usuario nao encontrado na sessao atual.' });
+      toast({ variant: 'destructive', title: 'Erro de sessao', description: 'Usuario não encontrado na sessao atual.' });
       return;
     }
 
@@ -356,7 +356,7 @@ export default function ProfilePage() {
                   <Input id="street" className="h-12 bg-white" value={street} onChange={(e) => setStreet(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="number" className="font-bold text-slate-700">Numero</Label>
+                  <Label htmlFor="number" className="font-bold text-slate-700">Número</Label>
                   <Input id="number" className="h-12 bg-white" value={number} onChange={(e) => setNumber(e.target.value)} />
                 </div>
               </div>

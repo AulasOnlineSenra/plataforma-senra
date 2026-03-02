@@ -44,7 +44,7 @@ export default function HistoricoPage() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-        <h1 className="text-3xl font-bold text-slate-900">Historico de Aulas</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Histórico de Aulas</h1>
         <p className="mt-1 text-sm text-slate-600">Acesso rapido as aulas confirmadas.</p>
       </div>
 

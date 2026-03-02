@@ -65,7 +65,7 @@ export default function FinanceiroPage() {
       const studentId = localStorage.getItem('userId');
       if (!studentId) {
         if (isMounted) {
-          setError('Nao foi possivel identificar o aluno atual.');
+          setError('Não foi possivel identificar o aluno atual.');
           setLoading(false);
         }
         return;
@@ -81,7 +81,7 @@ export default function FinanceiroPage() {
       if (transactionsResult.success && transactionsResult.data) {
         setTransactions(transactionsResult.data as TransactionHistory[]);
       } else {
-        setError(transactionsResult.error || 'Falha ao carregar historico de compras.');
+        setError(transactionsResult.error || 'Falha ao carregar histórico de compras.');
       }
 
       if (userResult.success && userResult.data) {
@@ -107,7 +107,7 @@ export default function FinanceiroPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-slate-900">Painel Financeiro</h1>
         <p className="text-sm text-slate-500">
-          Acompanhe seus creditos e o historico completo de compras da sua conta.
+          Acompanhe seus créditos e o histórico completo de compras da sua conta.
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function FinanceiroPage() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-500">Creditos Disponiveis</p>
+                <p className="text-sm font-medium text-slate-500">Créditos Disponiveis</p>
                 <p className="text-3xl font-bold text-slate-900">{creditsAvailable}</p>
                 <p className="text-xs text-slate-500">Prontos para novos agendamentos.</p>
               </div>
@@ -133,7 +133,7 @@ export default function FinanceiroPage() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-slate-500">Total Investido</p>
                 <p className="text-3xl font-bold text-slate-900">{currencyFormatter.format(totalInvested)}</p>
-                <p className="text-xs text-slate-500">Soma de todas as transacoes confirmadas.</p>
+                <p className="text-xs text-slate-500">Soma de todas as transações confirmadas.</p>
               </div>
               <div className="rounded-xl border border-sky-200 bg-sky-50 p-2.5">
                 <Wallet className="h-5 w-5 text-sky-600" />
@@ -145,14 +145,14 @@ export default function FinanceiroPage() {
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader className="border-b border-slate-200">
-          <CardTitle className="text-slate-900">Historico de Compras</CardTitle>
+          <CardTitle className="text-slate-900">Histórico de Compras</CardTitle>
           <CardDescription>
             Aqui voce pode ver um registro de todos os pacotes de aulas que voce adquiriu.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-8 text-sm text-slate-500">Carregando transacoes...</div>
+            <div className="p-8 text-sm text-slate-500">Carregando transações...</div>
           ) : error ? (
             <div className="p-8 text-sm text-rose-600">{error}</div>
           ) : transactions.length === 0 ? (
@@ -160,9 +160,9 @@ export default function FinanceiroPage() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <ReceiptText className="h-6 w-6 text-slate-500" />
               </div>
-              <h3 className="text-base font-semibold text-slate-900">Ainda nao ha compras registradas</h3>
+              <h3 className="text-base font-semibold text-slate-900">Ainda não ha compras registradas</h3>
               <p className="max-w-md text-sm text-slate-500">
-                Assim que voce adquirir um pacote, as transacoes aparecerao aqui com data, metodo de
+                Assim que voce adquirir um pacote, as transações aparecerao aqui com data, metodo de
                 pagamento, status e valor.
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function FinanceiroPage() {
                   <TableHead>Data da Compra</TableHead>
                   <TableHead>Metodo de Pagamento</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Creditos</TableHead>
+                  <TableHead>Créditos</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                 </TableRow>
               </TableHeader>
