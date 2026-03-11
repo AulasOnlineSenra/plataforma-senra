@@ -102,13 +102,13 @@ export async function loginUser(data: { email: string; password: string }) {
     }
 
     // Validando o status ANTES de deixar entrar
-    if (user.status === "pending") {
+   /* if (user.status === "pending") {
       return {
         success: false,
         error:
           "Sua conta está em análise! Aguarde a aprovação do administrador para acessar o sistema.",
       };
-    }
+    } */
 
     if (user.status === "inactive") {
       return {
