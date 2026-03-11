@@ -8,59 +8,60 @@ datasource db {
 }
 
 model User {
-  id               String   @id @default(uuid())
-  name             String
-  email            String   @unique
-  password         String
-  role             String   @default("student") // 'admin', 'teacher', ou 'student'
-  avatarUrl        String?
-  status           String   @default("active")
-  referralCode     String   @unique @default(cuid())
-  referredById     String?
-  
+  id           String  @id @default(uuid())
+  name         String
+  email        String  @unique
+  password     String
+  role         String  @default("student") // 'admin', 'teacher', ou 'student'
+  avatarUrl    String?
+  status       String  @default("active")
+  referralCode String  @unique @default(cuid())
+  referredById String?
+
   resetToken       String?
   resetTokenExpiry DateTime?
-  
-  credits          Int      @default(0)
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  subject          String?
+  credits Int @default(0)
 
-  cpf              String?  @unique
-  birthDate        DateTime?
-  cep              String?
-  state            String?
-  neighborhood     String?
-  street           String?
-  number           String?
-  
-  videoUrl         String?  // Vídeo de apresentação do Professor
-  isValidated      Boolean  @default(false) // Controle de aprovação do Admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subject String?
+
+  cpf          String?   @unique
+  birthDate    DateTime?
+  cep          String?
+  state        String?
+  neighborhood String?
+  street       String?
+  number       String?
+
+  videoUrl    String? // Vídeo de apresentação do Professor
+  isValidated Boolean @default(false) // Controle de aprovação do Admin
 
   // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
-  lessonsAsStudent Lesson[] @relation("StudentLessons")
-  lessonsAsTeacher Lesson[] @relation("TeacherLessons")
-  referredBy       User?    @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals        User[]   @relation("UserReferrals")
-  sentMessages     ChatMessage[] @relation("SentMessages")
-  receivedMessages ChatMessage[] @relation("ReceivedMessages")
-  createdSimulados Simulado[] @relation("SimuladoCreator")
-  assignedSimulados Simulado[] @relation("SimuladoStudent")
-  transactions     Transaction[] @relation("StudentTransactions")
+  lessonsAsStudent  Lesson[]       @relation("StudentLessons")
+  lessonsAsTeacher  Lesson[]       @relation("TeacherLessons")
+  referredBy        User?          @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals         User[]         @relation("UserReferrals")
+  sentMessages      ChatMessage[]  @relation("SentMessages")
+  receivedMessages  ChatMessage[]  @relation("ReceivedMessages")
+  createdSimulados  Simulado[]     @relation("SimuladoCreator")
+  assignedSimulados Simulado[]     @relation("SimuladoStudent")
+  transactions      Transaction[]  @relation("StudentTransactions")
+  notifications     Notification[]
 }
 
 model ChatMessage {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   senderId   String
   receiverId String
   content    String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   readAt     DateTime?
 
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
 
   @@index([senderId, receiverId, createdAt])
   @@index([receiverId, senderId, createdAt])
@@ -68,39 +69,39 @@ model ChatMessage {
 
 // Aulas (Alimenta os cards de agendadas/realizadas e a lista de Próximas Aulas)
 model Lesson {
-  id             String   @id @default(uuid())
-  studentId      String
-  teacherId      String
-  subject        String   // Ex: Matemática, Física, etc.
-  
-  // NOSSAS DATAS (Início e Fim)
-  date           DateTime // Data e hora do INÍCIO da aula
-  endDate        DateTime @default(now()) // Data e hora do FIM da aula
-  
-  status         String   @default("PENDING") // 'PENDING', 'CONFIRMED', 'CANCELLED'
-  meetingLink    String?
-  price          Float?   // Preço cobrado pela aula
-  isExperimental Boolean  @default(false) // Define se é aula teste grátis
+  id        String @id @default(uuid())
+  studentId String
+  teacherId String
+  subject   String // Ex: Matemática, Física, etc.
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  // NOSSAS DATAS (Início e Fim)
+  date    DateTime // Data e hora do INÍCIO da aula
+  endDate DateTime @default(now()) // Data e hora do FIM da aula
+
+  status         String  @default("PENDING") // 'PENDING', 'CONFIRMED', 'CANCELLED'
+  meetingLink    String?
+  price          Float? // Preço cobrado pela aula
+  isExperimental Boolean @default(false) // Define se é aula teste grátis
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Liga a aula aos usuários
-  student        User     @relation("StudentLessons", fields: [studentId], references: [id])
-  teacher        User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+  student User @relation("StudentLessons", fields: [studentId], references: [id])
+  teacher User @relation("TeacherLessons", fields: [teacherId], references: [id])
 }
 
 // Planos/Pacotes (Baseado na sua tela de Gerenciar Planos)
 model Plan {
-  id            String   @id @default(uuid())
-  name          String   // Ex: "Pacote 4 Aulas"
-  lessonsCount  Int      // Ex: 4
-  price         Float    // Ex: 95.00
-  durationMins  Int      // Ex: 90
-  isPopular     Boolean  @default(false)
+  id           String  @id @default(uuid())
+  name         String // Ex: "Pacote 4 Aulas"
+  lessonsCount Int // Ex: 4
+  price        Float // Ex: 95.00
+  durationMins Int // Ex: 90
+  isPopular    Boolean @default(false)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Simulado {
@@ -127,14 +128,14 @@ model Simulado {
 
 // Tabela Oficial de Disciplinas
 model Subject {
-  id          String   @id @default(uuid())
-  name        String   @unique // Ex: "Matemática", "Física"
-  description String?  // Opcional
-  icon        String?  // Nome do ícone (ex: 'Calculator', 'Atom')
-  isActive    Boolean  @default(true)
+  id          String  @id @default(uuid())
+  name        String  @unique // Ex: "Matemática", "Física"
+  description String? // Opcional
+  icon        String? // Nome do ícone (ex: 'Calculator', 'Atom')
+  isActive    Boolean @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AppSetting {
@@ -148,14 +149,14 @@ model AppSetting {
 model Transaction {
   id            String   @id @default(uuid())
   studentId     String
-  planName      String   // Ex: "Pacote 4 Aulas" ou "Adição Manual"
+  planName      String // Ex: "Pacote 4 Aulas" ou "Adição Manual"
   creditsAdded  Int
   amountPaid    Float
   paymentMethod String   @default("PIX")
   status        String   @default("COMPROVADO")
   createdAt     DateTime @default(now())
 
-  student       User     @relation("StudentTransactions", fields: [studentId], references: [id])
+  student User @relation("StudentTransactions", fields: [studentId], references: [id])
 }
 
 model MarketingCost {
@@ -166,4 +167,15 @@ model MarketingCost {
   organicCommissions Float    @default(0)
   paidCommissions    Float    @default(0)
   updatedAt          DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      REFERRAL
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+user        User     @relation(fields: [userId], references: [id])
 }

@@ -1,105 +1,117 @@
-﻿'use server';
+﻿"use server";
 
-import prisma from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
+import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 
 // Buscar todos os alunos
 export async function getStudents() {
   try {
     const students = await prisma.user.findMany({
       where: {
-        role: 'student',
-        status: { not: 'deleted' },
+        role: "student",
+        status: { not: "deleted" },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return { success: true, data: students };
   } catch (error) {
-    console.error('Erro ao buscar alunos:', error);
-    return { success: false, error: 'Falha ao buscar alunos no banco de dados.' };
+    console.error("Erro ao buscar alunos:", error);
+    return {
+      success: false,
+      error: "Falha ao buscar alunos no banco de dados.",
+    };
   }
 }
 
 export async function getActiveUsers() {
   try {
     const users = await prisma.user.findMany({
-      where: { status: 'active' },
-      orderBy: { name: 'asc' },
+      where: { status: "active" },
+      orderBy: { name: "asc" },
     });
     return { success: true, data: users };
   } catch (error) {
-    console.error('Erro ao buscar usuarios ativos:', error);
-    return { success: false, error: 'Falha ao buscar usuarios ativos.' };
+    console.error("Erro ao buscar usuarios ativos:", error);
+    return { success: false, error: "Falha ao buscar usuarios ativos." };
   }
 }
 
 // Adicionar creditos (aulas) para um aluno
-export async function addCreditsToStudent(studentId: string, creditsToAdd: number) {
+export async function addCreditsToStudent(
+  studentId: string,
+  creditsToAdd: number,
+) {
   try {
     const student = await prisma.user.findUnique({
       where: { id: studentId },
     });
 
     if (!student) {
-      return { success: false, error: 'Aluno não encontrado.' };
+      return { success: false, error: "Aluno não encontrado." };
     }
 
     const updatedStudent = await prisma.user.update({
       where: { id: studentId },
       data: {
         credits: student.credits + creditsToAdd,
-        status: 'active',
+        status: "active",
       },
     });
 
-    revalidatePath('/dashboard/students');
+    revalidatePath("/dashboard/students");
 
     return { success: true, newTotal: updatedStudent.credits };
   } catch (error) {
-    console.error('Erro ao adicionar creditos:', error);
-    return { success: false, error: 'Não foi possivel adicionar os créditos ao aluno.' };
+    console.error("Erro ao adicionar creditos:", error);
+    return {
+      success: false,
+      error: "Não foi possivel adicionar os créditos ao aluno.",
+    };
   }
 }
 
 // Aprovar / Bloquear acesso do aluno
-export async function toggleStudentStatus(studentId: string, newStatus: 'active' | 'inactive') {
+export async function toggleStudentStatus(
+  studentId: string,
+  newStatus: "active" | "inactive",
+) {
   try {
     await prisma.user.update({
       where: { id: studentId },
       data: { status: newStatus },
     });
 
-    revalidatePath('/dashboard/students');
+    revalidatePath("/dashboard/students");
     return { success: true };
   } catch (error) {
-    console.error('Erro ao alterar status do aluno:', error);
-    return { success: false, error: 'Falha ao alterar o status do aluno.' };
+    console.error("Erro ao alterar status do aluno:", error);
+    return { success: false, error: "Falha ao alterar o status do aluno." };
   }
 }
 
 export async function deleteStudentProfile(studentId: string) {
   try {
     const student = await prisma.user.findFirst({
-      where: { id: studentId, role: 'student' },
+      where: { id: studentId, role: "student" },
       select: { id: true },
     });
 
     if (!student) {
-      return { success: false, error: 'Aluno não encontrado.' };
+      return { success: false, error: "Aluno não encontrado." };
     }
 
     await prisma.user.update({
       where: { id: studentId },
-      data: { status: 'deleted' },
+      data: { status: "deleted" },
     });
 
-    revalidatePath('/dashboard/students');
-    revalidatePath('/dashboard/admin/students');
+    revalidatePath("/dashboard/students");
+    revalidatePath("/dashboard/admin/students");
     return { success: true };
   } catch (error) {
-    console.error('Erro ao excluir perfil do aluno:', error);
-    return { success: false, error: 'Falha ao excluir o perfil do aluno.' };
+    console.error("Erro ao excluir perfil do aluno:", error);
+    return { success: false, error: "Falha ao excluir o perfil do aluno." };
   }
 }
 
@@ -108,43 +120,46 @@ export async function getTeachers() {
   try {
     const teachers = await prisma.user.findMany({
       where: {
-        role: 'teacher',
-        status: { not: 'deleted' },
+        role: "teacher",
+        status: { not: "deleted" },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
     return { success: true, data: teachers };
   } catch (error) {
-    console.error('Erro ao buscar professores:', error);
-    return { success: false, error: 'Falha ao buscar professores do banco de dados.' };
+    console.error("Erro ao buscar professores:", error);
+    return {
+      success: false,
+      error: "Falha ao buscar professores do banco de dados.",
+    };
   }
 }
 
 export async function approveTeacher(teacherId: string) {
   try {
     const teacher = await prisma.user.findFirst({
-      where: { id: teacherId, role: 'teacher' },
+      where: { id: teacherId, role: "teacher" },
       select: { id: true },
     });
 
     if (!teacher) {
-      return { success: false, error: 'Professor não encontrado.' };
+      return { success: false, error: "Professor não encontrado." };
     }
 
     await prisma.user.update({
       where: { id: teacherId },
       data: {
-        status: 'active',
+        status: "active",
         isValidated: true,
       },
     });
 
-    revalidatePath('/dashboard/teachers');
-    revalidatePath('/dashboard/admin/teachers');
+    revalidatePath("/dashboard/teachers");
+    revalidatePath("/dashboard/admin/teachers");
     return { success: true };
   } catch (error) {
-    console.error('Erro ao aprovar professor:', error);
-    return { success: false, error: 'Falha ao aprovar professor.' };
+    console.error("Erro ao aprovar professor:", error);
+    return { success: false, error: "Falha ao aprovar professor." };
   }
 }
 
@@ -155,16 +170,19 @@ export async function getSubjects() {
       subjectsTable = await prisma.subject.findMany({
         where: { isActive: true },
         select: { id: true, name: true },
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       });
     } catch (error) {
-      console.warn('Tabela Subject indisponivel. Usando fallback por professores.', error);
+      console.warn(
+        "Tabela Subject indisponivel. Usando fallback por professores.",
+        error,
+      );
     }
 
     const teacherSubjects = await prisma.user.findMany({
       where: {
-        role: 'teacher',
-        status: 'active',
+        role: "teacher",
+        status: "active",
         subject: { not: null },
       },
       select: { subject: true },
@@ -175,97 +193,124 @@ export async function getSubjects() {
     for (const subject of subjectsTable) {
       const name = subject.name.trim();
       if (!name) continue;
-      normalized.set(name.toLocaleLowerCase('pt-BR'), { id: subject.id, name });
+      normalized.set(name.toLocaleLowerCase("pt-BR"), { id: subject.id, name });
     }
 
     for (const teacher of teacherSubjects) {
-      const name = (teacher.subject || '').trim();
+      const name = (teacher.subject || "").trim();
       if (!name) continue;
-      const key = name.toLocaleLowerCase('pt-BR');
+      const key = name.toLocaleLowerCase("pt-BR");
       if (!normalized.has(key)) {
         normalized.set(key, {
-          id: `teacher-subject-${key.replace(/\s+/g, '-')}`,
+          id: `teacher-subject-${key.replace(/\s+/g, "-")}`,
           name,
         });
       }
     }
 
     const subjects = Array.from(normalized.values()).sort((a, b) =>
-      a.name.localeCompare(b.name, 'pt-BR')
+      a.name.localeCompare(b.name, "pt-BR"),
     );
 
     return { success: true, data: subjects };
   } catch (error) {
-    console.error('Erro ao buscar disciplinas:', error);
-    return { success: false, error: 'Falha ao buscar disciplinas do banco de dados.' };
+    console.error("Erro ao buscar disciplinas:", error);
+    return {
+      success: false,
+      error: "Falha ao buscar disciplinas do banco de dados.",
+    };
   }
 }
 
-export async function createTeacher(data: { name: string; email: string; password: string; subject: string }) {
+export async function createTeacher(data: {
+  name: string;
+  email: string;
+  password: string;
+  subject: string;
+}) {
   try {
     const newTeacher = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: data.password,
-        role: 'teacher',
-        status: 'active',
+        role: "teacher",
+        status: "active",
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
         credits: 0,
         subject: data.subject,
       },
     });
-    revalidatePath('/dashboard/teachers');
+    revalidatePath("/dashboard/teachers");
     return { success: true, data: newTeacher };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Erro ao criar. O email ja pode estar em uso.' };
+    return {
+      success: false,
+      error: "Erro ao criar. O email ja pode estar em uso.",
+    };
   }
 }
 
-export async function updateTeacher(id: string, data: { name: string; email: string; subject: string }) {
+export async function updateTeacher(
+  id: string,
+  data: { name: string; email: string; subject: string },
+) {
   try {
     await prisma.user.update({
       where: { id },
       data: { name: data.name, email: data.email, subject: data.subject },
     });
-    revalidatePath('/dashboard/teachers');
+    revalidatePath("/dashboard/teachers");
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Erro ao atualizar os dados do professor.' };
+    return {
+      success: false,
+      error: "Erro ao atualizar os dados do professor.",
+    };
   }
 }
 
 export async function deleteTeacher(id: string) {
   try {
     await prisma.user.delete({ where: { id } });
-    revalidatePath('/dashboard/teachers');
+    revalidatePath("/dashboard/teachers");
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Não foi possivel deletar. Podem haver aulas atreladas a ele.' };
+    return {
+      success: false,
+      error: "Não foi possivel deletar. Podem haver aulas atreladas a ele.",
+    };
   }
 }
 
-export async function createStudent(data: { name: string; email: string; password: string }) {
+export async function createStudent(data: {
+  name: string;
+  email: string;
+  password: string;
+}) {
   try {
     const newStudent = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: data.password,
-        role: 'student',
-        status: 'active',
+        role: "student",
+        status: "active",
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=03A9F4&textColor=000000`,
         credits: 0,
       },
     });
-    revalidatePath('/dashboard/students');
+    revalidatePath("/dashboard/students");
     return { success: true, data: newStudent };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Erro ao criar aluno. O email ja pode estar em uso.' };
+    return {
+      success: false,
+      error: "Erro ao criar aluno. O email ja pode estar em uso.",
+    };
   }
 }
 
@@ -275,12 +320,12 @@ export async function getUserById(userId: string) {
       where: { id: userId },
     });
     if (!user) {
-      return { success: false, error: 'Usuario não encontrado.' };
+      return { success: false, error: "Usuario não encontrado." };
     }
     return { success: true, data: user };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Erro ao buscar usuario.' };
+    return { success: false, error: "Erro ao buscar usuario." };
   }
 }
 
@@ -303,18 +348,21 @@ function normalizeOptionalText(value?: string | null) {
   return normalized ? normalized : null;
 }
 
-// Atualizar Perfil 
-export async function updateUserProfile(userId: string, data: UpdateUserProfileInput) {
+// Atualizar Perfil
+export async function updateUserProfile(
+  userId: string,
+  data: UpdateUserProfileInput,
+) {
   try {
     const parsedBirthDate =
       data.birthDate instanceof Date
         ? data.birthDate
-        : typeof data.birthDate === 'string' && data.birthDate
-        ? new Date(data.birthDate)
-        : null;
+        : typeof data.birthDate === "string" && data.birthDate
+          ? new Date(data.birthDate)
+          : null;
 
     if (parsedBirthDate && Number.isNaN(parsedBirthDate.getTime())) {
-      return { success: false, error: 'Data de nascimento invalida.' };
+      return { success: false, error: "Data de nascimento invalida." };
     }
 
     const updateData: Prisma.UserUpdateInput = {
@@ -326,36 +374,51 @@ export async function updateUserProfile(userId: string, data: UpdateUserProfileI
           : data.avatarUrl,
     };
 
-    if (data.cpf !== undefined) updateData.cpf = normalizeOptionalText(data.cpf);
+    if (data.cpf !== undefined)
+      updateData.cpf = normalizeOptionalText(data.cpf);
     if (data.birthDate !== undefined) updateData.birthDate = parsedBirthDate;
-    if (data.cep !== undefined) updateData.cep = normalizeOptionalText(data.cep);
-    if (data.state !== undefined) updateData.state = normalizeOptionalText(data.state);
-    if (data.neighborhood !== undefined) updateData.neighborhood = normalizeOptionalText(data.neighborhood);
-    if (data.street !== undefined) updateData.street = normalizeOptionalText(data.street);
-    if (data.number !== undefined) updateData.number = normalizeOptionalText(data.number);
-    if (data.videoUrl !== undefined) updateData.videoUrl = normalizeOptionalText(data.videoUrl);
+    if (data.cep !== undefined)
+      updateData.cep = normalizeOptionalText(data.cep);
+    if (data.state !== undefined)
+      updateData.state = normalizeOptionalText(data.state);
+    if (data.neighborhood !== undefined)
+      updateData.neighborhood = normalizeOptionalText(data.neighborhood);
+    if (data.street !== undefined)
+      updateData.street = normalizeOptionalText(data.street);
+    if (data.number !== undefined)
+      updateData.number = normalizeOptionalText(data.number);
+    if (data.videoUrl !== undefined)
+      updateData.videoUrl = normalizeOptionalText(data.videoUrl);
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
     });
-    revalidatePath('/dashboard/profile');
+    revalidatePath("/dashboard/profile");
     return { success: true, data: updatedUser };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Ocorreu um erro ao atualizar o perfil. O e-mail já pode estar em uso.' };
+    return {
+      success: false,
+      error:
+        "Ocorreu um erro ao atualizar o perfil. O e-mail já pode estar em uso.",
+    };
   }
 }
 
-export async function updateUserPassword(userId: string, currentPassword: string, newPassword: string) {
+export async function updateUserPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      return { success: false, error: 'Usuario não encontrado.' };
+      return { success: false, error: "Usuario não encontrado." };
     }
 
     if (user.password !== currentPassword) {
-      return { success: false, error: 'Senha atual incorreta.' };
+      return { success: false, error: "Senha atual incorreta." };
     }
 
     const updated = await prisma.user.update({
@@ -365,18 +428,22 @@ export async function updateUserPassword(userId: string, currentPassword: string
 
     return { success: true, data: updated };
   } catch (error) {
-    console.error('Erro ao atualizar senha:', error);
-    return { success: false, error: 'Falha ao atualizar senha.' };
+    console.error("Erro ao atualizar senha:", error);
+    return { success: false, error: "Falha ao atualizar senha." };
   }
 }
 
-export async function applyReferralOnSignup(newUserId: string, referralCode?: string) {
+export async function applyReferralOnSignup(
+  newUserId: string,
+  referralCode?: string,
+) {
   try {
     const cleanedCode = referralCode?.trim();
     if (!cleanedCode) return { success: true, applied: false };
 
     const newUser = await prisma.user.findUnique({ where: { id: newUserId } });
-    if (!newUser) return { success: false, error: 'Novo usuario não encontrado.' };
+    if (!newUser)
+      return { success: false, error: "Novo usuario não encontrado." };
 
     const owner = await prisma.user.findUnique({
       where: { referralCode: cleanedCode },
@@ -398,13 +465,13 @@ export async function applyReferralOnSignup(newUserId: string, referralCode?: st
       }),
     ]);
 
-    revalidatePath('/dashboard/indicacoes');
-    revalidatePath('/dashboard/marketing');
-    revalidatePath('/dashboard/financeiro');
+    revalidatePath("/dashboard/indicacoes");
+    revalidatePath("/dashboard/marketing");
+    revalidatePath("/dashboard/financeiro");
     return { success: true, applied: true };
   } catch (error) {
-    console.error('Erro ao aplicar indicacao:', error);
-    return { success: false, error: 'Falha ao aplicar codigo de indicacao.' };
+    console.error("Erro ao aplicar indicacao:", error);
+    return { success: false, error: "Falha ao aplicar codigo de indicacao." };
   }
 }
 
@@ -418,23 +485,23 @@ export async function getReferralSummary(userId: string) {
         referralCode: true,
         referrals: {
           select: { id: true, name: true, email: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
 
-    if (!user) return { success: false, error: 'Usuario não encontrado.' };
+    if (!user) return { success: false, error: "Usuario não encontrado." };
     return { success: true, data: user };
   } catch (error) {
-    console.error('Erro ao buscar resumo de indicacoes:', error);
-    return { success: false, error: 'Falha ao buscar indicações.' };
+    console.error("Erro ao buscar resumo de indicacoes:", error);
+    return { success: false, error: "Falha ao buscar indicações." };
   }
 }
 
 export async function getReferralRanking() {
   try {
     const ranking = await prisma.user.findMany({
-      where: { role: 'student' },
+      where: { role: "student" },
       select: {
         id: true,
         name: true,
@@ -444,14 +511,14 @@ export async function getReferralRanking() {
         createdAt: true,
         _count: { select: { referrals: true } },
       },
-      orderBy: [{ referrals: { _count: 'desc' } }, { createdAt: 'asc' }],
+      orderBy: [{ referrals: { _count: "desc" } }, { createdAt: "asc" }],
       take: 50,
     });
 
     return { success: true, data: ranking };
   } catch (error) {
-    console.error('Erro ao buscar ranking de indicacoes:', error);
-    return { success: false, error: 'Falha ao buscar ranking.' };
+    console.error("Erro ao buscar ranking de indicacoes:", error);
+    return { success: false, error: "Falha ao buscar ranking." };
   }
 }
 
@@ -466,13 +533,13 @@ export async function getCrmUsers() {
         status: true,
         createdAt: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return { success: true, data: users };
   } catch (error) {
-    console.error('Erro ao buscar usuarios do CRM:', error);
-    return { success: false, error: 'Falha ao carregar usuarios.' };
+    console.error("Erro ao buscar usuarios do CRM:", error);
+    return { success: false, error: "Falha ao carregar usuarios." };
   }
 }
 
@@ -486,7 +553,7 @@ export async function getStudentFinancialSummary(userId: string) {
         credits: true,
       },
     });
-    if (!user) return { success: false, error: 'Usuario não encontrado.' };
+    if (!user) return { success: false, error: "Usuario não encontrado." };
 
     const lessons = await prisma.lesson.findMany({
       where: { studentId: userId, isExperimental: false },
@@ -497,13 +564,41 @@ export async function getStudentFinancialSummary(userId: string) {
         date: true,
         teacher: { select: { name: true } },
       },
-      orderBy: { date: 'desc' },
+      orderBy: { date: "desc" },
       take: 100,
     });
 
     return { success: true, data: { user, lessons } };
   } catch (error) {
-    console.error('Erro ao buscar financeiro do aluno:', error);
-    return { success: false, error: 'Falha ao carregar financeiro do aluno.' };
+    console.error("Erro ao buscar financeiro do aluno:", error);
+    return { success: false, error: "Falha ao carregar financeiro do aluno." };
+  }
+}
+
+//funções de Notificação
+export async function getUserNotifications(userId: string) {
+  try {
+    if (!userId) return { success: false, error: "ID inválido." };
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { success: true, data: notifications };
+  } catch (error) {
+    return { success: false, error: "Erro ao carregar notificações." };
+  }
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  try {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { read: true },
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Erro ao atualizar." };
   }
 }
