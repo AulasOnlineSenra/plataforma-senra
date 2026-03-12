@@ -1,18 +1,93 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Gift, Sparkles, UserPlus, X } from "lucide-react";
+import {
+  Gift,
+  Sparkles,
+  UserPlus,
+  X,
+  CalendarCheck,
+  Package,
+  XCircle,
+} from "lucide-react";
 import { getMockUser } from "@/lib/data";
 import { getUserNotifications } from "@/app/actions/users";
 import { User } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 3000;
-const TOAST_DURATION_MS = 20000; // 20 segundos visível
+const TOAST_DURATION_MS = 20000;
 
 interface ReferralToast {
   id: string;
   message: string;
+  type: string;
 }
+
+// Config dinâmica por tipo
+
+const TOAST_CONFIG: Record<
+  string,
+  {
+    label: string;
+    accent: string;
+    accentDark: string;
+    accentBg: string;
+    badgeColor: string;
+    badgeText: string;
+    BadgeIcon: React.ElementType;
+    ToastIcon: React.ElementType;
+    LabelIcon: React.ElementType;
+  }
+> = {
+  REFERRAL: {
+    label: "Nova Indicação!",
+    accent: "linear-gradient(135deg, #FFC107 0%, #FF9800 100%)",
+    accentDark: "#B45309",
+    accentBg: "rgba(5,150,105,0.08)",
+    badgeColor: "#059669",
+    badgeText: "Código utilizado com sucesso",
+    BadgeIcon: UserPlus,
+    ToastIcon: Gift,
+    LabelIcon: Sparkles,
+  },
+  class_scheduled: {
+    label: "Aula Agendada!",
+    accent: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+    accentDark: "#1E40AF",
+    accentBg: "rgba(59,130,246,0.08)",
+    badgeColor: "#1D4ED8",
+    badgeText: "Aula confirmada no sistema",
+    BadgeIcon: CalendarCheck,
+    ToastIcon: CalendarCheck,
+    LabelIcon: Sparkles,
+  },
+  package_purchased: {
+    label: "Pacote Comprado!",
+    accent: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+    accentDark: "#065F46",
+    accentBg: "rgba(16,185,129,0.08)",
+    badgeColor: "#059669",
+    badgeText: "Créditos adicionados à sua conta",
+    BadgeIcon: Package,
+    ToastIcon: Package,
+    LabelIcon: Sparkles,
+  },
+  class_cancelled: {
+    label: "Aula Cancelada",
+    accent: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+    accentDark: "#991B1B",
+    accentBg: "rgba(239,68,68,0.08)",
+    badgeColor: "#DC2626",
+    badgeText: "Aula removida do agendamento",
+    BadgeIcon: XCircle,
+    ToastIcon: XCircle,
+    LabelIcon: Sparkles,
+  },
+};
+
+const DEFAULT_CONFIG = TOAST_CONFIG["REFERRAL"];
+
+// Componente visual do pop-up
 
 function ReferralToastItem({
   toast,
@@ -23,6 +98,9 @@ function ReferralToastItem({
 }) {
   const [progress, setProgress] = useState(100);
   const [exiting, setExiting] = useState(false);
+
+  const config = TOAST_CONFIG[toast.type] ?? DEFAULT_CONFIG;
+  const { ToastIcon, BadgeIcon, LabelIcon } = config;
 
   const handleClose = useCallback(() => {
     setExiting(true);
@@ -85,6 +163,7 @@ function ReferralToastItem({
           maxWidth: "calc(100vw - 48px)",
         }}
       >
+        {/* Barra lateral — cor dinâmica */}
         <div
           style={{
             position: "absolute",
@@ -92,10 +171,11 @@ function ReferralToastItem({
             top: 0,
             bottom: 0,
             width: "5px",
-            background: "linear-gradient(180deg, #FFC107 0%, #FF9800 100%)",
+            background: config.accent,
           }}
         />
 
+        {/* Shimmer */}
         <div
           style={{
             position: "absolute",
@@ -123,12 +203,13 @@ function ReferralToastItem({
           <div
             style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}
           >
+            {/* Ícone — dinâmico */}
             <div
               style={{
                 width: "48px",
                 height: "48px",
                 borderRadius: "14px",
-                background: "linear-gradient(135deg, #FFC107 0%, #FF9800 100%)",
+                background: config.accent,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -136,10 +217,11 @@ function ReferralToastItem({
                 animation: "rn-pulse 2s ease-in-out infinite",
               }}
             >
-              <Gift size={22} color="#fff" />
+              <ToastIcon size={22} color="#fff" />
             </div>
 
             <div style={{ flex: 1, minWidth: 0, paddingTop: "2px" }}>
+              {/* Label — dinâmico */}
               <div
                 style={{
                   display: "flex",
@@ -154,13 +236,15 @@ function ReferralToastItem({
                     fontWeight: 800,
                     letterSpacing: "0.07em",
                     textTransform: "uppercase",
-                    color: "#B45309",
+                    color: config.accentDark,
                   }}
                 >
-                  Nova Indicação!
+                  {config.label}
                 </span>
-                <Sparkles size={12} color="#FFC107" />
+                <LabelIcon size={12} color="#FFC107" />
               </div>
+
+              {/* Mensagem vinda do banco */}
               <p
                 style={{
                   fontSize: "13.5px",
@@ -172,6 +256,8 @@ function ReferralToastItem({
               >
                 {toast.message}
               </p>
+
+              {/* Badge inferior — dinâmico */}
               <div
                 style={{
                   display: "inline-flex",
@@ -180,23 +266,24 @@ function ReferralToastItem({
                   marginTop: "8px",
                   padding: "3px 10px",
                   borderRadius: "20px",
-                  background: "rgba(5,150,105,0.08)",
-                  border: "1px solid rgba(5,150,105,0.18)",
+                  background: config.accentBg,
+                  border: `1px solid ${config.badgeColor}30`,
                 }}
               >
-                <UserPlus size={11} color="#059669" />
+                <BadgeIcon size={11} color={config.badgeColor} />
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#059669",
+                    color: config.badgeColor,
                     fontWeight: 700,
                   }}
                 >
-                  Código utilizado com sucesso
+                  {config.badgeText}
                 </span>
               </div>
             </div>
 
+            {/* Botão fechar */}
             <button
               className="rn-close"
               onClick={handleClose}
@@ -220,12 +307,13 @@ function ReferralToastItem({
           </div>
         </div>
 
+        {/* Barra de progresso — cor dinâmica */}
         <div style={{ height: "3px", background: "#F3F4F6" }}>
           <div
             style={{
               height: "100%",
               width: `${progress}%`,
-              background: "linear-gradient(90deg, #FFC107, #FF9800)",
+              background: config.accent,
               transition: "width 0.1s linear",
               borderRadius: "0 2px 2px 0",
             }}
@@ -235,6 +323,8 @@ function ReferralToastItem({
     </>
   );
 }
+
+//  Provider que gerencia o estado global das notificações de indicação e exibe os pop-ups
 
 export function ReferralNotificationProvider() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -259,15 +349,16 @@ export function ReferralNotificationProvider() {
       const response = await getUserNotifications(currentUser.id);
       if (!response.success || !response.data) return;
 
-      const newReferrals = (response.data as any[]).filter(
-        (n) => n.type === "REFERRAL" && !shownIdsRef.current.has(n.id),
+      // Filtra apenas os tipos que têm config definido e ainda não foram exibidos
+      const newToasts = (response.data as any[]).filter(
+        (n) => n.type in TOAST_CONFIG && !shownIdsRef.current.has(n.id),
       );
 
-      if (newReferrals.length === 0) return;
+      if (newToasts.length === 0) return;
 
-      const incoming: ReferralToast[] = newReferrals.map((n) => {
+      const incoming: ReferralToast[] = newToasts.map((n) => {
         shownIdsRef.current.add(n.id);
-        return { id: n.id, message: n.message };
+        return { id: n.id, message: n.message, type: n.type };
       });
 
       localStorage.setItem(
