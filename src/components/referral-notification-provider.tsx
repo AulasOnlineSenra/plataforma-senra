@@ -271,7 +271,7 @@ export function ReferralNotificationProvider() {
       setToasts((prev) => [...prev, ...incoming]);
     };
 
-    check(); // dispara imediatamente ao montar
+    check();
     const interval = setInterval(check, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [currentUser]);
