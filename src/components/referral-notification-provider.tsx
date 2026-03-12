@@ -239,7 +239,9 @@ function ReferralToastItem({
 export function ReferralNotificationProvider() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [toasts, setToasts] = useState<ReferralToast[]>([]);
-  const shownIdsRef = useRef<Set<string>>(new Set());
+  const shownIdsRef = useRef<Set<string>>(
+    new Set(JSON.parse(localStorage.getItem("rn-shown-ids") ?? "[]")),
+  );
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -267,6 +269,11 @@ export function ReferralNotificationProvider() {
         shownIdsRef.current.add(n.id);
         return { id: n.id, message: n.message };
       });
+
+      localStorage.setItem(
+        "rn-shown-ids",
+        JSON.stringify(Array.from(shownIdsRef.current)),
+      );
 
       setToasts((prev) => [...prev, ...incoming]);
     };
