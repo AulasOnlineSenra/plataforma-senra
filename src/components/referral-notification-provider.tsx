@@ -41,10 +41,10 @@ const TOAST_CONFIG: Record<
 > = {
   REFERRAL: {
     label: "Nova Indicação!",
-    accent: "linear-gradient(135deg, #FFC107 0%, #FF9800 100%)",
-    accentDark: "#B45309",
-    accentBg: "rgba(5,150,105,0.08)",
-    badgeColor: "#059669",
+    accent: "linear-gradient(135deg, #f5b000 0%, #e6a000 100%)",
+    accentDark: "#92650a",
+    accentBg: "rgba(245,176,0,0.08)",
+    badgeColor: "#b07800",
     badgeText: "Código utilizado com sucesso",
     BadgeIcon: UserPlus,
     ToastIcon: Gift,
@@ -52,10 +52,10 @@ const TOAST_CONFIG: Record<
   },
   class_scheduled: {
     label: "Aula Agendada!",
-    accent: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
-    accentDark: "#1E40AF",
-    accentBg: "rgba(59,130,246,0.08)",
-    badgeColor: "#1D4ED8",
+    accent: "linear-gradient(135deg, #f5b000 0%, #e6a000 100%)",
+    accentDark: "#92650a",
+    accentBg: "rgba(245,176,0,0.08)",
+    badgeColor: "#b07800",
     badgeText: "Aula confirmada no sistema",
     BadgeIcon: CalendarCheck,
     ToastIcon: CalendarCheck,
@@ -63,10 +63,10 @@ const TOAST_CONFIG: Record<
   },
   package_purchased: {
     label: "Pacote Comprado!",
-    accent: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-    accentDark: "#065F46",
-    accentBg: "rgba(16,185,129,0.08)",
-    badgeColor: "#059669",
+    accent: "linear-gradient(135deg, #f5b000 0%, #e6a000 100%)",
+    accentDark: "#92650a",
+    accentBg: "rgba(245,176,0,0.08)",
+    badgeColor: "#b07800",
     badgeText: "Créditos adicionados à sua conta",
     BadgeIcon: Package,
     ToastIcon: Package,
@@ -241,7 +241,6 @@ function ReferralToastItem({
                 >
                   {config.label}
                 </span>
-                <LabelIcon size={12} color="#FFC107" />
               </div>
 
               {/* Mensagem vinda do banco */}
