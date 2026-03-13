@@ -1,6 +1,6 @@
-'use server';
+"use server";
 
-import prisma from '@/lib/prisma';
+import prisma from "@/lib/prisma";
 
 type SendMessageInput = {
   senderId: string;
@@ -8,11 +8,20 @@ type SendMessageInput = {
   content: string;
 };
 
-export async function getChatUsers() {
+export async function getChatUsers(
+  currentUserRole: string,
+  currentUserId: string,
+) {
   try {
+    const where =
+      currentUserRole === "student"
+        ? { role: "teacher" as const, status: "active" }
+        : { status: "active" };
+
     const users = await prisma.user.findMany({
       where: {
-        status: 'active',
+        ...where,
+        NOT: { id: currentUserId },
       },
       select: {
         id: true,
@@ -20,15 +29,13 @@ export async function getChatUsers() {
         role: true,
         avatarUrl: true,
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: { name: "asc" },
     });
 
     return { success: true, data: users };
   } catch (error) {
-    console.error('Erro ao buscar usuarios do chat:', error);
-    return { success: false, error: 'Falha ao buscar usuarios do chat.' };
+    console.error("Erro ao buscar usuarios do chat:", error);
+    return { success: false, error: "Falha ao buscar usuarios do chat." };
   }
 }
 
@@ -39,15 +46,15 @@ export async function getChatMessagesForUser(userId: string) {
         OR: [{ senderId: userId }, { receiverId: userId }],
       },
       orderBy: {
-        createdAt: 'asc',
+        createdAt: "asc",
       },
       take: 1000,
     });
 
     return { success: true, data: messages };
   } catch (error) {
-    console.error('Erro ao buscar mensagens do chat:', error);
-    return { success: false, error: 'Falha ao buscar mensagens do chat.' };
+    console.error("Erro ao buscar mensagens do chat:", error);
+    return { success: false, error: "Falha ao buscar mensagens do chat." };
   }
 }
 
@@ -55,7 +62,7 @@ export async function sendChatMessage(input: SendMessageInput) {
   try {
     const content = input.content.trim();
     if (!content) {
-      return { success: false, error: 'Mensagem vazia.' };
+      return { success: false, error: "Mensagem vazia." };
     }
 
     const [sender, receiver] = await Promise.all([
@@ -64,7 +71,10 @@ export async function sendChatMessage(input: SendMessageInput) {
     ]);
 
     if (!sender || !receiver) {
-      return { success: false, error: 'Usuario remetente ou destinatario invalido.' };
+      return {
+        success: false,
+        error: "Usuario remetente ou destinatario invalido.",
+      };
     }
 
     const message = await prisma.chatMessage.create({
@@ -77,12 +87,15 @@ export async function sendChatMessage(input: SendMessageInput) {
 
     return { success: true, data: message };
   } catch (error) {
-    console.error('Erro ao enviar mensagem:', error);
-    return { success: false, error: 'Falha ao enviar mensagem.' };
+    console.error("Erro ao enviar mensagem:", error);
+    return { success: false, error: "Falha ao enviar mensagem." };
   }
 }
 
-export async function markConversationAsRead(currentUserId: string, contactId: string) {
+export async function markConversationAsRead(
+  currentUserId: string,
+  contactId: string,
+) {
   try {
     const result = await prisma.chatMessage.updateMany({
       where: {
@@ -97,7 +110,7 @@ export async function markConversationAsRead(currentUserId: string, contactId: s
 
     return { success: true, data: { updatedCount: result.count } };
   } catch (error) {
-    console.error('Erro ao marcar mensagens como lidas:', error);
-    return { success: false, error: 'Falha ao confirmar leitura.' };
+    console.error("Erro ao marcar mensagens como lidas:", error);
+    return { success: false, error: "Falha ao confirmar leitura." };
   }
 }
