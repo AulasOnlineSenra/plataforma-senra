@@ -329,8 +329,16 @@ export function ReferralNotificationProvider() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [toasts, setToasts] = useState<ReferralToast[]>([]);
   const shownIdsRef = useRef<Set<string>>(
-    new Set(JSON.parse(localStorage.getItem("rn-shown-ids") ?? "[]")),
+    typeof window !== "undefined"
+      ? new Set(JSON.parse(localStorage.getItem("rn-shown-ids") || "[]"))
+      : new Set(),
   );
+  useEffect(() => {
+    const stored = localStorage.getItem("rn-shown-ids");
+    if (stored) {
+      shownIdsRef.current = new Set(JSON.parse(stored));
+    }
+  }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
