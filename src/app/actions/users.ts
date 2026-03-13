@@ -274,15 +274,30 @@ export async function updateTeacher(
 
 export async function deleteTeacher(id: string) {
   try {
-    await prisma.user.delete({ where: { id } });
+    const teacher = await prisma.user.findFirst({
+      where: { id, role: "teacher" },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return { success: false, error: "Professor não encontrado." };
+    }
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { userId: id } }),
+      prisma.chatMessage.deleteMany({
+        where: { OR: [{ senderId: id }, { receiverId: id }] },
+      }),
+      prisma.simulado.deleteMany({ where: { creatorId: id } }),
+      prisma.lesson.deleteMany({ where: { teacherId: id } }),
+      prisma.user.delete({ where: { id } }),
+    ]);
+
     revalidatePath("/dashboard/teachers");
     return { success: true };
   } catch (error) {
     console.error(error);
-    return {
-      success: false,
-      error: "Não foi possivel deletar. Podem haver aulas atreladas a ele.",
-    };
+    return { success: false, error: "Não foi possível deletar o professor." };
   }
 }
 
