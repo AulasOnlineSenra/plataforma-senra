@@ -48,7 +48,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { getStudents, getUserById } from "@/app/actions/users";
+import { getStudents, getUserById, getMyStudents } from "@/app/actions/users";
 import {
   deleteSimulado,
   listSimuladosForUser,
@@ -153,7 +153,7 @@ export default function SimuladosPage() {
 
     const [simuladosResult, studentsResult] = await Promise.all([
       listSimuladosForUser(dbUser.id),
-      getStudents(),
+      dbUser.role === "teacher" ? getMyStudents(dbUser.id) : getStudents(),
     ]);
 
     if (simuladosResult.success && simuladosResult.data) {
