@@ -24,6 +24,38 @@ export async function getStudents() {
   }
 }
 
+// Buscar apenas os alunos vinculados a um professor específico
+
+export async function getMyStudents(teacherId: string) {
+  try {
+    const lessons = await prisma.lesson.findMany({
+      where: { teacherId },
+      select: { studentId: true },
+      distinct: ["studentId"],
+    });
+
+    const studentIds = lessons.map((l) => l.studentId);
+
+    if (studentIds.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const students = await prisma.user.findMany({
+      where: {
+        id: { in: studentIds },
+        role: "student",
+        status: { not: "deleted" },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return { success: true, data: students };
+  } catch (error) {
+    console.error("Erro ao buscar alunos do professor:", error);
+    return { success: false, error: "Falha ao buscar seus alunos." };
+  }
+}
+
 export async function getActiveUsers() {
   try {
     const users = await prisma.user.findMany({
@@ -274,15 +306,30 @@ export async function updateTeacher(
 
 export async function deleteTeacher(id: string) {
   try {
-    await prisma.user.delete({ where: { id } });
+    const teacher = await prisma.user.findFirst({
+      where: { id, role: "teacher" },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return { success: false, error: "Professor não encontrado." };
+    }
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { userId: id } }),
+      prisma.chatMessage.deleteMany({
+        where: { OR: [{ senderId: id }, { receiverId: id }] },
+      }),
+      prisma.simulado.deleteMany({ where: { creatorId: id } }),
+      prisma.lesson.deleteMany({ where: { teacherId: id } }),
+      prisma.user.delete({ where: { id } }),
+    ]);
+
     revalidatePath("/dashboard/teachers");
     return { success: true };
   } catch (error) {
     console.error(error);
-    return {
-      success: false,
-      error: "Não foi possivel deletar. Podem haver aulas atreladas a ele.",
-    };
+    return { success: false, error: "Não foi possível deletar o professor." };
   }
 }
 

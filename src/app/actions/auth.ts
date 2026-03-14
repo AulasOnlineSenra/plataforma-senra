@@ -57,12 +57,23 @@ export async function registerUser(data: {
       });
 
       if (referrer) {
-        // Cria notificação para o ususario que indicou
+        // Notificação 1: para o dono do código de indicação
         await prisma.notification.create({
           data: {
             userId: referrer.id,
             title: "Nova Indicação!",
             message: `O aluno ${data.name} se cadastrou usando seu código!`,
+            type: "REFERRAL",
+            read: false,
+          },
+        });
+
+        // Notificação 2: para o novo aluno
+        await prisma.notification.create({
+          data: {
+            userId: newUser.id,
+            title: "Bem-vindo!",
+            message: `Você se cadastrou com o código de indicação de ${referrer.name}! Aproveite a plataforma.`,
             type: "REFERRAL",
             read: false,
           },

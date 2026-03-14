@@ -1,8 +1,11 @@
+export type UserRole = "admin" | "student" | "teacher";
 
-
-export type UserRole = 'admin' | 'student' | 'teacher';
-
-export type EducationType = 'Licenciatura' | 'Bacharelado' | 'Mestrado' | 'Doutorado' | 'Pós-graduação';
+export type EducationType =
+  | "Licenciatura"
+  | "Bacharelado"
+  | "Mestrado"
+  | "Doutorado"
+  | "Pós-graduação";
 
 export interface EducationEntry {
   id: string;
@@ -19,14 +22,13 @@ export interface TimeRange {
 
 export type Availability = Record<string, TimeRange[]>;
 
-
 export interface User {
   id: string;
   name: string;
   email: string;
   avatarUrl: string;
   role: UserRole;
-  status?: 'active' | 'inactive' | 'hidden' | 'deleted';
+  status?: "active" | "inactive" | "hidden" | "deleted" | "pending";
   timezone?: string;
   nickname?: string;
   phone?: string;
@@ -41,7 +43,7 @@ export interface User {
     neighborhood?: string;
     street?: string;
     number?: string;
-  },
+  };
   lastAccess?: string;
   classCredits?: number;
   activePackage?: string;
@@ -50,14 +52,14 @@ export interface User {
 
 export interface Subject {
   id: string;
-  name:string;
+  name: string;
 }
 
 export interface Teacher extends User {
-  role: 'teacher';
+  role: "teacher";
   subjects: string[]; // array of subject IDs
   availability: Availability; // e.g. { "monday": [{ start: "09:00", end: "11:00" }] }
-  status: 'active' | 'hidden' | 'deleted';
+  status: "active" | "hidden" | "deleted" | "pending";
   googleMeetLink?: string;
 }
 
@@ -80,7 +82,7 @@ export interface ScheduleEvent {
   teacherId: string;
   subject: string;
   subjectId?: string;
-  status: 'completed' | 'scheduled' | 'cancelled';
+  status: "completed" | "scheduled" | "cancelled";
   studentHasRated?: boolean;
   teacherHasRated?: boolean;
   isExperimental?: boolean;
@@ -110,7 +112,7 @@ export interface QuestionOption {
   isCorrect: boolean;
 }
 
-export type QuestionType = 'multiple-choice' | 'short-answer' | 'paragraph';
+export type QuestionType = "multiple-choice" | "short-answer" | "paragraph";
 
 export interface Question {
   id: string;
@@ -128,7 +130,7 @@ export interface Simulado {
   studentId: string;
   creatorId: string;
   createdAt: Date;
-  status: 'Pendente' | 'Concluído';
+  status: "Pendente" | "Concluído";
   questions: Question[];
   maxAttempts: number;
   timeLimitMinutes?: number;
@@ -148,9 +150,9 @@ export interface Suggestion {
   id: string;
   submittedBy: string;
   userRole: UserRole;
-  type: 'bug' | 'suggestion';
+  type: "bug" | "suggestion";
   content: string;
-  status: 'received' | 'rejected' | 'implemented';
+  status: "received" | "rejected" | "implemented";
   timestamp: Date;
   evaluationDate?: Date;
 }
@@ -160,15 +162,15 @@ export interface Referral {
   code: string;
   timesUsed: number;
   totalBonus: number;
-  bonusType: 'money' | 'classes';
+  bonusType: "money" | "classes";
   referredUsers: string[]; // New field: Array of user IDs
 }
 
 export interface NavItem {
-    href: string;
-    icon: React.ElementType;
-    label: string;
-    roles: UserRole[];
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  roles: UserRole[];
 }
 
 export interface PaymentTransaction {
@@ -193,13 +195,13 @@ export interface Activity {
   date: Date;
 }
 
-export type NotificationType = 
-  | 'class_scheduled' 
-  | 'class_cancelled' 
-  | 'class_rescheduled'
-  | 'package_purchased' 
-  | 'new_user_registered'
-  | 'group_class_scheduled';
+export type NotificationType =
+  | "class_scheduled"
+  | "class_cancelled"
+  | "class_rescheduled"
+  | "package_purchased"
+  | "new_user_registered"
+  | "group_class_scheduled";
 
 export interface Notification {
   id: string;

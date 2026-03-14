@@ -1,8 +1,10 @@
-'use server';
+"use server";
 
-import prisma from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { sendNewBookingNotificationEmail } from '@/lib/mailer';
+import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { sendNewBookingNotificationEmail } from "@/lib/mailer";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type BookingInput = {
   subjectId: string;
@@ -12,30 +14,45 @@ type BookingInput = {
   isExperimental: boolean;
 };
 
-export async function createBookings(studentId: string, bookings: BookingInput[]) {
+export async function createBookings(
+  studentId: string,
+  bookings: BookingInput[],
+) {
   try {
     if (!bookings.length) {
-      return { success: false, error: 'Nenhuma aula informada.' };
+      return { success: false, error: "Nenhuma aula informada." };
     }
 
     const student = await prisma.user.findUnique({ where: { id: studentId } });
-    if (!student) return { success: false, error: 'Aluno não encontrado.' };
+    if (!student) return { success: false, error: "Aluno não encontrado." };
 
-    const teacherIds = Array.from(new Set(bookings.map((booking) => booking.teacherId)));
+    const teacherIds = Array.from(
+      new Set(bookings.map((booking) => booking.teacherId)),
+    );
     const teachers = await prisma.user.findMany({
-      where: { id: { in: teacherIds }, role: 'teacher' },
+      where: { id: { in: teacherIds }, role: "teacher" },
       select: { id: true, name: true, email: true },
     });
 
     if (teachers.length !== teacherIds.length) {
-      return { success: false, error: 'Um ou mais professores não foram encontrados.' };
+      return {
+        success: false,
+        error: "Um ou mais professores não foram encontrados.",
+      };
     }
 
-    const teachersById = new Map(teachers.map((teacher) => [teacher.id, teacher]));
-    const nonExperimentalCount = bookings.filter((booking) => !booking.isExperimental).length;
+    const teachersById = new Map(
+      teachers.map((teacher) => [teacher.id, teacher]),
+    );
+    const nonExperimentalCount = bookings.filter(
+      (booking) => !booking.isExperimental,
+    ).length;
 
     if (student.credits < nonExperimentalCount) {
-      return { success: false, error: 'Voce não tem créditos suficientes para este agendamento.' };
+      return {
+        success: false,
+        error: "Voce não tem créditos suficientes para este agendamento.",
+      };
     }
 
     await prisma.$transaction(async (tx) => {
@@ -55,7 +72,7 @@ export async function createBookings(studentId: string, bookings: BookingInput[]
             date: booking.start,
             endDate: booking.end,
             isExperimental: booking.isExperimental,
-            status: 'PENDING',
+            status: "PENDING",
           },
         });
       }
@@ -68,31 +85,67 @@ export async function createBookings(studentId: string, bookings: BookingInput[]
       }
     });
 
-    // Notificacao de nova marcacao para o professor (email real via nodemailer, se SMTP estiver configurado).
+    // Notificação de novo Agendamento para o professor
     await Promise.allSettled(
-      Array.from(firstBookingByTeacher.entries()).map(async ([teacherId, booking]) => {
-        const teacher = teachersById.get(teacherId);
-        if (!teacher) return;
+      Array.from(firstBookingByTeacher.entries()).map(
+        async ([teacherId, booking]) => {
+          const teacher = teachersById.get(teacherId);
+          if (!teacher) return;
 
-        await sendNewBookingNotificationEmail({
-          teacherEmail: teacher.email,
-          teacherName: teacher.name,
-          studentName: student.name,
-          subject: booking.subjectId,
-          startAt: booking.start,
-        });
-      })
+          await prisma.notification.create({
+            data: {
+              userId: teacherId,
+              type: "class_scheduled",
+              title: "Nova Aula Agendada!",
+              message: `O aluno ${student.name} agendou uma aula de ${booking.subjectId} para o dia ${format(booking.start, "dd/MM/yyyy", { locale: ptBR })}.`,
+              read: false,
+            },
+          });
+        },
+      ),
     );
 
-    revalidatePath('/dashboard');
-    revalidatePath('/dashboard/schedule');
-    revalidatePath('/dashboard/minhas-aulas');
-    revalidatePath('/dashboard/historico');
+    // Notificação confimando o agendamento para o aluno
+    await prisma.notification.create({
+      data: {
+        userId: studentId,
+        type: "class_scheduled",
+        title: "Aula Agendada com Sucesso!",
+        message: `Sua aula de ${bookings[0].subjectId} foi agendada para o dia ${format(bookings[0].start, "dd/MM/yyyy", { locale: ptBR })}.`,
+        read: false,
+      },
+    });
+
+    // Notificacao de nova marcacao para o professor (email real via nodemailer, se SMTP estiver configurado).
+    await Promise.allSettled(
+      Array.from(firstBookingByTeacher.entries()).map(
+        async ([teacherId, booking]) => {
+          const teacher = teachersById.get(teacherId);
+          if (!teacher) return;
+
+          await sendNewBookingNotificationEmail({
+            teacherEmail: teacher.email,
+            teacherName: teacher.name,
+            studentName: student.name,
+            subject: booking.subjectId,
+            startAt: booking.start,
+          });
+        },
+      ),
+    );
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/minhas-aulas");
+    revalidatePath("/dashboard/historico");
 
     return { success: true };
   } catch (error) {
-    console.error('Erro ao processar agendamentos:', error);
-    return { success: false, error: 'Erro interno do servidor ao agendar. Tente novamente.' };
+    console.error("Erro ao processar agendamentos:", error);
+    return {
+      success: false,
+      error: "Erro interno do servidor ao agendar. Tente novamente.",
+    };
   }
 }
 
@@ -100,11 +153,18 @@ export async function createBooking(studentId: string, booking: BookingInput) {
   return createBookings(studentId, [booking]);
 }
 
-export async function confirmLesson(lessonId: string, teacherId: string, meetingLink: string) {
+export async function confirmLesson(
+  lessonId: string,
+  teacherId: string,
+  meetingLink: string,
+) {
   try {
     const cleanedLink = meetingLink.trim();
     if (!cleanedLink) {
-      return { success: false, error: 'Informe um link do Google Meet valido.' };
+      return {
+        success: false,
+        error: "Informe um link do Google Meet valido.",
+      };
     }
 
     const lesson = await prisma.lesson.findFirst({
@@ -112,47 +172,54 @@ export async function confirmLesson(lessonId: string, teacherId: string, meeting
     });
 
     if (!lesson) {
-      return { success: false, error: 'Aula não encontrada para este professor.' };
+      return {
+        success: false,
+        error: "Aula não encontrada para este professor.",
+      };
     }
 
     const updatedLesson = await prisma.lesson.update({
       where: { id: lessonId },
-      data: { status: 'CONFIRMED', meetingLink: cleanedLink },
+      data: { status: "CONFIRMED", meetingLink: cleanedLink },
     });
 
-    revalidatePath('/dashboard');
-    revalidatePath('/dashboard/schedule');
-    revalidatePath('/dashboard/minhas-aulas');
-    revalidatePath('/dashboard/historico');
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/minhas-aulas");
+    revalidatePath("/dashboard/historico");
 
     return { success: true, data: updatedLesson };
   } catch (error) {
-    console.error('Erro ao confirmar aula:', error);
-    return { success: false, error: 'Não foi possivel confirmar a aula.' };
+    console.error("Erro ao confirmar aula:", error);
+    return { success: false, error: "Não foi possivel confirmar a aula." };
   }
 }
 
 export async function getLessons() {
   try {
     const lessons = await prisma.lesson.findMany({
-      orderBy: { date: 'asc' },
+      orderBy: { date: "asc" },
     });
 
     return { success: true, data: lessons };
   } catch (error) {
-    console.error('Erro ao buscar aulas:', error);
-    return { success: false, error: 'Erro ao buscar aulas.' };
+    console.error("Erro ao buscar aulas:", error);
+    return { success: false, error: "Erro ao buscar aulas." };
   }
 }
 
 export async function getLessonsForUser(userId: string, role: string) {
   try {
     const where =
-      role === 'admin' ? {} : role === 'teacher' ? { teacherId: userId } : { studentId: userId };
+      role === "admin"
+        ? {}
+        : role === "teacher"
+          ? { teacherId: userId }
+          : { studentId: userId };
 
     const lessons = await prisma.lesson.findMany({
       where,
-      orderBy: { date: 'asc' },
+      orderBy: { date: "asc" },
       include: {
         student: { select: { id: true, name: true, email: true } },
         teacher: { select: { id: true, name: true, email: true } },
@@ -161,7 +228,7 @@ export async function getLessonsForUser(userId: string, role: string) {
 
     return { success: true, data: lessons };
   } catch (error) {
-    console.error('Erro ao buscar aulas do usuario:', error);
-    return { success: false, error: 'Erro ao buscar aulas do usuario.' };
+    console.error("Erro ao buscar aulas do usuario:", error);
+    return { success: false, error: "Erro ao buscar aulas do usuario." };
   }
 }
