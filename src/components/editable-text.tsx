@@ -14,11 +14,13 @@ export function EditableText({ children, storageKey }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(children?.toString() || '');
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const clickTimeout = useRef<NodeJS.Timeout | null>(null);
   const clickCount = useRef(0);
   const spanRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    setIsMounted(true);
     const role = localStorage.getItem('userRole') as UserRole | null;
     setUserRole(role);
 
@@ -66,6 +68,10 @@ export function EditableText({ children, storageKey }: EditableTextProps) {
       e.preventDefault();
       (e.target as HTMLElement).blur();
     }
+  }
+
+  if (!isMounted) {
+    return <>{children}</>;
   }
 
   if (userRole === 'admin') {

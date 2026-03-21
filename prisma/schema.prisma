@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:../dev.db"
 }
 
 model User {
@@ -166,4 +166,15 @@ model MarketingCost {
   organicCommissions Float    @default(0)
   paidCommissions    Float    @default(0)
   updatedAt          DateTime @updatedAt
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String
+  phone     String?
+  source    String   @default("home")
+  status    String   @default("novo") // novo, contatado, convertido
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
