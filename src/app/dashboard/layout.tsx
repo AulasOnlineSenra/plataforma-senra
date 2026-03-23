@@ -1,5 +1,6 @@
-import React from 'react';
-import { DashboardClientLayout } from '@/components/dashboard-client-layout';
+import React from "react";
+import { DashboardClientLayout } from "@/components/dashboard-client-layout";
+import { ReferralNotificationProvider } from "@/components/referral-notification-provider";
 
 export default function DashboardLayout({
   children,
@@ -8,9 +9,8 @@ export default function DashboardLayout({
 }) {
   return (
     <DashboardClientLayout>
-      <div className="mx-auto w-full min-w-0 max-w-7xl">
-        {children}
-      </div>
+      <ReferralNotificationProvider />
+      <div className="mx-auto w-full min-w-0 max-w-7xl">{children}</div>
     </DashboardClientLayout>
   );
 }

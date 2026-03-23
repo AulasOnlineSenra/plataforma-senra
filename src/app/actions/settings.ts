@@ -54,3 +54,26 @@ export async function updateSettings(data: SettingsInput) {
     return { success: false, error: 'Falha ao atualizar configurações do sistema.' };
   }
 }
+
+// Atualizar tipo de disponibilidade global (ex: "weekly" ou "custom")
+export async function updateAvailabilityType(availabilityType: string) {
+  try {
+    const trimmed = availabilityType.trim();
+    if (!trimmed) {
+      return { success: false, error: 'Tipo de disponibilidade inválido.' };
+    }
+
+    const settings = await prisma.appSetting.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', availabilityType: trimmed },
+      update: { availabilityType: trimmed },
+    });
+
+    revalidatePath('/dashboard/admin/settings');
+
+    return { success: true, data: settings };
+  } catch (error) {
+    console.error('Erro ao atualizar tipo de disponibilidade:', error);
+    return { success: false, error: 'Falha ao atualizar tipo de disponibilidade.' };
+  }
+}

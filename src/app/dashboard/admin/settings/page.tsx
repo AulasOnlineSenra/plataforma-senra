@@ -1,13 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Gift, MessageCircle, Save, Settings, Wallet } from 'lucide-react';
+import { CalendarDays, Gift, MessageCircle, Save, Settings, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { getSettings, updateSettings } from '@/app/actions/settings';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getSettings, updateSettings, updateAvailabilityType } from '@/app/actions/settings';
 
 const DEFAULT_SETTINGS = {
   whatsapp: '5583999999999',
@@ -21,6 +28,8 @@ export default function SettingsPage() {
   const [whatsapp, setWhatsapp] = useState(DEFAULT_SETTINGS.whatsapp);
   const [teacherClassValue, setTeacherClassValue] = useState(DEFAULT_SETTINGS.teacherClassValue);
   const [referralBonus, setReferralBonus] = useState(DEFAULT_SETTINGS.referralBonus);
+  const [availabilityType, setAvailabilityType] = useState('weekly');
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +41,7 @@ export default function SettingsPage() {
       setWhatsapp(result.data.whatsapp || DEFAULT_SETTINGS.whatsapp);
       setTeacherClassValue(result.data.classValue || DEFAULT_SETTINGS.teacherClassValue);
       setReferralBonus(result.data.referralBonus || DEFAULT_SETTINGS.referralBonus);
+      setAvailabilityType(result.data.availabilityType || 'weekly');
     };
 
     loadSettings();
@@ -40,6 +50,21 @@ export default function SettingsPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleSaveAvailabilityType = async () => {
+    setIsSavingAvailability(true);
+    const result = await updateAvailabilityType(availabilityType);
+    setIsSavingAvailability(false);
+    if (!result.success) {
+      toast({ variant: 'destructive', title: 'Erro', description: result.error });
+      return;
+    }
+    toast({
+      title: 'Sucesso!',
+      description: 'Tipo de agenda atualizado.',
+      className: 'border-none bg-green-600 text-white',
+    });
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -175,6 +200,60 @@ export default function SettingsPage() {
               <p className="mt-2 text-sm text-slate-500">
                 Quantidade de aulas gratis que o aluno recebe quando um amigo se cadastra e compra um plano usando o codigo dele.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-shadow hover:shadow-md md:col-span-2">
+          <CardHeader className="border-b border-slate-100 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-amber-100 p-3 text-amber-600">
+                <CalendarDays className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-slate-900">Tipo de Agenda</CardTitle>
+                <CardDescription>Periodicidade da grade de disponibilidade dos professores</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="availability-type" className="font-medium text-slate-700">
+                Periodicidade da disponibilidade
+              </Label>
+              <Select value={availabilityType} onValueChange={setAvailabilityType}>
+                <SelectTrigger
+                  id="availability-type"
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Semanal</SelectItem>
+                  <SelectItem value="biweekly">Quinzenal</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-2 text-sm text-slate-500">
+                Define o ciclo de repetição dos horários cadastrados pelos professores.
+                <span className="font-semibold text-slate-700"> Como será usado: </span>
+                no agendamento, o sistema lerá este campo para calcular os próximos blocos
+                disponíveis — <span className="italic">semanal</span> repete toda semana,
+                <span className="italic"> quinzenal</span> a cada 14 dias e
+                <span className="italic"> mensal</span> uma vez por mês.
+                Ao verificar conflitos de data, a query filtrará somente os slots que se encaixam
+                no ciclo atual antes de comparação com as aulas já agendadas.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSaveAvailabilityType}
+                disabled={isSavingAvailability}
+                className="h-12 rounded-full bg-brand-yellow px-6 font-bold text-slate-900 hover:bg-amber-400 transition-all"
+              >
+                {isSavingAvailability ? 'Salvando...' : <><Save className="mr-2 h-4 w-4" /> Salvar Tipo de Agenda</>}
+              </Button>
             </div>
           </CardContent>
         </Card>

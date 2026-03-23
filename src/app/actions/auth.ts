@@ -1,32 +1,42 @@
-'use server'
+"use server";
 
-import prisma from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
-import { sendResetPasswordEmail } from '@/lib/mailer';
-import crypto from 'crypto';
-import { applyReferralOnSignup } from '@/app/actions/users';
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { sendResetPasswordEmail } from "@/lib/mailer";
+import crypto from "crypto";
+import { applyReferralOnSignup } from "@/app/actions/users";
+import { revalidatePath } from "next/cache";
 
-const ALLOWED_ROLES = new Set(['student', 'teacher']);
+const ALLOWED_ROLES = new Set(["student", "teacher"]);
 
 // REGISTRAR USUÁRIO (Com Criptografia)
-export async function registerUser(data: { name: string, email: string, password: string, role: string, referralCode?: string }) {
+export async function registerUser(data: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  referralCode?: string;
+}) {
   try {
-    if (data.role === 'admin') {
-      return { success: false, error: 'Ação não permitida.' }
+    if (data.role === "admin") {
+      return { success: false, error: "Ação não permitida." };
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { email: data.email }
-    })
+      where: { email: data.email },
+    });
 
     if (existingUser) {
-      return { success: false, error: 'Este e-mail já está cadastrado. Vá para a tela de login.' }
+      return {
+        success: false,
+        error: "Este e-mail já está cadastrado. Vá para a tela de login.",
+      };
     }
 
     // MÁGICA DA SEGURANÇA: Embaralhando a senha antes de salvar
-    const hashedPassword = await bcrypt.hash(data.password, 10)
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    const normalizedRole = ALLOWED_ROLES.has(data.role) ? data.role : 'student';
+    const normalizedRole = ALLOWED_ROLES.has(data.role) ? data.role : "student";
 
     const newUser = await prisma.user.create({
       data: {
@@ -34,93 +44,137 @@ export async function registerUser(data: { name: string, email: string, password
         email: data.email,
         password: hashedPassword, // Salva o hash (ex: $2a$10$wY... ), ninguém nunca saberá a senha real
         role: normalizedRole,
-        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`, 
-        ...(normalizedRole === 'teacher' ? { isValidated: false } : {}),
-        status: normalizedRole === 'teacher' ? 'pending' : 'active'
+        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
+        ...(normalizedRole === "teacher" ? { isValidated: false } : {}),
+        status: normalizedRole === "teacher" ? "pending" : "active",
+      },
+    });
+
+    // lógica de indicação
+    if (data.referralCode) {
+      const referrer = await prisma.user.findFirst({
+        where: { referralCode: data.referralCode },
+      });
+
+      if (referrer) {
+        // Notificação 1: para o dono do código de indicação
+        await prisma.notification.create({
+          data: {
+            userId: referrer.id,
+            title: "Nova Indicação!",
+            message: `O aluno ${data.name} se cadastrou usando seu código!`,
+            type: "REFERRAL",
+            read: false,
+          },
+        });
+
+        // Notificação 2: para o novo aluno
+        await prisma.notification.create({
+          data: {
+            userId: newUser.id,
+            title: "Bem-vindo!",
+            message: `Você se cadastrou com o código de indicação de ${referrer.name}! Aproveite a plataforma.`,
+            type: "REFERRAL",
+            read: false,
+          },
+        });
+
+        await applyReferralOnSignup(newUser.id, data.referralCode);
+        revalidatePath("/dashboard/notifications");
       }
-    })
+    }
 
-    await applyReferralOnSignup(newUser.id, data.referralCode);
-
-    return { success: true, user: newUser }
+    return { success: true, user: newUser };
   } catch (error) {
-    console.error('Erro ao registrar no banco:', error)
-    return { success: false, error: 'Erro interno ao criar a conta.' }
+    console.error("Erro no registro:", error);
+    return { success: false, error: "Erro interno ao criar a conta." };
   }
 }
 
 //  LOGIN (Comparando o Hash)
-export async function loginUser(data: { email: string, password: string }) {
+export async function loginUser(data: { email: string; password: string }) {
   try {
     const user = await prisma.user.findUnique({
-      where: { email: data.email }
-    })
+      where: { email: data.email },
+    });
 
     if (!user) {
-      return { success: false, error: 'E-mail não encontrado no sistema.' }
+      return { success: false, error: "E-mail não encontrado no sistema." };
     }
 
     // Verifica se a senha digitada bate com a criptografia do banco
-    const isPasswordValid = await bcrypt.compare(data.password, user.password)
-    
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
+
     // (Apoio para testes) Permite logar com usuários criados ANTES da criptografia
-    const isLegacyPassword = user.password === data.password
+    const isLegacyPassword = user.password === data.password;
 
     if (!isPasswordValid && !isLegacyPassword) {
-      return { success: false, error: 'Senha incorreta. Tente novamente.' }
+      return { success: false, error: "Senha incorreta. Tente novamente." };
     }
 
     // Validando o status ANTES de deixar entrar
-    if (user.status === 'pending') {
-      return { 
-        success: false, 
-        error: 'Sua conta está em análise! Aguarde a aprovação do administrador para acessar o sistema.' 
-      }
-    }
+   /* if (user.status === "pending") {
+      return {
+        success: false,
+        error:
+          "Sua conta está em análise! Aguarde a aprovação do administrador para acessar o sistema.",
+      };
+    } */
 
-    if (user.status === 'inactive') {
-      return { 
-        success: false, 
-        error: 'Sua conta foi desativada. Entre em contato com o suporte para mais informações.' 
-      }
+    if (user.status === "inactive") {
+      return {
+        success: false,
+        error:
+          "Sua conta foi desativada. Entre em contato com o suporte para mais informações.",
+      };
     }
 
     // Se a senha tá certa e o status tá 'active', portas abertas!
-    return { success: true, user }
+    return { success: true, user };
   } catch (error) {
-    console.error('Erro ao iniciar sessão:', error)
-    return { success: false, error: 'Erro interno ao iniciar sessão.' }
+    console.error("Erro ao iniciar sessão:", error);
+    return { success: false, error: "Erro interno ao iniciar sessão." };
   }
 }
 
 // TROCAR A SENHA (Para a tela de Perfil)
-export async function changePassword(userId: string, currentPassword: string, newPassword: string) {
-    try {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) return { success: false, error: 'Usuário não encontrado.' };
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { success: false, error: "Usuário não encontrado." };
 
-        // Valida se ele sabe a senha atual antes de deixar trocar
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-        const isLegacyPassword = user.password === currentPassword;
+    // Valida se ele sabe a senha atual antes de deixar trocar
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    const isLegacyPassword = user.password === currentPassword;
 
-        if (!isPasswordValid && !isLegacyPassword) {
-            return { success: false, error: 'A senha atual está incorreta. Não foi possível alterar.' };
-        }
-
-        // Criptografa a senha nova
-        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-        // Atualiza no banco
-        await prisma.user.update({
-            where: { id: userId },
-            data: { password: hashedNewPassword }
-        });
-
-        return { success: true };
-    } catch (error) {
-        console.error('Erro ao trocar senha:', error);
-        return { success: false, error: 'Erro interno ao atualizar a senha.' };
+    if (!isPasswordValid && !isLegacyPassword) {
+      return {
+        success: false,
+        error: "A senha atual está incorreta. Não foi possível alterar.",
+      };
     }
+
+    // Criptografa a senha nova
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Atualiza no banco
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao trocar senha:", error);
+    return { success: false, error: "Erro interno ao atualizar a senha." };
+  }
 }
 
 // 4. SOLICITAR RECUPERAÇÃO DE SENHA
@@ -129,45 +183,60 @@ export async function requestPasswordReset(email: string) {
   try {
     console.log(`[DEBUG] 1. A procurar o e-mail no banco de dados: "${email}"`);
     const user = await prisma.user.findUnique({ where: { email } });
-    
+
     if (!user) {
-        console.log(`[DEBUG] ❌ FALHA: O e-mail "${email}" NÃO foi encontrado no banco de dados SQLite! O sistema vai fingir sucesso por segurança.`);
-        return { success: true };
+      console.log(
+        `[DEBUG] ❌ FALHA: O e-mail "${email}" NÃO foi encontrado no banco de dados SQLite! O sistema vai fingir sucesso por segurança.`,
+      );
+      return { success: true };
     }
 
-    console.log(`[DEBUG] ✅ SUCESSO: Utilizador encontrado! ID: ${user.id}. A gerar Token...`);
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600000); 
+    console.log(
+      `[DEBUG] ✅ SUCESSO: Utilizador encontrado! ID: ${user.id}. A gerar Token...`,
+    );
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = new Date(Date.now() + 3600000);
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { resetToken, resetTokenExpiry }
+      data: { resetToken, resetTokenExpiry },
     });
 
-    console.log(`[DEBUG] 📨 A tentar ligar à Hostinger para enviar o e-mail...`);
+    console.log(
+      `[DEBUG] 📨 A tentar ligar à Hostinger para enviar o e-mail...`,
+    );
     const mailResult = await sendResetPasswordEmail(user.email, resetToken);
-    
+
     console.log(`[DEBUG] 🏁 Resposta do Carteiro (Nodemailer):`, mailResult);
 
     return { success: true };
   } catch (error) {
-    console.error('[DEBUG] 🚨 ERRO GRAVE no pedido de reset:', error);
-    return { success: false, error: 'Erro interno ao processar a solicitação.' };
+    console.error("[DEBUG] 🚨 ERRO GRAVE no pedido de reset:", error);
+    return {
+      success: false,
+      error: "Erro interno ao processar a solicitação.",
+    };
   }
 }
 
 // 5. VALIDAR TOKEN E SALVAR NOVA SENHA
-export async function resetPasswordWithToken(token: string, newPassword: string) {
+export async function resetPasswordWithToken(
+  token: string,
+  newPassword: string,
+) {
   try {
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpiry: { gt: new Date() } // Verifica se ainda não expirou
-      }
+        resetTokenExpiry: { gt: new Date() }, // Verifica se ainda não expirou
+      },
     });
 
     if (!user) {
-      return { success: false, error: 'Link inválido ou expirado. Solicite a recuperação novamente.' };
+      return {
+        success: false,
+        error: "Link inválido ou expirado. Solicite a recuperação novamente.",
+      };
     }
 
     // Criptografa a nova senha
@@ -179,13 +248,46 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
       data: {
         password: hashedNewPassword,
         resetToken: null,
-        resetTokenExpiry: null
-      }
+        resetTokenExpiry: null,
+      },
     });
 
     return { success: true };
   } catch (error) {
-    console.error('Erro ao redefinir senha:', error);
-    return { success: false, error: 'Erro interno ao atualizar a senha.' };
+    console.error("Erro ao redefinir senha:", error);
+    return { success: false, error: "Erro interno ao atualizar a senha." };
+  }
+}
+
+//   Buscar notificações do usuário
+export async function getUserNotifications(userId: string) {
+  try {
+    if (!userId) {
+      return { success: false, error: "ID de Usuário inválido." };
+    }
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { success: true, data: notifications };
+  } catch (error) {
+    console.error("Erro ao buscar notificações:", error);
+    return { success: false, error: "Erro interno ao carregar notificações." };
+  }
+}
+
+//  Marcar notificação como lida
+export async function markNotificationAsRead(notificationId: string) {
+  try {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { read: true },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao atualizar notificação:", error);
+    return { success: false, error: "Erro ao atualizar o estado." };
   }
 }
