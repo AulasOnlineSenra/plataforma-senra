@@ -185,5 +185,5 @@ model Lead {
   id        String   @id @default(uuid())
   name      String?
   email     String?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) //
 }
