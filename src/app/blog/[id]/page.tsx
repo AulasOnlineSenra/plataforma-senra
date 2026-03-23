@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { getBlogPostById } from '@/lib/data';
 import Link from 'next/link';
@@ -8,6 +9,19 @@ import { useParams } from 'next/navigation';
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
   const post = getBlogPostById(id as string);
+  const [formattedDate, setFormattedDate] = useState<string>('');
+
+  useEffect(() => {
+    if (post?.date) {
+      setFormattedDate(
+        new Date(post.date).toLocaleDateString('pt-BR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+      );
+    }
+  }, [post?.date]);
 
   if (!post) {
     notFound();
@@ -44,11 +58,7 @@ export default function BlogPostPage() {
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H3a2 2 0 00-2 2v5a2 2 0 002 2h5"></path>
               </svg>
-              {new Date(post.date).toLocaleDateString('pt-BR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
+              {formattedDate}
             </span>
           </div>
 
