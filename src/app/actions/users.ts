@@ -649,3 +649,110 @@ export async function markNotificationAsRead(notificationId: string) {
     return { success: false, error: "Erro ao atualizar." };
   }
 }
+
+// Buscar disponibilidade de um professor
+export async function getTeacherAvailability(teacherId: string) {
+  try {
+    const slots = await prisma.availability.findMany({
+      where: { teacherId },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    });
+    return { success: true, data: slots };
+  } catch (error) {
+    console.error('Erro ao buscar disponibilidade:', error);
+    return { success: false, error: 'Falha ao buscar disponibilidade.', data: [] as { id: string; teacherId: string; dayOfWeek: number; startTime: string; endTime: string }[] };
+  }
+}
+
+// Buscar apenas professores ativos E validados (visivel para alunos)
+export async function getValidatedTeachers() {
+  try {
+    const teachers = await prisma.user.findMany({
+      where: {
+        role: 'teacher',
+        status: 'active',
+        isValidated: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+    return { success: true, data: teachers };
+  } catch (error) {
+    console.error('Erro ao buscar professores validados:', error);
+    return { success: false, error: 'Falha ao buscar professores.' };
+  }
+}
+
+// Atualizar perfil público do professor (bio, formação e disciplina)
+export async function updateTeacherProfile(
+  teacherId: string,
+  data: { bio?: string | null; education?: string | null; subject?: string | null },
+) {
+  try {
+    const teacher = await prisma.user.findFirst({
+      where: { id: teacherId, role: "teacher" },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return { success: false, error: "Professor não encontrado." };
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: teacherId },
+      data: {
+        bio: data.bio?.trim() || null,
+        education: data.education?.trim() || null,
+        subject: data.subject?.trim() || null,
+      },
+    });
+
+    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/teachers");
+    return { success: true, data: updated };
+  } catch (error) {
+    console.error("Erro ao atualizar perfil do professor:", error);
+    return { success: false, error: "Falha ao atualizar perfil do professor." };
+  }
+}
+
+type AvailabilitySlot = {
+  dayOfWeek: number; // 0–6
+  startTime: string; // "HH:mm"
+  endTime: string;   // "HH:mm"
+};
+
+// Salvar disponibilidade semanal do professor (substitui a existente)
+export async function saveTeacherAvailability(
+  teacherId: string,
+  slots: AvailabilitySlot[],
+) {
+  try {
+    const teacher = await prisma.user.findFirst({
+      where: { id: teacherId, role: "teacher" },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return { success: false, error: "Professor não encontrado." };
+    }
+
+    await prisma.$transaction([
+      prisma.availability.deleteMany({ where: { teacherId } }),
+      prisma.availability.createMany({
+        data: slots.map((slot) => ({
+          teacherId,
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        })),
+      }),
+    ]);
+
+    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/schedule");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao salvar disponibilidade:", error);
+    return { success: false, error: "Falha ao salvar disponibilidade." };
+  }
+}

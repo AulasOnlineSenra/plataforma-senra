@@ -33,16 +33,38 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }, [pathname]);
 
+  // Verifica se o professor está com status 'pending' e tenta acessar outra rota
+  const isPendingTeacherBlocked = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const stored = localStorage.getItem("currentUser");
+      if (!stored) return false;
+      const user = JSON.parse(stored);
+      return (
+        user?.role === "teacher" &&
+        user?.status === "pending" &&
+        pathname !== "/dashboard/profile"
+      );
+    } catch {
+      return false;
+    }
+  }, [pathname]);
+
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     if (!role) {
       router.push("/login");
       return;
     }
+    // Professor pendente só pode acessar a página de perfil
+    if (isPendingTeacherBlocked) {
+      router.replace("/dashboard/profile");
+      return;
+    }
     if (!allowedByRole) {
       router.push("/dashboard");
     }
-  }, [allowedByRole, router]);
+  }, [allowedByRole, isPendingTeacherBlocked, router]);
 
   return (
     <div className="grid min-h-screen w-full overflow-x-hidden md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

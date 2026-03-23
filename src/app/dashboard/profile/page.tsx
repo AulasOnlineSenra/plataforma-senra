@@ -5,12 +5,30 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, ShieldCheck, Mail, KeyRound, Save, CheckCircle2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  User, ShieldCheck, Mail, KeyRound, Save, CheckCircle2,
+  GraduationCap, BookOpen, Clock, Plus, Trash2, CalendarDays,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-import { getUserById, updateUserProfile } from '@/app/actions/users';
+import {
+  getUserById,
+  updateUserProfile,
+  updateTeacherProfile,
+  saveTeacherAvailability,
+  getSubjects,
+  getTeacherAvailability,
+} from '@/app/actions/users';
 import { changePassword } from '@/app/actions/auth';
 
 type ProfileUser = {
@@ -28,6 +46,16 @@ type ProfileUser = {
   street?: string | null;
   number?: string | null;
   videoUrl?: string | null;
+  bio?: string | null;
+  education?: string | null;
+  subject?: string | null;
+};
+
+type AvailabilitySlot = {
+  tempId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
 };
 
 function toDateInputValue(value?: string | Date | null) {
@@ -86,6 +114,15 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
+  // Estado específico do professor
+  const [bio, setBio] = useState('');
+  const [education, setEducation] = useState('');
+  const [subject, setSubject] = useState('');
+  const [subjectsList, setSubjectsList] = useState<{ id: string; name: string }[]>([]);
+  const [isSavingTeacherProfile, setIsSavingTeacherProfile] = useState(false);
+  const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
+
   useEffect(() => {
     const loadUser = async () => {
       const userId = localStorage.getItem('userId');
@@ -94,9 +131,13 @@ export default function ProfilePage() {
         return;
       }
 
-      const result = await getUserById(userId);
-      if (result.success && result.data) {
-        const user = result.data as ProfileUser;
+      const [userResult, subjectsResult] = await Promise.all([
+        getUserById(userId),
+        getSubjects(),
+      ]);
+
+      if (userResult.success && userResult.data) {
+        const user = userResult.data as ProfileUser;
         setCurrentUser(user);
         setName(user.name || '');
         setEmail(user.email || '');
@@ -109,7 +150,29 @@ export default function ProfilePage() {
         setStreet(user.street || '');
         setNumber(user.number || '');
         setVideoUrl(user.videoUrl || '');
+
+        if (user.role === 'teacher') {
+          setBio(user.bio || '');
+          setEducation(user.education || '');
+          setSubject(user.subject || '');
+          const availResult = await getTeacherAvailability(userId);
+          if (availResult.success && availResult.data) {
+            setAvailabilitySlots(
+              availResult.data.map((slot) => ({
+                tempId: slot.id,
+                dayOfWeek: slot.dayOfWeek,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+              })),
+            );
+          }
+        }
       }
+
+      if (subjectsResult.success && subjectsResult.data) {
+        setSubjectsList(subjectsResult.data);
+      }
+
       setIsLoading(false);
     };
 
@@ -230,6 +293,55 @@ export default function ProfilePage() {
       toast({ variant: 'destructive', title: 'Erro de autenticacao', description: result.error });
     }
     setIsSavingPassword(false);
+  };
+
+  const handleSaveTeacherProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser?.id) return;
+    setIsSavingTeacherProfile(true);
+    const result = await updateTeacherProfile(currentUser.id, { bio, education, subject });
+    if (result.success) {
+      toast({ title: 'Perfil público atualizado', description: 'Bio, formação e disciplina foram salvos.' });
+    } else {
+      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: result.error });
+    }
+    setIsSavingTeacherProfile(false);
+  };
+
+  const handleSaveAvailability = async () => {
+    if (!currentUser?.id) return;
+    setIsSavingAvailability(true);
+    const result = await saveTeacherAvailability(
+      currentUser.id,
+      availabilitySlots.map(({ dayOfWeek, startTime, endTime }) => ({ dayOfWeek, startTime, endTime })),
+    );
+    if (result.success) {
+      toast({ title: 'Disponibilidade salva', description: 'Seus horários foram atualizados com sucesso.' });
+    } else {
+      toast({ variant: 'destructive', title: 'Erro', description: result.error });
+    }
+    setIsSavingAvailability(false);
+  };
+
+  const addAvailabilitySlot = () => {
+    setAvailabilitySlots((prev) => [
+      ...prev,
+      { tempId: crypto.randomUUID(), dayOfWeek: 1, startTime: '08:00', endTime: '09:30' },
+    ]);
+  };
+
+  const removeAvailabilitySlot = (tempId: string) => {
+    setAvailabilitySlots((prev) => prev.filter((s) => s.tempId !== tempId));
+  };
+
+  const updateSlotField = (
+    tempId: string,
+    field: keyof Omit<AvailabilitySlot, 'tempId'>,
+    value: string | number,
+  ) => {
+    setAvailabilitySlots((prev) =>
+      prev.map((s) => (s.tempId === tempId ? { ...s, [field]: value } : s)),
+    );
   };
 
   if (isLoading) {
@@ -417,6 +529,200 @@ export default function ProfilePage() {
           </form>
         </Card>
       </div>
+
+      {currentUser?.role === 'teacher' && (
+        <>
+          {/* Perfil Público do Professor */}
+          <Card className="rounded-3xl border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50 border-b pb-5 rounded-t-3xl">
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-800">
+                <GraduationCap className="h-6 w-6 text-brand-yellow" />
+                Perfil Público
+              </CardTitle>
+              <CardDescription className="text-base font-medium">
+                Informações exibidas para os alunos. Complete para ser aprovado pelo administrador.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSaveTeacherProfile}>
+              <CardContent className="space-y-5 pt-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="teacher-subject" className="font-bold text-slate-700">
+                    Disciplina principal
+                  </Label>
+                  {subjectsList.length > 0 ? (
+                    <Select value={subject} onValueChange={setSubject}>
+                      <SelectTrigger id="teacher-subject" className="h-12 bg-white rounded-xl">
+                        <SelectValue placeholder="Selecione uma disciplina" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjectsList.map((s) => (
+                          <SelectItem key={s.id} value={s.name}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      id="teacher-subject-text"
+                      className="h-12 bg-white"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Ex: Matemática"
+                    />
+                  )}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="education" className="font-bold text-slate-700 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-slate-500" /> Formação Acadêmica
+                  </Label>
+                  <Input
+                    id="education"
+                    className="h-12 bg-white"
+                    value={education}
+                    onChange={(e) => setEducation(e.target.value)}
+                    placeholder="Ex: Licenciatura em Matemática — UFPB"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="bio" className="font-bold text-slate-700 flex items-center gap-2">
+                    <User className="h-4 w-4 text-slate-500" /> Bio / Apresentação
+                  </Label>
+                  <Textarea
+                    id="bio"
+                    className="min-h-[120px] bg-white resize-none"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Conte sobre sua experiência, metodologia e diferenciais como professor..."
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="bg-slate-50 pt-6 rounded-b-3xl border-t">
+                <Button
+                  type="submit"
+                  disabled={isSavingTeacherProfile}
+                  className="w-full h-12 rounded-xl bg-slate-900 font-bold text-white hover:bg-slate-800 transition-all"
+                >
+                  {isSavingTeacherProfile
+                    ? 'Salvando...'
+                    : <><Save className="mr-2 h-5 w-5" /> Salvar perfil público</>}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+
+          {/* Gestão de Disponibilidade */}
+          <Card className="rounded-3xl border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50 border-b pb-5 rounded-t-3xl">
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-800">
+                <CalendarDays className="h-6 w-6 text-brand-yellow" />
+                Gestão de Disponibilidade
+              </CardTitle>
+              <CardDescription className="text-base font-medium">
+                Defina os dias e horários em que você está disponível para aulas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              {availabilitySlots.length === 0 && (
+                <p className="text-sm text-slate-500 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center">
+                  Nenhum horário cadastrado. Clique em &quot;Adicionar Horário&quot; para começar.
+                </p>
+              )}
+
+              {availabilitySlots.map((slot) => (
+                <div
+                  key={slot.tempId}
+                  className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-2xl border border-slate-100 bg-slate-50 p-4"
+                >
+                  <div className="grid gap-1">
+                    <Label className="text-xs font-bold text-slate-600">Dia da Semana</Label>
+                    <Select
+                      value={String(slot.dayOfWeek)}
+                      onValueChange={(v) => updateSlotField(slot.tempId, 'dayOfWeek', Number(v))}
+                    >
+                      <SelectTrigger className="h-10 bg-white rounded-xl text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[
+                          { value: 0, label: 'Domingo' },
+                          { value: 1, label: 'Segunda-feira' },
+                          { value: 2, label: 'Terça-feira' },
+                          { value: 3, label: 'Quarta-feira' },
+                          { value: 4, label: 'Quinta-feira' },
+                          { value: 5, label: 'Sexta-feira' },
+                          { value: 6, label: 'Sábado' },
+                        ].map((d) => (
+                          <SelectItem key={d.value} value={String(d.value)}>
+                            {d.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Início
+                    </Label>
+                    <Input
+                      type="time"
+                      className="h-10 bg-white rounded-xl text-sm"
+                      value={slot.startTime}
+                      onChange={(e) => updateSlotField(slot.tempId, 'startTime', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Fim
+                    </Label>
+                    <Input
+                      type="time"
+                      className="h-10 bg-white rounded-xl text-sm"
+                      value={slot.endTime}
+                      onChange={(e) => updateSlotField(slot.tempId, 'endTime', e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-xl border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => removeAvailabilitySlot(slot.tempId)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addAvailabilitySlot}
+                className="w-full h-11 rounded-xl border-dashed border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Horário
+              </Button>
+            </CardContent>
+            <CardFooter className="bg-slate-50 pt-6 rounded-b-3xl border-t">
+              <Button
+                type="button"
+                onClick={handleSaveAvailability}
+                disabled={isSavingAvailability}
+                className="w-full h-12 rounded-xl bg-brand-yellow font-bold text-slate-900 hover:bg-amber-400 shadow-md transition-all"
+              >
+                {isSavingAvailability
+                  ? 'Salvando...'
+                  : <><Save className="mr-2 h-5 w-5" /> Salvar disponibilidade</>}
+              </Button>
+            </CardFooter>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { createBookings, getLessons } from "@/app/actions/bookings";
 import {
   getStudents,
   getSubjects,
-  getTeachers,
+  getValidatedTeachers,
   getUserById,
 } from "@/app/actions/users";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -156,7 +156,7 @@ function BookingPageComponent() {
       const [subjectsResult, teachersResult, lessonsResult, studentsResult] =
         await Promise.all([
           getSubjects(),
-          getTeachers(),
+          getValidatedTeachers(),
           getLessons(),
           getStudents(),
         ]);

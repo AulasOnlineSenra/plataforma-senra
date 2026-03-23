@@ -39,6 +39,9 @@ model User {
   videoUrl    String? // Vídeo de apresentação do Professor
   isValidated Boolean @default(false) // Controle de aprovação do Admin
 
+  bio       String? // Apresentação pessoal do professor
+  education String? // Formação acadêmica do professor
+
   // Relacionamentos: Um usuário pode ter várias aulas como aluno ou como professor
   lessonsAsStudent  Lesson[]       @relation("StudentLessons")
   lessonsAsTeacher  Lesson[]       @relation("TeacherLessons")
@@ -50,6 +53,7 @@ model User {
   assignedSimulados Simulado[]     @relation("SimuladoStudent")
   transactions      Transaction[]  @relation("StudentTransactions")
   notifications     Notification[]
+  availability      Availability[]
 }
 
 model ChatMessage {
@@ -139,11 +143,24 @@ model Subject {
 }
 
 model AppSetting {
-  id            String   @id @default("global")
-  whatsapp      String   @default("")
-  classValue    String   @default("50.00")
-  referralBonus String   @default("1")
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default("global")
+  whatsapp         String   @default("")
+  classValue       String   @default("50.00")
+  referralBonus    String   @default("1")
+  availabilityType String   @default("weekly")
+  updatedAt        DateTime @updatedAt
+}
+
+model Availability {
+  id         String @id @default(uuid())
+  teacherId  String
+  dayOfWeek  Int    // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+  startTime  String // Formato "HH:mm", ex: "08:00"
+  endTime    String // Formato "HH:mm", ex: "10:00"
+
+  teacher User @relation(fields: [teacherId], references: [id])
+
+  @@index([teacherId])
 }
 
 model Transaction {
