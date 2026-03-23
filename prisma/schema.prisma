@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:../dev.db"
 }
 
 model User {
@@ -195,4 +195,13 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 user        User     @relation(fields: [userId], references: [id])
+model Lead {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String
+  phone     String?
+  source    String   @default("home")
+  status    String   @default("novo") // novo, contatado, convertido
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
