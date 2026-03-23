@@ -1,3 +1,5 @@
+'use client';
+
 import { notFound } from 'next/navigation';
 import { getBlogPostById } from '@/lib/data';
 import Link from 'next/link';
