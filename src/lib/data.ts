@@ -672,9 +672,123 @@ export const logNotification = (notificationData: Omit<Notification, 'id' | 'tim
 
     const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
     const currentNotifications: Notification[] = storedNotifications ? JSON.parse(storedNotifications) : notifications;
-    
+
     const updatedNotifications = [newNotification, ...currentNotifications];
 
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedNotifications));
     window.dispatchEvent(new Event('storage'));
+};
+
+// Blog posts mock data
+export interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  authorAvatar: string;
+  date: string; // ISO string
+  readTime: string; // e.g., "5 min read"
+  image: string;
+  tags: string[];
+}
+
+export const blogPosts: BlogPost[] = [
+  {
+    id: 'post-1',
+    title: 'Como a aprendizagem personalizada transforma resultados educacionais',
+    excerpt: 'Descubra métodos eficazes para adaptar o ensino às necessidades individuais de cada aluno, aumentando engajamento e desempenho.',
+    content: `# Como a aprendizagem personalizada transforma resultados educacionais
+
+A aprendizagem personalizada está revolucionando a educação ao adaptar o conteúdo, ritmo e estilo de ensino às necessidades únicas de cada estudante.
+
+## Por que funciona?
+
+Quando os alunos recebem materiais alinhados com seus interesses e nível de habilidade, eles tendem a:
+- Manter-se mais engajados por períodos mais longos
+- Desenvolver maior confiança em suas capacidades
+- Reter informações por mais tempo
+- Aplicar o conhecimento em contextos práticos com maior facilidade
+
+## Implementação prática
+
+Na Plataforma Senra, utilizamos avaliações iniciais e feedback contínuo para criar trajetórias de aprendizado únicas para cada aluno, garantindo que cada minuto de estudo seja o mais produtivo possível.`,
+    author: 'Ana Silva',
+    authorAvatar: 'https://picsum.photos/seed/ana/100/100',
+    date: '2026-03-15T10:30:00Z',
+    readTime: '7 min read',
+    image: 'https://picsum.photos/seed/blog1/800/400',
+    tags: ['Educação', 'Metodologia', 'Personalização']
+  },
+  {
+    id: 'post-2',
+    title: '5 estratégias para manter a motivação nos estudos online',
+    excerpt: 'Dicas práticas para superar a procrastinação e manter o foco em ambientes de aprendizado virtual.',
+    content: `# 5 estratégias para manter a motivação nos estudos online
+
+Estudar online traz flexibilidade, mas também desafios únicos de motivação e autodisciplina.
+
+## 1. Estabeleça uma rotina consistente
+Defina horários específicos para estudo e trate-os como compromissos inadiáveis.
+
+## 2. Crie um espaço dedicado
+Um ambiente organizado e livre de distrações aumenta significativamente a produtividade.
+
+## 3. Use a técnica Pomodoro
+Trabalhe em blocos de 25 minutos seguidos de pausas curtas para manter o foco e evitar o esgotamento.
+
+## 4. Celebre pequenas vitórias
+Reconheça o progresso, por menores que sejam, para manter o senso de realização.
+
+## 5. Conecte-se com colegas
+Interações sociais, mesmo que virtuais, proporcionam apoio e responsabilidade mútua.
+
+Aplique estas estratégias e transforme sua experiência de aprendizado online.`,
+    author: 'Carlos Lima',
+    authorAvatar: 'https://picsum.photos/seed/carlos/100/100',
+    date: '2026-03-10T14:15:00Z',
+    readTime: '5 min read',
+    image: 'https://picsum.photos/seed/blog2/800/400',
+    tags: ['Motivação', 'Dicas de Estudo', 'Produtividade']
+  },
+  {
+    id: 'post-3',
+    title: 'O papel do feedback imediato no desenvolvimento de habilidades',
+    excerpt: 'Como respostas rápidas e específicas aceleram o aprendizado e corrigem equívocos antes que se consolidem.',
+    content: `# O papel do feedback imediato no desenvolvimento de habilidades
+
+Feedback oportuno é um dos maiores preditores de sucesso em ambientes de aprendizado.
+
+## Por que o timing importa?
+
+Quando o feedback é dado imediatamente após uma tentativa:
+- O contexto ainda está fresco na memória
+- Correções são mais facilmente incorporadas
+- Evita-se a consolidação de conceitos incorretos
+- A conexão entre ação e consequência fica mais clara
+
+## Tecnologia como aliada
+
+Plataformas modernas podem fornecer feedback instantâneo através de:
+- Correção automática de exercícios
+- Análise de padrões de erro
+- Sugestões personalizadas de melhoria
+- Visualização de progresso em tempo real
+
+Invista em ambientes que priorizem o feedback imediato para acelerar o desenvolvimento de competências essenciais.`,
+    author: 'Beatriz Costa',
+    authorAvatar: 'https://picsum.photos/seed/beatriz/100/100',
+    date: '2026-03-05T09:00:00Z',
+    readTime: '6 min read',
+    image: 'https://picsum.photos/seed/blog3/800/400',
+    tags: ['Feedback', 'Aprendizado', 'Tecnologia']
+  }
+];
+
+export const getBlogPosts = (): BlogPost[] => {
+  return blogPosts;
+};
+
+export const getBlogPostById = (id: string): BlogPost | undefined => {
+  return blogPosts.find(post => post.id === id);
 };

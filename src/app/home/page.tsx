@@ -458,10 +458,10 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
-                    <EditableText storageKey="home-footer-nav-blog">Blog</EditableText>
-                  </Link>
+<Link href="/blog" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
+  <ArrowRight className="h-4 w-4" />
+  <EditableText storageKey="home-footer-nav-blog">Blog</EditableText>
+</Link>
                 </li>
                 <li>
                   <Link href="#" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
