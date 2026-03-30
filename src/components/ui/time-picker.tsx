@@ -20,8 +20,8 @@ interface TimePickerProps {
 }
 
 export function TimePicker({ date, setDate }: TimePickerProps) {
-  const [hour, setHour] = React.useState<number | undefined>(date?.getHours());
-  const [minute, setMinute] = React.useState<number | undefined>(date?.getMinutes());
+  const [hour, setHour] = React.useState<number>(date?.getHours() ?? new Date().getHours());
+  const [minute, setMinute] = React.useState<number>(date?.getMinutes() ?? new Date().getMinutes());
 
   const hourRef = React.useRef<HTMLDivElement>(null);
   const minuteRef = React.useRef<HTMLDivElement>(null);
@@ -34,11 +34,13 @@ export function TimePicker({ date, setDate }: TimePickerProps) {
   }, [date]);
   
   React.useEffect(() => {
-    if (hour !== undefined && minute !== undefined && date) {
-      const newDate = new Date(date);
-      newDate.setHours(hour);
-      newDate.setMinutes(minute);
-      setDate(newDate);
+    if (hour !== undefined && minute !== undefined) {
+      const base = date ? new Date(date) : new Date();
+      base.setHours(hour);
+      base.setMinutes(minute);
+      base.setSeconds(0);
+      base.setMilliseconds(0);
+      setDate(base);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hour, minute]);

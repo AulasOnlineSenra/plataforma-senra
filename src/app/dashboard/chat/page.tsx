@@ -1,6 +1,6 @@
 "use client";
 
-import {
+import React, {
   FormEvent,
   useCallback,
   useEffect,
@@ -10,7 +10,20 @@ import {
   Suspense,
 } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, CheckCheck, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  Send,
+  Paperclip,
+  X,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  FileText,
+  Mic,
+  Clock,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +35,10 @@ import {
   markConversationAsRead,
   sendChatMessage,
 } from "@/app/actions/chat";
+import { ChatAttachmentPreview } from "@/components/chat-attachment-preview";
+import { HighlightText } from "@/components/highlight-text";
+import { AudioRecorder } from "@/components/audio-recorder";
+import { ScheduledMessagesDialog } from "@/components/scheduled-messages-dialog";
 
 type UserRole = "admin" | "student" | "teacher" | string;
 
@@ -39,6 +56,9 @@ interface ChatMessage {
   content: string;
   createdAt: string | Date;
   readAt: string | Date | null;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentType?: string | null;
 }
 
 const CURRENT_USER_KEY = "currentUser";
@@ -67,6 +87,19 @@ function formatTime(value: unknown): string {
   });
 }
 
+function formatDateSeparator(value: unknown): string {
+  const date = toDate(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (msgDay.getTime() === today.getTime()) return 'Hoje';
+  if (msgDay.getTime() === yesterday.getTime()) return 'Ontem';
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+}
+
 function normalizeUser(raw: any): ChatUser | null {
   if (!raw || typeof raw !== "object" || !raw.id) return null;
   return {
@@ -89,8 +122,22 @@ function ChatContent() {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isContactTyping, setIsContactTyping] = useState(false);
+  const [typingContactIds, setTypingContactIds] = useState<Set<string>>(new Set());
+  const [isRecording, setIsRecording] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchResultIndices, setSearchResultIndices] = useState<number[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUnreadTotalRef = useRef(0);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const loadUsers = useCallback(async () => {
     if (!currentUser?.role || !currentUser?.id) return;
@@ -114,6 +161,9 @@ function ChatContent() {
           content: String(message.content || ""),
           createdAt: message.createdAt,
           readAt: message.readAt,
+          attachmentUrl: message.attachmentUrl || null,
+          attachmentName: message.attachmentName || null,
+          attachmentType: message.attachmentType || null,
         }),
       );
 
@@ -177,15 +227,26 @@ function ChatContent() {
     if (!currentUser) return [];
     const list = allUsers.filter((u) => u.id !== currentUser.id);
 
-    if (currentUser.role === "admin") return list;
-    if (currentUser.role === "student") {
-      return list.filter((u) => u.role === "teacher" || u.role === "admin");
+    let filtered = list;
+    if (currentUser.role === "admin") filtered = list;
+    else if (currentUser.role === "student") {
+      filtered = list.filter((u) => u.role === "teacher" || u.role === "admin");
+    } else if (currentUser.role === "teacher") {
+      filtered = list.filter((u) => u.role === "student" || u.role === "admin");
     }
-    if (currentUser.role === "teacher") {
-      return list.filter((u) => u.role === "student" || u.role === "admin");
-    }
-    return [];
-  }, [allUsers, currentUser]);
+
+    return filtered.sort((a, b) => {
+      const lastMsgA = allMessages
+        .filter((m) => (m.senderId === a.id && m.receiverId === currentUser.id) || (m.senderId === currentUser.id && m.receiverId === a.id))
+        .sort((m1, m2) => toDate(m2.createdAt).getTime() - toDate(m1.createdAt).getTime())[0];
+      const lastMsgB = allMessages
+        .filter((m) => (m.senderId === b.id && m.receiverId === currentUser.id) || (m.senderId === currentUser.id && m.receiverId === b.id))
+        .sort((m1, m2) => toDate(m2.createdAt).getTime() - toDate(m1.createdAt).getTime())[0];
+      const timeA = lastMsgA ? toDate(lastMsgA.createdAt).getTime() : 0;
+      const timeB = lastMsgB ? toDate(lastMsgB.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+  }, [allUsers, currentUser, allMessages]);
 
   useEffect(() => {
     if (!contacts.length) return;
@@ -248,16 +309,273 @@ function ChatContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.length, activeContactId]);
 
+  // Typing indicator - check if contact is typing
+  useEffect(() => {
+    if (!currentUser?.id || !activeContact?.id) return;
+
+    let interval: ReturnType<typeof setInterval>;
+    let mounted = true;
+
+    const checkTyping = async () => {
+      try {
+        const res = await fetch(
+          `/api/typing?userId=${currentUser.id}&contactId=${activeContact.id}`,
+        );
+        const data = await res.json();
+        if (mounted && data.success) {
+          setIsContactTyping(data.isTyping);
+        }
+      } catch {
+        // silently fail
+      }
+    };
+
+    interval = setInterval(checkTyping, 1500);
+    checkTyping();
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [currentUser?.id, activeContact?.id]);
+
+  // Reset typing state when switching contacts
+  useEffect(() => {
+    setIsContactTyping(false);
+  }, [activeContactId]);
+
+  // Typing indicator - all contacts typing to current user (for contacts list)
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    let interval: ReturnType<typeof setInterval>;
+    let mounted = true;
+
+    const checkAllTyping = async () => {
+      try {
+        const res = await fetch(`/api/typing?userId=${currentUser.id}`);
+        const data = await res.json();
+        if (mounted && data.success && Array.isArray(data.typingContacts)) {
+          setTypingContactIds(new Set(data.typingContacts));
+        }
+      } catch {
+        // silently fail
+      }
+    };
+
+    interval = setInterval(checkAllTyping, 1500);
+    checkAllTyping();
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [currentUser?.id]);
+
+  // Search results
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSearchResultIndices([]);
+      setCurrentSearchIndex(0);
+      return;
+    }
+    const term = searchTerm.toLowerCase();
+    const indices: number[] = [];
+    conversation.forEach((msg, index) => {
+      if (msg.content.toLowerCase().includes(term)) {
+        indices.push(index);
+      }
+    });
+    setSearchResultIndices(indices);
+    setCurrentSearchIndex(indices.length > 0 ? indices.length - 1 : 0);
+  }, [searchTerm, conversation]);
+
+  // Scroll to search result
+  useEffect(() => {
+    if (searchResultIndices.length === 0) return;
+    const targetIndex = searchResultIndices[currentSearchIndex];
+    const el = messageRefs.current.get(targetIndex);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [currentSearchIndex, searchResultIndices]);
+
+  const navigateSearch = useCallback(
+    (direction: "up" | "down") => {
+      if (searchResultIndices.length === 0) return;
+      setCurrentSearchIndex((prev) => {
+        if (direction === "up") {
+          return prev > 0 ? prev - 1 : searchResultIndices.length - 1;
+        }
+        return prev < searchResultIndices.length - 1 ? prev + 1 : 0;
+      });
+    },
+    [searchResultIndices.length],
+  );
+
+  const sendTypingStatus = useCallback(
+    async (isTyping: boolean) => {
+      if (!currentUser?.id || !activeContact?.id) return;
+      try {
+        await fetch("/api/typing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: currentUser.id,
+            contactId: activeContact.id,
+            isTyping,
+          }),
+        });
+      } catch {
+        // silently fail
+      }
+    },
+    [currentUser?.id, activeContact?.id],
+  );
+
+  const handleInputChange = useCallback(
+    (value: string) => {
+      setInputValue(value);
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTypingStatus(true);
+      typingTimeoutRef.current = setTimeout(() => sendTypingStatus(false), 2000);
+    },
+    [sendTypingStatus],
+  );
+
+  const handleFileSelect = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setPendingFile(file);
+      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [],
+  );
+
+  const handleAudioSend = useCallback(
+    async (blob: Blob, duration: number) => {
+      if (!currentUser?.id || !activeContact?.id || isSending) return;
+      setIsSending(true);
+
+      try {
+        const file = new File(
+          [blob],
+          `audio-${Date.now()}.webm`,
+          { type: blob.type || "audio/webm" },
+        );
+
+        const formData = new FormData();
+        formData.append("file", file);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploadData = await uploadRes.json();
+
+        if (!uploadData.success) {
+          toast({
+            variant: "destructive",
+            title: "Erro no upload",
+            description: uploadData.error || "Falha ao enviar áudio.",
+          });
+          setIsSending(false);
+          setIsRecording(false);
+          return;
+        }
+
+        const result = await sendChatMessage({
+          senderId: currentUser.id,
+          receiverId: activeContact.id,
+          content: "",
+          attachmentUrl: uploadData.data.url,
+          attachmentName: uploadData.data.name,
+          attachmentType: uploadData.data.type,
+        });
+
+        if (!result.success) {
+          toast({
+            variant: "destructive",
+            title: "Erro ao enviar",
+            description: result.error || "Não foi possível enviar o áudio.",
+          });
+        }
+
+        await loadMessages(currentUser.id, false);
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Falha ao processar o áudio.",
+        });
+      }
+
+      setIsSending(false);
+      setIsRecording(false);
+    },
+    [currentUser?.id, activeContact?.id, isSending, toast, loadMessages],
+  );
+
+  const handleAudioCancel = useCallback(() => {
+    setIsRecording(false);
+  }, []);
+
   const handleSend = async (e: FormEvent) => {
     e.preventDefault();
     const content = inputValue.trim();
-    if (!content || !currentUser?.id || !activeContact?.id || isSending) return;
+    if ((!content && !pendingFile) || !currentUser?.id || !activeContact?.id || isSending) return;
 
     setIsSending(true);
+    let attachmentUrl: string | null = null;
+    let attachmentName: string | null = null;
+    let attachmentType: string | null = null;
+
+    if (pendingFile) {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", pendingFile);
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) {
+          toast({
+            variant: "destructive",
+            title: "Erro no upload",
+            description: uploadData.error || "Falha ao enviar arquivo.",
+          });
+          setIsSending(false);
+          setIsUploading(false);
+          return;
+        }
+        attachmentUrl = uploadData.data.url;
+        attachmentName = uploadData.data.name;
+        attachmentType = uploadData.data.type;
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Erro no upload",
+          description: "Falha ao enviar arquivo.",
+        });
+        setIsSending(false);
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
     const result = await sendChatMessage({
       senderId: currentUser.id,
       receiverId: activeContact.id,
-      content,
+      content: content || (pendingFile ? pendingFile.name : ""),
+      attachmentUrl,
+      attachmentName,
+      attachmentType,
     });
 
     if (!result.success) {
@@ -271,19 +589,22 @@ function ChatContent() {
     }
 
     setInputValue("");
+    setPendingFile(null);
+    sendTypingStatus(false);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     await loadMessages(currentUser.id, false);
     setIsSending(false);
   };
 
   return (
-    <div className="grid h-[calc(100vh-10rem)] w-full grid-cols-1 gap-4 overflow-hidden md:grid-cols-[340px_1fr]">
+    <div className="grid h-[calc(100vh-calc(10rem-60px))] w-full grid-cols-1 gap-4 overflow-hidden md:grid-cols-[340px_1fr]">
       <section
         className={`${activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-sm`}
       >
         <div className="border-b border-border/70 bg-muted/20 px-4 py-4">
           <h1 className="text-lg font-semibold tracking-tight">Conversas</h1>
         </div>
-        <ScrollArea className="h-[calc(100vh-10rem)] flex-1">
+        <ScrollArea className="h-[calc(100vh-calc(10rem-60px))] flex-1">
           {isLoading ? (
             <p className="p-4 text-sm text-muted-foreground">
               Carregando contatos...
@@ -320,7 +641,18 @@ function ChatContent() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{name}</p>
                     <p className="text-xs text-muted-foreground/90">
-                      {contact.role || "contato"}
+                      {typingContactIds.has(contact.id) ? (
+                        <span className="text-primary font-medium">
+                          digitando
+                          <span className="inline-flex ml-0.5">
+                            <span className="animate-typing-dot" style={{ animationDelay: '0ms' }}>.</span>
+                            <span className="animate-typing-dot" style={{ animationDelay: '0.2s' }}>.</span>
+                            <span className="animate-typing-dot" style={{ animationDelay: '0.4s' }}>.</span>
+                          </span>
+                        </span>
+                      ) : (
+                        contact.role || "contato"
+                      )}
                     </p>
                   </div>
                   {(unreadCountByContact[contact.id] || 0) > 0 && (
@@ -339,16 +671,16 @@ function ChatContent() {
         className={`${!activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm`}
       >
         {!currentUser ? (
-          <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+          <div className="flex h-[calc(100vh-calc(10rem-60px))] items-center justify-center p-6 text-center text-sm text-muted-foreground">
             Usuario atual não encontrado. Faca login novamente.
           </div>
         ) : !activeContact ? (
-          <div className="flex h-[calc(100vh-10rem)] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+          <div className="flex h-[calc(100vh-calc(10rem-60px))] items-center justify-center p-6 text-center text-sm text-muted-foreground">
             Selecione um contato para iniciar a conversa.
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 border-b border-border/70 bg-muted/20 px-4 py-4">
+            <div className="flex items-center gap-3 border-b border-border/70 bg-muted/20 px-4 py-3">
               <Button
                 type="button"
                 variant="ghost"
@@ -368,40 +700,167 @@ function ChatContent() {
                   {(activeContact.name || "U").charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <p className="text-sm font-semibold">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">
                   {activeContact.name || "Usuario"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {activeContact.role || "contato"}
+                  {isContactTyping ? (
+                    <span className="text-primary font-medium">
+                      digitando
+                      <span className="inline-flex ml-0.5">
+                        <span className="animate-typing-dot" style={{ animationDelay: '0ms' }}>.</span>
+                        <span className="animate-typing-dot" style={{ animationDelay: '0.2s' }}>.</span>
+                        <span className="animate-typing-dot" style={{ animationDelay: '0.4s' }}>.</span>
+                      </span>
+                    </span>
+                  ) : (
+                    activeContact.role || "contato"
+                  )}
                 </p>
               </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => {
+                  setIsSearchOpen((prev) => {
+                    if (!prev) {
+                      setTimeout(() => searchInputRef.current?.focus(), 100);
+                    } else {
+                      setSearchTerm("");
+                    }
+                    return !prev;
+                  });
+                }}
+                aria-label="Buscar"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
 
-            <ScrollArea className="max-h-[calc(100vh-16rem)] flex-1 bg-background">
+            {isSearchOpen && (
+              <div className="flex items-center gap-2 border-b border-border/70 bg-muted/10 px-4 py-2">
+                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar mensagens..."
+                  className="h-8 flex-1 border-0 bg-transparent text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      navigateSearch("up");
+                    }
+                  }}
+                />
+                {searchTerm && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {searchResultIndices.length > 0
+                      ? `${currentSearchIndex + 1}/${searchResultIndices.length}`
+                      : "0/0"}
+                  </span>
+                )}
+                {searchResultIndices.length > 0 && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => navigateSearch("up")}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => navigateSearch("down")}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setSearchTerm("");
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+
+            <ScrollArea className="max-h-[calc(100vh-calc(16rem-60px))] flex-1 bg-background">
               <div className="space-y-2 p-4">
                 {conversation.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Nenhuma mensagem ainda.
                   </p>
                 ) : (
-                  conversation.map((message) => {
+                  conversation.map((message, msgIndex) => {
+                    const prevDate = msgIndex > 0 ? toDate(conversation[msgIndex - 1].createdAt).toDateString() : null;
+                    const currDate = toDate(message.createdAt).toDateString();
+                    const showDateSeparator = prevDate !== currDate;
                     const isMine = message.senderId === currentUser.id;
+                    const isHighlighted =
+                      searchTerm.trim() &&
+                      searchResultIndices.includes(msgIndex);
+                    const isAudioOnly = message.attachmentType?.startsWith("audio/") && !message.content;
                     return (
+                      <React.Fragment key={message.id}>
+                        {showDateSeparator && (
+                          <div className="flex items-center justify-center my-4">
+                            <div className="bg-muted/70 text-muted-foreground text-xs font-medium px-3 py-1 rounded-full">
+                              {formatDateSeparator(message.createdAt)}
+                            </div>
+                          </div>
+                        )}
                       <div
-                        key={message.id}
+                        ref={(el) => {
+                          if (el) messageRefs.current.set(msgIndex, el);
+                          else messageRefs.current.delete(msgIndex);
+                        }}
                         className={`mb-2 flex ${isMine ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[82%] px-3 py-2.5 text-sm shadow-sm ${
+                          className={`max-w-[82%] px-3 ${isAudioOnly ? "py-0" : "py-2"} text-sm shadow-sm ${
                             isMine
                               ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground"
                               : "rounded-2xl rounded-bl-sm bg-muted text-foreground"
-                          }`}
+                          } ${isHighlighted ? "ring-2 ring-yellow-400 ring-offset-1" : ""}`}
                         >
-                          <p className="whitespace-pre-wrap break-words">
-                            {message.content || ""}
-                          </p>
+                          {message.attachmentUrl && (
+                            <div className={`${message.content ? "mb-2" : ""} ${isAudioOnly ? "pt-2.5" : ""}`}>
+                              <ChatAttachmentPreview
+                                url={message.attachmentUrl}
+                                name={message.attachmentName || "Arquivo"}
+                                type={message.attachmentType || ""}
+                                isMine={isMine}
+                              />
+                            </div>
+                          )}
+                          {message.content && (
+                            <p className="whitespace-pre-wrap break-words">
+                              {searchTerm ? (
+                                <HighlightText
+                                  text={message.content}
+                                  searchTerm={searchTerm}
+                                />
+                              ) : (
+                                message.content
+                              )}
+                            </p>
+                          )}
                           <div
                             className={`mt-1 flex items-center justify-end gap-1 text-[11px] ${
                               isMine
@@ -419,6 +878,7 @@ function ChatContent() {
                           </div>
                         </div>
                       </div>
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -428,28 +888,106 @@ function ChatContent() {
 
             <form
               onSubmit={handleSend}
-              className="border-t border-border/70 bg-card p-3"
+              className="border-t border-border/70 bg-card"
             >
-              <div className="flex items-center gap-2">
-                <Input
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Digite uma mensagem..."
-                  className="h-11 flex-1 rounded-md border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={isSending}
-                  className="h-11 w-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Send className="h-5 w-5" strokeWidth={2.4} />
-                </Button>
-              </div>
+              {pendingFile && (
+                <div className="flex items-center gap-2 border-b border-border/40 bg-muted/20 px-3 py-2">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate flex-1">
+                    {pendingFile.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {(pendingFile.size / 1024).toFixed(0)}KB
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setPendingFile(null)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {isRecording ? (
+                <div className="flex items-center gap-2 p-3">
+                  <AudioRecorder onSend={handleAudioSend} onCancel={handleAudioCancel} />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.doc,.docx,.xlsx,text/plain,audio/mpeg,audio/ogg,audio/webm,audio/mp4"
+                    onChange={handleFileChange}
+                  />
+                  <Input
+                    value={inputValue}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder="Digite uma mensagem..."
+                    className="h-11 flex-1 rounded-[13px] border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 shrink-0 rounded-[13px]"
+                    onClick={handleFileSelect}
+                    disabled={isSending || isUploading}
+                    aria-label="Anexar arquivo"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 shrink-0 rounded-[13px]"
+                    onClick={() => setIsScheduleOpen(true)}
+                    disabled={isSending || isUploading || !activeContact}
+                    aria-label="Mensagens agendadas"
+                  >
+                    <Clock className="h-5 w-5" />
+                  </Button>
+                  {inputValue.trim() || pendingFile ? (
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={isSending || isUploading}
+                      className="h-11 w-11 rounded-[13px] bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Send className="h-5 w-5" strokeWidth={2.4} />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="icon"
+                      disabled={isSending || isUploading}
+                      onClick={() => setIsRecording(true)}
+                      className="h-11 w-11 rounded-[13px] bg-primary text-primary-foreground hover:bg-primary/90"
+                      aria-label="Gravar áudio"
+                    >
+                      <Mic className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </form>
           </>
         )}
       </section>
+
+      {currentUser && activeContact && (
+        <ScheduledMessagesDialog
+          open={isScheduleOpen}
+          onOpenChange={setIsScheduleOpen}
+          senderId={currentUser.id}
+          receiverId={activeContact.id}
+          receiverName={activeContact.name || "Usuario"}
+        />
+      )}
     </div>
   );
 }

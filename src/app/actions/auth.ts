@@ -50,6 +50,22 @@ export async function registerUser(data: {
       },
     });
 
+    // Notificação para o admin sobre novo usuário
+    const adminUser = await prisma.user.findFirst({
+      where: { role: "admin" },
+    });
+    if (adminUser) {
+      await prisma.notification.create({
+        data: {
+          userId: adminUser.id,
+          title: "Novo Usuário Cadastrado!",
+          message: `${data.name} (${data.email}) se cadastrou como ${normalizedRole === "teacher" ? "professor" : "aluno"}.`,
+          type: "NEW_USER",
+          read: false,
+        },
+      });
+    }
+
     // lógica de indicação
     if (data.referralCode) {
       const referrer = await prisma.user.findFirst({
@@ -259,35 +275,4 @@ export async function resetPasswordWithToken(
   }
 }
 
-//   Buscar notificações do usuário
-export async function getUserNotifications(userId: string) {
-  try {
-    if (!userId) {
-      return { success: false, error: "ID de Usuário inválido." };
-    }
 
-    const notifications = await prisma.notification.findMany({
-      where: { userId: userId },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return { success: true, data: notifications };
-  } catch (error) {
-    console.error("Erro ao buscar notificações:", error);
-    return { success: false, error: "Erro interno ao carregar notificações." };
-  }
-}
-
-//  Marcar notificação como lida
-export async function markNotificationAsRead(notificationId: string) {
-  try {
-    await prisma.notification.update({
-      where: { id: notificationId },
-      data: { read: true },
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Erro ao atualizar notificação:", error);
-    return { success: false, error: "Erro ao atualizar o estado." };
-  }
-}

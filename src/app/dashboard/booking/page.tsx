@@ -371,35 +371,7 @@ function BookingPageComponent() {
           Escolha disciplina, professor e horário para confirmar sua aula.
         </p>
       </div>
-      {/* Trava de créditos — bloqueia o formulário antes de preencher */}
-      {currentUser && currentUser.credits < 1 && (
-        <Card className="rounded-3xl border-2 border-amber-200 bg-amber-50 shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-              <span style={{ fontSize: "32px" }}>🪙</span>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                Você não tem créditos disponíveis
-              </h2>
-              <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
-                Para agendar uma aula, você precisa ter pelo menos 1 crédito na
-                sua conta.
-              </p>
-            </div>
-            <Button
-              onClick={() => router.push("/dashboard/packages")}
-              className="h-12 rounded-2xl bg-[#FFC107] px-8 font-bold text-slate-900 hover:bg-amber-400"
-            >
-              Comprar Créditos
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Formulário — só aparece se tiver créditos */}
-      {(!currentUser || currentUser.credits >= 1) && (
-        <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-slate-900">Novo agendamento</CardTitle>
@@ -612,8 +584,7 @@ function BookingPageComponent() {
               )}
             </CardContent>
           </Card>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

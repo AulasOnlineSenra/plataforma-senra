@@ -9,6 +9,7 @@ import {
   CalendarCheck,
   Package,
   XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { getMockUser } from "@/lib/data";
 import { getUserNotifications } from "@/app/actions/users";
@@ -81,6 +82,17 @@ const TOAST_CONFIG: Record<
     badgeText: "Aula removida do agendamento",
     BadgeIcon: XCircle,
     ToastIcon: XCircle,
+    LabelIcon: Sparkles,
+  },
+  TEACHER_APPROVED: {
+    label: "Perfil Aprovado!",
+    accent: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+    accentDark: "#047857",
+    accentBg: "rgba(16,185,129,0.08)",
+    badgeColor: "#059669",
+    badgeText: "Você já pode receber agendamentos",
+    BadgeIcon: CheckCircle,
+    ToastIcon: CheckCircle,
     LabelIcon: Sparkles,
   },
 };

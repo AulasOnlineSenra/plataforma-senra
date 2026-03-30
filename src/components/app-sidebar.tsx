@@ -10,6 +10,7 @@ import { navItems as defaultNavItems, adminNavItems as defaultAdminNavItems } fr
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getChatMessagesForUser } from '@/app/actions/chat';
 import { getUserById } from '@/app/actions/users';
+import { safeLocalStorage } from '@/lib/safe-storage';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   student: 'Aluno',

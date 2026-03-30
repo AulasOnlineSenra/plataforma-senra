@@ -15,6 +15,7 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
+  CheckCircle,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -29,6 +30,7 @@ import {
 import {
   getUserNotifications,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from "@/app/actions/users";
 
 const NOTIFICATIONS_STORAGE_KEY = "notificationsList";
@@ -42,6 +44,9 @@ const notificationIcons: Record<NotificationType | string, React.ElementType> =
     new_user_registered: UserPlus,
     group_class_scheduled: CalendarCheck,
     REFERRAL: UserPlus,
+    NEW_USER: UserPlus,
+    TEACHER_PROFILE_COMPLETE: UserPlus,
+    TEACHER_APPROVED: CheckCircle,
   };
 
 const notificationColors: Record<NotificationType | string, string> = {
@@ -52,6 +57,9 @@ const notificationColors: Record<NotificationType | string, string> = {
   class_cancelled: "bg-red-100 text-red-600 border-red-100",
   class_rescheduled: "bg-purple-100 text-purple-600 border-purple-100",
   REFERRAL: "bg-emerald-100 text-emerald-600 border-emerald-100",
+  NEW_USER: "bg-blue-100 text-blue-600 border-blue-100",
+  TEACHER_PROFILE_COMPLETE: "bg-blue-100 text-blue-600 border-blue-100",
+  TEACHER_APPROVED: "bg-emerald-100 text-emerald-600 border-emerald-100",
 };
 
 export default function NotificationsPage() {
@@ -126,13 +134,14 @@ export default function NotificationsPage() {
     await markNotificationAsRead(id);
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     if (!currentUser) return;
     const updatedNotifications = notifications.map((n) => ({
       ...n,
       read: true,
     }));
     setNotifications(updatedNotifications);
+    await markAllNotificationsAsRead(currentUser.id);
   };
 
   const handleDeleteNotification = (id: string) => {

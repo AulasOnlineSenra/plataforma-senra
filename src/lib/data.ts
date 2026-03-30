@@ -206,18 +206,18 @@ export let teachers: Teacher[] = [
 export const allUsers: (User | Teacher)[] = [...users, ...teachers];
 
 export const getAllUsers = (): (User | Teacher)[] => {
-    if (typeof window === 'undefined') return [];
-    const storedUsers = localStorage.getItem('userList');
+    if (typeof window === 'undefined' || typeof localStorage?.getItem !== 'function') return [];
+    const storedUsers = typeof window !== 'undefined' ? localStorage.getItem('userList') : null;
     const currentUsers = storedUsers ? JSON.parse(storedUsers) : users;
 
-    const storedTeachers = localStorage.getItem('teacherList');
+    const storedTeachers = typeof window !== 'undefined' ? localStorage.getItem('teacherList') : null;
     const currentTeachers = storedTeachers ? JSON.parse(storedTeachers) : teachers;
 
     return [...currentUsers, ...currentTeachers];
 };
 
 export const getContactsForUser = (currentUser: User): ChatContact[] => {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined' || typeof localStorage?.getItem !== 'function') return [];
 
   const allCurrentUsers = getAllUsers();
   
@@ -566,7 +566,7 @@ export const marketingCosts: MarketingCosts = {
 
 const ACTIVITY_LOG_STORAGE_KEY = 'activityLog';
 export const logActivity = (action: string) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof localStorage?.getItem !== 'function') return;
     
     const newActivity: Activity = {
         action,
@@ -661,7 +661,7 @@ export const notifications: Notification[] = [
 ];
 
 export const logNotification = (notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof localStorage?.getItem !== 'function') return;
 
     const newNotification: Notification = {
         ...notificationData,

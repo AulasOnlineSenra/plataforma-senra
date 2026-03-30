@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export function SenraLogo({ className }: { className?: string }) {
   return (
-    <Link href="/" className={`relative block w-40 h-16 ${className || ''}`}>
+    <Link href="/" className={`relative block w-[130px] h-[52px] ${className || ''}`}>
       <Image
         src="/logo.png"
         alt="Logo Aulas Senra"

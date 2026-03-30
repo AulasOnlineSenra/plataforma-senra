@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { getUserById } from "@/app/actions/users";
 
-export function PendingProfileBanner() {
+interface PendingProfileBannerProps {
+  className?: string;
+}
+
+export function PendingProfileBanner({ className = "" }: PendingProfileBannerProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -41,6 +45,7 @@ export function PendingProfileBanner() {
 
   return (
     <div
+      className={className}
       style={{
         background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
         borderBottom: "2px solid #f5b000",
@@ -79,8 +84,8 @@ export function PendingProfileBanner() {
           Conta em análise.
         </span>
         <span style={{ fontSize: "16px", color: "#b07800", fontWeight: 500 }}>
-          Seu perfil está sendo revisado pelo administrador. Você receberá
-          acesso completo assim que for aprovado.
+          Preencha todos seus dados corretamente. Seu perfil estará
+          disponível para os alunos assim que for aprovado.
         </span>
       </div>
     </div>

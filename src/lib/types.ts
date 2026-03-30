@@ -94,6 +94,20 @@ export interface ChatMessage {
   receiverId: string;
   content: string;
   timestamp: Date;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentType?: string | null;
+}
+
+export interface ScheduledMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  scheduledAt: Date;
+  status: "pending" | "sent" | "cancelled";
+  createdAt: Date;
+  sentAt?: Date | null;
 }
 
 export interface ChatContact {
@@ -201,7 +215,9 @@ export type NotificationType =
   | "class_rescheduled"
   | "package_purchased"
   | "new_user_registered"
-  | "group_class_scheduled";
+  | "group_class_scheduled"
+  | "TEACHER_APPROVED"
+  | "TEACHER_SUSPENDED";
 
 export interface Notification {
   id: string;

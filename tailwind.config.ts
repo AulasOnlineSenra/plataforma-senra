@@ -24,6 +24,7 @@ export default {
       colors: {
         senra: '#f5b000',
         'brand-yellow': 'hsl(var(--brand-yellow))',
+        'brand-blue': 'hsl(var(--brand-blue))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -81,6 +82,10 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
+        'typing-dot': {
+          '0%, 60%, 100%': { opacity: '0.3', transform: 'translateY(0)' },
+          '30%': { opacity: '1', transform: 'translateY(-4px)' },
+        },
         'accordion-down': {
           from: { height: '0' },
           to: { height: 'var(--radix-accordion-content-height)' },
@@ -101,6 +106,7 @@ export default {
         },
       },
       animation: {
+        'typing-dot': 'typing-dot 1.4s ease-in-out infinite',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'highlight': 'highlight-border 2s ease-out',

@@ -221,8 +221,8 @@ export async function getLessonsForUser(userId: string, role: string) {
       where,
       orderBy: { date: "asc" },
       include: {
-        student: { select: { id: true, name: true, email: true } },
-        teacher: { select: { id: true, name: true, email: true } },
+        student: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
       },
     });
 

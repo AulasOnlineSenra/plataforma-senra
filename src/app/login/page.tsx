@@ -325,10 +325,10 @@ export default function LoginPage() {
               src={loginImage.imageUrl}
               alt="Estudante focado"
               fill
-              className="object-cover opacity-40 mix-blend-overlay"
+              className="object-cover opacity-70 mix-blend-overlay"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/30 to-slate-900/5"></div>
             </>
           )}
           <div className="relative z-10 max-w-lg">

@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -150,6 +150,7 @@ export async function deleteStudentProfile(studentId: string) {
 // Buscar apenas professores ativos
 export async function getTeachers() {
   try {
+    revalidatePath("/dashboard/teachers");
     const teachers = await prisma.user.findMany({
       where: {
         role: "teacher",
@@ -186,8 +187,20 @@ export async function approveTeacher(teacherId: string) {
       },
     });
 
+    await prisma.notification.create({
+      data: {
+        userId: teacherId,
+        title: "Perfil Aprovado!",
+        message:
+          "Seu perfil de professor foi aprovado pelo administrador. Você já pode receber agendamentos!",
+        type: "TEACHER_APPROVED",
+        read: false,
+      },
+    });
+
     revalidatePath("/dashboard/teachers");
     revalidatePath("/dashboard/admin/teachers");
+    revalidatePath("/dashboard/notifications");
     return { success: true };
   } catch (error) {
     console.error("Erro ao aprovar professor:", error);
@@ -197,6 +210,22 @@ export async function approveTeacher(teacherId: string) {
 
 export async function getSubjects() {
   try {
+    // Lista padrão de disciplinas como fallback
+    const defaultSubjects = [
+      { id: 'default-subj-1', name: 'Matemática' },
+      { id: 'default-subj-2', name: 'Português' },
+      { id: 'default-subj-3', name: 'Física' },
+      { id: 'default-subj-4', name: 'Redação' },
+      { id: 'default-subj-5', name: 'História' },
+      { id: 'default-subj-6', name: 'Química' },
+      { id: 'default-subj-7', name: 'Espanhol' },
+      { id: 'default-subj-8', name: 'Filosofia' },
+      { id: 'default-subj-9', name: 'Geografia' },
+      { id: 'default-subj-10', name: 'Inglês' },
+      { id: 'default-subj-11', name: 'Sociologia' },
+      { id: 'default-subj-12', name: 'Biologia' },
+    ];
+
     let subjectsTable: { id: string; name: string }[] = [];
     try {
       subjectsTable = await prisma.subject.findMany({
@@ -222,12 +251,19 @@ export async function getSubjects() {
 
     const normalized = new Map<string, { id: string; name: string }>();
 
+    // Adicionar disciplinas padrão primeiro
+    for (const subject of defaultSubjects) {
+      normalized.set(subject.name.toLocaleLowerCase("pt-BR"), subject);
+    }
+
+    // Adicionar disciplinas do banco (sobrescreve padrões se existirem)
     for (const subject of subjectsTable) {
       const name = subject.name.trim();
       if (!name) continue;
       normalized.set(name.toLocaleLowerCase("pt-BR"), { id: subject.id, name });
     }
 
+    // Adicionar disciplinas de professores existentes
     for (const teacher of teacherSubjects) {
       const name = (teacher.subject || "").trim();
       if (!name) continue;
@@ -383,6 +419,7 @@ type UpdateUserProfileInput = {
   cpf?: string | null;
   birthDate?: string | Date | null;
   cep?: string | null;
+  phone?: string | null;
   state?: string | null;
   neighborhood?: string | null;
   street?: string | null;
@@ -426,6 +463,8 @@ export async function updateUserProfile(
     if (data.birthDate !== undefined) updateData.birthDate = parsedBirthDate;
     if (data.cep !== undefined)
       updateData.cep = normalizeOptionalText(data.cep);
+    if (data.phone !== undefined)
+      updateData.phone = normalizeOptionalText(data.phone);
     if (data.state !== undefined)
       updateData.state = normalizeOptionalText(data.state);
     if (data.neighborhood !== undefined)
@@ -650,6 +689,19 @@ export async function markNotificationAsRead(notificationId: string) {
   }
 }
 
+export async function markAllNotificationsAsRead(userId: string) {
+  try {
+    await prisma.notification.updateMany({
+      where: { userId, read: false },
+      data: { read: true },
+    });
+    revalidatePath("/dashboard/notifications");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Erro ao marcar notificações como lidas." };
+  }
+}
+
 // Buscar disponibilidade de um professor
 export async function getTeacherAvailability(teacherId: string) {
   try {
@@ -682,29 +734,68 @@ export async function getValidatedTeachers() {
   }
 }
 
-// Atualizar perfil público do professor (bio, formação e disciplina)
+// Atualizar perfil público do professor (bio, formação, disciplinas e chave Pix)
 export async function updateTeacherProfile(
   teacherId: string,
-  data: { bio?: string | null; education?: string | null; subject?: string | null },
+  data: { bio?: string | null; education?: string | null; subject?: string | null; subjects?: string | null; pixKeyType?: string | null; pixKey?: string | null },
 ) {
   try {
     const teacher = await prisma.user.findFirst({
       where: { id: teacherId, role: "teacher" },
-      select: { id: true },
     });
 
     if (!teacher) {
-      return { success: false, error: "Professor não encontrado." };
+      return { success: false, error: "Professor não encontrada." };
+    }
+
+    // Build update data - only update fields that were explicitly provided
+    const updateData: Record<string, any> = {};
+    
+    if ('bio' in data) {
+      updateData.bio = data.bio?.trim() || null;
+    }
+    if ('education' in data) {
+      updateData.education = data.education?.trim() || null;
+    }
+    if ('subject' in data) {
+      updateData.subject = data.subject?.trim() || null;
+    }
+    if ('subjects' in data) {
+      updateData.subjects = data.subjects || null;
+    }
+    if ('pixKeyType' in data) {
+      updateData.pixKeyType = data.pixKeyType?.trim() || null;
+    }
+    if ('pixKey' in data) {
+      updateData.pixKey = data.pixKey?.trim() || null;
     }
 
     const updated = await prisma.user.update({
       where: { id: teacherId },
-      data: {
-        bio: data.bio?.trim() || null,
-        education: data.education?.trim() || null,
-        subject: data.subject?.trim() || null,
-      },
+      data: updateData,
     });
+
+    // Check if profile is now complete (using updated data)
+    const isProfileComplete = !!(updated.bio && updated.education && updated.subject && updated.pixKeyType && updated.pixKey);
+
+    // Notify admin only when profile becomes complete
+    const wasComplete = !!(teacher.bio && teacher.education && teacher.subject && teacher.pixKeyType && teacher.pixKey);
+    if (isProfileComplete && !wasComplete) {
+      const adminUser = await prisma.user.findFirst({
+        where: { role: "admin" },
+      });
+      if (adminUser) {
+        await prisma.notification.create({
+          data: {
+            userId: adminUser.id,
+            title: "Professor Aguardando Aprovação!",
+            message: `${teacher.name} completou o perfil e está aguardando sua aprovação.`,
+            type: "TEACHER_PROFILE_COMPLETE",
+            read: false,
+          },
+        });
+      }
+    }
 
     revalidatePath("/dashboard/profile");
     revalidatePath("/dashboard/teachers");

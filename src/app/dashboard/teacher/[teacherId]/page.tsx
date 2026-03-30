@@ -1,339 +1,337 @@
-
-
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMockUser, users as initialUsers, subjects, simulados as initialSimulados } from '@/lib/data';
-import { Teacher, ScheduleEvent, User, Simulado } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, FileText, BookCopy, CalendarCheck, Pencil, XCircle, Star, StarHalf, Check, Clock } from 'lucide-react';
+import { ChevronRight, FileText, BookCopy, CalendarCheck, Star, GraduationCap, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from '@/components/ui/toast';
-import { cn } from '@/lib/utils';
+import { getUserById } from '@/app/actions/users';
+import { getTeacherAverageRating, getTeacherRatings } from '@/app/actions/ratings';
+import { getLessonsForUser } from '@/app/actions/bookings';
 
+type TeacherData = {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  subject?: string | null;
+  subjects?: string | null;
+  education?: string | null;
+  bio?: string | null;
+};
 
-const SIMULADOS_STORAGE_KEY = 'simuladosList';
+type RatingData = {
+  id: string;
+  score: number;
+  comment?: string | null;
+  createdAt: string;
+  student: { id: string; name: string; avatarUrl?: string | null };
+};
 
-function formatDuration(seconds: number): string {
-    if (seconds < 60) {
-      return `${seconds} s`;
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes} min ${remainingSeconds > 0 ? `${remainingSeconds} s` : ''}`.trim();
-}
+type CurrentUser = {
+  id: string;
+  name: string;
+  role: string;
+};
 
 function TeacherDetailPageComponent() {
-    const params = useParams();
-    const router = useRouter();
-    const teacherId = params.teacherId as string;
-    const { toast } = useToast();
+  const params = useParams();
+  const router = useRouter();
+  const teacherId = params.teacherId as string;
 
-    const [teacher, setTeacher] = useState<Teacher | null>(null);
-    const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [simulados, setSimulados] = useState<Simulado[]>([]);
-
-    useEffect(() => {
-        const updateData = () => {
-            const storedTeachers = localStorage.getItem('teacherList');
-            const currentTeachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
-            const foundTeacher = currentTeachers.find(t => t.id === teacherId);
-            setTeacher(foundTeacher || null);
-
-            const storedSchedule = localStorage.getItem('scheduleEvents');
-            const currentSchedule: ScheduleEvent[] = storedSchedule 
-                ? JSON.parse(storedSchedule).map((e: any) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })) 
-                : initialSchedule;
-            setSchedule(currentSchedule);
-
-            const storedUser = localStorage.getItem('currentUser');
-            setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('student'));
-            
-            const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
-            setSimulados(storedSimulados ? JSON.parse(storedSimulados) : initialSimulados);
-        };
-
-        updateData();
-        window.addEventListener('storage', updateData);
-        return () => window.removeEventListener('storage', updateData);
-    }, [teacherId]);
-
-    const upcomingClasses = useMemo(() => {
-        if (!teacher || !currentUser) return [];
-        return schedule.filter(e => 
-            e.teacherId === teacher.id && 
-            e.studentId === currentUser.id &&
-            e.status === 'scheduled' &&
-            e.start > new Date()
-        ).sort((a, b) => a.start.getTime() - b.start.getTime());
-    }, [schedule, teacher, currentUser]);
-    
-    const teacherSimuladosForStudent = useMemo(() => {
-        if (!teacher || !currentUser) return [];
-        return simulados.filter(s => s.creatorId === teacher.id && s.studentId === currentUser.id)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [simulados, teacher, currentUser]);
-
-    const handleConfirmCancel = (eventId: string) => {
-        const updatedEvents = schedule.map(e => 
-        e.id === eventId ? { ...e, status: 'cancelled' as 'cancelled' } : e
-        );
-        setSchedule(updatedEvents);
-        localStorage.setItem('scheduleEvents', JSON.stringify(updatedEvents));
-        window.dispatchEvent(new Event('storage'));
-
-        const event = schedule.find(e => e.id === eventId);
-        toast({
-            title: "Aula Cancelada",
-            description: `A aula de ${event?.subject} foi cancelada.`,
-        });
-    };
-
-    const handleCancelClick = (event: ScheduleEvent) => {
-        toast({
-        title: `Cancelar aula de ${event.subject}?`,
-        description: 'A ação será confirmada em 5 segundos.',
-        variant: 'destructive',
-        duration: 5000,
-        action: (
-            <ToastAction altText="Confirmar" onClick={() => handleConfirmCancel(event.id)}>
-            Confirmar
-            </ToastAction>
-        ),
-        });
-    };
-    
-    const averageFeedback = useMemo(() => {
-        if (!teacher || !teacher.ratings || teacher.ratings.length < 5) {
-          return { score: 5.0, count: 0, text: 'Aguardando 5 avaliações' };
-        }
-        
-        const { ratings } = teacher;
-        if (ratings.length < 5) {
-          return { score: 5.0, count: ratings.length, text: `Aguardando ${5 - ratings.length} ${5 - ratings.length > 1 ? 'avaliações' : 'avaliação'}` };
-        }
-        const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-        return { score: avg, count: ratings.length, text: `Baseado em ${ratings.length} avaliações` };
-      }, [teacher]);
-
-
-    if (!teacher) {
-        return (
-            <div className="flex flex-1 items-center justify-center">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Professor não encontrado</CardTitle>
-                        <CardDescription>O perfil deste professor não pôde ser carregado.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button asChild>
-                            <Link href="/dashboard/my-teachers">Voltar para Meus Professores</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+  const formatEducation = (education: string | null | undefined): string => {
+    if (!education) return '';
+    let eduList: { course: string; university: string }[] = [];
+    if (Array.isArray(education)) {
+      eduList = education;
+    } else if (typeof education === 'string') {
+      try {
+        eduList = JSON.parse(education);
+      } catch {
+        return education;
+      }
     }
+    if (eduList.length > 0) {
+      return `${eduList[0].course} - ${eduList[0].university}`;
+    }
+    return education;
+  };
 
-    const teacherSubjects = teacher.subjects
-    .map((subjectId) => subjects.find((s) => s.id === subjectId)?.name)
-    .filter(Boolean);
-
-    const getSubjectName = (subjectId: string) => {
-        return subjects.find(s => s.id === subjectId)?.name || 'Disciplina Desconhecida';
-    };
+  const getAllEducations = (education: string | null | undefined): { text: string }[] => {
+    if (!education) return [];
     
-    const calculateSimuladoResults = (simulado: Simulado) => {
-        if (!simulado.userAnswers) return { correct: 0, incorrect: 0 };
-        let correct = 0;
-        simulado.questions.forEach(q => {
-            const correctOption = q.options.find(opt => opt.isCorrect);
-            if (correctOption && simulado.userAnswers && simulado.userAnswers[q.id] === correctOption.id) {
-                correct++;
-            }
-        });
-        return {
-            correct,
-            incorrect: simulado.questions.length - correct,
-        };
+    let eduList = education;
+    if (typeof eduList === 'string') {
+      try {
+        eduList = JSON.parse(eduList);
+      } catch {
+        return [];
+      }
+    }
+    
+    if (!Array.isArray(eduList) || eduList.length === 0) return [];
+    
+    return eduList
+      .filter((e: { course: string; university: string }) => e.course && e.university)
+      .map((e: { course: string; university: string }) => ({
+        text: `${e.course} - ${e.university}`
+      }));
+  };
+
+  const [teacher, setTeacher] = useState<TeacherData | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [rating, setRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
+  const [ratings, setRatings] = useState<RatingData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        const userResult = await getUserById(userId);
+        if (userResult.success && userResult.data) {
+          setCurrentUser(userResult.data as CurrentUser);
+        }
+      }
+
+      const teacherResult = await getUserById(teacherId);
+      if (teacherResult.success && teacherResult.data) {
+        setTeacher(teacherResult.data as TeacherData);
+      }
+
+      const [avgResult, ratingsResult] = await Promise.all([
+        getTeacherAverageRating(teacherId),
+        getTeacherRatings(teacherId),
+      ]);
+
+      if (avgResult.success && avgResult.data) {
+        setRating(avgResult.data);
+      }
+      if (ratingsResult.success && ratingsResult.data) {
+        setRatings(ratingsResult.data as RatingData[]);
+      }
+
+      setIsLoading(false);
     };
+    load();
+  }, [teacherId]);
 
+  const isAdmin = currentUser?.role === 'admin';
 
+  const teacherSubjects = teacher?.subjects
+    ? (() => {
+        try { return JSON.parse(teacher.subjects); } catch { return []; }
+      })()
+    : teacher?.subject
+      ? [teacher.subject]
+      : [];
+
+  const filteredRatings = ratings.filter((r) => {
+    if (isAdmin) return true;
+    return r.score >= 4;
+  });
+
+  if (isLoading) {
     return (
-        <div className="flex flex-1 flex-col gap-4 md:gap-8">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Link href="/dashboard/my-teachers" className="hover:underline">Meus Professores</Link>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-foreground">{teacher.name}</span>
+      <div className="flex flex-1 items-center justify-center text-slate-500">
+        Carregando perfil do professor...
+      </div>
+    );
+  }
+
+  if (!teacher) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Card className="rounded-3xl">
+          <CardHeader>
+            <CardTitle>Professor não encontrado</CardTitle>
+            <CardDescription>O perfil deste professor não pôde ser carregado.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/dashboard/teachers">Voltar para Professores</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/dashboard/teachers" className="hover:underline">Professores</Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="font-medium text-foreground">{teacher.name}</span>
+      </div>
+
+      <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-slate-50 border-b p-8">
+          <div className="flex flex-col lg:flex-row items-start gap-8">
+            {/* Lado esquerdo - Informações do professor (sem alterações) */}
+            <div className="flex-1">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                <Avatar className="h-28 w-28 border-4 border-brand-yellow shadow-[0_4px_16px_rgba(245,176,0,0.5)]">
+                  <AvatarImage src={teacher.avatarUrl || undefined} alt={teacher.name} />
+                  <AvatarFallback className="bg-amber-100 text-amber-700 font-bold text-4xl">
+                    {teacher.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 text-center md:text-left space-y-3">
+                  <h1 className="text-3xl font-bold text-slate-900">{teacher.name}</h1>
+
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                    {teacherSubjects.map((subject: string) => (
+                      <Badge key={subject} variant="secondary" className="bg-amber-100 text-amber-800 font-semibold">
+                        {subject}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-center md:justify-start gap-1">
+                    {Array(5).fill(0).map((_, i) => (
+                      <Star
+                        key={i}
+                        className="h-5 w-5"
+                        style={{ color: '#FFC107', fill: i < Math.round(rating.average) ? '#FFC107' : 'none' }}
+                      />
+                    ))}
+                    <span className="text-sm font-bold ml-1" style={{ color: '#FFC107' }}>
+                      {rating.average.toFixed(1)}
+                    </span>
+                    <span className="text-xs text-slate-400 ml-1">
+                      ({rating.count} {rating.count === 1 ? 'avaliação' : 'avaliações'})
+                    </span>
+                  </div>
+
+                  {teacher.education && (
+                    <div className="space-y-1">
+                      {getAllEducations(teacher.education).map((edu: { text: string }, idx: number) => (
+                        <div key={idx} className="flex items-center justify-center md:justify-start gap-2 text-sm text-slate-600">
+                          <GraduationCap className="h-4 w-4 text-brand-yellow" />
+                          <span className="font-medium">{edu.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <header className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <Avatar className="h-24 w-24 border-4 border-primary">
-                    <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                    <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-2">
-                    <h1 className="text-3xl md:text-4xl font-bold font-headline">{teacher.name}</h1>
-                     <div className="flex flex-wrap items-center gap-2">
-                        {teacherSubjects.map((subject) => (
-                            <Badge key={subject} variant="secondary">{subject}</Badge>
-                        ))}
-                    </div>
-                     <div className="flex items-center gap-1 pt-1">
-                        {Array(5).fill(0).map((_, i) => {
-                            const ratingValue = i + 1;
-                            if (averageFeedback.score >= ratingValue) {
-                                return <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
-                            }
-                            if (averageFeedback.score > i && averageFeedback.score < ratingValue) {
-                                return <StarHalf key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />;
-                            }
-                            return <Star key={i} className="h-5 w-5 text-gray-300" />;
-                        })}
-                        <span className="text-sm font-bold ml-2">{averageFeedback.score.toFixed(1)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">({averageFeedback.text})</span>
-                    </div>
-                </div>
-            </header>
-            
-            <Tabs defaultValue="classes" className="w-full mt-4">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="classes">
-                    <CalendarCheck className="mr-2" />
-                    Aulas Agendadas
-                </TabsTrigger>
-                <TabsTrigger value="materials">
-                    <FileText className="mr-2" />
-                    Materiais de Aula
-                </TabsTrigger>
-                <TabsTrigger value="simulations">
-                    <BookCopy className="mr-2" />
-                    Simulados
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="classes">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Próximas Aulas</CardTitle>
-                    <CardDescription>
-                      Suas aulas agendadas com {teacher.name}.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                     {upcomingClasses.length > 0 ? (
-                        upcomingClasses.map(c => (
-                            <div key={c.id} className="flex items-center justify-between rounded-md border p-3">
-                                <div>
-                                    <p className="font-semibold">{c.subject}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {format(c.start, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} - {format(c.end, "HH:mm")}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon" onClick={() => {
-                                        toast({ title: 'Edição de Aula', description: 'A edição de aulas é feita na página principal da Agenda.' });
-                                    }}>
-                                        <Pencil className="h-5 w-5 text-muted-foreground" />
-                                        <span className="sr-only">Editar Aula</span>
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleCancelClick(c)}>
-                                        <XCircle className="h-5 w-5" />
-                                        <span className="sr-only">Cancelar Aula</span>
-                                    </Button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="text-center py-10 text-muted-foreground">
-                            <p>Nenhuma aula futura agendada com este professor.</p>
-                        </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="materials">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Materiais de Aula</CardTitle>
-                        <CardDescription>Materiais compartilhados pelo professor.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center py-10 text-muted-foreground">
-                        <p>Nenhum material compartilhado ainda.</p>
-                    </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="simulations">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Simulados</CardTitle>
-                        <CardDescription>Simulados e exercícios propostos por {teacher.name}.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {teacherSimuladosForStudent.length > 0 ? (
-                            teacherSimuladosForStudent.map(simulado => {
-                                const results = calculateSimuladoResults(simulado);
-                                return (
-                                <div key={simulado.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-4 gap-4">
-                                    <div className="flex-1">
-                                        <p className="font-semibold">{simulado.title}</p>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            {getSubjectName(simulado.subjectId)} • {simulado.questions.length} questões
-                                        </p>
-                                    </div>
-                                    {simulado.status === 'Concluído' && simulado.score !== undefined ? (
-                                        <div className="flex items-center gap-4 text-sm w-full sm:w-auto justify-between">
-                                            <div className="flex items-center gap-2 text-green-600">
-                                                <Check className="h-4 w-4" />
-                                                <span>{results.correct} Acertos</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-destructive">
-                                                <XCircle className="h-4 w-4" />
-                                                <span>{results.incorrect} Erros</span>
-                                            </div>
-                                            {simulado.durationSeconds !== undefined && (
-                                                <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                    <Clock className="h-4 w-4" /> 
-                                                    <span>{formatDuration(simulado.durationSeconds)}</span>
-                                                </div>
-                                            )}
-                                            <Badge variant={simulado.score >= 70 ? 'secondary' : 'destructive'} className={cn(simulado.score >= 70 && 'bg-green-100 text-green-800')}>
-                                                {simulado.score.toFixed(0)}%
-                                            </Badge>
-                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Ver Gabarito</Button>
-                                        </div>
-                                    ) : (
-                                        <Button onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}>Iniciar Simulado</Button>
-                                    )}
-                                </div>
-                                )
-                            })
-                        ) : (
-                            <div className="text-center py-10 text-muted-foreground">
-                                <p>Nenhum simulado disponível com este professor no momento.</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            {/* Lado direito - Bio do professor */}
+            {teacher.bio && (
+              <div className="lg:w-1/3 w-full bg-slate-100 rounded-2xl p-4">
+                <h3 className="font-bold text-slate-700 mb-2">Sobre mim</h3>
+                <p className="text-sm text-slate-600">{teacher.bio}</p>
+                
+                <Button
+                  asChild
+                  className="w-full h-9 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90 mt-4"
+                >
+                  <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>
+                    Agendar Aula
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-    );
+
+        <CardContent className="pt-6">
+          <Tabs defaultValue="avaliacoes" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 rounded-2xl">
+              <TabsTrigger value="aulas" className="rounded-xl">
+                <CalendarCheck className="mr-2 h-4 w-4" /> Aulas
+              </TabsTrigger>
+              <TabsTrigger value="materiais" className="rounded-xl">
+                <FileText className="mr-2 h-4 w-4" /> Materiais
+              </TabsTrigger>
+              <TabsTrigger value="simulados" className="rounded-xl">
+                <BookCopy className="mr-2 h-4 w-4" /> Simulados
+              </TabsTrigger>
+              <TabsTrigger value="avaliacoes" className="rounded-xl">
+                <Star className="mr-2 h-4 w-4" /> Avaliações
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="aulas" className="pt-4">
+              <div className="text-center py-10 text-slate-400">
+                <CalendarCheck className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Nenhuma aula agendada com este professor.</p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="materiais" className="pt-4">
+              <div className="text-center py-10 text-slate-400">
+                <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Nenhum material compartilhado ainda.</p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="simulados" className="pt-4">
+              <div className="text-center py-10 text-slate-400">
+                <BookCopy className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Nenhum simulado disponível no momento.</p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="avaliacoes" className="pt-4">
+              {filteredRatings.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredRatings.map((r) => (
+                    <div key={r.id} className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <Avatar className="h-10 w-10 border-2 border-brand-yellow">
+                        <AvatarImage src={r.student.avatarUrl || undefined} alt={r.student.name} />
+                        <AvatarFallback className="bg-amber-100 text-amber-700 font-bold text-sm">
+                          {r.student.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-sm text-slate-800">{r.student.name}</p>
+                          <span className="text-xs text-slate-400">
+                            {format(new Date(r.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-0.5 mt-1">
+                          {Array(5).fill(0).map((_, i) => (
+                            <Star
+                              key={i}
+                              className="h-3.5 w-3.5"
+                              style={{ color: '#FFC107', fill: i < r.score ? '#FFC107' : 'none' }}
+                            />
+                          ))}
+                        </div>
+                        {r.comment && (
+                          <p className="text-sm text-slate-500 mt-2">{r.comment}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-400">
+                  <Star className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma avaliação disponível ainda.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
-
 export default function TeacherDetailPage() {
-    return (
-        <Suspense fallback={<div>Carregando perfil do professor...</div>}>
-            <TeacherDetailPageComponent />
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center text-slate-500">Carregando...</div>}>
+      <TeacherDetailPageComponent />
+    </Suspense>
+  );
 }

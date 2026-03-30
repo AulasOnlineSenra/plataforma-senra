@@ -12,6 +12,8 @@ import {
   Coins,
   ArrowRight,
   XCircle,
+  Star,
+  Check,
 } from "lucide-react";
 import {
   Card,
@@ -34,12 +36,21 @@ import {
 import { getUserById } from "@/app/actions/users";
 import { getLessonsForUser } from "@/app/actions/bookings";
 import { getDashboardStats } from "@/app/actions/dashboard";
+import { getUnratedPeopleForUser, submitRating, getUserAverageReceivedRating } from "@/app/actions/ratings";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type DashboardUser = {
   id: string;
   name: string;
   role: "admin" | "teacher" | "student";
   credits: number;
+  avatarUrl?: string | null;
+};
+
+type UnratedPerson = {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
 };
 
 type LessonItem = {
@@ -48,7 +59,7 @@ type LessonItem = {
   status: string;
   date: string | Date;
   student?: { name: string } | null;
-  teacher?: { name: string } | null;
+  teacher?: { name: string; avatarUrl?: string | null } | null;
 };
 
 type AdminStats = {
@@ -97,6 +108,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
+  const [unratedPeople, setUnratedPeople] = useState<UnratedPerson[]>([]);
+  const [userRating, setUserRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -131,6 +144,19 @@ export default function DashboardPage() {
 
       if (dbUser.role === "admin" && statsResult.success && statsResult.data) {
         setAdminStats(statsResult.data as AdminStats);
+      }
+
+      if (dbUser.role !== "admin") {
+        const [unratedResult, ratingResult] = await Promise.all([
+          getUnratedPeopleForUser(dbUser.id, dbUser.role),
+          getUserAverageReceivedRating(dbUser.id, dbUser.role),
+        ]);
+        if (unratedResult.success && unratedResult.data) {
+          setUnratedPeople(unratedResult.data as UnratedPerson[]);
+        }
+        if (ratingResult.success && ratingResult.data) {
+          setUserRating(ratingResult.data);
+        }
       }
 
       setIsLoading(false);
@@ -179,6 +205,15 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const handleRate = async (targetId: string, score: number) => {
+    if (!user) return;
+    const givenBy = user.role as "student" | "teacher";
+    const studentId = user.role === "student" ? user.id : targetId;
+    const teacherId = user.role === "teacher" ? user.id : targetId;
+    await submitRating(studentId, teacherId, score, givenBy);
+    setUnratedPeople((prev) => prev.filter((p) => p.id !== targetId));
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6 bg-slate-50">
@@ -417,6 +452,93 @@ export default function DashboardPage() {
                   </TableBody>
                 </Table>
               </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border-slate-200 shadow-sm">
+            <CardHeader className="border-b bg-slate-50">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
+                <Star className="h-5 w-5 text-[#FFC107]" />
+                Feedback
+              </CardTitle>
+              <CardDescription>
+                Avalie suas aulas e veja seu desempenho.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                  {unratedPeople.length > 0 ? (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {unratedPeople.map((person) => (
+                        <div
+                          key={person.id}
+                          className="flex flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-sm"
+                        >
+                          <Avatar className="h-14 w-14 border-2 border-brand-yellow shadow-md">
+                            <AvatarImage src={person.avatarUrl || undefined} alt={person.name} />
+                            <AvatarFallback className="bg-amber-100 text-amber-700 font-bold">
+                              {person.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <p className="text-sm font-bold text-slate-800">{person.name}</p>
+                          <p className="text-xs text-slate-500">Como foi sua experiência com a aula?</p>
+                          <div className="flex items-center gap-1">
+                            {Array(5)
+                              .fill(0)
+                              .map((_, i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => handleRate(person.id, i + 1)}
+                                  className="transition-transform hover:scale-125"
+                                >
+                                  <Star className="h-7 w-7 text-[#FFC107] fill-[#FFC107] cursor-pointer" />
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                        <Check className="h-7 w-7 text-green-600" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-600">
+                        Você não tem aulas para avaliar no momento.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="md:w-48 flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Seu feedback</p>
+                  <Avatar className="h-16 w-16 border-2 border-brand-yellow shadow-md">
+                    <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
+                    <AvatarFallback className="bg-amber-100 text-amber-700 font-bold text-xl">
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex items-center gap-0.5">
+                    {Array(5)
+                      .fill(0)
+                      .map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-5 w-5"
+                          style={{
+                            color: '#FFC107',
+                            fill: i < Math.round(userRating.average) ? '#FFC107' : 'none',
+                          }}
+                        />
+                      ))}
+                    <span className="text-sm font-bold ml-1" style={{ color: '#FFC107' }}>
+                      {userRating.average.toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </>

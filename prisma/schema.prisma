@@ -3,62 +3,71 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id               String    @id @default(uuid())
-  name             String
-  email            String    @unique
-  password         String
-  role             String    @default("student")
-  avatarUrl        String?
-  status           String    @default("active")
-  referralCode     String    @unique @default(cuid())
-  referredById     String?
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  credits          Int       @default(0)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  subject          String?
-  cpf              String?    @unique
-  birthDate        DateTime?
-  cep              String?
-  state            String?
-  neighborhood     String?
-  street           String?
-  number           String?
-  videoUrl         String?
-  isValidated      Boolean   @default(false)
-  bio              String?
-  education        String?
-
-  // Relacionamentos
-  lessonsAsStudent  Lesson[]      @relation("StudentLessons")
-  lessonsAsTeacher  Lesson[]      @relation("TeacherLessons")
-  referredBy        User?         @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals         User[]        @relation("UserReferrals")
-  sentMessages      ChatMessage[] @relation("SentMessages")
-  receivedMessages  ChatMessage[] @relation("ReceivedMessages")
-  createdSimulados  Simulado[]    @relation("SimuladoCreator")
-  assignedSimulados Simulado[]    @relation("SimuladoStudent")
-  transactions      Transaction[] @relation("StudentTransactions")
-  notifications     Notification[]
-  availability      Availability[]
+  id                            String             @id @default(uuid())
+  name                          String
+  email                         String             @unique
+  password                      String
+  role                          String             @default("student")
+  avatarUrl                     String?
+  status                        String             @default("active")
+  referralCode                  String             @unique @default(cuid())
+  referredById                  String?
+  resetToken                    String?
+  resetTokenExpiry              DateTime?
+  credits                       Int                @default(0)
+  createdAt                     DateTime           @default(now())
+  updatedAt                     DateTime           @updatedAt
+  subject                       String?
+  cpf                           String?            @unique
+  birthDate                     DateTime?
+  cep                           String?
+  state                         String?
+  neighborhood                  String?
+  street                        String?
+  number                        String?
+  videoUrl                      String?
+  isValidated                   Boolean            @default(false)
+  bio                           String?
+  education                     String?
+  pixKey                        String?
+  pixKeyType                    String?
+  subjects                      String?
+  suspendedAt                   DateTime?
+  phone                         String?
+  availability                  Availability[]
+  receivedMessages              ChatMessage[]      @relation("ReceivedMessages")
+  sentMessages                  ChatMessage[]      @relation("SentMessages")
+  lessonsAsTeacher              Lesson[]           @relation("TeacherLessons")
+  lessonsAsStudent              Lesson[]           @relation("StudentLessons")
+  notifications                 Notification[]
+  Rating_Rating_teacherIdToUser Rating[]           @relation("Rating_teacherIdToUser")
+  Rating_Rating_studentIdToUser Rating[]           @relation("Rating_studentIdToUser")
+  scheduledReceived             ScheduledMessage[] @relation("ScheduledReceived")
+  scheduledSent                 ScheduledMessage[] @relation("ScheduledSent")
+  assignedSimulados             Simulado[]         @relation("SimuladoStudent")
+  createdSimulados              Simulado[]         @relation("SimuladoCreator")
+  transactions                  Transaction[]      @relation("StudentTransactions")
+  referredBy                    User?              @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals                     User[]             @relation("UserReferrals")
 }
 
 model ChatMessage {
-  id         String   @id @default(uuid())
-  senderId   String
-  receiverId String
-  content    String
-  createdAt  DateTime @default(now())
-  readAt     DateTime?
-
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  id             String    @id @default(uuid())
+  senderId       String
+  receiverId     String
+  content        String
+  createdAt      DateTime  @default(now())
+  readAt         DateTime?
+  attachmentName String?
+  attachmentType String?
+  attachmentUrl  String?
+  receiver       User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender         User      @relation("SentMessages", fields: [senderId], references: [id])
 
   @@index([senderId, receiverId, createdAt])
   @@index([receiverId, senderId, createdAt])
@@ -71,15 +80,15 @@ model Lesson {
   subject        String
   date           DateTime
   endDate        DateTime @default(now())
-  status         String   @default("PENDING")
+  status         String   @default("CONFIRMED")
   meetingLink    String?
   price          Float?
   isExperimental Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  student User @relation("StudentLessons", fields: [studentId], references: [id])
-  teacher User @relation("TeacherLessons", fields: [teacherId], references: [id])
+  teacher        User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+  student        User     @relation("StudentLessons", fields: [studentId], references: [id])
+  Rating         Rating[]
 }
 
 model Plan {
@@ -107,9 +116,8 @@ model Simulado {
   attempts         Json
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  creator User @relation("SimuladoCreator", fields: [creatorId], references: [id])
-  student User @relation("SimuladoStudent", fields: [studentId], references: [id])
+  student          User     @relation("SimuladoStudent", fields: [studentId], references: [id])
+  creator          User     @relation("SimuladoCreator", fields: [creatorId], references: [id])
 
   @@index([creatorId, createdAt])
   @@index([studentId, createdAt])
@@ -140,8 +148,7 @@ model Availability {
   dayOfWeek Int
   startTime String
   endTime   String
-
-  teacher User @relation(fields: [teacherId], references: [id])
+  teacher   User   @relation(fields: [teacherId], references: [id])
 
   @@index([teacherId])
 }
@@ -155,8 +162,7 @@ model Transaction {
   paymentMethod String   @default("PIX")
   status        String   @default("COMPROVADO")
   createdAt     DateTime @default(now())
-
-  student User @relation("StudentTransactions", fields: [studentId], references: [id])
+  student       User     @relation("StudentTransactions", fields: [studentId], references: [id])
 }
 
 model MarketingCost {
@@ -177,13 +183,62 @@ model Notification {
   type      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Lead {
   id        String   @id @default(uuid())
   name      String?
   email     String?
-  createdAt DateTime @default(now()) //
+  createdAt DateTime @default(now())
+}
+
+model ScheduledMessage {
+  id             String    @id @default(uuid())
+  senderId       String
+  receiverId     String
+  content        String
+  scheduledAt    DateTime
+  status         String    @default("pending")
+  createdAt      DateTime  @default(now())
+  sentAt         DateTime?
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentType String?
+  receiver       User      @relation("ScheduledReceived", fields: [receiverId], references: [id])
+  sender         User      @relation("ScheduledSent", fields: [senderId], references: [id])
+
+  @@index([status, scheduledAt])
+  @@index([senderId, receiverId])
+}
+
+model BlogPost {
+  id        String   @id
+  title     String
+  excerpt   String
+  content   String
+  author    String
+  image     String?
+  tags      String   @default("[]")
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model Rating {
+  id                          String   @id
+  studentId                   String
+  teacherId                   String
+  lessonId                    String?
+  score                       Int
+  comment                     String?
+  givenBy                     String
+  createdAt                   DateTime @default(now())
+  Lesson                      Lesson?  @relation(fields: [lessonId], references: [id])
+  User_Rating_teacherIdToUser User     @relation("Rating_teacherIdToUser", fields: [teacherId], references: [id])
+  User_Rating_studentIdToUser User     @relation("Rating_studentIdToUser", fields: [studentId], references: [id])
+
+  @@unique([studentId, teacherId, givenBy])
+  @@index([studentId])
+  @@index([teacherId])
 }

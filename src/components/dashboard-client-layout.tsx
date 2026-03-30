@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { navItems, adminNavItems } from "@/lib/navigation";
 import type { UserRole } from "@/lib/types";
 import { PendingProfileBanner } from "@/components/pending-profile-banner";
+import { safeLocalStorage } from "@/lib/safe-storage";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, toggleCollapse } = useResizablePanel();
@@ -20,9 +21,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const allowedByRole = useMemo(() => {
-    const role = (
-      typeof window !== "undefined" ? localStorage.getItem("userRole") : null
-    ) as UserRole | null;
+    const role = safeLocalStorage.getItem("userRole") as UserRole | null;
     if (!role) return false;
     const allowedItems = [...navItems, ...adminNavItems].filter((item) =>
       item.roles.includes(role),
@@ -51,7 +50,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = safeLocalStorage.getItem("userRole");
     if (!role) {
       router.push("/login");
       return;

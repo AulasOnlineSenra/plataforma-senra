@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { BookOpen, UserPlus, Edit, Trash2, Check } from "lucide-react";
+import { BookOpen, UserPlus, Edit, Trash2, Check, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
@@ -42,6 +42,7 @@ import {
   deleteTeacher,
   approveTeacher,
 } from "@/app/actions/users";
+import { getTeacherAverageRating } from "@/app/actions/ratings";
 
 function TeacherCard({
   teacher,
@@ -59,17 +60,104 @@ function TeacherCard({
   onOpenDetails: (id: string) => void;
 }) {
   const isAdmin = currentUser?.role === "admin";
+  const isProfileComplete = teacher.bio && teacher.education && teacher.subject && teacher.pixKeyType && teacher.pixKey;
+  const isPendingAwaitingApproval = teacher.status === "pending" && isProfileComplete;
+  const [rating, setRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
+
+  useEffect(() => {
+    const loadRating = async () => {
+      const result = await getTeacherAverageRating(teacher.id);
+      if (result.success && result.data) {
+        setRating(result.data);
+      }
+    };
+    loadRating();
+  }, [teacher.id]);
+
+  const teacherSubjects = (() => {
+    let subjList: string[] = [];
+    if (teacher.subjects) {
+      if (Array.isArray(teacher.subjects)) {
+        subjList = teacher.subjects;
+      } else if (typeof teacher.subjects === "string") {
+        try {
+          subjList = JSON.parse(teacher.subjects);
+        } catch {
+          subjList = [];
+        }
+      }
+    }
+    const subjectFallback = teacher.subject ? [teacher.subject] : [];
+    return subjList.length > 0 ? subjList : subjectFallback;
+  })();
+
+  const teacherEducation = (() => {
+    if (!teacher.education) return [];
+    
+    let eduList = teacher.education;
+    
+    if (typeof eduList === "string") {
+      try {
+        eduList = JSON.parse(eduList);
+      } catch {
+        return [];
+      }
+    }
+    
+    if (!Array.isArray(eduList) || eduList.length === 0) return [];
+    
+    // Se tiver 1 formação: mostrar apenas 1
+    if (eduList.length === 1) {
+      const first = eduList[0];
+      if (first.course && first.university) {
+        return [{ text: `${first.course} - ${first.university}`, hasIndicator: false }];
+      }
+      if (first.course) {
+        return [{ text: first.course, hasIndicator: false }];
+      }
+      return [];
+    }
+    
+    // Se tiver 2+ formações: mostrar 2 linhas com indicador na 2ª
+    const remaining = eduList.length - 2;
+    const secondHasIndicator = remaining > 0;
+    
+    const result = [];
+    
+    // Primeira formação
+    const first = eduList[0];
+    if (first.course && first.university) {
+      result.push({ text: `${first.course} - ${first.university}`, hasIndicator: false });
+    } else if (first.course) {
+      result.push({ text: first.course, hasIndicator: false });
+    }
+    
+    // Segunda formação
+    const second = eduList[1];
+    if (second.course && second.university) {
+      const indicator = secondHasIndicator ? ` (+${remaining})` : '';
+      result.push({ text: `${second.course} - ${second.university}${indicator}`, hasIndicator: secondHasIndicator });
+    } else if (second.course) {
+      const indicator = secondHasIndicator ? ` (+${remaining})` : '';
+      result.push({ text: `${second.course}${indicator}`, hasIndicator: secondHasIndicator });
+    }
+    
+    return result;
+  })();
 
   return (
     <Card
+      style={{ width: '100%' }}
       className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer ${
-        teacher.status === "pending"
-          ? "border-amber-300 bg-amber-50/60 hover:border-amber-400"
-          : "border-slate-200 bg-white hover:border-brand-yellow/50"
+        isPendingAwaitingApproval
+          ? "border-blue-400 bg-blue-50/80 hover:border-blue-500"
+          : teacher.status === "pending"
+            ? "border-amber-300 bg-amber-50/60 hover:border-amber-400"
+            : "border-slate-200 bg-white hover:border-brand-yellow/50"
       }`}
-      onClick={() => isAdmin && onOpenDetails(teacher.id)}
-      role={isAdmin ? "button" : undefined}
-      tabIndex={isAdmin ? 0 : -1}
+      onClick={() => onOpenDetails(teacher.id)}
+      role="button"
+      tabIndex={0}
       onKeyDown={(event) => {
         if (!isAdmin) return;
         if (event.key === "Enter" || event.key === " ") {
@@ -81,13 +169,33 @@ function TeacherCard({
       {/* Detalhe de cor no topo do card */}
       <div
         className={`h-24 w-full border-b absolute top-0 left-0 z-0 transition-colors ${
-          teacher.status === "pending"
-            ? "bg-amber-100 border-amber-200"
-            : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
+          isPendingAwaitingApproval
+            ? "bg-blue-100 border-blue-200"
+            : teacher.status === "pending"
+              ? "bg-amber-100 border-amber-200"
+              : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
         }`}
       ></div>
 
-      <CardHeader className="items-center text-center pb-2 pt-8 relative z-10">
+      <div className="flex justify-center mt-2 relative z-10">
+        {teacher.status === "pending" && teacher.bio && teacherEducation && teacherSubjects.length > 0 && teacher.pixKeyType && teacher.pixKey && (
+          <Badge className="border-none bg-blue-100 font-bold text-blue-700 px-3 py-1 rounded-full shadow-none animate-pulse">
+            Aguardando Aprovação
+          </Badge>
+        )}
+        {(teacher.status === "pending" && (!teacher.bio || !teacherEducation || teacherSubjects.length === 0 || !teacher.pixKeyType || !teacher.pixKey)) && (
+          <Badge className="border-none bg-amber-100 font-bold text-amber-700 px-3 py-1 rounded-full shadow-none">
+            Pendente
+          </Badge>
+        )}
+        {teacher.status !== "pending" && (
+          <Badge className="border-none bg-emerald-50 font-bold text-emerald-600 px-3 py-1 rounded-full shadow-none">
+            Ativo
+          </Badge>
+        )}
+      </div>
+
+      <CardHeader className="items-center text-center pb-4 pt-2 relative z-10">
         {isAdmin && (
           <div className="absolute right-3 top-3 z-20 flex gap-1 rounded-full border border-slate-100 bg-white/80 backdrop-blur-md p-1 shadow-sm opacity-100 md:opacity-0 transition-opacity group-hover:opacity-100">
             {teacher.status === "pending" && (
@@ -133,8 +241,12 @@ function TeacherCard({
         )}
 
         <Avatar
-          className={`mb-4 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white ${
-            teacher.status === "pending" ? "border-amber-300" : "border-white"
+          className={`mb-1 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white ${
+            isPendingAwaitingApproval
+              ? "border-blue-400"
+              : teacher.status === "pending"
+                ? "border-amber-300"
+                : "border-white"
           }`}
         >
           <AvatarImage
@@ -147,34 +259,58 @@ function TeacherCard({
           </AvatarFallback>
         </Avatar>
 
-        <CardTitle className="font-headline text-xl text-slate-900 tracking-tight">
+        <CardTitle className="font-headline text-xl text-slate-900 tracking-tight flex items-center justify-center gap-2 flex-wrap">
           {teacher.name}
+          <div className="flex items-center gap-0.5">
+            {Array(5).fill(0).map((_, i) => (
+              <Star
+                key={i}
+                className="h-4 w-4"
+                style={{ color: '#FFC107', fill: i < Math.round(rating.average) ? '#FFC107' : 'none' }}
+              />
+            ))}
+            <span className="text-sm font-bold ml-1" style={{ color: '#FFC107' }}>
+              {rating.average.toFixed(1)}
+            </span>
+          </div>
         </CardTitle>
 
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          <Badge
-            variant="secondary"
-            className="border-none bg-slate-100 font-semibold text-slate-600 px-3 py-1 rounded-full"
-          >
-            {teacher.subject || "Geral"}
-          </Badge>
-          {teacher.status === "pending" && (
-            <Badge className="border-none bg-amber-100 font-bold text-amber-700 px-3 py-1 rounded-full shadow-none">
-              Pendente
-            </Badge>
-          )}
-          {teacher.status !== "pending" && (
-            <Badge className="border-none bg-emerald-50 font-bold text-emerald-600 px-3 py-1 rounded-full shadow-none">
-              Ativo
+        {teacherEducation && (
+          <div className="space-y-1 w-full max-w-[calc(100%-2rem)] overflow-hidden">
+            {teacherEducation.map((edu: { text: string; hasIndicator: boolean }, idx: number) => (
+              <p 
+                key={idx} 
+                className="text-sm font-medium text-slate-400 truncate px-4 w-full max-w-full overflow-hidden whitespace-nowrap"
+              >
+                {edu.text}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-1">
+          {teacherSubjects.length > 0 ? (
+            teacherSubjects.map((subjName: string, idx: number) => (
+              <Badge
+                key={idx}
+                variant="secondary"
+                className="border-none bg-slate-100 font-semibold text-slate-600 px-3 py-1 rounded-full"
+              >
+                {subjName}
+              </Badge>
+            ))
+          ) : (
+            <Badge
+              variant="secondary"
+              className="border-none bg-slate-100 font-semibold text-slate-600 px-3 py-1 rounded-full"
+            >
+              Geral
             </Badge>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 text-center relative z-10">
-        <p className="text-sm font-medium text-slate-400 truncate px-4">
-          {teacher.email}
-        </p>
+      <CardContent className="flex-1 text-center relative z-10 min-h-[60px]">
       </CardContent>
 
       <CardFooter className="flex-col gap-2 pt-0 pb-6 px-6 relative z-10">
@@ -394,7 +530,7 @@ export default function TeachersPage() {
             )}
           </div>
         ) : (
-          <div className="mt-2 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-2 grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 justify-items-center">
             {teacherList.map((teacher) => (
               <TeacherCard
                 key={teacher.id}
@@ -404,7 +540,7 @@ export default function TeachersPage() {
                 onDelete={handleDelete}
                 onApprove={handleApprove}
                 onOpenDetails={(teacherId) =>
-                  router.push(`/dashboard/student/${teacherId}`)
+                  router.push(`/dashboard/teacher/${teacherId}`)
                 }
               />
             ))}

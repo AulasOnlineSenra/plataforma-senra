@@ -43,6 +43,7 @@ const navLinks = [
   { href: '#como-funciona', label: 'Como funciona', storageKey: 'home-nav-how-it-works' },
   { href: '#sobre-nos', label: 'Sobre nós', storageKey: 'home-nav-about' },
   { href: '#contato', label: 'Contato', storageKey: 'home-nav-contact' },
+  { href: '/blog', label: 'Blog', storageKey: 'home-nav-blog' },
 ];
 
 
@@ -91,8 +92,8 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-card">
-      <header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:p-4 bg-card/80 backdrop-blur-sm border-b">
-        <SenraLogo />
+<header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:px-4 lg:py-[2px] bg-card border-b h-[52px] sm:h-[52px]">
+          <SenraLogo className="h-7 sm:h-9" />
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
@@ -103,7 +104,7 @@ export default function HomePage() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Button asChild className="hidden sm:inline-flex rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all hover:scale-105 active:scale-95 gap-2 font-bold border border-slate-800">
+          <Button asChild className="hidden sm:inline-flex h-[32px] rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all hover:scale-105 active:scale-95 gap-2 font-bold border border-slate-800">
             <Link href="/login" className="flex items-center">
               <LogIn className="w-4 h-4 text-amber-400" />
               <EditableText storageKey="home-login-button">Acessar Plataforma</EditableText>
