@@ -16,10 +16,13 @@ export async function getChatUsers(
   currentUserId: string,
 ) {
   try {
-    const where =
-      currentUserRole === "student"
-        ? { role: "teacher" as const, status: "active" }
-        : { status: "active" };
+    let where: any = { status: "active" };
+
+    if (currentUserRole === "student") {
+      where = { role: { in: ["teacher", "admin"] }, status: "active" };
+    } else if (currentUserRole === "teacher") {
+      where = { role: { in: ["student", "admin"] }, status: "active" };
+    }
 
     const users = await prisma.user.findMany({
       where: {
@@ -32,7 +35,7 @@ export async function getChatUsers(
         role: true,
         avatarUrl: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ role: "asc" }, { name: "asc" }],
     });
 
     return { success: true, data: users };
