@@ -66,14 +66,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }, [allowedByRole, isPendingTeacherBlocked, router]);
 
   return (
-    <div className="grid min-h-screen w-full overflow-x-hidden md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-sidebar md:block">
+    <div className="flex min-h-screen w-full overflow-x-hidden">
+      {/* Sidebar fixa à esquerda */}
+      <aside className="fixed left-0 top-0 hidden h-screen w-[220px] border-r bg-sidebar md:block lg:w-[280px]">
         <AppSidebar />
-      </div>
-      <div className="flex min-w-0 flex-col">
+      </aside>
+      {/* Conteúdo principal com offset e scroll próprio */}
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col md:ml-[220px] lg:ml-[280px]">
         <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
         <PendingProfileBanner />
-        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto bg-background p-4 lg:gap-6 lg:p-6">
+        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto bg-background p-4 lg:gap-6 lg:p-6">
           {children}
         </main>
       </div>
