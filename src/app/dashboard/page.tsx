@@ -14,6 +14,10 @@ import {
   XCircle,
   Star,
   Check,
+  Video,
+  Pencil,
+  Wallet,
+  Eye,
 } from "lucide-react";
 import {
   Card,
@@ -25,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -33,10 +38,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getUserById } from "@/app/actions/users";
-import { getLessonsForUser } from "@/app/actions/bookings";
+import { getLessonsForUser, updateLesson, cancelLesson } from "@/app/actions/bookings";
 import { getDashboardStats } from "@/app/actions/dashboard";
 import { getUnratedPeopleForUser, submitRating, getUserAverageReceivedRating } from "@/app/actions/ratings";
+import { approveTransaction, rejectTransaction, getStudentPendingTransactions, getAllPendingTransactions } from "@/app/actions/finance";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type DashboardUser = {
@@ -53,13 +79,47 @@ type UnratedPerson = {
   avatarUrl?: string | null;
 };
 
+type PendingTransaction = {
+  id: string;
+  studentId: string;
+  student?: {
+    name: string;
+    avatarUrl: string | null;
+  };
+  planName: string;
+  creditsAdded: number;
+  amountPaid: number;
+  paymentMethod: string;
+  status: string;
+  proofUrl: string | null;
+  bookings: string | null;
+  createdAt: Date;
+};
+
+type StudentPendingTransaction = {
+  id: string;
+  studentId?: string;
+  student?: {
+    name: string;
+    avatarUrl: string | null;
+  };
+  planName: string;
+  creditsAdded: number;
+  amountPaid: number;
+  paymentMethod: string;
+  status: string;
+  proofUrl: string | null;
+  bookings: string | null;
+  createdAt: Date;
+};
+
 type LessonItem = {
   id: string;
   subject: string;
   status: string;
   date: string | Date;
-  student?: { name: string } | null;
-  teacher?: { name: string; avatarUrl?: string | null } | null;
+  student?: { id: string; name: string } | null;
+  teacher?: { id: string; name: string; videoUrl?: string | null } | null;
 };
 
 type AdminStats = {
@@ -70,6 +130,7 @@ type AdminStats = {
   cancelled: number;
   revenue: number;
   upcomingLessons: LessonItem[];
+  pendingTransactions: PendingTransaction[];
 };
 
 function StatCard({
@@ -86,7 +147,7 @@ function StatCard({
   href?: string;
 }) {
   const body = (
-    <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/30">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-semibold text-slate-600">
           {title}
@@ -105,12 +166,30 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [unratedPeople, setUnratedPeople] = useState<UnratedPerson[]>([]);
   const [userRating, setUserRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [lessonToEdit, setLessonToEdit] = useState<any>(null);
+  const [lessonToCancel, setLessonToCancel] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    subject: "",
+    date: "",
+    time: "",
+    duration: "90",
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [pendingTxToApprove, setPendingTxToApprove] = useState<PendingTransaction | null>(null);
+  const [pendingTxToReject, setPendingTxToReject] = useState<PendingTransaction | null>(null);
+  const [isProcessingTx, setIsProcessingTx] = useState(false);
+  const [viewProofDialog, setViewProofDialog] = useState<{ open: boolean; url: string | null }>({ open: false, url: null });
+  const [studentPendingTransactions, setStudentPendingTransactions] = useState<StudentPendingTransaction[]>([]);
+  const [viewBookingDetails, setViewBookingDetails] = useState<StudentPendingTransaction | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -146,6 +225,20 @@ export default function DashboardPage() {
         setAdminStats(statsResult.data as AdminStats);
       }
 
+      if (dbUser.role === "student") {
+        const pendingResult = await getStudentPendingTransactions(dbUser.id);
+        if (pendingResult.success && pendingResult.data) {
+          setStudentPendingTransactions(pendingResult.data as StudentPendingTransaction[]);
+        }
+      }
+
+      if (dbUser.role === "admin") {
+        const allPendingResult = await getAllPendingTransactions();
+        if (allPendingResult.success && allPendingResult.data) {
+          setStudentPendingTransactions(allPendingResult.data as StudentPendingTransaction[]);
+        }
+      }
+
       if (dbUser.role !== "admin") {
         const [unratedResult, ratingResult] = await Promise.all([
           getUnratedPeopleForUser(dbUser.id, dbUser.role),
@@ -171,14 +264,19 @@ export default function DashboardPage() {
     () =>
       lessons.filter(
         (l) =>
-          ["PENDING", "CONFIRMED"].includes(l.status) &&
+          ["PENDING", "CONFIRMED", "scheduled"].includes(l.status) &&
           new Date(l.date) >= now,
       ),
     [lessons],
   );
 
   const completed = useMemo(
-    () => lessons.filter((l) => new Date(l.date) < now),
+    () => 
+      lessons.filter(
+        (l) => 
+          ["CONFIRMED", "COMPLETED", "completed", "scheduled"].includes(l.status) && 
+          new Date(l.date) < now
+      ),
     [lessons],
   );
 
@@ -191,12 +289,156 @@ export default function DashboardPage() {
     return lessons.filter((l) => {
       const d = new Date(l.date);
       return (
+        ["CONFIRMED", "COMPLETED", "completed", "scheduled"].includes(l.status) &&
         d < now &&
         d.getMonth() === now.getMonth() &&
         d.getFullYear() === now.getFullYear()
       );
     });
   }, [lessons]);
+
+  const handleOpenEditDialog = (lesson: any) => {
+    const lessonDate = new Date(lesson.date);
+    setLessonToEdit(lesson);
+    setEditFormData({
+      subject: lesson.subject,
+      date: format(lessonDate, "yyyy-MM-dd"),
+      time: format(lessonDate, "HH:mm"),
+      duration: "90",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleOpenCancelDialog = (lesson: any) => {
+    setLessonToCancel(lesson);
+    setIsCancelDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!lessonToEdit) return;
+    
+    setIsSaving(true);
+    
+    const newDate = new Date(`${editFormData.date}T${editFormData.time}`);
+    const durationMinutes = parseInt(editFormData.duration);
+    const endDate = new Date(newDate.getTime() + durationMinutes * 60 * 1000);
+    
+    const result = await updateLesson(lessonToEdit.id, {
+      subject: editFormData.subject,
+      date: newDate,
+      endDate: endDate,
+    });
+
+    setIsSaving(false);
+
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: "Aula atualizada com sucesso.",
+      });
+      setIsEditDialogOpen(false);
+      setLessonToEdit(null);
+      
+      if (user?.id && user?.role) {
+        const response = await getLessonsForUser(user.id, user.role);
+        if (response.success && response.data) {
+          setLessons(response.data as LessonItem[]);
+        }
+      }
+      
+      const statsResult = await getDashboardStats();
+      if (statsResult.success && statsResult.data) {
+        setAdminStats(statsResult.data as AdminStats);
+      }
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Não foi possível atualizar a aula.",
+      });
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!lessonToCancel) return;
+
+    const result = await cancelLesson(lessonToCancel.id);
+
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: "Aula cancelada com sucesso.",
+      });
+      setIsCancelDialogOpen(false);
+      setLessonToCancel(null);
+      
+      if (user?.id && user?.role) {
+        const response = await getLessonsForUser(user.id, user.role);
+        if (response.success && response.data) {
+          setLessons(response.data as LessonItem[]);
+        }
+      }
+      
+      const statsResult = await getDashboardStats();
+      if (statsResult.success && statsResult.data) {
+        setAdminStats(statsResult.data as AdminStats);
+      }
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Não foi possível cancelar a aula.",
+      });
+    }
+  };
+
+  const handleApproveTransaction = async () => {
+    if (!pendingTxToApprove) return;
+    setIsProcessingTx(true);
+    const result = await approveTransaction(pendingTxToApprove.id);
+    setIsProcessingTx(false);
+    if (result.success) {
+      toast({
+        title: "Pagamento Aprovado",
+        description: `Créditos adicionados e ${result.data?.bookingsCreated ? 'agendamentos criados' : 'transação atualizada'} com sucesso.`,
+      });
+      setPendingTxToApprove(null);
+      // Atualizar lista local - remover transação aprovada
+      setStudentPendingTransactions(prev => prev.filter(tx => tx.id !== pendingTxToApprove.id));
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Não foi possível aprovar o pagamento.",
+      });
+    }
+  };
+
+  const handleRejectTransaction = async () => {
+    if (!pendingTxToReject) return;
+    setIsProcessingTx(true);
+    const result = await rejectTransaction(pendingTxToReject.id);
+    setIsProcessingTx(false);
+    if (result.success) {
+      toast({
+        title: "Pagamento Rejeitado",
+        description: "Transação rejeitada. O aluno será notificado.",
+      });
+      setPendingTxToReject(null);
+      // Atualizar lista local - remover transação rejeitada
+      setStudentPendingTransactions(prev => prev.filter(tx => tx.id !== pendingTxToReject.id));
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Não foi possível rejeitar o pagamento.",
+      });
+    }
+  };
+
+  const openProofDialog = (url: string | null) => {
+    setViewProofDialog({ open: !!url, url });
+  };
 
   if (isLoading || !user) {
     return (
@@ -228,7 +470,7 @@ export default function DashboardPage() {
 
       {user.role === "admin" ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard
               title="Alunos Ativos"
               value={adminStats?.students ?? 0}
@@ -257,6 +499,13 @@ export default function DashboardPage() {
               icon={CheckCircle2}
               href="/dashboard/minhas-aulas"
             />
+            <StatCard
+              title="Aulas Canceladas"
+              value={adminStats?.cancelled ?? 0}
+              description="Aulas canceladas"
+              icon={XCircle}
+              href="/dashboard/minhas-aulas"
+            />
           </div>
 
           <Card className="rounded-3xl border-slate-200 shadow-sm">
@@ -277,13 +526,14 @@ export default function DashboardPage() {
                       <TableHead>Professor</TableHead>
                       <TableHead>Disciplina</TableHead>
                       <TableHead className="text-right">Data</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(adminStats?.upcomingLessons || []).length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={4}
+                          colSpan={5}
                           className="h-24 text-center text-slate-500"
                         >
                           Nenhuma aula agendada.
@@ -300,12 +550,142 @@ export default function DashboardPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            {format(
-                              new Date(lesson.date),
-                              "dd/MM/yyyy 'às' HH:mm",
-                              { locale: ptBR },
-                            )}
+                            {(() => {
+                              const lessonDate = new Date(lesson.date);
+                              const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                              return format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
+                            })()}
                           </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenEditDialog(lesson)}
+                                className="h-8 w-8"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenCancelDialog(lesson)}
+                                className="h-8 w-8 text-red-600 hover:text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border-slate-200 shadow-sm">
+            <CardHeader className="border-b bg-slate-50">
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <Wallet className="h-5 w-5 text-amber-500" />
+                Pagamentos Pendentes
+                <Badge variant="outline" className="ml-2 border-amber-200 bg-amber-50 text-amber-700">
+                  {studentPendingTransactions.length} aguardando
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                {user.role === "admin" ? "Valide ou rejeite os pagamentos pendentes de créditos." : "Aguardando aprovação do administrador."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <ScrollArea className="h-72">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {user.role === "admin" && <TableHead>Aluno</TableHead>}
+                      <TableHead>Plano</TableHead>
+                      <TableHead className="text-center">Créditos</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-right">Data</TableHead>
+                      {user.role === "admin" && <TableHead className="text-center">Comprovante</TableHead>}
+                      {user.role === "admin" && <TableHead className="text-center">Ações</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {studentPendingTransactions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={user.role === "admin" ? 7 : 4} className="h-24 text-center text-slate-500">
+                          Nenhum pagamento pendente.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      studentPendingTransactions.map((tx) => (
+                        <TableRow key={tx.id}>
+                          {user.role === "admin" && (
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  {tx.student?.avatarUrl && <AvatarImage src={tx.student.avatarUrl} />}
+                                  <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
+                                    {tx.student?.name?.charAt(0) || 'A'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium text-slate-900">{tx.student?.name || 'Aluno'}</p>
+                                  <p className="text-xs text-slate-500">ID: {(tx.studentId || tx.id)?.substring(0, 8)}...</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                          )}
+                          <TableCell className="font-medium text-slate-700">{tx.planName}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-amber-100 text-amber-700">+{tx.creditsAdded}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-slate-700">
+                            R$ {tx.amountPaid.toFixed(2).replace('.', ',')}
+                          </TableCell>
+                          <TableCell className="text-right text-slate-600">
+                            {tx.createdAt ? format(new Date(tx.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
+                          </TableCell>
+                          {user.role === "admin" && (
+                            <>
+                              <TableCell className="text-center">
+                                {tx.proofUrl ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    onClick={() => openProofDialog(tx.proofUrl)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-slate-400">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <div className="flex justify-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    onClick={() => setPendingTxToApprove(tx)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => setPendingTxToReject(tx)}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </>
+                          )}
                         </TableRow>
                       ))
                     )}
@@ -440,11 +820,11 @@ export default function DashboardPage() {
                               : lesson.student?.name}
                           </TableCell>
                           <TableCell className="text-right">
-                            {format(
-                              new Date(lesson.date),
-                              "dd/MM/yyyy 'às' HH:mm",
-                              { locale: ptBR },
-                            )}
+                            {(() => {
+                              const lessonDate = new Date(lesson.date);
+                              const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                              return format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))
@@ -454,6 +834,63 @@ export default function DashboardPage() {
               </ScrollArea>
             </CardContent>
           </Card>
+
+          {user.role === "student" && studentPendingTransactions.length > 0 && (
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader className="border-b bg-amber-50">
+                <CardTitle className="flex items-center gap-2 text-slate-900">
+                  <Wallet className="h-5 w-5 text-amber-500" />
+                  Meus Pagamentos Pendentes
+                </CardTitle>
+                <CardDescription>
+                  Aguardando aprovação do administrador.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <ScrollArea className="h-48">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Plano</TableHead>
+                        <TableHead className="text-center">Créditos</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Data</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {studentPendingTransactions.map((tx) => (
+                        <TableRow key={tx.id}>
+                          <TableCell className="font-medium text-slate-700">{tx.planName}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-amber-100 text-amber-700">+{tx.creditsAdded}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-slate-700">
+                            R$ {tx.amountPaid.toFixed(2).replace('.', ',')}
+                          </TableCell>
+                          <TableCell className="text-right text-slate-600">
+                            {format(new Date(tx.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                tx.status === 'PENDENTE' ? 'border-amber-200 bg-amber-50 text-amber-700' :
+                                tx.status === 'COMPROVADO' ? 'border-green-200 bg-green-50 text-green-700' :
+                                'border-red-200 bg-red-50 text-red-700'
+                              }
+                            >
+                              {tx.status === 'PENDENTE' ? 'Aguardando' : tx.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="rounded-3xl border-slate-200 shadow-sm">
             <CardHeader className="border-b bg-slate-50">
@@ -543,6 +980,150 @@ export default function DashboardPage() {
           </Card>
         </>
       )}
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Aula</DialogTitle>
+            <DialogDescription>
+              Altere os dados da aula agendada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="dashboard-subject">Matéria</Label>
+              <Input
+                id="dashboard-subject"
+                value={editFormData.subject}
+                onChange={(e) => setEditFormData({ ...editFormData, subject: e.target.value })}
+                placeholder="Ex: Matemática"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dashboard-date">Data</Label>
+              <Input
+                id="dashboard-date"
+                type="date"
+                value={editFormData.date}
+                onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dashboard-time">Hora</Label>
+              <Input
+                id="dashboard-time"
+                type="time"
+                value={editFormData.time}
+                onChange={(e) => setEditFormData({ ...editFormData, time: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dashboard-duration">Duração (minutos)</Label>
+              <select
+                id="dashboard-duration"
+                value={editFormData.duration}
+                onChange={(e) => setEditFormData({ ...editFormData, duration: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="45">45 minutos</option>
+                <option value="60">60 minutos</option>
+                <option value="90">90 minutos</option>
+                <option value="120">120 minutos</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSaving}>
+              {isSaving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Aula</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja cancelar a aula de {lessonToCancel?.subject} marcada para{" "}
+              {lessonToCancel && format(new Date(lessonToCancel.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel} className="bg-red-600 hover:bg-red-700">
+              Sim, cancelar aula
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingTxToApprove} onOpenChange={(open) => !open && setPendingTxToApprove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aprovar Pagamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja aprovar o pagamento de <strong>um aluno</strong>?
+              <br /><br />
+              Isso adicionará <strong>{pendingTxToApprove?.creditsAdded} créditos</strong> e criará os agendamentos automaticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleApproveTransaction} disabled={isProcessingTx} className="bg-green-600 hover:bg-green-700">
+              {isProcessingTx ? "Processando..." : "Sim, Aprovar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingTxToReject} onOpenChange={(open) => !open && setPendingTxToReject(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rejeitar Pagamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja rejeitar o pagamento de <strong>um aluno</strong>?
+              <br /><br />
+              O aluno será notificado sobre a rejeição.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRejectTransaction} disabled={isProcessingTx} className="bg-red-600 hover:bg-red-700">
+              {isProcessingTx ? "Processando..." : "Sim, Rejeitar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={viewProofDialog.open} onOpenChange={(open) => setViewProofDialog({ open, url: viewProofDialog.url })}>
+        <DialogContent className="max-w-lg rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Comprovante de Pagamento</DialogTitle>
+            <DialogDescription>
+              Comprovante enviado pelo aluno.
+            </DialogDescription>
+          </DialogHeader>
+          {viewProofDialog.url && (
+            <div className="flex justify-center">
+              <img
+                src={viewProofDialog.url}
+                alt="Comprovante"
+                className="max-h-[400px] rounded-xl border border-slate-200 object-contain"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewProofDialog({ open: false, url: null })}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -278,3 +278,73 @@ export async function updateScheduledMessage(
     return { success: false, error: "Falha ao atualizar mensagem agendada." };
   }
 }
+
+type BookingDetail = {
+  subjectName: string;
+  teacherName: string;
+  date: string;
+  start: string;
+  end: string;
+};
+
+export async function sendPaymentChatToAdmins(
+  studentId: string,
+  studentName: string,
+  transactionId: string,
+  amount: number,
+  credits: number,
+  proofUrl: string | null,
+  bookings: BookingDetail[],
+) {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: "admin", status: "active" },
+      select: { id: true },
+    });
+
+    const formattedAmount = new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(amount);
+
+    const header = proofUrl
+      ? `💰 *Comprovante de Pagamento*`
+      : `💰 *Solicitação de Pagamento*`;
+
+    const details = `\n\nAluno: ${studentName}\nCréditos: ${credits}\nValor: ${formattedAmount}`;
+
+    let aulas = '';
+    if (bookings.length > 0) {
+      const lista = bookings.map((b, i) => {
+        const dataFormatada = new Date(b.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        return `${i + 1}. ${b.subjectName} — Prof. ${b.teacherName} — ${dataFormatada} às ${b.start}–${b.end}`;
+      }).join('\n');
+      aulas = `\n\n📚 Aulas solicitadas:\n${lista}`;
+    }
+
+    const footer = `\n\nAcesse o painel para aprovar ou rejeitar.`;
+    const messageContent = `${header}${details}${aulas}${footer}`;
+
+    for (const admin of admins) {
+      try {
+        await prisma.chatMessage.create({
+          data: {
+            senderId: studentId,
+            receiverId: admin.id,
+            content: messageContent,
+            attachmentUrl: proofUrl || null,
+            attachmentName: proofUrl ? "comprovante-pagamento.png" : null,
+            attachmentType: proofUrl ? "image" : null,
+          },
+        });
+      } catch (chatError) {
+        console.error(`Erro ao criar mensagem para admin ${admin.id}:`, chatError);
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao enviar mensagem de pagamento para admins:", error);
+    return { success: false, error: "Falha ao notificar administradores." };
+  }
+}

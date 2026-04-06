@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut, Settings, User as UserIcon } from 'lucide-react';
@@ -9,7 +9,7 @@ import type { NavItem, UserRole } from '@/lib/types';
 import { navItems as defaultNavItems, adminNavItems as defaultAdminNavItems } from '@/lib/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getChatMessagesForUser } from '@/app/actions/chat';
-import { getUserById } from '@/app/actions/users';
+import { getUserById, getUserNotifications } from '@/app/actions/users';
 import { safeLocalStorage } from '@/lib/safe-storage';
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -25,6 +25,24 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<any | null>(null);
   const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let timeout: NodeJS.Timeout;
+    const onScroll = () => {
+      el.classList.add('scrolling');
+      clearTimeout(timeout);
+      timeout = setTimeout(() => el.classList.remove('scrolling'), 1500);
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const filteredNavItems = useMemo(() => {
     if (!userRole) return [];
@@ -87,6 +105,20 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+    const pollNotifications = async () => {
+      const result = await getUserNotifications(user.id);
+      if (!result.success || !result.data) return;
+      const unread = result.data.some((n: any) => !n.read);
+      setHasNewNotifications(unread);
+    };
+
+    pollNotifications();
+    const interval = setInterval(pollNotifications, 5000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!userRole) return;
     const allowed = [...filteredNavItems, ...filteredAdminNavItems, settingsLink].some((item) =>
       pathname.startsWith(item.href)
@@ -104,6 +136,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const renderLink = (item: NavItem, isLogout = false) => {
     const isActive = pathname === item.href;
     const isChat = item.href === '/dashboard/chat';
+    const isNotifications = item.href === '/dashboard/notifications';
     const content = (
       <div
         className={cn(
@@ -116,6 +149,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         <item.icon className="h-4 w-4 shrink-0" />
         <span className="font-semibold">{item.label}</span>
         {isChat && hasNewMessages && (
+          <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-brand-yellow" />
+        )}
+        {isNotifications && hasNewNotifications && (
           <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-brand-yellow" />
         )}
       </div>
@@ -156,7 +192,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </div>
       </Link>
 
-      <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
+      <div ref={scrollRef} className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
         <nav className="grid gap-1">
           {filteredNavItems.map((item) => renderLink(item))}
           {filteredAdminNavItems.length > 0 && <div className="my-2 border-t border-slate-800" />}

@@ -65,19 +65,44 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [allowedByRole, isPendingTeacherBlocked, router]);
 
+  // Controle dinâmico do scroll global (apenas para o Dashboard)
+  useEffect(() => {
+    // Salva o estado original
+    const originalOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHeight = document.documentElement.style.height;
+    const originalBodyHeight = document.body.style.height;
+
+    // Trava o scroll global para o Dashboard
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.height = "100%";
+    document.body.style.height = "100%";
+
+    // Cleanup: restaura o scroll original ao sair do dashboard (ex: ir para o blog)
+    return () => {
+      document.documentElement.style.overflow = originalOverflow;
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.height = originalHeight;
+      document.body.style.height = originalBodyHeight;
+    };
+  }, []);
+
   return (
-    <div className="dashboard-layout flex w-full overflow-x-hidden">
+    <div className="dashboard-layout h-full w-full overflow-hidden">
       {/* Sidebar fixa à esquerda */}
-      <aside className="fixed left-0 top-0 hidden h-screen w-[220px] border-r bg-sidebar md:block lg:w-[280px]">
+      <aside className="fixed left-0 top-0 hidden h-full w-[15%] min-w-[180px] border-r bg-sidebar md:block">
         <AppSidebar />
       </aside>
       {/* Conteúdo principal com offset e scroll próprio */}
-      <div className="flex h-screen min-w-0 flex-1 flex-col md:ml-[220px] lg:ml-[280px]">
-        <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
-        <PendingProfileBanner />
-        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto bg-background p-4 lg:gap-6 lg:p-6">
-          {children}
-        </main>
+      <div className="flex h-full min-w-0 flex-1 flex-row md:ml-[15%]">
+        <div className="flex h-full w-full flex-col">
+          <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
+          <PendingProfileBanner />
+          <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden bg-background px-4 pb-4 pt-1.5 lg:gap-6 lg:px-6 lg:pb-6 lg:pt-[15px]">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

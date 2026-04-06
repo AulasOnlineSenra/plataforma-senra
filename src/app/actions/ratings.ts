@@ -63,7 +63,7 @@ export async function getTeacherAverageRating(teacherId: string) {
     }
 
     const sum = ratings.reduce((acc, r) => acc + r.score, 0);
-    const average = Math.round((sum / ratings.length) * 10) / 10;
+    const average = Math.round(((5 + sum) / (ratings.length + 1)) * 10) / 10;
     return { success: true, data: { average, count: ratings.length } };
   } catch (error) {
     console.error("Erro ao calcular media:", error);

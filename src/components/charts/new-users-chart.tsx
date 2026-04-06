@@ -105,9 +105,9 @@ export function NewUsersChart({ selectedMonth }: NewUsersChartProps) {
           accessibilityLayer
           data={chartData}
           margin={{
-            top: 20,
-            right: 20,
-            left: 20,
+            top: 10,
+            right: 10,
+            left: 10,
             bottom: 5,
           }}
         >

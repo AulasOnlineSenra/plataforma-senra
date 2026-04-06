@@ -85,7 +85,7 @@ export default function HistoricoPage() {
                     Professor: {lesson.teacher?.name || "-"}
                   </p>
                   <p className="text-sm text-slate-600">
-                    {format(new Date(lesson.date), "dd/MM/yyyy 'as' HH:mm", {
+                    {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", {
                       locale: ptBR,
                     })}{" "}
                     -{" "}

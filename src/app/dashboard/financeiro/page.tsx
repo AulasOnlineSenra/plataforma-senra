@@ -9,6 +9,7 @@ import { getUserById } from '@/app/actions/users';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AdminFinancials from '@/components/admin-financials';
 
 type TransactionHistory = {
   id: string;
@@ -49,7 +50,7 @@ function getStatusBadgeClass(status: string) {
   return 'border-slate-200 bg-slate-50 text-slate-700';
 }
 
-export default function FinanceiroPage() {
+function StudentFinancialPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creditsAvailable, setCreditsAvailable] = useState(0);
@@ -206,4 +207,44 @@ export default function FinanceiroPage() {
       </Card>
     </div>
   );
+}
+
+function AdminFinancialPanel() {
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-slate-900">Painel Financeiro</h1>
+          <p className="text-sm text-slate-500">
+            Visão geral das finanças da plataforma.
+          </p>
+        </div>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+        />
+      </div>
+      <AdminFinancials selectedMonth={selectedMonth} />
+    </div>
+  );
+}
+
+export default function FinanceiroPage() {
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem('userRole'));
+  }, []);
+
+  if (userRole === null) return null;
+
+  if (userRole === 'admin') {
+    return <AdminFinancialPanel />;
+  }
+
+  return <StudentFinancialPanel />;
 }

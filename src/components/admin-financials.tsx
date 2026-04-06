@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/table';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -42,7 +41,8 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collap
 import { toZonedTime } from 'date-fns-tz';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
-import { ScrollArea } from './ui/scroll-area';
+import { getMarketingCosts } from '@/app/actions/marketing';
+import { getApprovedTransactions, getCompletedClassesByPeriod, deleteTransaction } from '@/app/actions/finance';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -83,6 +83,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     const [packageRevenue, setPackageRevenue] = useState(0);
     const [singleClassRevenue, setSingleClassRevenue] = useState(0);
     const [transactionToDelete, setTransactionToDelete] = useState<PaymentTransaction | null>(null);
+    const [deleteMode, setDeleteMode] = useState<'transaction-only' | 'all'>('all');
     const [isReceiptsOpen, setIsReceiptsOpen] = useState(false);
     const [isExpensesOpen, setIsExpensesOpen] = useState(false);
     const [isTeacherPaymentsOpen, setIsTeacherPaymentsOpen] = useState(true);
@@ -148,7 +149,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
 
 
     useEffect(() => {
-        const updateData = () => {
+        const updateData = async () => {
             const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
             const currentPaymentDay = storedPaymentDay || 'friday';
             setPaymentDay(currentPaymentDay);
@@ -163,25 +164,41 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
               end: endOfMonth(monthDate),
             };
 
-            const storedHistory = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
-            const allHistory: PaymentTransaction[] = storedHistory ? JSON.parse(storedHistory).map((p: any) => ({ ...p, date: new Date(p.date) })) : initialPaymentHistory;
+            const transactionsResult = await getApprovedTransactions(selectedMonth);
             
-            const monthHistory = allHistory.filter(t => isWithinInterval(t.date, monthInterval));
+            if (transactionsResult.success && transactionsResult.data) {
+                const dbTransactions = transactionsResult.data.map((t: any) => ({
+                    id: t.id,
+                    studentId: t.studentId,
+                    packageName: t.planName,
+                    creditsAdded: t.creditsAdded,
+                    amount: t.amountPaid,
+                    date: new Date(t.createdAt),
+                    paymentMethod: t.paymentMethod,
+                    student: t.student,
+                }));
+                
+                const monthHistory = dbTransactions.filter((t: PaymentTransaction) => isWithinInterval(t.date, monthInterval));
+                setTransactions(monthHistory.sort((a: any, b: any) => b.date.getTime() - a.date.getTime()));
 
-            setTransactions(monthHistory.sort((a, b) => b.date.getTime() - a.date.getTime()));
+                const revenue = monthHistory.reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
+                setTotalRevenue(revenue);
+                
+                const pkgRevenue = monthHistory
+                    .filter((t: PaymentTransaction) => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
+                    .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
+                setPackageRevenue(pkgRevenue);
 
-            const revenue = monthHistory.reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
-            setTotalRevenue(revenue);
-            
-            const pkgRevenue = monthHistory
-                .filter((t: PaymentTransaction) => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
-                .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
-            setPackageRevenue(pkgRevenue);
-
-            const singleRevenue = monthHistory
-                .filter((t: PaymentTransaction) => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
-                .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
-            setSingleClassRevenue(singleRevenue);
+                const singleRevenue = monthHistory
+                    .filter((t: PaymentTransaction) => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
+                    .reduce((acc: number, t: PaymentTransaction) => acc + t.amount, 0);
+                setSingleClassRevenue(singleRevenue);
+            } else {
+                setTransactions([]);
+                setTotalRevenue(0);
+                setPackageRevenue(0);
+                setSingleClassRevenue(0);
+            }
 
             const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
             if (storedUsers) {
@@ -190,16 +207,16 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 setUsers(initialUsers);
             }
             
-            const storedMonthlyCosts = localStorage.getItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY);
-            let allCosts: Record<string, MarketingCosts> = {};
-            if (storedMonthlyCosts) {
-                allCosts = JSON.parse(storedMonthlyCosts);
-                setMarketingCosts(allCosts[selectedMonth] || DEFAULT_COSTS);
+            const marketingResult = await getMarketingCosts(selectedMonth);
+            if (marketingResult.success && marketingResult.data) {
+                setMarketingCosts({
+                    ads: Number(marketingResult.data.ads) || 0,
+                    team: Number(marketingResult.data.team) || 0,
+                    organicCommissions: Number(marketingResult.data.organicCommissions) || 0,
+                    paidCommissions: Number(marketingResult.data.paidCommissions) || 0,
+                });
             } else {
-                const initialData = { [format(new Date(), 'yyyy-MM')]: initialMarketingCosts };
-                localStorage.setItem(MONTHLY_MARKETING_COSTS_STORAGE_KEY, JSON.stringify(initialData));
-                allCosts = initialData;
-                setMarketingCosts(selectedMonth === format(new Date(), 'yyyy-MM') ? initialMarketingCosts : DEFAULT_COSTS);
+                setMarketingCosts(DEFAULT_COSTS);
             }
 
             const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
@@ -267,90 +284,87 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         const selectedPeriod = paymentPeriods.find(p => p.value === selectedPeriodKey);
         if (!selectedPeriod) return;
 
-        const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-        const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})) : initialScheduleEvents;
-        
-        const storedTeachers = localStorage.getItem(TEACHERS_STORAGE_KEY);
-        const teachers: Teacher[] = storedTeachers ? JSON.parse(storedTeachers) : initialTeachers;
-        
-        const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
-        const paymentRate = storedRate ? parseFloat(storedRate) : 50;
+        const fetchTeacherPayments = async () => {
+            const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
+            const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
-        const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
-
-        const classesInPeriod = schedule.filter(e => 
-            e.status === 'completed' && isWithinInterval(new Date(e.start), { start: selectedPeriod.start, end: selectedPeriod.end }) && !e.isExperimental
-        );
-
-        classesInPeriod.forEach(c => {
-            if (!paymentsByTeacher[c.teacherId]) {
-                const teacher = teachers.find(t => t.id === c.teacherId);
-                paymentsByTeacher[c.teacherId] = {
-                    teacherId: c.teacherId,
-                    teacherName: teacher?.name || 'Professor Desconhecido',
-                    teacherAvatarUrl: teacher?.avatarUrl,
-                    completedClasses: 0,
-                    paymentRate: paymentRate,
-                    totalAmount: 0,
-                };
+            const lessonsResult = await getCompletedClassesByPeriod(selectedPeriod.start, selectedPeriod.end);
+            
+            if (!lessonsResult.success || !lessonsResult.data) {
+                setTeacherPaymentDetails([]);
+                setSelectedPeriodCost(0);
+                return;
             }
-            paymentsByTeacher[c.teacherId].completedClasses += 1;
-        });
-        
-        const paymentDetails = Object.entries(paymentsByTeacher).map(([teacherId, p]) => ({
-          id: `${'\'\''}${selectedPeriodKey}-${'\'\''}${teacherId}`,
-          ...p,
-          totalAmount: p.completedClasses * p.paymentRate,
-          period: selectedPeriod.label,
-        })).sort((a,b) => b.totalAmount - a.totalAmount);
-        
-        setTeacherPaymentDetails(paymentDetails);
-        setSelectedPeriodCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+
+            const paymentsByTeacher: Record<string, Omit<TeacherPaymentDetails, 'id'|'period'>> = {};
+
+            lessonsResult.data.forEach((lesson: any) => {
+                if (!paymentsByTeacher[lesson.teacherId]) {
+                    paymentsByTeacher[lesson.teacherId] = {
+                        teacherId: lesson.teacherId,
+                        teacherName: lesson.teacher?.name || 'Professor Desconhecido',
+                        teacherAvatarUrl: lesson.teacher?.avatarUrl,
+                        completedClasses: 0,
+                        paymentRate: paymentRate,
+                        totalAmount: 0,
+                    };
+                }
+                paymentsByTeacher[lesson.teacherId].completedClasses += 1;
+            });
+            
+            const paymentDetails = Object.entries(paymentsByTeacher).map(([teacherId, p]) => ({
+              id: `${selectedPeriodKey}-${teacherId}`,
+              ...p,
+              totalAmount: p.completedClasses * p.paymentRate,
+              period: selectedPeriod.label,
+            })).sort((a,b) => b.totalAmount - a.totalAmount);
+            
+            setTeacherPaymentDetails(paymentDetails);
+            setSelectedPeriodCost(paymentDetails.reduce((acc, p) => acc + p.totalAmount, 0));
+        };
+
+        fetchTeacherPayments();
     }, [selectedPeriodKey, paymentPeriods, selectedMonth]); // Rerun when month changes to recalculate periods
 
     const getUserById = (id: string): AppUser | undefined => {
         return users.find(u => u.id === id);
     }
     
-    const handleDeleteTransaction = () => {
+    const handleDeleteTransaction = async (removeCredits: boolean) => {
       if (!transactionToDelete) return;
 
-      // Update payment history
-      const allHistoryStr = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
-      const allHistory = allHistoryStr ? JSON.parse(allHistoryStr) : [];
-      const updatedAllHistory = allHistory.filter(
-        (t: PaymentTransaction) => t.id !== transactionToDelete.id
-      );
-      localStorage.setItem(
-        PAYMENT_HISTORY_STORAGE_KEY,
-        JSON.stringify(updatedAllHistory)
-      );
+      const result = await deleteTransaction(transactionToDelete.id, removeCredits);
 
-      // Update user credits
-      const allUsersStr = localStorage.getItem(USERS_STORAGE_KEY);
-      const allUsers: AppUser[] = allUsersStr
-        ? JSON.parse(allUsersStr)
-        : initialUsers;
-      const userIndex = allUsers.findIndex(
-        (u) => u.id === transactionToDelete.studentId
-      );
-      if (userIndex !== -1) {
-        allUsers[userIndex].classCredits = Math.max(
-          0,
-          (allUsers[userIndex].classCredits || 0) -
-            transactionToDelete.creditsAdded
-        );
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(allUsers));
+      if (result.success) {
+        toast({
+          title: removeCredits ? 'Transação Excluída' : 'Transação Excluída',
+          description: removeCredits 
+            ? 'A transação e os créditos correspondentes foram removidos.' 
+            : 'A transação foi removida. Os créditos do aluno foram mantidos.',
+        });
+        setTransactions(prev => prev.filter(t => t.id !== transactionToDelete.id));
+        setTotalRevenue(prev => prev - transactionToDelete.amount);
+        
+        const updatedTransactions = transactions.filter(t => t.id !== transactionToDelete.id);
+        const pkgRevenue = updatedTransactions
+          .filter(t => t.packageName && !t.packageName.toLowerCase().includes('avulsa'))
+          .reduce((acc, t) => acc + t.amount, 0);
+        setPackageRevenue(pkgRevenue);
+
+        const singleRevenue = updatedTransactions
+          .filter(t => t.packageName && t.packageName.toLowerCase().includes('avulsa'))
+          .reduce((acc, t) => acc + t.amount, 0);
+        setSingleClassRevenue(singleRevenue);
+      } else {
+        toast({
+          title: 'Erro',
+          description: result.error || 'Falha ao excluir transação.',
+          variant: 'destructive',
+        });
       }
 
-      // Dispatch storage event to notify other components (like sidebar)
-      window.dispatchEvent(new Event('storage'));
-
-      toast({
-        title: 'Transação Excluída',
-        description: 'A transação e os créditos correspondentes foram removidos.',
-      });
       setTransactionToDelete(null);
+      setDeleteMode('all');
     };
 
     const expenseItems = [
@@ -370,7 +384,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     <div className="grid gap-6">
         {/* KPIs */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Faturamento (Mês)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -382,7 +396,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Despesas (Mês)</CardTitle>
                 <Landmark className="h-4 w-4 text-muted-foreground" />
@@ -395,9 +409,9 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </p>
                 </CardContent>
             </Card>
-             <Card>
+             <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Lucro Líquido (Mês)</CardTitle>
+                <CardTitle className="text-sm font-medium">Resultado Líquido (mês)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -407,7 +421,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium">Patrimônio Líquido (Mês)</CardTitle>
                   <CardDescription className="text-xs">Resultado do mês</CardDescription>
@@ -419,7 +433,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
+            <Card className="rounded-xl">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><TrendingUp className="text-green-500" />Receitas</CardTitle>
                     <CardDescription>Distribuição do faturamento.</CardDescription>
@@ -442,7 +456,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                     </div>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-xl">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><TrendingDown className="text-red-500" />Despesas</CardTitle>
                     <CardDescription>Distribuição dos custos operacionais.</CardDescription>
@@ -465,7 +479,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                     </div>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-xl">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><DollarSign />Resultado do Mês</CardTitle>
                     <CardDescription>Demonstração do resultado do mês.</CardDescription>
@@ -493,7 +507,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         </div>
 
         <Collapsible open={isReceiptsOpen} onOpenChange={setIsReceiptsOpen}>
-            <Card>
+            <Card className="rounded-xl">
                 <CollapsibleTrigger asChild>
                     <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
                         <div>
@@ -507,7 +521,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        <ScrollArea>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -521,16 +534,17 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                 </TableHeader>
                                 <TableBody>
                                     {transactions.map(transaction => {
-                                        const user = getUserById(transaction.studentId);
+                                        const studentName = (transaction as any).student?.name || getUserById(transaction.studentId)?.name || 'Aluno não encontrado';
+                                        const studentAvatar = (transaction as any).student?.avatarUrl || getUserById(transaction.studentId)?.avatarUrl;
                                         return (
                                             <TableRow key={transaction.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="h-10 w-10">
-                                                            <AvatarImage src={user?.avatarUrl} alt={user?.name} />
-                                                            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                                                            <AvatarImage src={studentAvatar} alt={studentName} />
+                                                            <AvatarFallback>{studentName.charAt(0)}</AvatarFallback>
                                                         </Avatar>
-                                                        <div className="font-medium">{user?.name || 'Aluno não encontrado'}</div>
+                                                        <div className="font-medium">{studentName}</div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>{transaction.packageName}</TableCell>
@@ -553,14 +567,13 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                     )}
                                 </TableBody>
                             </Table>
-                        </ScrollArea>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
         </Collapsible>
         
         <Collapsible open={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
-            <Card>
+            <Card className="rounded-xl">
                 <CollapsibleTrigger asChild>
                     <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
                         <div>
@@ -574,7 +587,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        <ScrollArea>
                              <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -594,21 +606,13 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                         </TableRow>
                                     ))}
                                 </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </CardContent>
-                     <CardContent className="mt-auto">
-                        <Separator className="my-4" />
-                        <div className="flex items-center justify-between font-bold">
-                            <span>Total de Despesas</span>
-                            <span className="text-red-600">R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</span>
-                        </div>
+                             </Table>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
         </Collapsible>
         <Collapsible open={isTeacherPaymentsOpen} onOpenChange={setIsTeacherPaymentsOpen}>
-            <Card>
+            <Card className="rounded-xl">
                 <CollapsibleTrigger asChild>
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer gap-4">
                         <div className="flex-1">
@@ -639,7 +643,6 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        <ScrollArea>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -681,25 +684,72 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                     </TableRow>
                                 </TableFooter>
                             </Table>
-                        </ScrollArea>
                     </CardContent>
                 </CollapsibleContent>
             </Card>
         </Collapsible>
     </div>
+    
     <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-[650px] border-amber-50 shadow-xl">
             <AlertDialogHeader>
-                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente a transação de <span className="font-bold">{getUserById(transactionToDelete?.studentId || '')?.name}</span> no valor de R$ {transactionToDelete?.amount.toFixed(2).replace('.',',')} e removerá os créditos de aula correspondentes da conta do aluno.
+                <AlertDialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-900 font-headline">
+                    <Trash2 className="h-5 w-5 text-rose-600" />
+                    Confirmar Exclusão de Receita
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-base pt-2 text-slate-500">
+                    Esta ação é irreversível e removerá o registro financeiro permanentemente.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteTransaction}>
-                    Excluir
-                </AlertDialogAction>
+
+            {/* Resumo da Transação em Destaque */}
+            <div className="my-6 rounded-2xl border border-slate-100 bg-slate-50 p-5 shadow-inner">
+                <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Aluno</span>
+                        <p className="font-bold text-slate-900 truncate text-base leading-none">
+                            {getUserById(transactionToDelete?.studentId || '')?.name || 'Carregando...'}
+                        </p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Valor Total</span>
+                        <p className="text-xl font-black text-slate-950 font-mono tracking-tight leading-none">
+                            R$ {transactionToDelete?.amount.toFixed(2).replace('.', ',')}
+                        </p>
+                    </div>
+                    <div className="col-span-2 flex items-center gap-4 pt-4 border-t border-slate-200/60">
+                        <div className="flex-1 space-y-1">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pacote / Produto</span>
+                            <p className="text-sm font-medium text-slate-600 truncate">{transactionToDelete?.packageName}</p>
+                        </div>
+                        <div className="text-right space-y-1">
+                             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">ID Ref</span>
+                             <p className="text-[10px] font-mono text-slate-300">#{transactionToDelete?.id.slice(0, 8)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <AlertDialogFooter className="flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
+                <AlertDialogCancel className="w-full sm:w-auto mt-0 order-3 sm:order-1 h-12 border-slate-200 text-slate-500 font-semibold hover:bg-slate-50 rounded-xl transition-all">
+                    Cancelar
+                </AlertDialogCancel>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 justify-end order-1 sm:order-2">
+                    <Button 
+                        variant="outline" 
+                        className="w-full sm:w-auto h-12 border-rose-200 text-rose-600 font-semibold hover:bg-rose-50 rounded-xl transition-all"
+                        onClick={() => handleDeleteTransaction(false)}
+                    >
+                        Excluir apenas registro
+                    </Button>
+                    <Button 
+                        variant="destructive"
+                        className="w-full sm:w-auto h-12 bg-rose-600 hover:bg-rose-700 shadow-md rounded-xl font-bold transition-all px-6"
+                        onClick={() => handleDeleteTransaction(true)}
+                    >
+                        Excluir tudo (Ação Crítica)
+                    </Button>
+                </div>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

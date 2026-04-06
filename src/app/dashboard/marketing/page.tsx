@@ -170,76 +170,82 @@ export default function MarketingPage() {
       </div>
 
       {/* CARDS SUPERIORES */}
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4 mt-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         
-        <Card className="rounded-3xl border-slate-200 bg-white shadow-sm overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-3xl"></div>
-          <CardHeader className="pb-2 pt-6 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-500 font-medium uppercase tracking-wider text-xs">Anúncios</CardDescription>
-            <TrendingUp className="h-4 w-4 text-slate-300" />
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Anúncios</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="pb-6">
-            <div className="flex items-baseline gap-2">
-              <span className="text-slate-400 font-bold text-2xl">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={costs.ads === 0 ? '' : costs.ads}
-                placeholder="0,00"
-                disabled={isLoadingMonth || isSaving}
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => handleCostChange('ads', e.target.value)}
-                className="w-full bg-transparent border-0 border-b-2 border-transparent text-4xl font-extrabold text-slate-900 focus:outline-none focus:border-brand-yellow placeholder:text-slate-200 transition-colors py-0"
-              />
-            </div>
+          <CardContent>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={costs.ads === 0 ? '' : costs.ads}
+              placeholder="0,00"
+              disabled={isLoadingMonth || isSaving}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => handleCostChange('ads', e.target.value)}
+              className="w-full bg-transparent border-b-2 border-slate-200 text-2xl font-bold text-slate-900 focus:outline-none focus:border-brand-yellow placeholder:text-slate-300 transition-colors"
+            />
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-slate-200 bg-white shadow-sm overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 rounded-l-3xl"></div>
-          <CardHeader className="pb-2 pt-6 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-500 font-medium uppercase tracking-wider text-xs">Equipe</CardDescription>
-            <Users className="h-4 w-4 text-slate-300" />
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Equipe</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="pb-6">
-            <div className="flex items-baseline gap-2">
-              <span className="text-slate-400 font-bold text-2xl">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={costs.team === 0 ? '' : costs.team}
-                placeholder="0,00"
-                disabled={isLoadingMonth || isSaving}
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => handleCostChange('team', e.target.value)}
-                className="w-full bg-transparent border-0 border-b-2 border-transparent text-4xl font-extrabold text-slate-900 focus:outline-none focus:border-brand-yellow placeholder:text-slate-200 transition-colors py-0"
-              />
-            </div>
+          <CardContent>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={costs.team === 0 ? '' : costs.team}
+              placeholder="0,00"
+              disabled={isLoadingMonth || isSaving}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => handleCostChange('team', e.target.value)}
+              className="w-full bg-transparent border-b-2 border-slate-200 text-2xl font-bold text-slate-900 focus:outline-none focus:border-brand-yellow placeholder:text-slate-300 transition-colors"
+            />
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-slate-200 bg-white shadow-sm overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-3xl"></div>
-          <CardHeader className="pb-2 pt-6 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-500 font-medium uppercase tracking-wider text-xs">Comissões Totais</CardDescription>
-            <DollarSign className="h-4 w-4 text-slate-300" />
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Comissões Totais</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="pb-6 flex items-baseline gap-1">
-            <p className="text-4xl font-extrabold text-slate-900 truncate">
-              {currencyFormatter.format(totalCommissions)}
-            </p>
+          <CardContent>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={totalCommissions === 0 ? '' : totalCommissions}
+              placeholder="0,00"
+              disabled={isLoadingMonth || isSaving}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => {
+                const value = Number(e.target.value.replace(/^0+(?=\d)/, '').replace(',', '.')) || 0;
+                const diff = value - totalCommissions;
+                if (diff !== 0) {
+                  setCosts(prev => ({
+                    ...prev,
+                    organicCommissions: prev.organicCommissions + diff,
+                  }));
+                }
+              }}
+              className="w-full bg-transparent border-b-2 border-slate-200 text-2xl font-bold text-slate-900 focus:outline-none focus:border-brand-yellow placeholder:text-slate-300 transition-colors"
+            />
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-md overflow-hidden relative">
-          <CardHeader className="pb-2 pt-6 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-400 font-medium uppercase tracking-wider text-xs">Custo Total</CardDescription>
-            <Target className="h-4 w-4 text-brand-yellow" />
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Custo Total</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="pb-6">
-            <p className="text-4xl font-extrabold text-brand-yellow truncate">
-              {currencyFormatter.format(totalCost)}
-            </p>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {totalCost.toFixed(2).replace('.', ',')}</div>
+            <p className="text-xs text-muted-foreground">Total de despesas do mês</p>
           </CardContent>
         </Card>
       </div>

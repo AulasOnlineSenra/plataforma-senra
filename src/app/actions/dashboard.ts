@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma'
 
 export async function getDashboardStats() {
   try {
+    const now = new Date();
+
     // Busca os totais de Usuários
     const totalStudents = await prisma.user.count({
       where: { role: 'student', status: 'active' }
@@ -15,11 +17,22 @@ export async function getDashboardStats() {
 
     // Busca os totais de Aulas
     const scheduledLessons = await prisma.lesson.count({
-      where: { status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] } }
+      where: { 
+        status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
+        date: { gte: now }
+      }
     });
 
     const completedLessons = await prisma.lesson.count({
-      where: { status: { in: ['CONFIRMED', 'completed'] } }
+      where: { 
+        OR: [
+          { status: 'completed' },
+          { 
+            status: { in: ['CONFIRMED', 'scheduled'] },
+            date: { lt: now }
+          }
+        ]
+      }
     });
 
     const cancelledLessons = await prisma.lesson.count({
@@ -35,8 +48,8 @@ export async function getDashboardStats() {
       orderBy: { date: 'asc' },
       take: 5,
       include: {
-        student: { select: { name: true } },
-        teacher: { select: { name: true } }
+        student: { select: { id: true, name: true } },
+        teacher: { select: { id: true, name: true, videoUrl: true } }
       }
     });
 
@@ -45,6 +58,29 @@ export async function getDashboardStats() {
       _sum: { price: true },
       where: { status: { in: ['CONFIRMED', 'completed'] } }
     });
+
+    // Calcula pagamentos pendentes
+    const pendingPayments = await prisma.transaction.count({
+      where: { status: 'PENDENTE' }
+    });
+
+    const pendingPaymentsAmount = await prisma.transaction.aggregate({
+      _sum: { amountPaid: true },
+      where: { status: 'PENDENTE' }
+    });
+
+    // Busca transações pendentes - versão simplificada
+    const pendingTransactionsList = await prisma.transaction.findMany({
+      where: { status: 'PENDENTE' },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+      include: {
+        student: { select: { id: true, name: true, avatarUrl: true } }
+      }
+    });
+    
+    console.log('[Dashboard] Transações PENDENTE encontradas:', pendingTransactionsList.length);
+    console.log('[Dashboard] IDs das transações:', pendingTransactionsList.map(t => t.id));
 
     return {
       success: true,
@@ -55,7 +91,10 @@ export async function getDashboardStats() {
         completed: completedLessons,
         cancelled: cancelledLessons,
         revenue: revenue._sum.price || 0,
-        upcomingLessons
+        upcomingLessons,
+        pendingPayments,
+        pendingPaymentsAmount: pendingPaymentsAmount._sum.amountPaid || 0,
+        pendingTransactions: pendingTransactionsList
       }
     };
   } catch (error) {

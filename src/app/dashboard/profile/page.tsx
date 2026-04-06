@@ -176,6 +176,35 @@ export default function ProfilePage() {
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoUrlSaveTimer, setVideoUrlSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isSavingVideoUrl, setIsSavingVideoUrl] = useState(false);
+
+  const handleVideoUrlChange = async (value: string) => {
+    setVideoUrl(value);
+    
+    if (videoUrlSaveTimer) {
+      clearTimeout(videoUrlSaveTimer);
+    }
+    
+    if (!currentUser?.id || currentUser.role !== 'teacher') return;
+    
+    const newTimer = setTimeout(async () => {
+      setIsSavingVideoUrl(true);
+      const result = await updateUserProfile(currentUser.id, {
+        videoUrl: value,
+      });
+      setIsSavingVideoUrl(false);
+      
+      if (result.success) {
+        toast({ title: 'Link salvo com sucesso!' });
+      } else {
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: result.error });
+      }
+    }, 3000);
+    
+    setVideoUrlSaveTimer(newTimer);
+  };
+
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -1067,13 +1096,16 @@ export default function ProfilePage() {
             <CollapsibleContent>
               <CardContent className="pt-6 space-y-5">
                 <div className="grid gap-2">
-                  <Label htmlFor="videoUrl" className="font-bold text-slate-700">Link do vídeo de apresentação</Label>
+                  <Label htmlFor="videoUrl" className="font-bold text-slate-700">
+                    Link do vídeo de apresentação
+                    {isSavingVideoUrl && <span className="ml-2 text-xs text-amber-600">(Salvando...)</span>}
+                  </Label>
                   <Input
                     id="videoUrl"
                     type="url"
                     className="h-12 bg-white"
                     value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
+                    onChange={(e) => handleVideoUrlChange(e.target.value)}
                     placeholder="https://..."
                   />
                 </div>

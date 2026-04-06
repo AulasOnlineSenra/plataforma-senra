@@ -55,6 +55,7 @@ export async function createPost(data: {
   try {
     const post = await prisma.blogPost.create({
       data: {
+        id: crypto.randomUUID(),
         title: data.title,
         excerpt: data.excerpt,
         content: data.content,
@@ -62,6 +63,7 @@ export async function createPost(data: {
         image: data.image || null,
         tags: data.tags || '[]',
         published: data.published ?? false,
+        updatedAt: new Date(),
       },
     });
     revalidatePath('/dashboard/blog');
@@ -139,5 +141,35 @@ export async function togglePublishPost(id: string) {
   } catch (error) {
     console.error('Erro ao alternar publicação:', error);
     return { success: false, error: 'Falha ao alternar publicação.' };
+  }
+}
+
+export async function likePost(id: string) {
+  try {
+    const updated = await prisma.blogPost.update({
+      where: { id },
+      data: { likes: { increment: 1 } },
+    });
+    revalidatePath('/blog');
+    revalidatePath(`/blog/${id}`);
+    return { success: true, data: updated };
+  } catch (error) {
+    console.error('Erro ao dar like:', error);
+    return { success: false, error: 'Falha ao processar like.' };
+  }
+}
+
+export async function dislikePost(id: string) {
+  try {
+    const updated = await prisma.blogPost.update({
+      where: { id },
+      data: { dislikes: { increment: 1 } },
+    });
+    revalidatePath('/blog');
+    revalidatePath(`/blog/${id}`);
+    return { success: true, data: updated };
+  } catch (error) {
+    console.error('Erro ao dar dislike:', error);
+    return { success: false, error: 'Falha ao processar dislike.' };
   }
 }

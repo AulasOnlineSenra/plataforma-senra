@@ -1,75 +1,40 @@
-import Link from 'next/link';
 import { getPublishedPosts } from '@/app/actions/blog';
+import BlogSearchBar from '@/components/blog-search-bar';
+import BlogGrid from '@/components/blog-grid';
 
 export default async function BlogPage() {
   const result = await getPublishedPosts();
   const posts = result.success ? result.data : [];
 
   return (
-    <div className="min-h-[calc(100vh-160px)] bg-background py-12">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold font-headline text-slate-900 dark:text-foreground mb-8">
-          Blog
-        </h1>
+    <div className="min-h-screen bg-[url('/imagem-fundo-blog.png')] bg-cover bg-fixed bg-center">
+      {/* Header minimalista */}
+      <div className="hidden border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold font-headline text-foreground tracking-tight">
+            Blog
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Artigos, tutoriais e novidades
+          </p>
+        </div>
+      </div>
 
-        {posts && posts.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => {
-              let firstTag = '';
-              try {
-                const parsed = JSON.parse(post.tags);
-                if (Array.isArray(parsed) && parsed.length > 0) firstTag = parsed[0];
-              } catch { firstTag = ''; }
-
-              const formattedDate = new Date(post.createdAt).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-              });
-
-              return (
-                <Link
-                  key={post.id}
-                  href={`/blog/${post.id}`}
-                  className="group overflow-hidden rounded-xl border bg-card shadow-sm hover:shadow-lg transition-all duration-300"
-                >
-                  {post.image && (
-                    <div className="relative">
-                      <img
-                        src={post.image}
-                        alt={post.title}
-                        className="w-full h-40 sm:h-48 object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      {firstTag && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
-                          <span className="text-xs text-amber-400 font-medium uppercase tracking-wider">
-                            {firstTag}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-foreground mb-3 line-clamp-2 group-hover:text-amber-500 transition-colors duration-200">
-                      {post.title}
-                    </h2>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                      {post.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>{formattedDate}</span>
-                      <span>{post.author}</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-            <p className="text-lg">Nenhum artigo publicado ainda.</p>
-          </div>
-        )}
+      <div className="container mx-auto px-[150px] pt-[100px] pb-[25px]">
+        <BlogSearchBar posts={posts} />
+        <div className="bg-white rounded-[12px] p-[3px]">
+          {posts && posts.length > 0 ? (
+            <BlogGrid posts={posts} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
+              <svg className="w-16 h-16 mb-4 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+              <p className="text-lg font-medium">Nenhum artigo publicado ainda</p>
+              <p className="text-sm mt-1">Volte em breve para novos conteúdos</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

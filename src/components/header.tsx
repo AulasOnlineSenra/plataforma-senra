@@ -49,7 +49,7 @@ export function Header({ isCollapsed, toggleCollapse, className = "" }: HeaderPr
           </div>
         </div>
         {mounted && (
-          <div className="flex items-center gap-2 mt-[15px]">
+          <div className="flex items-center gap-2 mt-[15px] sm:hidden">
             <Sun className="h-4 w-4 text-muted-foreground" />
             <Switch
               checked={isDark}

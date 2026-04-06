@@ -21,7 +21,7 @@ import {
 export const navItems: NavItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/notifications', icon: Bell, label: 'Notificações', roles: ['student', 'teacher', 'admin'] },
-  { href: '/dashboard/minhas-aulas', icon: CalendarDays, label: 'Minhas Aulas', roles: ['student', 'teacher', 'admin'] },
+  { href: '/dashboard/minhas-aulas', icon: CalendarDays, label: 'Minha Agenda', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/booking', icon: BookOpenCheck, label: 'Agendar Aula', roles: ['student', 'admin'] },
   { href: '/dashboard/chat', icon: MessageSquare, label: 'Chat', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/students', icon: Users, label: 'Alunos', roles: ['teacher', 'admin'] },

@@ -7,6 +7,8 @@ type SettingsInput = {
   whatsapp: string;
   classValue: string;
   referralBonus: string;
+  pixKey?: string;
+  pixKeyType?: string;
 };
 
 export async function getSettings() {
@@ -37,11 +39,15 @@ export async function updateSettings(data: SettingsInput) {
         whatsapp: data.whatsapp.trim(),
         classValue: data.classValue.trim(),
         referralBonus: data.referralBonus.trim(),
+        pixKey: (data.pixKey ?? '').trim(),
+        pixKeyType: (data.pixKeyType ?? 'cnpj').trim(),
       },
       update: {
         whatsapp: data.whatsapp.trim(),
         classValue: data.classValue.trim(),
         referralBonus: data.referralBonus.trim(),
+        pixKey: (data.pixKey ?? '').trim(),
+        pixKeyType: (data.pixKeyType ?? 'cnpj').trim(),
       },
     });
 

@@ -252,7 +252,7 @@ function TeacherCard({
           <AvatarImage
             src={teacher.avatarUrl}
             alt={teacher.name}
-            className="object-cover"
+            className="object-cover object-center"
           />
           <AvatarFallback className="text-3xl font-bold bg-slate-100 text-slate-400">
             {teacher.name.charAt(0)}

@@ -231,7 +231,7 @@ export default function NotificationsPage() {
                         "border-b border-slate-100",
                     )}
                   >
-                    <div className="flex w-full items-start py-6">
+                    <div className="flex w-full items-start py-3">
                       <div
                         className={cn(
                           "hidden h-14 w-14 items-center justify-center rounded-2xl border sm:flex shadow-sm shrink-0",

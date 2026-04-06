@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gift, MessageCircle, Save, Settings, Wallet } from 'lucide-react';
+import { CalendarDays, Gift, KeyRound, MessageCircle, Save, Settings, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,8 @@ const DEFAULT_SETTINGS = {
   whatsapp: '5583999999999',
   teacherClassValue: '50.00',
   referralBonus: '1',
+  pixKey: '27394788000114',
+  pixKeyType: 'cnpj',
 };
 
 export default function SettingsPage() {
@@ -29,6 +31,8 @@ export default function SettingsPage() {
   const [teacherClassValue, setTeacherClassValue] = useState(DEFAULT_SETTINGS.teacherClassValue);
   const [referralBonus, setReferralBonus] = useState(DEFAULT_SETTINGS.referralBonus);
   const [availabilityType, setAvailabilityType] = useState('weekly');
+  const [pixKey, setPixKey] = useState('');
+  const [pixKeyType, setPixKeyType] = useState(DEFAULT_SETTINGS.pixKeyType);
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   useEffect(() => {
@@ -42,6 +46,8 @@ export default function SettingsPage() {
       setTeacherClassValue(result.data.classValue || DEFAULT_SETTINGS.teacherClassValue);
       setReferralBonus(result.data.referralBonus || DEFAULT_SETTINGS.referralBonus);
       setAvailabilityType(result.data.availabilityType || 'weekly');
+      setPixKey((result.data as any).pixKey || DEFAULT_SETTINGS.pixKey);
+      setPixKeyType((result.data as any).pixKeyType || DEFAULT_SETTINGS.pixKeyType);
     };
 
     loadSettings();
@@ -78,6 +84,8 @@ export default function SettingsPage() {
       whatsapp: nextSettings.whatsapp,
       classValue: nextSettings.teacherClassValue,
       referralBonus: nextSettings.referralBonus,
+      pixKey: pixKey.trim(),
+      pixKeyType: pixKeyType.trim(),
     });
     setIsLoading(false);
 
@@ -255,6 +263,66 @@ export default function SettingsPage() {
                 {isSavingAvailability ? 'Salvando...' : <><Save className="mr-2 h-4 w-4" /> Salvar Tipo de Agenda</>}
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-shadow hover:shadow-md md:col-span-2">
+          <CardHeader className="border-b border-slate-100 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-violet-100 p-3 text-violet-600">
+                <KeyRound className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-slate-900">Pagamento Pix</CardTitle>
+                <CardDescription>Chave Pix exibida no checkout dos alunos</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="pix-key-type" className="font-medium text-slate-700">
+                  Tipo de chave
+                </Label>
+                <Select value={pixKeyType} onValueChange={setPixKeyType}>
+                  <SelectTrigger id="pix-key-type" className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cpf">CPF</SelectItem>
+                    <SelectItem value="cnpj">CNPJ</SelectItem>
+                    <SelectItem value="email">E-mail</SelectItem>
+                    <SelectItem value="phone">Telefone</SelectItem>
+                    <SelectItem value="random">Chave Aleatória</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pix-key" className="font-medium text-slate-700">
+                  Chave Pix (copia e cola)
+                </Label>
+                <Input
+                  id="pix-key"
+                  value={pixKey}
+                  onChange={(e) => setPixKey(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder={
+                    !pixKeyType ? 'Selecione o tipo de chave primeiro' :
+                    pixKeyType === 'cpf' ? '000.000.000-00' :
+                    pixKeyType === 'cnpj' ? '00.000.000/0000-00' :
+                    pixKeyType === 'phone' ? '(00) 00000-0000' :
+                    pixKeyType === 'email' ? 'seu@email.com' :
+                    'Chave aleatória'
+                  }
+                  disabled={!pixKeyType}
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              Esta chave será exibida para os alunos ao escolherem pagar via Pix no checkout.
+            </p>
           </CardContent>
         </Card>
       </div>
