@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gift, KeyRound, MessageCircle, Save, Settings, Wallet } from 'lucide-react';
+import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getSettings, updateSettings, updateAvailabilityType } from '@/app/actions/settings';
+import { getAllQuizQuestions, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, reorderQuizQuestions } from '@/app/actions/quiz';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const DEFAULT_SETTINGS = {
   whatsapp: '5583999999999',
@@ -34,6 +38,19 @@ export default function SettingsPage() {
   const [pixKey, setPixKey] = useState('');
   const [pixKeyType, setPixKeyType] = useState(DEFAULT_SETTINGS.pixKeyType);
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
+
+  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    question: '',
+    questionPt: '',
+    type: 'text',
+    options: '',
+    placeholder: '',
+    isRequired: true,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -57,6 +74,18 @@ export default function SettingsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const loadQuizQuestions = async () => {
+      setIsLoadingQuestions(true);
+      const result = await getAllQuizQuestions();
+      if (result.success && result.data) {
+        setQuizQuestions(result.data);
+      }
+      setIsLoadingQuestions(false);
+    };
+    loadQuizQuestions();
+  }, []);
+
   const handleSaveAvailabilityType = async () => {
     setIsSavingAvailability(true);
     const result = await updateAvailabilityType(availabilityType);
@@ -73,11 +102,18 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
+    console.log('[handleSave] Salvando configurações:', { teacherClassValue, referralBonus: referralBonus, type: typeof referralBonus });
     setIsLoading(true);
+    
+    const referralBonusValue = String(referralBonus).trim() || '1';
+    const teacherClassValueValue = String(teacherClassValue).trim() || '50.00';
+    
+    console.log('[handleSave] Valores processados:', { teacherClassValueValue, referralBonusValue });
+    
     const nextSettings = {
-      whatsapp: whatsapp.trim(),
-      teacherClassValue: teacherClassValue.trim(),
-      referralBonus: referralBonus.trim(),
+      whatsapp: whatsapp.trim() || '',
+      teacherClassValue: teacherClassValueValue,
+      referralBonus: referralBonusValue,
     };
 
     const result = await updateSettings({
@@ -87,9 +123,17 @@ export default function SettingsPage() {
       pixKey: pixKey.trim(),
       pixKeyType: pixKeyType.trim(),
     });
+    console.log('[handleSave] Resultado:', result);
     setIsLoading(false);
 
-    if (!result.success) return;
+    if (!result.success) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Erro ao salvar', 
+        description: result.error || 'Falha ao salvar configurações.' 
+      });
+      return;
+    }
 
     toast({
       title: 'Sucesso!',
@@ -326,6 +370,240 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-3xl border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 pb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-amber-100 p-3 text-amber-600">
+                <GripVertical className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-slate-900">Questionário home</CardTitle>
+                <CardDescription>
+                  Configure as perguntas do questionário que aparece na página inicial
+                </CardDescription>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingQuestion(null);
+                setFormData({
+                  question: '',
+                  questionPt: '',
+                  type: 'text',
+                  options: '',
+                  placeholder: '',
+                  isRequired: true,
+                });
+                setIsDialogOpen(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Pergunta
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {isLoadingQuestions ? (
+            <p className="text-center text-slate-500">Carregando perguntas...</p>
+          ) : quizQuestions.length === 0 ? (
+            <p className="text-center text-slate-500">Nenhuma pergunta configurada.</p>
+          ) : (
+            <div className="space-y-3">
+              {quizQuestions.map((q, index) => (
+                <div
+                  key={q.id}
+                  className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-white"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold text-sm">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="font-medium text-slate-900">{q.question}</p>
+                      <p className="text-sm text-slate-500">
+                        Tipo: {q.type} {q.isRequired && '• Obrigatório'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingQuestion(q);
+                        setFormData({
+                          question: q.question,
+                          questionPt: q.questionPt || '',
+                          type: q.type,
+                          options: Array.isArray(q.options) ? q.options.join('\n') : '',
+                          placeholder: q.placeholder || '',
+                          isRequired: q.isRequired,
+                        });
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        if (confirm('Tem certeza que deseja excluir esta pergunta?')) {
+                          const result = await deleteQuizQuestion(q.id);
+                          if (result.success) {
+                            setQuizQuestions((prev) => prev.filter((item) => item.id !== q.id));
+                            toast({
+                              title: 'Sucesso',
+                              description: 'Pergunta excluída.',
+                              className: 'border-none bg-green-600 text-white',
+                            });
+                          }
+                        }
+                      }}
+                      className="text-red-500 border-red-200 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingQuestion ? 'Editar Pergunta' : 'Nova Pergunta'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Pergunta (PT)</Label>
+              <Input
+                value={formData.question}
+                onChange={(e) => setFormData({ ...formData, question: e.target.value, questionPt: e.target.value })}
+                placeholder="Digite a pergunta"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de campo</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => setFormData({ ...formData, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Texto</SelectItem>
+                  <SelectItem value="radio">Radio (escolha única)</SelectItem>
+                  <SelectItem value="multiselect">Multi-seleção</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(formData.type === 'radio' || formData.type === 'multiselect') && (
+              <div className="space-y-2">
+                <Label>Opções (uma por linha)</Label>
+                <Textarea
+                  value={formData.options}
+                  onChange={(e) => setFormData({ ...formData, options: e.target.value })}
+                  placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
+                  rows={4}
+                />
+              </div>
+            )}
+            {formData.type === 'text' && (
+              <div className="space-y-2">
+                <Label>Placeholder</Label>
+                <Input
+                  value={formData.placeholder}
+                  onChange={(e) => setFormData({ ...formData, placeholder: e.target.value })}
+                  placeholder="Texto de ajuda"
+                />
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={formData.isRequired}
+                onCheckedChange={(checked) => setFormData({ ...formData, isRequired: checked })}
+              />
+              <Label>Obrigatório</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const optionsArray = formData.options
+                  ? formData.options.split('\n').filter((o) => o.trim())
+                  : [];
+
+                if (editingQuestion) {
+                  const result = await updateQuizQuestion(editingQuestion.id, {
+                    question: formData.question,
+                    questionPt: formData.questionPt,
+                    type: formData.type as any,
+                    options: optionsArray,
+                    placeholder: formData.placeholder,
+                    isRequired: formData.isRequired,
+                  });
+                  if (result.success) {
+                    setQuizQuestions((prev) =>
+                      prev.map((q) =>
+                        q.id === editingQuestion.id
+                          ? {
+                              ...q,
+                              question: formData.question,
+                              questionPt: formData.questionPt,
+                              type: formData.type,
+                              options: optionsArray,
+                              placeholder: formData.placeholder,
+                              isRequired: formData.isRequired,
+                            }
+                          : q
+                      )
+                    );
+                    toast({
+                      title: 'Sucesso',
+                      description: 'Pergunta atualizada.',
+                      className: 'border-none bg-green-600 text-white',
+                    });
+                  }
+                } else {
+                  const result = await createQuizQuestion({
+                    question: formData.question,
+                    questionPt: formData.questionPt || formData.question,
+                    type: formData.type as any,
+                    options: optionsArray,
+                    placeholder: formData.placeholder,
+                    isRequired: formData.isRequired,
+                  });
+                  if (result.success && result.data) {
+                    setQuizQuestions((prev) => [...prev, result.data]);
+                    toast({
+                      title: 'Sucesso',
+                      description: 'Pergunta criada.',
+                      className: 'border-none bg-green-600 text-white',
+                    });
+                  }
+                }
+                setIsDialogOpen(false);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-900"
+            >
+              {editingQuestion ? 'Salvar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="mt-4 flex justify-end">
         <Button

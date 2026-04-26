@@ -112,7 +112,7 @@ function BookingPageComponent() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -362,8 +362,27 @@ function BookingPageComponent() {
       }
     }
 
-    return result;
-  }, [selectedDate, selectedTeacherId, currentUser, lessons, teacherAvailability, preBookings]);
+    const filteredResult = result.filter((slot) => {
+      if (!slot?.start) return true;
+
+      const [sh, sm] = slot.start.split(":").map(Number);
+      const slotStart = new Date(selectedDate);
+      slotStart.setHours(sh, sm, 0, 0);
+      const slotEnd = addMinutes(slotStart, CLASS_DURATION_MINUTES);
+
+      return !selectedTimes.some((selectedTime) => {
+        if (slot.start === selectedTime) return false;
+
+        const [selH, selM] = selectedTime.split(":").map(Number);
+        const selStart = new Date(selectedDate);
+        selStart.setHours(selH, selM, 0, 0);
+        const selEnd = addMinutes(selStart, CLASS_DURATION_MINUTES);
+        return slotStart < selEnd && slotEnd > selStart;
+      });
+    });
+
+    return filteredResult;
+  }, [selectedDate, selectedTeacherId, currentUser, lessons, teacherAvailability, preBookings, selectedTimes]);
 
   const editingAvailableTimes = useMemo(() => {
     if (!editingDate || !editingTeacher || !currentUser) return [];
@@ -421,61 +440,66 @@ function BookingPageComponent() {
   }, [editingDate, editingTeacher, currentUser, lessons, teacherAvailability, preBookings, editingId]);
 
   const handleAddPreBooking = () => {
-    if (!currentUser || !selectedSubjectName || !selectedTeacherId || !selectedDate || !selectedTime) {
-      toast({ variant: "destructive", title: "Campos incompletos", description: "Selecione disciplina, professor, data e horário." });
+    if (!currentUser || !selectedSubjectName || !selectedTeacherId || !selectedDate || selectedTimes.length === 0) {
+      toast({ variant: "destructive", title: "Campos incompletos", description: "Selecione disciplina, professor, data e pelo menos um horário." });
       return;
     }
 
     const teacher = teachers.find((t) => t.id === selectedTeacherId);
     if (!teacher) return;
 
-    const [hours, minutes] = selectedTime.split(":").map(Number);
-    const start = new Date(selectedDate);
-    start.setHours(hours, minutes, 0, 0);
-    const end = addMinutes(start, CLASS_DURATION_MINUTES);
-
-    if (isBefore(start, startOfToday())) {
+    if (isBefore(selectedDate, startOfToday())) {
       toast({ variant: "destructive", title: "Data inválida", description: "Não é possível agendar aulas no passado." });
       return;
     }
 
-    const conflict = preBookings.some((b) => {
-      if (editingId && b.id === editingId) return false;
-      if (b.teacherId !== selectedTeacherId) return false;
-      const bStart = new Date(b.date);
-      const [bh, bm] = b.start.split(":").map(Number);
-      bStart.setHours(bh, bm, 0, 0);
-      const bEnd = addMinutes(bStart, CLASS_DURATION_MINUTES);
-      return start < bEnd && end > bStart;
-    });
+    const newBookings: PreBooking[] = [];
+    const addedTimes: string[] = [];
 
-    if (conflict) {
-      toast({ variant: "destructive", title: "Conflito de horário", description: "Já existe uma aula com este professor neste horário." });
+    for (const time of selectedTimes) {
+      const [hours, minutes] = time.split(":").map(Number);
+      const start = new Date(selectedDate);
+      start.setHours(hours, minutes, 0, 0);
+      const end = addMinutes(start, CLASS_DURATION_MINUTES);
+
+      const conflict = preBookings.some((b) => {
+        if (b.teacherId !== selectedTeacherId) return false;
+        const bStart = new Date(b.date);
+        const [bh, bm] = b.start.split(":").map(Number);
+        bStart.setHours(bh, bm, 0, 0);
+        const bEnd = addMinutes(bStart, CLASS_DURATION_MINUTES);
+        return start < bEnd && end > bStart;
+      });
+
+      if (conflict) continue;
+
+      newBookings.push({
+        id: crypto.randomUUID(),
+        subjectId: selectedSubjectId,
+        subjectName: selectedSubjectName,
+        teacherId: selectedTeacherId,
+        teacherName: teacher.name,
+        date: selectedDate,
+        start: time,
+        end: format(end, "HH:mm"),
+      });
+      addedTimes.push(time);
+    }
+
+    if (newBookings.length === 0) {
+      toast({ variant: "destructive", title: "Conflito de horário", description: "Todos os horários selecionados já estão em uso." });
       return;
     }
 
-    const newBooking: PreBooking = {
-      id: editingId || crypto.randomUUID(),
-      subjectId: selectedSubjectId,
-      subjectName: selectedSubjectName,
-      teacherId: selectedTeacherId,
-      teacherName: teacher.name,
-      date: selectedDate,
-      start: selectedTime,
-      end: format(end, "HH:mm"),
-    };
+    setPreBookings((prev) => [...prev, ...newBookings]);
 
-    setPreBookings((prev) => {
-      if (editingId) return prev.map((b) => (b.id === editingId ? newBooking : b));
-      return [...prev, newBooking];
-    });
-
-    toast({ title: editingId ? "Aula atualizada no resumo" : "Aula adicionada ao resumo", description: `${selectedSubjectName} - ${teacher.name} - ${format(selectedDate, "dd/MM/yyyy")} - ${selectedTime}` });
+    const timesStr = addedTimes.length > 1 ? `${addedTimes.length} horários` : addedTimes[0];
+    toast({ title: "Aula(s) adicionada(s) ao resumo", description: `${selectedSubjectName} - ${teacher.name} - ${format(selectedDate, "dd/MM/yyyy")} - ${timesStr}` });
 
     setSelectedSubjectId("");
     setSelectedTeacherId("");
     setSelectedDate(undefined);
-    setSelectedTime("");
+    setSelectedTimes([]);
     setEditingId(null);
   };
 
@@ -553,8 +577,11 @@ function BookingPageComponent() {
   const handleConfirmBookings = async () => {
     if (!currentUser || preBookings.length === 0) return;
 
-    if (currentUser.credits < preBookings.length) {
-      toast({ variant: "destructive", title: "Créditos insuficientes", description: `Você precisa de ${preBookings.length} crédito(s), mas tem apenas ${currentUser.credits}. Redirecionando para o checkout...` });
+    const scheduledLessonsCount = lessons.filter(l => l.studentId === currentUser.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length;
+    const creditsAvailableForUse = Math.max(0, currentUser.credits - scheduledLessonsCount);
+
+    if (creditsAvailableForUse < preBookings.length) {
+      toast({ variant: "destructive", title: "Créditos insuficientes", description: `Você precisa de ${preBookings.length} crédito(s), mas tem apenas ${creditsAvailableForUse} créditos disponíveis pra uso. Redirecionando para o checkout...` });
       safeLocalStorage.setItem('checkoutBookings', JSON.stringify(preBookings.map((b) => ({
         subjectName: b.subjectName,
         teacherId: b.teacherId,
@@ -563,7 +590,7 @@ function BookingPageComponent() {
         start: b.start,
         end: b.end,
       }))));
-      setTimeout(() => router.push(`/dashboard/checkout?needed=${preBookings.length}&current=${currentUser.credits}`), 2000);
+      setTimeout(() => router.push(`/dashboard/checkout?needed=${preBookings.length}&current=${creditsAvailableForUse}`), 2000);
       return;
     }
 
@@ -626,7 +653,7 @@ function BookingPageComponent() {
                     onValueChange={(value) => {
                       setSelectedSubjectId(value);
                       setSelectedTeacherId("");
-                      setSelectedTime("");
+                      setSelectedTimes([]);
                     }}
                   >
                     <SelectTrigger
@@ -662,7 +689,7 @@ function BookingPageComponent() {
                     value={selectedTeacherId}
                     onValueChange={(value) => {
                       setSelectedTeacherId(value);
-                      setSelectedTime("");
+                      setSelectedTimes([]);
                     }}
                     disabled={!selectedSubjectId}
                   >
@@ -695,7 +722,7 @@ function BookingPageComponent() {
                       selected={selectedDate}
                       onSelect={(date) => {
                         setSelectedDate(date);
-                        setSelectedTime("");
+                        setSelectedTimes([]);
                       }}
                       disabled={(date) => {
                         if (isBefore(date, startOfToday())) return true;
@@ -712,7 +739,7 @@ function BookingPageComponent() {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-slate-700">
-                    Horários disponíveis
+                    Horários disponíveis {selectedTimes.length > 0 && <span className="text-xs text-amber-600">({selectedTimes.length} selecionado(s))</span>}
                   </Label>
                   <div className="grid max-h-[340px] grid-cols-1 gap-2 overflow-auto rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-2">
                     {availableTimes.length > 0 ? (
@@ -720,10 +747,14 @@ function BookingPageComponent() {
                         <button
                           key={time.start}
                           type="button"
-                          onClick={() => setSelectedTime(time.start)}
+                          onClick={() => setSelectedTimes(prev => 
+                            prev.includes(time.start) 
+                              ? prev.filter(t => t !== time.start)
+                              : [...prev, time.start]
+                          )}
                           className={cn(
                             "h-12 rounded-xl border text-sm font-semibold transition",
-                            selectedTime === time.start
+                            selectedTimes.includes(time.start)
                               ? "border-[#FFC107] bg-[#FFC107] text-slate-900"
                               : "border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-slate-900",
                           )}
@@ -752,11 +783,11 @@ function BookingPageComponent() {
                   !selectedSubjectId ||
                   !selectedTeacherId ||
                   !selectedDate ||
-                  !selectedTime
+                  selectedTimes.length === 0
                 }
                 className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60"
               >
-                {editingId ? "Atualizar Resumo" : "Adicionar ao Resumo"}
+                Adicionar ao Resumo ({selectedTimes.length > 0 ? `${selectedTimes.length} horário(s)` : "0"})
               </Button>
             </CardContent>
           </Card>
@@ -768,7 +799,98 @@ function BookingPageComponent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!selectedSubjectId ? (
+              {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
+              {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
+                <div className="space-y-3">
+                  {teachers.map((teacher) => {
+                    const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
+                    const fullStars = Math.floor(rating.average);
+                    const hasHalf = rating.average - fullStars >= 0.5;
+                    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+                    const teacherEducation = (() => {
+                      if (!teacher.education) return [];
+                      let eduList: any = teacher.education;
+                      if (typeof eduList === "string") {
+                        try { eduList = JSON.parse(eduList); } catch { return []; }
+                      }
+                      if (!Array.isArray(eduList) || eduList.length === 0) return [];
+
+                      if (eduList.length === 1) {
+                        const first = eduList[0];
+                        if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
+                        if (first.course) return [{ text: first.course }];
+                        return [];
+                      }
+
+                      const remaining = eduList.length - 2;
+                      const result: { text: string }[] = [];
+                      const first = eduList[0];
+                      if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
+                      else if (first.course) result.push({ text: first.course });
+                      const second = eduList[1];
+                      const indicator = remaining > 0 ? ` (+${remaining})` : '';
+                      if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
+                      else if (second.course) result.push({ text: `${second.course}${indicator}` });
+                      return result;
+                    })();
+
+                    return (
+                      <button
+                        key={teacher.id}
+                        type="button"
+                        onClick={() => setSelectedTeacherId(teacher.id)}
+                        className={cn(
+                          "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                          selectedTeacherId === teacher.id
+                            ? "ring-2 ring-amber-400"
+                            : "hover:-translate-y-0.5 hover:border-slate-200",
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
+                            <AvatarImage
+                              src={teacher.avatarUrl || ""}
+                              alt={teacher.name}
+                            />
+                            <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
+                              {teacher.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-bold text-slate-900">
+                              {teacher.name}
+                            </p>
+                            {teacherEducation.length > 0 && (
+                              <div className="space-y-0.5">
+                                {teacherEducation.map((edu, idx) => (
+                                  <p key={idx} className="text-sm font-medium text-slate-400 truncate">
+                                    {edu.text}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                            <div className="mt-2 flex items-center gap-1 text-amber-500">
+                              {Array.from({ length: fullStars }).map((_, i) => (
+                                <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
+                              ))}
+                              {hasHalf && (
+                                <Star className="h-4 w-4 fill-current opacity-50" />
+                              )}
+                              {Array.from({ length: emptyStars }).map((_, i) => (
+                                <Star key={`empty-${i}`} className="h-4 w-4" />
+                              ))}
+                              <span className="ml-1 text-xs font-semibold text-slate-600">
+                                {rating.average.toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : !selectedSubjectId ? (
                 <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
                   Selecione uma disciplina para visualizar os professores.
                 </p>
@@ -887,8 +1009,8 @@ function BookingPageComponent() {
               <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "1fr 1fr 100px 100px 80px" }}>
                 <span style={{ paddingRight: "6px" }}>Disciplina</span>
                 <span style={{ paddingRight: "12px" }}>Professor</span>
-                <span style={{ paddingRight: "12px" }}>Data</span>
-                <span style={{ paddingRight: "12px" }}>Horário</span>
+                <span style={{ paddingRight: "-20px" }}>Data</span>
+                <span style={{ paddingRight: "0px" }}>Horário</span>
                 <span className="text-right">Ações</span>
               </div>
               {preBookings.map((booking, idx) => {
@@ -921,11 +1043,11 @@ function BookingPageComponent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div style={{ paddingRight: "12px" }}>
+                      <div style={{ paddingRight: "-8px" }}>
                         <input type="date" value={editingDate} onChange={(e) => { setEditingDate(e.target.value); setEditingTime(""); }} className="h-9 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700" />
                       </div>
-                      <div style={{ paddingRight: "12px" }}>
-                        <Select value={editingTime} onValueChange={setEditingTime} disabled={!editingTeacher || !editingDate}>
+                      <div style={{ paddingRight: "0px" }}>
+                        <Select value={editingTime} disabled={!editingTeacher || !editingDate}>
                           <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
                             <SelectValue placeholder="Horário" />
                           </SelectTrigger>
@@ -952,8 +1074,8 @@ function BookingPageComponent() {
                   <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 1fr 100px 100px 80px" }}>
                     <span className="text-sm font-bold text-slate-900 truncate" style={{ paddingRight: "6px" }}>{booking.subjectName}</span>
                     <span className="text-sm text-slate-700 truncate" style={{ paddingRight: "12px" }}>{booking.teacherName}</span>
-                    <span className="text-sm text-slate-600" style={{ paddingRight: "12px" }}>{format(new Date(booking.date), "dd/MM/yyyy")}</span>
-                    <span className="text-sm text-slate-600" style={{ paddingRight: "12px" }}>{booking.start} - {booking.end}</span>
+                    <span className="text-sm text-slate-600" style={{ paddingRight: "-8px" }}>{format(new Date(booking.date), "dd/MM/yyyy")}</span>
+                    <span className="text-sm text-slate-600" style={{ paddingRight: "0px" }}>{booking.start} - {booking.end}</span>
                     <div className="flex justify-end gap-0.5">
                       <button onClick={() => handleEditPreBooking(booking.id)} className="rounded-full p-1.5 text-slate-400 hover:bg-amber-100 hover:text-amber-600 transition" title="Editar">
                         <Pencil className="h-3.5 w-3.5" />
@@ -968,7 +1090,7 @@ function BookingPageComponent() {
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Total: <span className="font-bold text-slate-900">{preBookings.length} aula(s)</span> • Seus créditos: <span className="font-bold text-slate-900">{currentUser?.credits ?? 0}</span></p>
+              <p className="text-sm text-slate-500">Total: <span className="font-bold text-slate-900">{preBookings.length} aula(s)</span> • Créditos disponíveis pra uso: <span className="font-bold text-slate-900">{Math.max(0, (currentUser?.credits ?? 0) - lessons.filter(l => l.studentId === currentUser?.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length)}</span></p>
             </div>
             <Button onClick={handleConfirmBookings} disabled={isConfirming} className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60">
               {isConfirming ? "Confirmando..." : `Confirmar Agendamentos (${preBookings.length})`}

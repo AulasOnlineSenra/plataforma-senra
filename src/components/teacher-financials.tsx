@@ -17,8 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getMockUser, scheduleEvents as initialSchedule } from '@/lib/data';
-import { ScheduleEvent, Teacher } from '@/lib/types';
+import { Teacher } from '@/lib/types';
+import { getSettings } from '@/app/actions/settings';
+import { getLessonsForUser } from '@/app/actions/bookings';
 import { format, startOfWeek, endOfWeek, isWithinInterval, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, addWeeks, addMonths, getWeek, startOfMonth, parse, endOfMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
@@ -27,7 +28,6 @@ import { DollarSign, BookOpen, Calendar, TrendingUp } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
 
-const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
 const TEACHER_PAYMENT_RATE_KEY = 'teacherPaymentRate';
 const TEACHER_PAYMENT_DAY_KEY = 'teacherPaymentDay';
 const TEACHER_PAYMENT_FREQUENCY_KEY = 'teacherPaymentFrequency';
@@ -47,20 +47,30 @@ interface TeacherFinancialsProps {
 }
 
 
+interface LessonFromDB {
+  id: string;
+  teacherId: string;
+  studentId: string;
+  subject: string;
+  date: Date;
+  status: string;
+}
+
 export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsProps) {
   const [currentUser, setCurrentUser] = useState<Teacher | null>(null);
-  const [schedule, setSchedule] = useState<ScheduleEvent[]>(initialSchedule);
-  const [paymentRate, setPaymentRate] = useState(50); // Default value
+  const [lessons, setLessons] = useState<LessonFromDB[]>([]);
+  const [loadingLessons, setLoadingLessons] = useState(true);
+  const [paymentRate, setPaymentRate] = useState(50);
   const [paymentDay, setPaymentDay] = useState('friday');
   const [paymentFrequency, setPaymentFrequency] = useState('weekly');
   const [teacherPayments, setTeacherPayments] = useState<TeacherPaymentRecord[]>([]);
 
   const [paymentPeriods, setPaymentPeriods] = useState<{ label: string, value: string, start: Date, end: Date }[]>([]);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | undefined>();
-
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
-    const updateData = () => {
+    const loadUser = () => {
       const userStr = localStorage.getItem('currentUser');
       if (userStr) {
         const user = JSON.parse(userStr);
@@ -68,26 +78,27 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
           setCurrentUser(user);
         }
       }
+    };
 
-      const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-      if (storedSchedule) {
-        setSchedule(JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})));
-      } else {
-        setSchedule(initialSchedule);
-      }
-
+    const loadAllData = async () => {
+      setIsLoadingSettings(true);
+      
       const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
-      if (storedRate) {
-        setPaymentRate(parseFloat(storedRate));
+      if (!storedRate) {
+        const settingsResult = await getSettings();
+        if (settingsResult.success && settingsResult.data) {
+          const classValue = settingsResult.data.classValue;
+          if (classValue) {
+            setPaymentRate(parseFloat(classValue));
+          }
+        }
       }
       
       const storedPaymentDay = localStorage.getItem(TEACHER_PAYMENT_DAY_KEY);
       const currentPaymentDay = storedPaymentDay || 'friday';
-      setPaymentDay(currentPaymentDay);
       
       const storedPaymentFrequency = localStorage.getItem(TEACHER_PAYMENT_FREQUENCY_KEY);
       const currentPaymentFrequency = storedPaymentFrequency || 'weekly';
-      setPaymentFrequency(currentPaymentFrequency);
       
       const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
       const monthInterval = {
@@ -116,7 +127,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
               periodStart = addWeeks(periodStart, 1);
           } else if (currentPaymentFrequency === 'biweekly') {
               periodStart = addWeeks(periodStart, 2);
-          } else { // monthly
+          } else {
               periodStart = addMonths(periodStart, 1);
           }
       }
@@ -125,29 +136,60 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
       if (periods.length > 0 && !selectedPeriodKey) {
           setSelectedPeriodKey(periods[0].value);
       }
+      
+      setIsLoadingSettings(false);
     };
 
-    updateData();
-    window.addEventListener('storage', updateData);
-    return () => window.removeEventListener('storage', updateData);
+    loadUser();
+    loadAllData();
   }, [selectedMonth, selectedPeriodKey]);
 
   useEffect(() => {
-    if (!currentUser || paymentPeriods.length === 0) return;
+    const loadLessonsFromDB = async () => {
+      if (!currentUser) return;
+      
+      setLoadingLessons(true);
+      
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      
+      const result = await getLessonsForUser(userId || currentUser.id, userRole || 'teacher');
+      
+      if (result.success && result.data) {
+        setLessons((result.data as any[]).map(l => ({
+          id: l.id,
+          teacherId: l.teacherId,
+          studentId: l.studentId,
+          subject: l.subject,
+          date: l.date,
+          status: l.status,
+        })));
+      }
+      
+      setLoadingLessons(false);
+    };
+    
+    loadLessonsFromDB();
+  }, [currentUser]);
+
+  const completedLessons = useMemo(() => {
+    return lessons.filter(l => l.status === 'COMPLETED');
+  }, [lessons]);
+
+  useEffect(() => {
+    if (!currentUser || completedLessons.length === 0 || paymentPeriods.length === 0) return;
 
     const now = new Date();
     const allPastPeriods = paymentPeriods.filter(p => now > p.end);
-    const simulatedPayments: TeacherPaymentRecord[] = [];
+    const paymentsByPeriod: TeacherPaymentRecord[] = [];
 
     allPastPeriods.forEach(period => {
-      const classesInPeriod = schedule.filter(e =>
-        e.status === 'completed' &&
-        e.teacherId === currentUser.id &&
-        isWithinInterval(new Date(e.start), { start: period.start, end: period.end })
+      const classesInPeriod = completedLessons.filter(lesson =>
+        isWithinInterval(new Date(lesson.date), { start: period.start, end: period.end })
       );
 
       if (classesInPeriod.length > 0) {
-        simulatedPayments.push({
+        paymentsByPeriod.push({
           teacherId: currentUser.id,
           period: period.label,
           classesDone: classesInPeriod.length,
@@ -159,9 +201,9 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
       }
     });
     
-    setTeacherPayments(simulatedPayments.sort((a,b) => new Date(b.paymentDate!).getTime() - new Date(a.paymentDate!).getTime()));
+    setTeacherPayments(paymentsByPeriod.sort((a,b) => new Date(b.paymentDate!).getTime() - new Date(a.paymentDate!).getTime()));
 
-  }, [currentUser, schedule, paymentRate, paymentPeriods, selectedMonth]);
+  }, [currentUser, completedLessons, paymentRate, paymentPeriods, selectedMonth]);
   
   const filteredPayments = useMemo(() => {
     if (!selectedPeriodKey) {
@@ -183,17 +225,15 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     const start = startOfWeek(now, { locale: ptBR });
     const end = endOfWeek(now, { locale: ptBR });
 
-    const weeklyClasses = schedule.filter(e => 
-      e.teacherId === currentUser.id &&
-      e.status === 'completed' &&
-      isWithinInterval(e.start, { start, end })
+    const weeklyClasses = completedLessons.filter(lesson => 
+      isWithinInterval(new Date(lesson.date), { start, end })
     );
 
     return {
       count: weeklyClasses.length,
       earnings: weeklyClasses.length * paymentRate,
     };
-  }, [currentUser, schedule, paymentRate]);
+  }, [currentUser, completedLessons, paymentRate]);
 
   const nextPaymentDate = useMemo(() => {
     const now = new Date();
@@ -236,10 +276,9 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     
     return getNextPaymentDayFunc(zonedNow);
 
-  }, [paymentDay, paymentFrequency, currentUser]);
+}, [paymentDay, paymentFrequency, currentUser]);
 
-
-  if (!currentUser) {
+  if (!currentUser || isLoadingSettings || loadingLessons) {
     return (
       <Card>
         <CardHeader>
@@ -255,7 +294,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="min-h-[120px]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Valor por Aula</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -265,7 +304,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
             <p className="text-xs text-muted-foreground">Definido pelo administrador</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="min-h-[120px]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aulas Concluídas (Semana)</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -275,7 +314,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
             <p className="text-xs text-muted-foreground">Nos últimos 7 dias</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="min-h-[120px]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ganhos (Semana)</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -285,7 +324,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
             <p className="text-xs text-muted-foreground">Total a receber nesta semana</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="min-h-[120px]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Próximo Pagamento</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />

@@ -31,33 +31,48 @@ export async function getSettings() {
 }
 
 export async function updateSettings(data: SettingsInput) {
+  console.log('[updateSettings] Recebendo dados:', data);
+   
   try {
+    const classValue = data.classValue?.trim() ? data.classValue.trim() : '50.00';
+    const whatsapp = data.whatsapp?.trim() ? data.whatsapp.trim() : '';
+    const referralBonus = data.referralBonus?.trim() ? data.referralBonus.trim() : '1';
+    
+    console.log('[updateSettings] Valores a serem salvos:', { classValue, whatsapp, referralBonus });
+    
+    const now = new Date();
+    
     const settings = await prisma.appSetting.upsert({
       where: { id: 'global' },
       create: {
         id: 'global',
-        whatsapp: data.whatsapp.trim(),
-        classValue: data.classValue.trim(),
-        referralBonus: data.referralBonus.trim(),
-        pixKey: (data.pixKey ?? '').trim(),
-        pixKeyType: (data.pixKeyType ?? 'cnpj').trim(),
+        whatsapp: whatsapp,
+        classValue: classValue,
+        referralBonus: referralBonus,
+        pixKey: data.pixKey?.trim() || '',
+        pixKeyType: data.pixKeyType?.trim() || 'cnpj',
+        updatedAt: now,
       },
       update: {
-        whatsapp: data.whatsapp.trim(),
-        classValue: data.classValue.trim(),
-        referralBonus: data.referralBonus.trim(),
-        pixKey: (data.pixKey ?? '').trim(),
-        pixKeyType: (data.pixKeyType ?? 'cnpj').trim(),
+        whatsapp: whatsapp,
+        classValue: classValue,
+        referralBonus: referralBonus,
+        pixKey: data.pixKey?.trim() || '',
+        pixKeyType: data.pixKeyType?.trim() || 'cnpj',
+        updatedAt: now,
       },
     });
 
     revalidatePath('/dashboard/admin/settings');
     revalidatePath('/dashboard/packages');
+    revalidatePath('/dashboard/financeiro');
 
+    console.log('[updateSettings] Configurações salvas:', settings);
     return { success: true, data: settings };
-  } catch (error) {
-    console.error('Erro ao atualizar configuracoes:', error);
-    return { success: false, error: 'Falha ao atualizar configurações do sistema.' };
+  } catch (error: any) {
+    console.error('[updateSettings] Erro completo:', error);
+    const errorMessage = error?.message || error?.cause?.message || 'Erro desconhecido';
+    return { success: false, error: `Falha ao atualizar configurações: ${errorMessage}` };
   }
 }
 

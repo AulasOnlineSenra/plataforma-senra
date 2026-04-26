@@ -86,6 +86,7 @@ export async function sendChatMessage(input: SendMessageInput) {
 
     const message = await prisma.chatMessage.create({
       data: {
+        id: crypto.randomUUID(),
         senderId: input.senderId,
         receiverId: input.receiverId,
         content: content || "",

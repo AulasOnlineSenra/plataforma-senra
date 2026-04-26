@@ -100,6 +100,12 @@ function formatDateSeparator(value: unknown): string {
   return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 }
 
+const roleTranslations: Record<string, string> = {
+  student: "Aluno",
+  teacher: "Professor",
+  admin: "Administrador",
+};
+
 function normalizeUser(raw: any): ChatUser | null {
   if (!raw || typeof raw !== "object" || !raw.id) return null;
   return {
@@ -597,14 +603,14 @@ function ChatContent() {
   };
 
   return (
-    <div className="grid h-[calc(100vh-calc(10rem-60px))] w-full grid-cols-1 gap-4 overflow-hidden md:grid-cols-[340px_1fr]">
+    <div className="grid h-[90vh] w-full grid-cols-1 gap-4 overflow-hidden md:grid-cols-[300px_1fr]">
       <section
-        className={`${activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-sm`}
+        className={`${activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-md`}
       >
         <div className="border-b border-border/70 bg-muted/20 px-4 py-4">
           <h1 className="text-lg font-semibold tracking-tight">Conversas</h1>
         </div>
-        <ScrollArea className="h-[calc(100vh-calc(10rem-60px))] flex-1">
+        <ScrollArea className="h-[90vh] flex-1">
           {isLoading ? (
             <p className="p-4 text-sm text-muted-foreground">
               Carregando contatos...
@@ -651,7 +657,7 @@ function ChatContent() {
                           </span>
                         </span>
                       ) : (
-                        contact.role || "contato"
+                        roleTranslations[contact.role] || contact.role || "contato"
                       )}
                     </p>
                   </div>
@@ -668,14 +674,14 @@ function ChatContent() {
       </section>
 
       <section
-        className={`${!activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm`}
+        className={`${!activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-md`}
       >
         {!currentUser ? (
-          <div className="flex h-[calc(100vh-calc(10rem-60px))] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+          <div className="flex h-[90vh] items-center justify-center p-6 text-center text-sm text-muted-foreground">
             Usuario atual não encontrado. Faca login novamente.
           </div>
         ) : !activeContact ? (
-          <div className="flex h-[calc(100vh-calc(10rem-60px))] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+          <div className="flex h-[90vh] items-center justify-center p-6 text-center text-sm text-muted-foreground">
             Selecione um contato para iniciar a conversa.
           </div>
         ) : (
@@ -715,7 +721,7 @@ function ChatContent() {
                       </span>
                     </span>
                   ) : (
-                    activeContact.role || "contato"
+                    roleTranslations[activeContact.role] || activeContact.role || "contato"
                   )}
                 </p>
               </div>
@@ -800,7 +806,7 @@ function ChatContent() {
               </div>
             )}
 
-            <ScrollArea className="max-h-[calc(100vh-calc(16rem-60px))] flex-1 bg-background">
+            <ScrollArea className="max-h-[90vh] flex-1 bg-background">
               <div className="space-y-2 p-4">
                 {conversation.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -833,10 +839,10 @@ function ChatContent() {
                         className={`mb-2 flex ${isMine ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[82%] px-3 ${isAudioOnly ? "py-0" : "py-2"} text-sm shadow-sm ${
+                          className={`max-w-[82%] px-3 ${isAudioOnly ? "py-0" : "py-2"} text-sm shadow-md ${
                             isMine
                               ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground"
-                              : "rounded-2xl rounded-bl-sm bg-muted text-foreground"
+                              : "rounded-2xl rounded-bl-sm bg-[#0f172a] text-white"
                           } ${isHighlighted ? "ring-2 ring-yellow-400 ring-offset-1" : ""}`}
                         >
                           {message.attachmentUrl && (
@@ -927,7 +933,7 @@ function ChatContent() {
                     value={inputValue}
                     onChange={(e) => handleInputChange(e.target.value)}
                     placeholder="Digite uma mensagem..."
-                    className="h-11 flex-1 rounded-[13px] border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="h-11 flex-1 rounded-[13px] border-[#f5b000] bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                   <Button
                     type="button"

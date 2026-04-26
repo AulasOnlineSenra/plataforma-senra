@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger 
 } from '@/components/ui/dialog';
-import { Trash2, Plus, Star, CheckCircle2, PackageOpen } from 'lucide-react';
+import { Trash2, Plus, Star, CheckCircle2, PackageOpen, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getPlans, createPlan, deletePlan } from '@/app/actions/plans';
+import { getPlans, createPlan, deletePlan, updatePlan } from '@/app/actions/plans';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ type Plan = {
   price: number;
   durationMins: number;
   isPopular: boolean;
+  features?: string[];
 };
 
 export default function PlansPage() {
@@ -29,6 +30,7 @@ export default function PlansPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -37,7 +39,10 @@ export default function PlansPage() {
     price: 0,
     durationMins: 60,
     isPopular: false,
+    features: [''],
   });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPlans();
@@ -62,13 +67,16 @@ export default function PlansPage() {
     }
 
     setIsSubmitting(true);
-    const result = await createPlan(formData);
+    const result = await createPlan({
+      ...formData,
+      features: (formData.features || []).filter(f => f.trim() !== ''),
+    });
     
     if (result.success) {
       toast({ title: 'Sucesso!', description: 'Pacote criado com sucesso.', className: 'bg-emerald-600 text-white border-none' });
       loadPlans();
       setIsModalOpen(false);
-      setFormData({ name: '', lessonsCount: 1, price: 0, durationMins: 60, isPopular: false });
+      setFormData({ name: '', lessonsCount: 1, price: 0, durationMins: 60, isPopular: false, features: [''] });
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
@@ -87,6 +95,50 @@ export default function PlansPage() {
     }
   };
 
+  const handleEdit = (plan: Plan) => {
+    setEditingId(plan.id);
+    let parsedFeatures: string[] = [];
+    try {
+      parsedFeatures = JSON.parse(plan.features || '[]');
+    } catch {
+      parsedFeatures = [];
+    }
+    setFormData({
+      name: plan.name,
+      lessonsCount: plan.lessonsCount,
+      price: plan.price,
+      durationMins: plan.durationMins,
+      isPopular: plan.isPopular,
+      features: parsedFeatures.length > 0 ? parsedFeatures : [''],
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.name.trim() === '' || formData.price <= 0 || !editingId) {
+        toast({ variant: 'destructive', title: 'Aviso', description: 'Preencha um nome e um preço válido.' });
+        return;
+    }
+
+    setIsSubmitting(true);
+    const result = await updatePlan(editingId, {
+      ...formData,
+      features: (formData.features || []).filter(f => f.trim() !== ''),
+    });
+    
+    if (result.success) {
+      toast({ title: 'Sucesso!', description: 'Pacote atualizado com sucesso.', className: 'bg-emerald-600 text-white border-none' });
+      loadPlans();
+      setIsModalOpen(false);
+      setEditingId(null);
+      setFormData({ name: '', lessonsCount: 1, price: 0, durationMins: 60, isPopular: false, features: [''] });
+    } else {
+      toast({ variant: 'destructive', title: 'Erro', description: result.error });
+    }
+    setIsSubmitting(false);
+  };
+
   if (isLoading) {
     return <div className="flex h-[50vh] items-center justify-center text-slate-400 font-medium animate-pulse">Carregando planos...</div>;
   }
@@ -102,7 +154,13 @@ export default function PlansPage() {
         </div>
         
         {/* A JANELINHA MODAL */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={(open) => {
+            if (!open) {
+              setEditingId(null);
+              setFormData({ name: '', lessonsCount: 1, price: 0, durationMins: 60, isPopular: false });
+            }
+            setIsModalOpen(open);
+          }}>
           <DialogTrigger asChild>
             <Button className="h-12 rounded-xl bg-brand-yellow px-6 text-base font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90">
               <Plus className="w-5 h-5 mr-2" /> Novo Plano
@@ -110,13 +168,13 @@ export default function PlansPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md rounded-3xl border border-slate-100 bg-white shadow-xl p-8">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-slate-900">Criar Pacote</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-slate-900">{editingId ? 'Editar Pacote' : 'Criar Pacote'}</DialogTitle>
               <DialogDescription className="text-slate-500">
-                Preencha os dados abaixo para disponibilizar um novo plano na plataforma.
+                {editingId ? 'Atualize os dados do pacote abaixo.' : 'Preencha os dados abaixo para disponibilizar um novo plano na plataforma.'}
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleCreate} className="grid gap-5 py-4">
+            <form onSubmit={editingId ? handleUpdate : handleCreate} className="grid gap-5 py-4">
               <div className="space-y-2">
                 <Label className="font-bold text-slate-700">Nome do Pacote</Label>
                 <Input 
@@ -177,10 +235,50 @@ export default function PlansPage() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="font-bold text-slate-700">Tópicos do Card (Features)</Label>
+                <div className="space-y-2">
+                  {(formData.features || []).map((feature, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={feature}
+                        onChange={(e) => {
+                          const newFeatures = [...(formData.features || [])];
+                          newFeatures[index] = e.target.value;
+                          setFormData({...formData, features: newFeatures});
+                        }}
+                        className="h-10 rounded-xl border-slate-200"
+                        placeholder={`Tópico ${index + 1}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newFeatures = (formData.features || []).filter((_, i) => i !== index);
+                          setFormData({...formData, features: newFeatures});
+                        }}
+                        className="h-10 w-10 text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setFormData({...formData, features: [...(formData.features || []), '']})}
+                    className="w-full h-10 rounded-xl border-dashed text-slate-500"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Adicionar Tópico
+                  </Button>
+                </div>
+              </div>
+
               <DialogFooter className="mt-6 gap-3 sm:gap-0">
                 <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="rounded-xl font-bold text-slate-500 hover:text-slate-700">Cancelar</Button>
                 <Button type="submit" disabled={isSubmitting} className="h-11 rounded-xl bg-brand-yellow px-8 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90">
-                  {isSubmitting ? 'Salvando...' : 'Salvar Pacote'}
+                  {isSubmitting ? 'Salvando...' : editingId ? 'Atualizar Pacote' : 'Salvar Pacote'}
                 </Button>
               </DialogFooter>
             </form>
@@ -196,7 +294,7 @@ export default function PlansPage() {
            <p className="text-base mt-2 text-slate-500">Clique em "Novo Plano" para criar as ofertas da plataforma.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 max-w-6xl">
           {plans.map((plan) => (
             <Card key={plan.id} className={cn("relative flex flex-col bg-white rounded-3xl transition-all duration-300 hover:shadow-xl hover:-translate-y-2 group", plan.isPopular ? "border-2 border-brand-yellow shadow-md" : "border border-slate-200 shadow-sm")}>
               
@@ -234,7 +332,10 @@ export default function PlansPage() {
                 </ul>
               </CardContent>
 
-              <CardFooter className="px-6 pb-6 pt-0">
+              <CardFooter className="px-6 pb-6 pt-0 flex flex-col gap-2">
+                <Button variant="outline" className="w-full h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors" onClick={() => handleEdit(plan)}>
+                    <Pencil className="w-4 h-4 mr-2" /> Editar Pacote
+                </Button>
                 <Button variant="ghost" className="w-full h-12 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors" onClick={() => handleDelete(plan.id)}>
                     <Trash2 className="w-4 h-4 mr-2" /> Excluir Pacote
                 </Button>

@@ -27,6 +27,11 @@ import { getSettings } from '@/app/actions/settings';
 import { createPendingTransaction, getTransactionById, requestTransactionReview } from '@/app/actions/finance';
 import { sendPaymentChatToAdmins } from '@/app/actions/chat';
 import { getUserById } from '@/app/actions/users';
+import { registerUser } from '@/app/actions/auth';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { CheckoutAuthModal } from '@/components/checkout-auth-modal';
 
 type Plan = {
   id: string;
@@ -67,6 +72,7 @@ function CheckoutContent() {
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pixKey, setPixKey] = useState('');
   const [pixKeyType, setPixKeyType] = useState('');
@@ -87,10 +93,12 @@ function CheckoutContent() {
 
   useEffect(() => {
     const loadData = async () => {
+      console.log('[Checkout] loadData iniciado');
       setIsLoading(true);
 
       // If viewing existing transaction
       if (txId) {
+        console.log('[Checkout] txId encontrado, buscando transação...');
         const txResult = await getTransactionById(txId);
         if (txResult.success && txResult.data) {
           setViewTx(txResult.data);
@@ -100,6 +108,7 @@ function CheckoutContent() {
       }
 
       const storedUserId = safeLocalStorage.getItem('userId');
+      console.log('[Checkout] storedUserId:', storedUserId);
       const storedBookings = safeLocalStorage.getItem('checkoutBookings');
 
       if (storedBookings) {
@@ -139,6 +148,16 @@ function CheckoutContent() {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && !student) {
+      setIsAuthModalOpen(true);
+    }
+  }, [isLoading, student]);
+
+  const handleAuthSuccess = () => {
+    window.location.reload();
+  };
 
   const tiers = useMemo(() => {
     return [...plans]
@@ -850,9 +869,116 @@ function CheckoutContent() {
         </CardContent>
       </Card>
 
+      {/* Dialog Cadastro Simples - OCULTO (usando CheckoutAuthModal)
+      <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Criar sua conta</DialogTitle>
+            <DialogDescription>
+              Preencha seus dados para acessar a plataforma
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleRegister} className="grid gap-5">
+            <div className="grid gap-2">
+              <Label htmlFor="register-role" className="sr-only">
+                Perfil
+              </Label>
+              <Select value="student" disabled>
+                <SelectTrigger
+                  id="register-role"
+                  className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:border-brand-yellow focus:ring-brand-yellow"
+                >
+                  <SelectValue placeholder="Selecione o perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Aluno</SelectItem>
+                  <SelectItem value="teacher">Professor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="register-name" className="sr-only">
+                Nome Completo
+              </Label>
+              <Input
+                id="register-name"
+                type="text"
+                placeholder="Seu nome completo"
+                required
+                className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                value={registerName}
+                onChange={(e) => setRegisterName(e.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="register-email" className="sr-only">
+                E-mail
+              </Label>
+              <Input
+                id="register-email"
+                type="email"
+                placeholder="Seu melhor e-mail"
+                required
+                className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                value={registerEmail}
+                onChange={(e) => setRegisterEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="register-password" className="sr-only">
+                Senha
+              </Label>
+              <Input
+                id="register-password"
+                type="password"
+                placeholder="Crie uma senha segura"
+                required
+                className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                value={registerPassword}
+                onChange={(e) => setRegisterPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="register-referral" className="sr-only">
+                Código de indicação
+              </Label>
+              <Input
+                id="register-referral"
+                type="text"
+                placeholder="Código de indicação (opcional)"
+                className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-brand-yellow focus:ring-brand-yellow"
+                value={registerReferralCode}
+                onChange={(e) => setRegisterReferralCode(e.target.value)}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="h-12 w-full rounded-xl bg-brand-yellow font-bold text-slate-900 hover:bg-brand-yellow/90"
+              disabled={isRegistering}
+            >
+              {isRegistering ? 'Criando conta...' : 'Criar conta'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+      */}
+
+      {/* Modal de Autenticação (Checkout Auth Modal) */}
+      <CheckoutAuthModal
+        open={isAuthModalOpen}
+        onAuthenticated={handleAuthSuccess}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
       {/* Dialog Pix */}
       <Dialog open={isPixDialogOpen} onOpenChange={setIsPixDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl">
+        <DialogContent className="sm:max-w-md rounded-3xl border border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-xl">Pagamento via Pix</DialogTitle>
             <DialogDescription>
@@ -862,19 +988,17 @@ function CheckoutContent() {
 
           <div className="flex flex-col items-center gap-4 py-4">
             {pixKey ? (
-              <>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <Image
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixKey)}`}
-                    alt="QR Code Pix"
-                    width={200}
-                    height={200}
-                  />
-                </div>
+              <div className="flex items-center gap-4 pl-6 w-full">
+                <Image
+                  src="/Logo_pix_AOS.jpg"
+                  alt="Logo Pix AOS"
+                  width={50}
+                  height={50}
+                  className="rounded-lg self-center"
+                />
                 <div className="w-full space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm font-semibold text-slate-700">Tipo:</Label>
-                    <span className="text-sm font-bold text-violet-600">
+                  <div className="flex items-center gap-1">
+                    <span className="text-base font-bold text-violet-600">
                       {pixKeyType === 'cpf' ? 'CPF' :
                        pixKeyType === 'cnpj' ? 'CNPJ' :
                        pixKeyType === 'email' ? 'E-mail' :
@@ -882,10 +1006,10 @@ function CheckoutContent() {
                        pixKeyType === 'random' ? 'Chave Aleatória' :
                        pixKeyType.toUpperCase()}
                     </span>
+                    <span className="text-base text-slate-500">- Fernanda Senra Victor</span>
                   </div>
-                  <Label className="text-sm font-semibold text-slate-700">Chave Pix (copia e cola)</Label>
-                  <div className="relative">
-                    <Input readOnly value={pixKey} className="pr-12 text-xs rounded-xl" />
+                  <div className="relative pr-8">
+                    <Input readOnly value={pixKey} className="text-base rounded-xl" />
                     <Button
                       variant="ghost"
                       size="icon"
@@ -896,7 +1020,7 @@ function CheckoutContent() {
                     </Button>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
                 Nenhuma chave Pix configurada. Entre em contato com o suporte.

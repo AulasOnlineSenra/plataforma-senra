@@ -104,7 +104,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
 
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
-    const totalMonthlyExpenses = totalMarketingExpenses + monthlyTeacherPaymentsCost;
+    const totalMonthlyExpenses = totalMarketingExpenses + selectedPeriodCost;
     
     const nextPaymentDate = useMemo(() => {
         const now = new Date();
@@ -464,7 +464,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <CardContent className="grid gap-4 flex-1">
                      <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Pagamentos (Professores)</span>
-                        <span className="font-bold">R$ {monthlyTeacherPaymentsCost.toFixed(2).replace('.',',')}</span>
+                        <span className="font-bold">R$ {selectedPeriodCost.toFixed(2).replace('.',',')}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Marketing e Anúncios</span>
@@ -740,14 +740,14 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         className="w-full sm:w-auto h-12 border-rose-200 text-rose-600 font-semibold hover:bg-rose-50 rounded-xl transition-all"
                         onClick={() => handleDeleteTransaction(false)}
                     >
-                        Excluir apenas registro
+                        Excluir receita
                     </Button>
                     <Button 
                         variant="destructive"
                         className="w-full sm:w-auto h-12 bg-rose-600 hover:bg-rose-700 shadow-md rounded-xl font-bold transition-all px-6"
                         onClick={() => handleDeleteTransaction(true)}
                     >
-                        Excluir tudo (Ação Crítica)
+                        Excluir receita + crédito
                     </Button>
                 </div>
             </AlertDialogFooter>

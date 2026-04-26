@@ -1,13 +1,15 @@
 import { getPublishedPosts } from '@/app/actions/blog';
 import BlogSearchBar from '@/components/blog-search-bar';
 import BlogGrid from '@/components/blog-grid';
+import BlogBackground from '@/components/blog-background';
 
 export default async function BlogPage() {
   const result = await getPublishedPosts();
   const posts = result.success ? result.data : [];
 
   return (
-    <div className="min-h-screen bg-[url('/imagem-fundo-blog.png')] bg-cover bg-fixed bg-center">
+    <div className="min-h-screen">
+      <BlogBackground />
       {/* Header minimalista */}
       <div className="hidden border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-6">

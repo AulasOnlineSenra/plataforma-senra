@@ -185,3 +185,24 @@ export async function getUnratedPeopleForUser(userId: string, role: string) {
   }
   return { success: true, data: [] as any[] };
 }
+
+export async function getTestimonialsWithComments(limit: number = 6) {
+  try {
+    const ratings = await prisma.rating.findMany({
+      where: {
+        comment: { not: null },
+        score: { gte: 4 },
+      },
+      include: {
+        User_Rating_studentIdToUser: { select: { id: true, name: true, avatarUrl: true } },
+        User_Rating_teacherIdToUser: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return { success: true, data: ratings };
+  } catch (error) {
+    console.error("Erro ao buscar depoimentos:", error);
+    return { success: false, error: "Falha ao buscar depoimentos.", data: [] as any[] };
+  }
+}

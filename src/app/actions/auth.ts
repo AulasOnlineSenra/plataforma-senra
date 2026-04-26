@@ -40,11 +40,14 @@ export async function registerUser(data: {
 
     const newUser = await prisma.user.create({
       data: {
+        id: crypto.randomUUID(),
         name: data.name,
         email: data.email,
         password: hashedPassword, // Salva o hash (ex: $2a$10$wY... ), ninguém nunca saberá a senha real
         role: normalizedRole,
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
+        referralCode: crypto.randomUUID().split('-')[0].toUpperCase(),
+        updatedAt: new Date(),
         ...(normalizedRole === "teacher" ? { isValidated: false } : {}),
         status: normalizedRole === "teacher" ? "pending" : "active",
       },
@@ -57,6 +60,7 @@ export async function registerUser(data: {
     if (adminUser) {
       await prisma.notification.create({
         data: {
+          id: crypto.randomUUID(),
           userId: adminUser.id,
           title: "Novo Usuário Cadastrado!",
           message: `${data.name} (${data.email}) se cadastrou como ${normalizedRole === "teacher" ? "professor" : "aluno"}.`,
@@ -64,6 +68,42 @@ export async function registerUser(data: {
           read: false,
         },
       });
+    }
+
+    // lógica de indicação
+    if (data.referralCode) {
+      const referrer = await prisma.user.findFirst({
+        where: { referralCode: data.referralCode },
+      });
+
+      if (referrer) {
+        // Notificação 1: para o dono do código de indicação
+        await prisma.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: referrer.id,
+            title: "Nova Indicação!",
+            message: `O aluno ${data.name} se cadastrou usando seu código!`,
+            type: "REFERRAL",
+            read: false,
+          },
+        });
+
+        // Notificação 2: para o novo aluno
+        await prisma.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: newUser.id,
+            title: "Bem-vindo!",
+            message: `Você se cadastrou com o código de indicação de ${referrer.name}! Aproveite a plataforma.`,
+            type: "REFERRAL",
+            read: false,
+          },
+        });
+
+        await applyReferralOnSignup(newUser.id, data.referralCode);
+        revalidatePath("/dashboard/notifications");
+      }
     }
 
     // lógica de indicação
@@ -103,6 +143,7 @@ export async function registerUser(data: {
     return { success: true, user: newUser };
   } catch (error) {
     console.error("Erro no registro:", error);
+    console.error("Dados recebidos - name:", data.name, "email:", data.email, "role:", data.role, "referralCode:", data.referralCode);
     return { success: false, error: "Erro interno ao criar a conta." };
   }
 }

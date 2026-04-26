@@ -9,7 +9,7 @@ import {
   ArrowDownRight,
   Target
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/button'; // Note: check path based on previous file context
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Chart as ChartJS, 
   CategoryScale, 

@@ -70,7 +70,11 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     const loadUser = async () => {
       const role = localStorage.getItem('userRole') as UserRole | null;
       const userId = localStorage.getItem('userId');
+      
+      const isCheckoutRoute = pathname.includes('/dashboard/checkout');
+
       if (!role || !userId) {
+        if (isCheckoutRoute) return; // Não redireciona se for checkout
         router.push('/login');
         return;
       }
@@ -78,6 +82,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       setUserRole(role);
       const result = await getUserById(userId);
       if (!result.success || !result.data) {
+        if (isCheckoutRoute) return; // Não redireciona se for checkout
         localStorage.clear();
         router.push('/login');
         return;
@@ -143,7 +148,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
           'relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all',
           isActive
             ? 'bg-brand-yellow text-slate-900 shadow-sm'
-            : 'text-slate-200 hover:bg-slate-800 hover:text-brand-yellow'
+            : 'text-slate-200 hover:text-brand-yellow'
         )}
       >
         <item.icon className="h-4 w-4 shrink-0" />
@@ -179,7 +184,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         isMobile ? '' : 'hidden border-r border-slate-800 bg-slate-900 text-slate-100 sm:flex'
       )}
     >
-      <Link href="/dashboard/profile" className="border-b border-slate-800 p-4 transition-colors hover:bg-slate-800/60">
+      <Link href="/dashboard/profile" className="border-b border-slate-800 p-4 transition-colors hover:text-brand-yellow">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 border-2 border-brand-yellow">
             <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
@@ -192,7 +197,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         </div>
       </Link>
 
-      <div ref={scrollRef} className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
+      <div ref={scrollRef} className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4 pr-1">
         <nav className="grid gap-1">
           {filteredNavItems.map((item) => renderLink(item))}
           {filteredAdminNavItems.length > 0 && <div className="my-2 border-t border-slate-800" />}

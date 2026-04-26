@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter,
 } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Check, ArrowRight, PackageOpen, MessageCircle } from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -36,7 +37,8 @@ const DEFAULT_WHATSAPP_NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '').
 
 function PackagesContent() {
   const searchParams = useSearchParams();
-  const neededCredits = searchParams.get('needed');
+  const router = useRouter();
+  const neededCredits = searchParams?.get('needed');
 
   const [classesPerWeek, setClassesPerWeek] = useState<number>(1);
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
@@ -173,17 +175,18 @@ function PackagesContent() {
                   </div>
                 )}
                 
-                <CardHeader className="items-center pt-10 text-center pb-6">
+                <CardHeader className="items-center pt-8 pb-4 text-center">
                   <CardTitle className="font-headline text-2xl text-slate-900">{pkg.name}</CardTitle>
                   <div className="mt-4 flex items-baseline gap-1">
                     <span className="text-5xl font-extrabold text-slate-900 tracking-tight">
-                      R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}
+                      R$ {pkg.pricePerClass.toFixed(2).replace('.', ',')}
                     </span>
+                    <span className="text-lg font-medium text-slate-500">/aula</span>
                   </div>
-                  <p className="mt-2 text-base font-semibold text-slate-500">R$ {pkg.pricePerClass.toFixed(2).replace('.', ',')} / aula</p>
+                  <p className="mt-2 text-base font-semibold text-slate-500">Total: R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}</p>
                 </CardHeader>
                 
-                <CardContent className="mt-2 flex-1 px-8">
+                <CardContent className="mt-0 flex-1 px-8 pb-2">
                   <ul className="grid gap-4 rounded-2xl bg-slate-50 p-6 text-sm border border-slate-100">
                     <li className="flex items-center text-base font-bold text-slate-800 mb-1">
                       <div className="rounded-full bg-green-100 p-1 mr-3">
@@ -200,12 +203,21 @@ function PackagesContent() {
                   </ul>
                 </CardContent>
                 
-                <CardFooter className="flex-col gap-3 px-8 pb-8 pt-4">
+                <CardFooter className="flex-col gap-1 px-8 pb-5 pt-1">
+                  <Button 
+                    className="h-10 w-full rounded-2xl text-sm font-bold text-white shadow-sm transition-transform bg-slate-900 hover:bg-slate-800 hover:scale-[1.02]"
+                    onClick={() => {
+                      localStorage.removeItem('checkoutBookings');
+                      router.push(`/dashboard/checkout?needed=${pkg.numClasses}&current=0`);
+                    }}
+                  >
+                    Comprar Agora
+                  </Button>
                   <Button
-                    className="h-14 w-full rounded-2xl text-base font-bold text-white shadow-sm transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-[1.02]"
+                    className="h-10 w-full rounded-2xl text-sm font-bold text-white shadow-sm transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-[1.02]"
                     onClick={() => handleWhatsAppClick(getPackageWhatsAppText(pkg))}
                   >
-                    <MessageCircle className="mr-2 h-5 w-5" /> Comprar via WhatsApp
+                    <MessageCircle className="mr-2 h-4 w-4" /> Comprar via WhatsApp
                   </Button>
                 </CardFooter>
               </Card>
@@ -267,9 +279,19 @@ function PackagesContent() {
               </CardContent>
               
               <CardFooter className="flex-col gap-2 pb-10 px-8 pt-0">
+                <Button 
+                  size="lg" 
+                  className="mx-auto h-14 w-full max-w-md rounded-2xl text-lg font-bold text-white shadow-lg transition-transform bg-slate-900 hover:bg-slate-800 hover:scale-105"
+                  onClick={() => {
+                    localStorage.removeItem('checkoutBookings');
+                    router.push(`/dashboard/checkout?needed=${calculatedPackage.totalClasses}&current=0`);
+                  }}
+                >
+                  Comprar Agora
+                </Button>
                 <Button
                   size="lg"
-                  className="mx-auto h-16 w-full max-w-md rounded-2xl text-lg font-bold text-white shadow-lg transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-105"
+                  className="mx-auto h-14 w-full max-w-md rounded-2xl text-lg font-bold text-white shadow-lg transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-105"
                   onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())}
                 >
                   <MessageCircle className="mr-3 h-6 w-6" /> Contratar Pacote Personalizado

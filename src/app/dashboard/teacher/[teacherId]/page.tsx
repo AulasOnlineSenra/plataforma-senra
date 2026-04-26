@@ -42,7 +42,7 @@ type CurrentUser = {
 function TeacherDetailPageComponent() {
   const params = useParams();
   const router = useRouter();
-  const teacherId = params.teacherId as string;
+  const teacherId = params?.teacherId as string;
 
   const formatEducation = (education: string | null | undefined): string => {
     if (!education) return '';

@@ -64,13 +64,13 @@ function PaymentPageComponent() {
     setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('student'));
   }, []);
 
-  const packageId = searchParams.get('packageId');
+  const packageId = searchParams?.get('packageId');
   
   // For custom packages
-  const customName = searchParams.get('name');
-  const customTotalClasses = searchParams.get('totalClasses');
-  const customPricePerClass = searchParams.get('pricePerClass');
-  const customTotal = searchParams.get('total');
+  const customName = searchParams?.get('name');
+  const customTotalClasses = searchParams?.get('totalClasses');
+  const customPricePerClass = searchParams?.get('pricePerClass');
+  const customTotal = searchParams?.get('total');
 
   let selectedPackage: (ClassPackage & { total?: number }) | undefined;
 

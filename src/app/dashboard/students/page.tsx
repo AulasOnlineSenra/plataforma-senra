@@ -112,6 +112,7 @@ function StudentList({
   scheduledCountByStudent,
   onAddCredits,
   onDeleteStudent,
+  isAdmin,
 }: {
   id?: string;
   title: string;
@@ -119,6 +120,7 @@ function StudentList({
   scheduledCountByStudent: Record<string, number>;
   onAddCredits: (student: StudentRow) => void;
   onDeleteStudent: (student: StudentRow) => void;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
 
@@ -217,13 +219,15 @@ function StudentList({
                         align="end"
                         className="w-56 rounded-2xl border border-slate-100 bg-white shadow-lg p-2 gap-1 flex flex-col"
                       >
-                        <DropdownMenuItem
-                          onSelect={() => onAddCredits(student)}
-                          className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
-                        >
-                          <Wallet className="mr-2 h-4 w-4 text-emerald-500" />
-                          Adicionar créditos
-                        </DropdownMenuItem>
+                        {isAdmin && (
+                          <DropdownMenuItem
+                            onSelect={() => onAddCredits(student)}
+                            className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
+                          >
+                            <Wallet className="mr-2 h-4 w-4 text-emerald-500" />
+                            Adicionar créditos
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onSelect={() =>
                             router.push(
@@ -235,13 +239,15 @@ function StudentList({
                           <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
                           Chat Privado
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer rounded-xl py-2.5 font-medium text-red-600 focus:bg-red-50 focus:text-red-700 mt-1 border-t border-slate-50"
-                          onSelect={() => onDeleteStudent(student)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir perfil
-                        </DropdownMenuItem>
+                        {isAdmin && (
+                          <DropdownMenuItem
+                            className="cursor-pointer rounded-xl py-2.5 font-medium text-red-600 focus:bg-red-50 focus:text-red-700 mt-1 border-t border-slate-50"
+                            onSelect={() => onDeleteStudent(student)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir perfil
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -526,6 +532,7 @@ export default function AdminStudentsPage() {
           scheduledCountByStudent={scheduledCountByStudent}
           onAddCredits={openAddCreditsModal}
           onDeleteStudent={setStudentToDelete}
+          isAdmin={currentUser?.role === "admin"}
         />
         {inactiveStudents.length > 0 && (
           <StudentList
@@ -534,6 +541,7 @@ export default function AdminStudentsPage() {
             scheduledCountByStudent={scheduledCountByStudent}
             onAddCredits={openAddCreditsModal}
             onDeleteStudent={setStudentToDelete}
+            isAdmin={currentUser?.role === "admin"}
           />
         )}
       </div>

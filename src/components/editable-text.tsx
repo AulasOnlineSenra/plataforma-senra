@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils';
 interface EditableTextProps {
   children: React.ReactNode;
   storageKey: string;
+  className?: string;
 }
 
-export function EditableText({ children, storageKey }: EditableTextProps) {
+export function EditableText({ children, storageKey, className }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(children?.toString() || '');
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -84,6 +85,7 @@ export function EditableText({ children, storageKey }: EditableTextProps) {
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         className={cn(
+            className,
             isEditing && 'outline-none ring-2 ring-primary ring-offset-2 rounded-sm p-1 bg-background text-foreground'
         )}
         dangerouslySetInnerHTML={{ __html: text.toString() }}
@@ -91,7 +93,7 @@ export function EditableText({ children, storageKey }: EditableTextProps) {
     );
   }
 
-  return <>{text}</>;
+  return <span className={className}>{text}</span>;
 }
 
     

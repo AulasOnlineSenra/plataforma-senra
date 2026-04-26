@@ -18,8 +18,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Alegreya', 'serif'],
-        headline: ['Belleza', 'sans-serif'],
+        body: ['Poppins', 'sans-serif'],
+        headline: ['Outfit', 'sans-serif'],
       },
       colors: {
         senra: '#f5b000',

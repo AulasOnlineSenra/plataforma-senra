@@ -106,7 +106,7 @@ function PostReactions({ post, isHero = false }: { post: Post, isHero?: boolean 
 }
 
 export default function BlogGrid({ posts }: { posts: Post[] }) {
-  if (posts.length === 0) {
+  if (!posts || posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
         <svg className="w-16 h-16 mb-4 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">

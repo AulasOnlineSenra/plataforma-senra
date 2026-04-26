@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/header";
@@ -14,11 +14,16 @@ import { navItems, adminNavItems } from "@/lib/navigation";
 import type { UserRole } from "@/lib/types";
 import { PendingProfileBanner } from "@/components/pending-profile-banner";
 import { safeLocalStorage } from "@/lib/safe-storage";
+import { CheckoutAuthModal } from "@/components/checkout-auth-modal";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, toggleCollapse } = useResizablePanel();
   const pathname = usePathname();
   const router = useRouter();
+  const [showCheckoutAuthModal, setShowCheckoutAuthModal] = useState(false);
+
+  // Verifica se a rota atual é de checkout
+  const isCheckoutRoute = pathname.includes('/dashboard/checkout');
 
   const allowedByRole = useMemo(() => {
     const role = safeLocalStorage.getItem("userRole") as UserRole | null;
@@ -28,7 +33,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
     return (
       allowedItems.some((item) => pathname.startsWith(item.href)) ||
-      pathname === "/dashboard"
+      pathname === "/dashboard" ||
+      pathname.startsWith("/dashboard/checkout") // checkout sempre permitido após login
     );
   }, [pathname]);
 
@@ -51,10 +57,24 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const role = safeLocalStorage.getItem("userRole");
+    console.log('[DashboardLayout] pathname:', pathname, 'role:', role);
+
     if (!role) {
+      // Se o usuário não está logado E está tentando acessar o checkout,
+      // exibimos o modal de cadastro/login em vez de redirecionar para /login
+      if (isCheckoutRoute) {
+        console.log('[DashboardLayout] Sem autenticação no checkout → abrindo modal');
+        setShowCheckoutAuthModal(true);
+        return;
+      }
+      console.log('[DashboardLayout] Redirecionando para /login');
       router.push("/login");
       return;
     }
+
+    // Usuário logado: fecha o modal se estava aberto
+    setShowCheckoutAuthModal(false);
+
     // Professor pendente só pode acessar a página de perfil
     if (isPendingTeacherBlocked) {
       router.replace("/dashboard/profile");
@@ -63,7 +83,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     if (!allowedByRole) {
       router.push("/dashboard");
     }
-  }, [allowedByRole, isPendingTeacherBlocked, router]);
+  }, [pathname, allowedByRole, isPendingTeacherBlocked, isCheckoutRoute, router]);
 
   // Controle dinâmico do scroll global (apenas para o Dashboard)
   useEffect(() => {
@@ -88,14 +108,37 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const handleAuthModalClose = () => {
+    setShowCheckoutAuthModal(false);
+    router.push('/home');
+  };
+
+  const handleAuthenticated = () => {
+    setShowCheckoutAuthModal(false);
+    // Força re-execução do useEffect para reconhecer o novo login
+    router.refresh();
+  };
+
   return (
     <div className="dashboard-layout h-full w-full overflow-hidden">
-      {/* Sidebar fixa à esquerda */}
-      <aside className="fixed left-0 top-0 hidden h-full w-[15%] min-w-[180px] border-r bg-sidebar md:block">
-        <AppSidebar />
-      </aside>
-      {/* Conteúdo principal com offset e scroll próprio */}
-      <div className="flex h-full min-w-0 flex-1 flex-row md:ml-[15%]">
+      {/* Modal de autenticação para checkout sem login */}
+      <CheckoutAuthModal
+        open={showCheckoutAuthModal}
+        onAuthenticated={handleAuthenticated}
+        onClose={handleAuthModalClose}
+      />
+
+      {/* Sidebar fixa à esquerda - Oculta se estiver mostrando modal de auth no checkout */}
+      {!showCheckoutAuthModal && (
+        <aside className="fixed left-0 top-0 hidden h-full w-[calc(15%+22px)] min-w-[180px] border-r bg-sidebar md:block">
+          <AppSidebar />
+        </aside>
+      )}
+      {/* Conteúdo principal com offset e scroll próprio - Remove offset se sidebar estiver oculta */}
+      <div className={cn(
+        "flex h-full min-w-0 flex-1 flex-row",
+        !showCheckoutAuthModal && "md:ml-[calc(15%+22px)]"
+      )}>
         <div className="flex h-full w-full flex-col">
           <Header isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
           <PendingProfileBanner />

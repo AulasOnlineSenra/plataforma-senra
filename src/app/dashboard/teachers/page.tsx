@@ -109,9 +109,6 @@ function TeacherCard({
     // Se tiver 1 formação: mostrar apenas 1
     if (eduList.length === 1) {
       const first = eduList[0];
-      if (first.course && first.university) {
-        return [{ text: `${first.course} - ${first.university}`, hasIndicator: false }];
-      }
       if (first.course) {
         return [{ text: first.course, hasIndicator: false }];
       }
@@ -126,18 +123,13 @@ function TeacherCard({
     
     // Primeira formação
     const first = eduList[0];
-    if (first.course && first.university) {
-      result.push({ text: `${first.course} - ${first.university}`, hasIndicator: false });
-    } else if (first.course) {
+    if (first.course) {
       result.push({ text: first.course, hasIndicator: false });
     }
     
     // Segunda formação
     const second = eduList[1];
-    if (second.course && second.university) {
-      const indicator = secondHasIndicator ? ` (+${remaining})` : '';
-      result.push({ text: `${second.course} - ${second.university}${indicator}`, hasIndicator: secondHasIndicator });
-    } else if (second.course) {
+    if (second.course) {
       const indicator = secondHasIndicator ? ` (+${remaining})` : '';
       result.push({ text: `${second.course}${indicator}`, hasIndicator: secondHasIndicator });
     }
@@ -147,7 +139,7 @@ function TeacherCard({
 
   return (
     <Card
-      style={{ width: '100%' }}
+      style={{ width: 'calc(100% - 70px)' }}
       className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer ${
         isPendingAwaitingApproval
           ? "border-blue-400 bg-blue-50/80 hover:border-blue-500"
@@ -177,7 +169,8 @@ function TeacherCard({
         }`}
       ></div>
 
-      <div className="flex justify-center mt-2 relative z-10">
+      {/* Status no canto superior esquerdo */}
+      <div className="absolute top-2 left-3 z-10">
         {teacher.status === "pending" && teacher.bio && teacherEducation && teacherSubjects.length > 0 && teacher.pixKeyType && teacher.pixKey && (
           <Badge className="border-none bg-blue-100 font-bold text-blue-700 px-3 py-1 rounded-full shadow-none animate-pulse">
             Aguardando Aprovação
@@ -195,39 +188,39 @@ function TeacherCard({
         )}
       </div>
 
-      <CardHeader className="items-center text-center pb-4 pt-2 relative z-10">
+      <CardHeader className="items-center text-center pb-3 pt-8 relative z-10">
         {isAdmin && (
-          <div className="absolute right-3 top-3 z-20 flex gap-1 rounded-full border border-slate-100 bg-white/80 backdrop-blur-md p-1 shadow-sm opacity-100 md:opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="absolute right-[17px] top-[8px] z-20 flex gap-0.5 rounded-full border border-slate-100 bg-white/80 backdrop-blur-md p-0.5 shadow-sm opacity-100 md:opacity-0 transition-opacity group-hover:opacity-100">
             {teacher.status === "pending" && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100"
+                className="h-5 w-5 rounded-full text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   onApprove(teacher.id);
                 }}
                 title="Aprovar Professor"
               >
-                <Check className="h-4 w-4" />
+                <Check className="h-2.5 w-2.5" />
               </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full text-slate-400 hover:text-brand-yellow hover:bg-amber-100"
+              className="h-5 w-5 rounded-full text-slate-400 hover:text-brand-yellow hover:bg-amber-100"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(teacher);
               }}
               title="Editar Dados"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-2.5 w-2.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-100"
+              className="h-5 w-5 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-100"
               onClick={(e) => {
                 e.stopPropagation();
                 if (confirm("Excluir este professor permanentemente?"))
@@ -235,52 +228,56 @@ function TeacherCard({
               }}
               title="Excluir Professor"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-2.5 w-2.5" />
             </Button>
           </div>
         )}
 
-        <Avatar
-          className={`mb-1 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white ${
-            isPendingAwaitingApproval
-              ? "border-blue-400"
-              : teacher.status === "pending"
-                ? "border-amber-300"
-                : "border-white"
-          }`}
-        >
-          <AvatarImage
-            src={teacher.avatarUrl}
-            alt={teacher.name}
-            className="object-cover object-center"
-          />
-          <AvatarFallback className="text-3xl font-bold bg-slate-100 text-slate-400">
-            {teacher.name.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+        
 
-        <CardTitle className="font-headline text-xl text-slate-900 tracking-tight flex items-center justify-center gap-2 flex-wrap">
-          {teacher.name}
-          <div className="flex items-center gap-0.5">
+        <div className="relative">
+          <Avatar
+            className={`mb-1 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white ${
+              isPendingAwaitingApproval
+                ? "border-blue-400"
+                : teacher.status === "pending"
+                  ? "border-amber-300"
+                  : "border-white"
+            }`}
+          >
+            <AvatarImage
+              src={teacher.avatarUrl}
+              alt={teacher.name}
+              className="object-cover object-center"
+            />
+            <AvatarFallback className="text-3xl font-bold bg-slate-100 text-slate-400">
+              {teacher.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute -bottom-1 -right-1 flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shadow border" style={{ backgroundColor: '#0f172a' }}>
             {Array(5).fill(0).map((_, i) => (
               <Star
                 key={i}
-                className="h-4 w-4"
+                className="h-3 w-3"
                 style={{ color: '#FFC107', fill: i < Math.round(rating.average) ? '#FFC107' : 'none' }}
               />
             ))}
-            <span className="text-sm font-bold ml-1" style={{ color: '#FFC107' }}>
+            <span className="text-xs font-bold" style={{ color: '#FFC107' }}>
               {rating.average.toFixed(1)}
             </span>
           </div>
+        </div>
+
+        <CardTitle className="font-headline text-xl text-slate-900 tracking-tight flex items-center justify-center gap-2 flex-wrap">
+          {teacher.name}
         </CardTitle>
 
         {teacherEducation && (
-          <div className="space-y-1 w-full max-w-[calc(100%-2rem)] overflow-hidden">
+          <div className="space-y-1 w-full max-w-[calc(100%-1rem)] overflow-hidden">
             {teacherEducation.map((edu: { text: string; hasIndicator: boolean }, idx: number) => (
               <p 
                 key={idx} 
-                className="text-sm font-medium text-slate-400 truncate px-4 w-full max-w-full overflow-hidden whitespace-nowrap"
+                className="text-xs font-medium text-slate-400 truncate w-full overflow-hidden whitespace-nowrap"
               >
                 {edu.text}
               </p>
@@ -310,16 +307,19 @@ function TeacherCard({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 text-center relative z-10 min-h-[60px]">
+      <CardContent className="flex-1 relative z-10 p-0">
       </CardContent>
 
-      <CardFooter className="flex-col gap-2 pt-0 pb-6 px-6 relative z-10">
+      <CardFooter className="flex-col gap-2 pt-[-15px] pb-3 px-6 relative z-10">
         {!isAdmin && (
           <Button
             asChild
-            className="w-full h-11 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90"
+            className="w-full h-11 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90 mt-[-15px]"
           >
-            <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>
+            <Link 
+              href={`/dashboard/booking?teacherId=${teacher.id}`}
+              onClick={(e) => e.stopPropagation()}
+            >
               Agendar Aula
             </Link>
           </Button>
@@ -350,7 +350,10 @@ export default function TeachersPage() {
 
   const fetchDBTeachers = async () => {
     setIsLoading(true);
-    const result = await getTeachers();
+    const storedUser = localStorage.getItem("currentUser");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const showAll = user?.role === "admin";
+    const result = await getTeachers(showAll);
     if (result.success && result.data) {
       setTeacherList(result.data);
     } else {
@@ -365,9 +368,17 @@ export default function TeachersPage() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) setCurrentUser(JSON.parse(storedUser));
-    fetchDBTeachers();
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setCurrentUser(user);
+    }
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchDBTeachers();
+    }
+  }, [currentUser]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -530,7 +541,7 @@ export default function TeachersPage() {
             )}
           </div>
         ) : (
-          <div className="mt-2 grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 justify-items-center">
+          <div className={`mt-2 grid gap-6 ${currentUser?.role === "admin" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"} justify-items-center`}>
             {teacherList.map((teacher) => (
               <TeacherCard
                 key={teacher.id}

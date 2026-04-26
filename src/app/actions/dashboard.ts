@@ -25,13 +25,7 @@ export async function getDashboardStats() {
 
     const completedLessons = await prisma.lesson.count({
       where: { 
-        OR: [
-          { status: 'completed' },
-          { 
-            status: { in: ['CONFIRMED', 'scheduled'] },
-            date: { lt: now }
-          }
-        ]
+        status: 'COMPLETED'
       }
     });
 

@@ -10,20 +10,16 @@ import { teachers as initialTeachers, scheduleEvents as initialSchedule, getMock
 import { Teacher, User, ScheduleEvent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, CalendarClock } from 'lucide-react';
+import { MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
-function TeacherList({ teachers, scheduleEvents }: { teachers: Teacher[], scheduleEvents: ScheduleEvent[] }) {
+function TeacherList({ teachers }: { teachers: Teacher[] }) {
   const router = useRouter();
 
   const getSubjectNames = (subjectIds: string[]) => {
     return subjectIds.map(id => subjects.find(s => s.id === id)?.name).filter(Boolean).join(', ');
-  }
-  
-  const hasUpcomingEvents = (teacherId: string) => {
-    return scheduleEvents.some(event => event.teacherId === teacherId && event.status === 'scheduled' && event.start > new Date());
   }
 
   return (
@@ -52,14 +48,12 @@ function TeacherList({ teachers, scheduleEvents }: { teachers: Teacher[], schedu
                           Conversar
                           </Link>
                       </Button>
-                      {hasUpcomingEvents(teacher.id) && (
-                          <Button asChild variant="secondary" size="sm" onClick={(e) => e.stopPropagation()}>
-                              <Link href={`/dashboard/schedule?teacherId=${teacher.id}`}>
-                                  <CalendarClock className="mr-2 h-4 w-4" />
-                                  Ver Aulas
-                              </Link>
-                          </Button>
-                      )}
+                      <Button asChild variant="secondary" size="sm" onClick={(e) => e.stopPropagation()}>
+                          <Link href={`/dashboard/schedule?teacherId=${teacher.id}`}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Agendar
+                          </Link>
+                      </Button>
                   </div>
               </div>
           </Card>
@@ -124,7 +118,7 @@ export default function MyTeachersPage() {
       </div>
       <div className="grid gap-6">
         {myTeachers.length > 0 ? (
-          <TeacherList teachers={myTeachers} scheduleEvents={scheduleEvents} />
+          <TeacherList teachers={myTeachers} />
         ) : (
           <Card>
             <CardHeader>

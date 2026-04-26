@@ -18,6 +18,7 @@ import {
   Pencil,
   Wallet,
   Eye,
+  ExternalLink,
 } from "lucide-react";
 import {
   Card,
@@ -58,6 +59,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const subjectMap: Record<string, string> = {
+  'default-subj-1': 'Matemática',
+  'default-subj-2': 'Português',
+  'default-subj-3': 'Física',
+  'default-subj-4': 'Redação',
+  'default-subj-5': 'História',
+  'default-subj-6': 'Química',
+  'default-subj-7': 'Espanhol',
+  'default-subj-8': 'Filosofia',
+  'default-subj-9': 'Geografia',
+  'default-subj-10': 'Inglês',
+  'default-subj-11': 'Sociologia',
+  'default-subj-12': 'Biologia',
+};
 import { getUserById } from "@/app/actions/users";
 import { getLessonsForUser, updateLesson, cancelLesson } from "@/app/actions/bookings";
 import { getDashboardStats } from "@/app/actions/dashboard";
@@ -273,9 +289,7 @@ export default function DashboardPage() {
   const completed = useMemo(
     () => 
       lessons.filter(
-        (l) => 
-          ["CONFIRMED", "COMPLETED", "completed", "scheduled"].includes(l.status) && 
-          new Date(l.date) < now
+        (l) => l.status === "COMPLETED"
       ),
     [lessons],
   );
@@ -289,8 +303,7 @@ export default function DashboardPage() {
     return lessons.filter((l) => {
       const d = new Date(l.date);
       return (
-        ["CONFIRMED", "COMPLETED", "completed", "scheduled"].includes(l.status) &&
-        d < now &&
+        l.status === "COMPLETED" &&
         d.getMonth() === now.getMonth() &&
         d.getFullYear() === now.getFullYear()
       );
@@ -453,8 +466,23 @@ export default function DashboardPage() {
     const givenBy = user.role as "student" | "teacher";
     const studentId = user.role === "student" ? user.id : targetId;
     const teacherId = user.role === "teacher" ? user.id : targetId;
-    await submitRating(studentId, teacherId, score, givenBy);
-    setUnratedPeople((prev) => prev.filter((p) => p.id !== targetId));
+    
+    const result = await submitRating(studentId, teacherId, score, givenBy);
+    
+    if (result.success) {
+      toast({
+        title: "Avaliação enviada",
+        description: "Obrigado pelo seu feedback!",
+        variant: "default",
+      });
+      setUnratedPeople((prev) => prev.filter((p) => p.id !== targetId));
+    } else {
+      toast({
+        title: "Erro ao enviar avaliação",
+        description: result.error || "Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -470,7 +498,7 @@ export default function DashboardPage() {
 
       {user.role === "admin" ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-5 gap-2">
             <StatCard
               title="Alunos Ativos"
               value={adminStats?.students ?? 0}
@@ -497,14 +525,14 @@ export default function DashboardPage() {
               value={adminStats?.completed ?? 0}
               description="Histórico finalizado"
               icon={CheckCircle2}
-              href="/dashboard/minhas-aulas"
+              href="/dashboard/minhas-aulas#completed-history"
             />
             <StatCard
               title="Aulas Canceladas"
               value={adminStats?.cancelled ?? 0}
               description="Aulas canceladas"
               icon={XCircle}
-              href="/dashboard/minhas-aulas"
+              href="/dashboard/minhas-aulas#cancelled-history"
             />
           </div>
 
@@ -546,7 +574,7 @@ export default function DashboardPage() {
                           <TableCell>{lesson.teacher?.name || "N/A"}</TableCell>
                           <TableCell>
                             <Badge className="bg-[#FFC107] text-slate-900">
-                              {lesson.subject}
+                              {subjectMap[lesson.subject] || lesson.subject}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -706,9 +734,9 @@ export default function DashboardPage() {
                       Créditos Disponíveis
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+<CardContent>
                     <p className="text-4xl font-extrabold text-[#FFC107]">
-                      {user.credits}
+                      {Math.max(0, user.credits)}
                     </p>
                     <Button
                       asChild
@@ -730,14 +758,14 @@ export default function DashboardPage() {
                   value={completed.length}
                   description="Histórico total"
                   icon={CheckCircle2}
-                  href="/dashboard/historico"
+                  href="/dashboard/minhas-aulas#completed-history"
                 />
                 <StatCard
                   title="Concluídas no Mês"
                   value={completedThisMonth.length}
                   description={format(now, "MMMM 'de' yyyy", { locale: ptBR })}
                   icon={Coins}
-                  href="/dashboard/historico"
+                  href="/dashboard/minhas-aulas#completed-history"
                 />
               </>
             ) : (
@@ -754,21 +782,21 @@ export default function DashboardPage() {
                   value={completed.length}
                   description="Histórico total"
                   icon={CheckCircle2}
-                  href="/dashboard/historico"
+                  href="/dashboard/minhas-aulas#completed-history"
                 />
                 <StatCard
                   title="Aulas Canceladas"
                   value={cancelled.length}
                   description="Total cancelado"
                   icon={XCircle}
-                  href="/dashboard/historico"
+                  href="/dashboard/minhas-aulas#cancelled-history"
                 />
                 <StatCard
                   title="Concluídas no Mês"
                   value={completedThisMonth.length}
                   description={format(now, "MMMM 'de' yyyy", { locale: ptBR })}
                   icon={Coins}
-                  href="/dashboard/historico"
+                  href="/dashboard/minhas-aulas#completed-history"
                 />
               </>
             )}
@@ -791,6 +819,7 @@ export default function DashboardPage() {
                         {user.role === "student" ? "Professor" : "Aluno"}
                       </TableHead>
                       <TableHead className="text-right">Data</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -811,7 +840,7 @@ export default function DashboardPage() {
                               variant="secondary"
                               className="bg-slate-100 text-slate-700"
                             >
-                              {lesson.subject}
+                              {subjectMap[lesson.subject] || lesson.subject}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -825,6 +854,35 @@ export default function DashboardPage() {
                               const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
                               return format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
                             })()}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              {lesson.teacher?.videoUrl && (
+                                <Button asChild className="h-8 px-2 rounded-xl bg-slate-900 text-slate-50 hover:bg-slate-800">
+                                  <a href={lesson.teacher?.videoUrl} target="_blank" rel="noreferrer">
+                                    <Video className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {((user.role === "admin") || 
+                                (user.role === "teacher" && lesson.teacher?.id === user.id) || 
+                                (user.role === "student" && lesson.student?.id === user.id)) && (
+                                <>
+                                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl" onClick={() => {
+                                    setLessonToEdit(lesson);
+                                    setIsEditDialogOpen(true);
+                                  }}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl text-red-600 hover:text-red-600 hover:bg-red-50" onClick={() => {
+                                    setLessonToCancel(lesson);
+                                    setIsCancelDialogOpen(true);
+                                  }}>
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -912,14 +970,14 @@ export default function DashboardPage() {
                           key={person.id}
                           className="flex flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-sm"
                         >
-                          <Avatar className="h-14 w-14 border-2 border-brand-yellow shadow-md">
+                          <Avatar className="h-20 w-20 border-2 border-brand-yellow shadow-md">
                             <AvatarImage src={person.avatarUrl || undefined} alt={person.name} />
-                            <AvatarFallback className="bg-amber-100 text-amber-700 font-bold">
+                            <AvatarFallback className="bg-amber-100 text-amber-700 font-bold text-xl">
                               {person.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <p className="text-sm font-bold text-slate-800">{person.name}</p>
-                          <p className="text-xs text-slate-500">Como foi sua experiência com a aula?</p>
+                          <p className="text-base font-bold text-slate-800">{person.name}</p>
+                          <p className="text-xs text-slate-500 mt-[-15px]">Como foi sua experiência com a aula?</p>
                           <div className="flex items-center gap-1">
                             {Array(5)
                               .fill(0)
@@ -928,9 +986,9 @@ export default function DashboardPage() {
                                   key={i}
                                   type="button"
                                   onClick={() => handleRate(person.id, i + 1)}
-                                  className="transition-transform hover:scale-125"
+                                  className="transition-transform hover:scale-125 bg-transparent p-0"
                                 >
-                                  <Star className="h-7 w-7 text-[#FFC107] fill-[#FFC107] cursor-pointer" />
+                                  <Star className="h-7 w-7 text-[#FFC107] fill-none cursor-pointer" />
                                 </button>
                               ))}
                           </div>

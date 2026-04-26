@@ -253,28 +253,45 @@ export async function getPendingTransactions() {
 
 export async function approveTransaction(transactionId: string) {
   try {
+    // First, get the transaction data to know if there are bookings
+    const transactionCheck = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+    });
+
+    if (!transactionCheck) {
+      return { success: false, error: 'Transação não encontrada.' };
+    }
+
+    if (transactionCheck.status !== 'PENDENTE') {
+      return { success: false, error: 'Transação não está pendente.' };
+    }
+
+    // Parse bookings data BEFORE the transaction (to avoid issues inside transaction)
+    let bookingsData: { subjectName: string; teacherId: string; date: string; start: string; end: string }[] = [];
+    let hasBookings = false;
+    
+    if (transactionCheck.bookings) {
+      try {
+        bookingsData = JSON.parse(transactionCheck.bookings);
+        const validBookings = bookingsData.filter(b => b.teacherId && b.teacherId.trim() !== '');
+        hasBookings = validBookings.length > 0;
+        console.log('[ApproveTransaction] Bookings encontrados:', validBookings.length);
+      } catch (parseError) {
+        console.error('[ApproveTransaction] Erro ao fazer parse dos bookings:', parseError);
+      }
+    }
+
+    // Execute main transaction (credits + status update)
     const result = await prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findUnique({
-        where: { id: transactionId },
-      });
-
-      if (!transaction) {
-        throw new Error('Transação não encontrada.');
-      }
-
-      if (transaction.status !== 'PENDENTE') {
-        throw new Error('Transação não está pendente.');
-      }
-
       const updatedTransaction = await tx.transaction.update({
         where: { id: transactionId },
         data: { status: 'COMPROVADO' },
       });
 
       const updatedUser = await tx.user.update({
-        where: { id: transaction.studentId },
+        where: { id: transactionCheck.studentId },
         data: {
-          credits: { increment: transaction.creditsAdded },
+          credits: { increment: transactionCheck.creditsAdded },
         },
       });
 
@@ -282,54 +299,61 @@ export async function approveTransaction(transactionId: string) {
       await tx.notification.create({
         data: {
           id: crypto.randomUUID(),
-          userId: transaction.studentId,
+          userId: transactionCheck.studentId,
           type: 'payment_approved',
           title: 'Pagamento Aprovado!',
-          message: `Seu pagamento de ${transaction.creditsAdded} crédito(s) foi aprovado. Créditos adicionados à sua conta.`,
+          message: `Seu pagamento de ${transactionCheck.creditsAdded} crédito(s) foi aprovado. Créditos adicionados à sua conta.`,
           read: false,
         },
       });
 
-      // Create bookings if present in transaction
-      let bookingsCreated = false;
-      if (transaction.bookings) {
-        try {
-          const bookingsData = JSON.parse(transaction.bookings) as { subjectName: string; teacherId: string; date: string; start: string; end: string }[];
-          
-          // Filter bookings with valid teacherId
-          const validBookings = bookingsData.filter(b => b.teacherId && b.teacherId.trim() !== '');
-          
-          if (validBookings.length > 0) {
-            const bookingsToCreate = validBookings.map((b) => {
-              const start = new Date(b.date);
-              const [h, m] = b.start.split(':').map(Number);
-              start.setHours(h, m, 0, 0);
-              const end = new Date(b.date);
-              const [endH, endM] = b.end.split(':').map(Number);
-              end.setHours(endH, endM, 0, 0);
-              
-              return {
-                subjectId: b.subjectName,
-                teacherId: b.teacherId,
-                start,
-                end,
-                isExperimental: false,
-              };
-            });
-
-            // Call createBookings outside transaction (it handles its own transaction)
-            await createBookings(transaction.studentId, bookingsToCreate, true, tx);
-            bookingsCreated = true;
-          } else {
-            console.log('[Finance] Bookings ignorados - teacherId vazio');
-          }
-        } catch (parseError) {
-          console.error('Erro ao processar bookings da transação:', parseError);
-        }
-      }
-
-      return { updatedTransaction, updatedUser, bookingsCreated };
+      return { updatedTransaction, updatedUser };
     });
+
+    console.log('[ApproveTransaction] Transação principal concluída - créditos adicionados');
+
+    // Create bookings OUTSIDE the transaction (to avoid timeout)
+    let bookingsCreated = false;
+    if (hasBookings && bookingsData.length > 0) {
+      try {
+        const validBookings = bookingsData.filter(b => b.teacherId && b.teacherId.trim() !== '');
+        
+        const bookingsToCreate = validBookings.map((b) => {
+          const start = new Date(b.date);
+          const [h, m] = b.start.split(':').map(Number);
+          start.setHours(h, m, 0, 0);
+          const end = new Date(b.date);
+          const [endH, endM] = b.end.split(':').map(Number);
+          end.setHours(endH, endM, 0, 0);
+          
+          return {
+            subjectId: b.subjectName,
+            teacherId: b.teacherId,
+            start,
+            end,
+            isExperimental: false,
+          };
+        });
+
+        console.log('[ApproveTransaction] Criando bookings fora da transação...');
+        
+        // Call createBookings WITHOUT passing tx (it will handle its own transaction)
+        const bookingsResult = await createBookings(transactionCheck.studentId, bookingsToCreate, true);
+        
+        console.log('[ApproveTransaction] Resultado de createBookings:', JSON.stringify(bookingsResult, null, 2));
+        
+        if (!bookingsResult.success) {
+          console.error('[ApproveTransaction] Erro ao criar bookings:', bookingsResult.error);
+        } else {
+          bookingsCreated = true;
+          console.log('[ApproveTransaction] Bookings criados com sucesso');
+        }
+      } catch (bookingsError: any) {
+        console.error('[ApproveTransaction] Exceção ao criar bookings:', bookingsError.message);
+      }
+    } else {
+      console.log('[ApproveTransaction] Nenhum booking para criar (apenas créditos)');
+    }
 
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/schedule');
@@ -342,7 +366,7 @@ export async function approveTransaction(transactionId: string) {
       data: {
         transaction: result.updatedTransaction,
         newCredits: result.updatedUser.credits,
-        bookingsCreated: result.bookingsCreated,
+        bookingsCreated,
       },
     };
   } catch (error: any) {

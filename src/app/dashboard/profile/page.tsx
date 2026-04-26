@@ -600,7 +600,17 @@ export default function ProfilePage() {
   };
 
   const handleSaveAvailability = async () => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não identificado.' });
+      return;
+    }
+
+    const slotsToSave = availabilitySlots.map(({ dayOfWeek, startTime, endTime }) => ({ dayOfWeek, startTime, endTime }));
+    
+    if (slotsToSave.length === 0) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Adicione pelo menos um horário.' });
+      return;
+    }
 
     const hasConflict = availabilitySlots.some((slot, idx) =>
       availabilitySlots.some(
@@ -622,14 +632,11 @@ export default function ProfilePage() {
     }
 
     setIsSavingAvailability(true);
-    const result = await saveTeacherAvailability(
-      currentUser.id,
-      availabilitySlots.map(({ dayOfWeek, startTime, endTime }) => ({ dayOfWeek, startTime, endTime })),
-    );
+    const result = await saveTeacherAvailability(currentUser.id, slotsToSave);
     if (result.success) {
       toast({ title: 'Disponibilidade salva', description: 'Seus horários foram atualizados com sucesso.' });
     } else {
-      toast({ variant: 'destructive', title: 'Erro', description: result.error });
+      toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Erro ao salvar.' });
     }
     setIsSavingAvailability(false);
   };
@@ -685,44 +692,12 @@ export default function ProfilePage() {
     return { startTime, endTime };
   };
 
-  const handleSaveAndAddSlot = async (dayOfWeek: number) => {
-    if (!currentUser?.id) return;
-
-    const hasConflict = availabilitySlots.some((slot, idx) =>
-      availabilitySlots.some(
-        (other, otherIdx) =>
-          otherIdx !== idx &&
-          slot.dayOfWeek === other.dayOfWeek &&
-          slot.startTime < other.endTime &&
-          slot.endTime > other.startTime,
-      ),
-    );
-
-    if (hasConflict) {
-      toast({
-        variant: 'destructive',
-        title: 'Horário conflitante',
-        description: 'Esse horário conflita com outro já cadastrado neste dia.',
-      });
-      return;
-    }
-
-    setIsSavingAvailability(true);
-    const result = await saveTeacherAvailability(
-      currentUser.id,
-      availabilitySlots.map(({ dayOfWeek, startTime, endTime }) => ({ dayOfWeek, startTime, endTime })),
-    );
-    setIsSavingAvailability(false);
-
-    if (result.success) {
-      const { startTime, endTime } = getDefaultTimesForDay(dayOfWeek);
-      setAvailabilitySlots((prev) => [
-        ...prev,
-        { tempId: crypto.randomUUID(), dayOfWeek, startTime, endTime },
-      ]);
-    } else {
-      toast({ variant: 'destructive', title: 'Erro', description: result.error });
-    }
+  const handleSaveAndAddSlot = (dayOfWeek: number) => {
+    const { startTime, endTime } = getDefaultTimesForDay(dayOfWeek);
+    setAvailabilitySlots((prev) => [
+      ...prev,
+      { tempId: crypto.randomUUID(), dayOfWeek, startTime, endTime },
+    ]);
   };
 
   const addAvailabilitySlot = () => {
@@ -736,13 +711,33 @@ export default function ProfilePage() {
     setAvailabilitySlots((prev) => prev.filter((s) => s.tempId !== tempId));
   };
 
+  const roundToHalfHour = (time: string): string => {
+    const [hours, minutes] = time.split(':').map(Number);
+    let roundedMinutes = 0;
+    
+    if (minutes >= 45) {
+      roundedMinutes = 0;
+      return `${String(hours + 1).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
+    } else if (minutes >= 15) {
+      roundedMinutes = 30;
+    } else {
+      roundedMinutes = 0;
+    }
+    
+    return `${String(hours).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
+  };
+
   const updateSlotField = (
     tempId: string,
     field: keyof Omit<AvailabilitySlot, 'tempId'>,
     value: string | number,
   ) => {
+    let processedValue = value;
+    if (field === 'startTime' || field === 'endTime') {
+      processedValue = roundToHalfHour(value as string);
+    }
     setAvailabilitySlots((prev) =>
-      prev.map((s) => (s.tempId === tempId ? { ...s, [field]: value } : s)),
+      prev.map((s) => (s.tempId === tempId ? { ...s, [field]: processedValue } : s)),
     );
   };
 
@@ -1202,77 +1197,91 @@ export default function ProfilePage() {
                     return (
                       <div
                         key={day.value}
-                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-2"
                       >
                         {daySlots.length === 0 ? (
                           <div className="grid grid-cols-[160px_1fr_1fr_auto_auto] gap-3 items-end">
                                 <span className="font-bold text-slate-700 text-center">{day.label}</span>
-                            <Input
-                              type="time"
-                              className="h-9 bg-white rounded-lg text-sm w-full text-center"
-                              value="08:00"
-                              disabled
-                            />
-                            <Input
-                              type="time"
-                              className="h-9 bg-white rounded-lg text-sm w-full text-center"
-                              value="09:30"
-                              disabled
-                            />
+                            <div className="relative cursor-pointer" onClick={() => document.getElementById(`start-${day.value}-new`)?.showPicker()}>
+                              <Input
+                                id={`start-${day.value}-new`}
+                                type="time"
+                                className="h-8 bg-white rounded-lg text-sm w-full cursor-pointer"
+                                value="08:00"
+                                disabled
+                                readOnly
+                              />
+                            </div>
+                            <div className="relative cursor-pointer" onClick={() => document.getElementById(`end-${day.value}-new`)?.showPicker()}>
+                              <Input
+                                id={`end-${day.value}-new`}
+                                type="time"
+                                className="h-8 bg-white rounded-lg text-sm w-full cursor-pointer"
+                                value="09:30"
+                                disabled
+                                readOnly
+                              />
+                            </div>
                             <Button
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-9 w-9 rounded-lg border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100"
+                              className="h-8 w-8 rounded-lg border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100"
                               onClick={() => handleSaveAndAddSlot(day.value)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
-                            <div className="h-9 w-9" />
+                            <div className="h-8 w-8" />
                           </div>
                         ) : (
                           daySlots.map((slot, idx) => (
                             <div
                               key={slot.tempId}
-                              className={`grid grid-cols-[160px_1fr_1fr_auto_auto] gap-3 items-end ${idx > 0 ? 'mt-2' : ''}`}
+                              className={`grid grid-cols-[160px_1fr_1fr_auto_auto] gap-3 items-end ${idx > 0 ? 'mt-1' : ''}`}
                             >
                               {idx === 0 ? (
                                 <span className="font-bold text-slate-700 text-center">{day.label}</span>
                               ) : (
                                 <div className="w-[160px]" />
                               )}
+<div className="relative cursor-pointer w-full" onClick={() => document.getElementById(`start-${slot.tempId}`)?.showPicker()}>
                               <Input
+                                id={`start-${slot.tempId}`}
                                 type="time"
-                                className="h-9 bg-white rounded-lg text-sm w-full text-center"
+                                className="h-8 bg-white rounded-lg text-sm w-full cursor-pointer"
                                 value={slot.startTime}
                                 onChange={(e) => updateSlotField(slot.tempId, 'startTime', e.target.value)}
                               />
+                            </div>
 
+                            <div className="relative cursor-pointer w-full" onClick={() => document.getElementById(`end-${slot.tempId}`)?.showPicker()}>
                               <Input
+                                id={`end-${slot.tempId}`}
                                 type="time"
-                                className="h-9 bg-white rounded-lg text-sm w-full text-center"
+                                className="h-8 bg-white rounded-lg text-sm w-full cursor-pointer"
                                 value={slot.endTime}
                                 onChange={(e) => updateSlotField(slot.tempId, 'endTime', e.target.value)}
                               />
+                            </div>
 
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-9 w-9 rounded-lg border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100"
-                                onClick={() => handleSaveAndAddSlot(day.value)}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100"
+                              onClick={() => handleSaveAndAddSlot(day.value)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
 
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-9 w-9 rounded-lg border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500"
-                                onClick={() => removeAvailabilitySlot(slot.tempId)}
-                              >
-                                <Trash2 className="h-3 w-3" />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500"
+                              onClick={() => removeAvailabilitySlot(slot.tempId)}
+                            >
+                              <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
                           ))
@@ -1280,6 +1289,16 @@ export default function ProfilePage() {
                       </div>
                     );
                   })}
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={handleSaveAvailability}
+                      disabled={isSavingAvailability}
+                      className="bg-brand-yellow hover:bg-brand-yellow/90 text-slate-900 font-bold"
+                    >
+                      {isSavingAvailability ? 'A salvar...' : 'Salvar Disponibilidade'}
+                    </Button>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Card>

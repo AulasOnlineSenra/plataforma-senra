@@ -63,22 +63,66 @@ export async function createBookings(
     }
 
     const executeWork = async (transactionClient: any) => {
-      if (nonExperimentalCount > 0) {
-        await transactionClient.user.update({
-          where: { id: studentId },
-          data: { credits: { decrement: nonExperimentalCount } },
-        });
-      }
-
       for (const booking of bookings) {
+        const newStart = new Date(booking.start);
+        const newEnd = new Date(booking.end || new Date(new Date(booking.start).getTime() + 90 * 60 * 1000));
+
+        // Verificar conflito de horário para o ALUNO
+        const studentConflict = await transactionClient.lesson.findFirst({
+          where: {
+            studentId,
+            status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
+            OR: [
+              // Aula existente começa antes e termina depois do novo horário (sobreposição total)
+              {
+                date: { lte: newEnd },
+                endDate: { gte: newStart }
+              },
+              // Aula existente começa dentro do novo horário
+              {
+                date: { gte: newStart, lt: newEnd }
+              }
+            ]
+          }
+        });
+
+        if (studentConflict) {
+          const conflictingLesson = await transactionClient.lesson.findUnique({
+            where: { id: studentConflict.id },
+            include: { teacher: { select: { name: true } }, subject: true }
+          });
+          throw new Error(`Você já tem uma aula agendada neste horário com o professor ${conflictingLesson?.teacher?.name || 'desconhecido'}.`);
+        }
+
+        // Verificar conflito de horário para o PROFESSOR
+        const teacherConflict = await transactionClient.lesson.findFirst({
+          where: {
+            teacherId: booking.teacherId,
+            status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
+            OR: [
+              {
+                date: { lte: newEnd },
+                endDate: { gte: newStart }
+              },
+              {
+                date: { gte: newStart, lt: newEnd }
+              }
+            ]
+          }
+        });
+
+        if (teacherConflict) {
+          throw new Error("O professor já tem uma aula agendada neste horário.");
+        }
+
         await transactionClient.lesson.create({
           data: {
             id: crypto.randomUUID(),
             studentId,
             teacherId: booking.teacherId,
             subject: booking.subjectId,
-            date: booking.start,
-            endDate: booking.end,
+            date: newStart,
+            endDate: newEnd,
             isExperimental: booking.isExperimental,
             status: "CONFIRMED",
             updatedAt: new Date(),
@@ -185,63 +229,21 @@ export async function createBookings(
       ),
     );
 
-    revalidatePath("/dashboard");
+revalidatePath("/dashboard");
     revalidatePath("/dashboard/schedule");
     revalidatePath("/dashboard/minhas-aulas");
     revalidatePath("/dashboard/historico");
+    revalidatePath("/dashboard/my-subjects");
+    revalidatePath("/dashboard/student");
+    revalidatePath("/dashboard/teachers");
 
-    return { success: true };
-  } catch (error) {
-    console.error("Erro ao processar agendamentos:", error);
-    return {
-      success: false,
-      error: "Erro interno do servidor ao agendar. Tente novamente.",
-    };
-  }
-}
-
-export async function createBooking(studentId: string, booking: BookingInput) {
-  return createBookings(studentId, [booking]);
-}
-
-export async function confirmLesson(
-  lessonId: string,
-  teacherId: string,
-  meetingLink: string,
-) {
-  try {
-    const cleanedLink = meetingLink.trim();
-    if (!cleanedLink) {
-      return {
-        success: false,
-        error: "Informe um link do Google Meet valido.",
-      };
+return { success: true, data: updatedLesson };
+  } catch (error: any) {
+    console.error("Erro ao agendar aula:", error);
+    // Verificar se é um erro de conflito de horário
+    if (error.message?.includes("já tem uma aula")) {
+      return { success: false, error: error.message };
     }
-
-    const lesson = await prisma.lesson.findFirst({
-      where: { id: lessonId, teacherId },
-    });
-
-    if (!lesson) {
-      return {
-        success: false,
-        error: "Aula não encontrada para este professor.",
-      };
-    }
-
-    const updatedLesson = await prisma.lesson.update({
-      where: { id: lessonId },
-      data: { status: "CONFIRMED", meetingLink: cleanedLink },
-    });
-
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/schedule");
-    revalidatePath("/dashboard/minhas-aulas");
-    revalidatePath("/dashboard/historico");
-
-    return { success: true, data: updatedLesson };
-  } catch (error) {
-    console.error("Erro ao confirmar aula:", error);
     return { success: false, error: "Não foi possivel confirmar a aula." };
   }
 }
@@ -271,11 +273,54 @@ export async function getLessonsForUser(userId: string, role: string) {
     const lessons = await prisma.lesson.findMany({
       where,
       orderBy: { date: "asc" },
-      include: {
+      select: {
+        id: true,
+        subject: true,
+        customTitle: true,
+        materials: true,
+        status: true,
+        date: true,
+        endDate: true,
         student: { select: { id: true, name: true, email: true, avatarUrl: true } },
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true, videoUrl: true } },
       },
     });
+
+    const now = new Date();
+    const lessonsToUpdate = lessons.filter((lesson) => {
+      const lessonEndDate = lesson.endDate ? new Date(lesson.endDate) : new Date(lesson.date.getTime() + 90 * 60 * 1000);
+      return (
+        lesson.status !== "COMPLETED" &&
+        lesson.status !== "CANCELLED" &&
+        lessonEndDate < now
+      );
+    });
+
+    if (lessonsToUpdate.length > 0) {
+      await prisma.lesson.updateMany({
+        where: {
+          id: { in: lessonsToUpdate.map((l) => l.id) },
+        },
+        data: {
+          status: "COMPLETED",
+        },
+      });
+
+      const nonExperimentalLessons = lessonsToUpdate.filter(l => !l.isExperimental);
+      if (nonExperimentalLessons.length > 0) {
+        const studentIds = [...new Set(nonExperimentalLessons.map(l => l.studentId))];
+        await prisma.user.updateMany({
+          where: { id: { in: studentIds } },
+          data: { credits: { decrement: nonExperimentalLessons.length } },
+        });
+      }
+
+      lessons.forEach((lesson) => {
+        if (lessonsToUpdate.some((l) => l.id === lesson.id)) {
+          lesson.status = "COMPLETED";
+        }
+      });
+    }
 
     return { success: true, data: lessons };
   } catch (error) {
@@ -286,6 +331,8 @@ export async function getLessonsForUser(userId: string, role: string) {
 
 export type LessonUpdateData = {
   subject?: string;
+  customTitle?: string;
+  materials?: string;
   date?: Date;
   endDate?: Date;
   teacherId?: string;
@@ -304,13 +351,20 @@ export async function updateLesson(lessonId: string, data: LessonUpdateData) {
     }
 
     if (existingLesson.status === "COMPLETED" || existingLesson.status === "CANCELLED") {
-      return { success: false, error: "Não é possível editar aulas já concluídas ou canceladas." };
+      // Permite editar apenas o customTitle ou materials em aulas concluídas
+      const allowedKeys = ['customTitle', 'materials'];
+      const hasOnlyAllowedChanges = Object.keys(data).every(key => allowedKeys.includes(key));
+      if (!hasOnlyAllowedChanges) {
+        return { success: false, error: "Não é possível editar aulas já concluídas ou canceladas." };
+      }
     }
 
     const updatedLesson = await prisma.lesson.update({
       where: { id: lessonId },
       data: {
         ...(data.subject && { subject: data.subject }),
+        ...(data.customTitle !== undefined && { customTitle: data.customTitle }),
+        ...(data.materials !== undefined && { materials: data.materials }),
         ...(data.date && { date: data.date }),
         ...(data.endDate && { endDate: data.endDate }),
         ...(data.teacherId && { teacherId: data.teacherId }),

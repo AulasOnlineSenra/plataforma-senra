@@ -67,7 +67,7 @@ const LoginForm = ({
   return (
     <div className="w-full animate-in fade-in slide-in-from-right-8 duration-500">
       
-      <div className="flex items-center justify-start mb-6">
+      <div className="flex items-center justify-start mb-6 mt-[-90px]">
           <Button
             onClick={onBack}
             variant="ghost"
@@ -77,11 +77,11 @@ const LoginForm = ({
           </Button>
       </div>
 
-      <div className="text-center mb-8">
-         <h1 className="text-2xl font-bold font-headline mb-2 text-slate-900">
+    <div className="text-center mb-8 pt-[15px]">
+         <h1 className="text-2xl font-bold font-headline mb-1 text-slate-900">
             Login como <span className="text-amber-500">{rolePortuguese[role]}</span>
          </h1>
-         <p className="text-slate-500 text-sm">
+        <p className="text-slate-500 text-sm">
             Bem-vindo de volta! Insira suas credenciais.
          </p>
       </div>
@@ -100,12 +100,6 @@ const LoginForm = ({
           />
         </div>
         <div className="grid gap-2 relative">
-          <div className="flex items-center justify-between mb-1">
-             <Label htmlFor="password" className="font-bold text-slate-700">Senha</Label>
-             <Link href="/forgot-password" className="text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline">
-                Esqueci minha senha
-             </Link>
-          </div>
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
@@ -122,9 +116,14 @@ const LoginForm = ({
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </Button>
+          <div className="-mt-2 ml-1">
+            <Link href="/forgot-password" className="text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline">
+              Esqueci minha senha
+            </Link>
+          </div>
         </div>
         
-        <Button 
+        <Button
             type="submit" 
             className="h-12 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-lg shadow-amber-500/20 text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
@@ -132,7 +131,7 @@ const LoginForm = ({
         </Button>
       </form>
 
-      <div className="relative my-8">
+      <div className="relative my-8 mt-[6px]">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-slate-200" />
         </div>
@@ -141,14 +140,14 @@ const LoginForm = ({
         </div>
       </div>
 
-      <div className="grid gap-4">
+    <div className="grid gap-4">
         <Button variant="outline" className="h-12 w-full rounded-xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 font-medium text-slate-600">
             <GoogleIcon className="mr-3 h-5 w-5" />
             Google
         </Button>
       </div>
 
-      <div className="mt-8 text-center text-sm text-slate-500">
+      <div className="mt-2 text-center text-sm text-slate-500">
         Não tem uma conta?{' '}
         <Link href={`/register?role=${role}`} className="text-amber-600 font-bold hover:underline underline-offset-4">
           Criar conta agora
@@ -162,7 +161,7 @@ const RoleSelection = ({ onSelectRole }: { onSelectRole: (role: UserRole) => voi
   return (
   <div className="w-full animate-in fade-in zoom-in-95 duration-500">
     <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold font-headline text-slate-900 mb-2">
+        <h1 className="text-2xl font-bold font-headline text-slate-900 mb-1">
             Como você deseja acessar?
         </h1>
         <p className="text-slate-500 text-sm">
@@ -170,7 +169,7 @@ const RoleSelection = ({ onSelectRole }: { onSelectRole: (role: UserRole) => voi
         </p>
     </div>
 
-    <div className="grid gap-4">
+    <div className="grid gap-4 mt-[-10px]">
         <Button 
             onClick={() => onSelectRole('teacher')} 
             className="h-14 w-full rounded-xl bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-1 text-lg flex items-center justify-start px-6 gap-4 group"
@@ -194,7 +193,7 @@ const RoleSelection = ({ onSelectRole }: { onSelectRole: (role: UserRole) => voi
          <Button 
             onClick={() => onSelectRole('admin')} 
             variant="outline"
-            className="h-14 w-full rounded-xl border-2 border-slate-100 hover:border-amber-400 hover:bg-amber-50 text-slate-600 font-bold transition-all text-base flex items-center justify-start px-6 gap-4"
+            className="h-14 w-full rounded-xl border-2 border-slate-100 hover:border-amber-400 hover:bg-amber-50 text-slate-600 font-bold transition-all text-base flex items-center justify-start px-6 gap-4 shadow-lg"
         >
             Sou Administrador
         </Button>
@@ -277,9 +276,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full bg-slate-50">
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 relative">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8 pt-[47px] relative">
 
-      <div className="absolute top-6 left-6 md:top-10 md:left-10 z-10"> 
+      <div className="absolute top-2 left-1 md:top-2 md:left-0.5 z-10"> 
           <Button 
             asChild
             variant="ghost"
@@ -294,11 +293,11 @@ export default function LoginPage() {
       </div>
 
         <div className="w-full max-w-md">
-            <div className="flex justify-center mb-8">
-                <SenraLogo />
-            </div>
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 py-[11px] md:py-[15px] px-8 md:px-10 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>
+                <div className="flex justify-center mt-6 mb-6">
+                    <SenraLogo />
+                </div>
                 {role ? (
                     <LoginForm
                         role={role}

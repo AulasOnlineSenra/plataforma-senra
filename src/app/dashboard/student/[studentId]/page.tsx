@@ -10,10 +10,18 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock, Video, GraduationCap, UserCircle } from 'lucide-react';
+import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock, Video, GraduationCap, UserCircle, File, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -30,6 +38,7 @@ import { cn } from '@/lib/utils';
 
 // MOTOR DO BANCO PARA BUSCAR O ALUNO/PROFESSOR
 import { getUserById } from '@/app/actions/users';
+import { getLessonsForUser, updateLesson } from '@/app/actions/bookings';
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -51,7 +60,7 @@ function formatBirthDate(value?: string | Date | null): string {
 
 function StudentDetailPageComponent() {
     const params = useParams();
-    const studentId = params.studentId as string;
+    const studentId = params?.studentId as string;
     const router = useRouter();
     const { toast } = useToast();
 
@@ -67,6 +76,135 @@ function StudentDetailPageComponent() {
     const [editedDescription, setEditedDescription] = useState('');
     const [isFileUploadDialogOpen, setIsFileUploadDialogOpen] = useState(false);
     const [selectedClassForMaterial, setSelectedClassForMaterial] = useState<ScheduleEvent | null>(null);
+
+    // Estados para aulas
+    const [lessons, setLessons] = useState<any[]>([]);
+    const [loadingLessons, setLoadingLessons] = useState(true);
+    const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+    const [editedTitleText, setEditedTitleText] = useState('');
+    const [uploadingLessonId, setUploadingLessonId] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
+
+    // Helper to parse materials JSON
+    const parseMaterials = (materialsStr: string | null): any[] => {
+        if (!materialsStr) return [];
+        try {
+            return JSON.parse(materialsStr);
+        } catch {
+            return [];
+        }
+    };
+
+    // Handle file selection
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Max 5MB
+            if (file.size > 5 * 1024 * 1024) {
+                toast({
+                    title: 'Arquivo muito grande',
+                    description: 'O arquivo deve ter no máximo 5MB.',
+                    className: 'bg-red-600 text-white border-none'
+                });
+                return;
+            }
+            setSelectedFile(file);
+        }
+    };
+
+    // Upload file to lesson
+    const handleUploadFile = async () => {
+        if (!selectedFile || !selectedClassForMaterial) return;
+        
+        setUploadingFile(true);
+        
+        try {
+            // Read file as base64
+            const reader = new FileReader();
+            const fileData = await new Promise<string>((resolve, reject) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(selectedFile!);
+            });
+            
+            // Get current materials
+            const currentMaterials = parseMaterials(selectedClassForMaterial.materials);
+            
+            // Add new material
+            const newMaterial = {
+                id: Date.now().toString(),
+                name: selectedFile.name,
+                type: selectedFile.type,
+                url: fileData,
+                uploadedAt: new Date().toISOString()
+            };
+            
+            const updatedMaterials = [...currentMaterials, newMaterial];
+
+            // Find the lesson in the lessons array
+            const lessonToUpdate = lessons.find(l => l.id === selectedClassForMaterial.id);
+            
+            // Update lesson in database
+            const result = await updateLesson(selectedClassForMaterial.id, {
+                materials: JSON.stringify(updatedMaterials)
+            });
+            
+            if (result.success) {
+                // Update local state
+                setLessons(lessons.map(l => 
+                    l.id === selectedClassForMaterial.id 
+                        ? { ...l, materials: JSON.stringify(updatedMaterials) }
+                        : l
+                ));
+                
+                toast({
+                    title: 'Arquivo Enviado!',
+                    description: `${selectedFile.name} foi adicionado à aula.`,
+                    className: 'bg-emerald-600 text-white border-none'
+                });
+            }
+            
+            setSelectedFile(null);
+            setIsFileUploadDialogOpen(false);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            toast({
+                title: 'Erro ao enviar arquivo',
+                description: 'Tente novamente com um arquivo menor.',
+                className: 'bg-red-600 text-white border-none'
+            });
+        } finally {
+            setUploadingFile(false);
+        }
+    };
+
+    // Delete material from lesson
+    const handleDeleteMaterial = async (lessonId: string, materialId: string) => {
+        const lesson = lessons.find(l => l.id === lessonId);
+        if (!lesson) return;
+
+        const currentMaterials = parseMaterials(lesson.materials);
+        const updatedMaterials = currentMaterials.filter((m: any) => m.id !== materialId);
+
+        const result = await updateLesson(lessonId, {
+            materials: JSON.stringify(updatedMaterials)
+        });
+
+        if (result.success) {
+            setLessons(lessons.map(l => 
+                l.id === lessonId 
+                    ? { ...l, materials: JSON.stringify(updatedMaterials) }
+                    : l
+            ));
+            
+            toast({
+                title: 'Arquivo Removido!',
+                description: 'O material foi excluído da aula.',
+                className: 'bg-slate-600 text-white border-none'
+            });
+        }
+    };
 
     useEffect(() => {
         const updateData = async () => {
@@ -119,6 +257,33 @@ function StudentDetailPageComponent() {
           .filter(baseFilter)
           .sort((a, b) => a.start.getTime() - b.start.getTime());
     }, [schedule, student, currentUser]);
+
+    // Carregar aulas do aluno
+    useEffect(() => {
+        const loadStudentLessons = async () => {
+            const result = await getLessonsForUser(studentId, 'student');
+            if (result.success && result.data) {
+                setLessons(result.data);
+            }
+            setLoadingLessons(false);
+        };
+        if (studentId) loadStudentLessons();
+    }, [studentId]);
+
+    // Aulas concluídas do aluno
+    const completedLessons = useMemo(() => {
+        return lessons
+            .filter((l: any) => l.status === 'COMPLETED')
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [lessons]);
+
+    const formatDateTimeLesson = (lesson: any) => {
+        const startDate = new Date(lesson.date);
+        const endDate = lesson.endDate ? new Date(lesson.endDate) : new Date(startDate.getTime() + 90 * 60 * 1000);
+        const startFormatted = format(startDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+        const endFormatted = format(endDate, "HH:mm");
+        return `${startFormatted} - ${endFormatted}`;
+    };
 
     const completedClasses = useMemo(() => {
         if (!student || !currentUser) return [];
@@ -277,7 +442,8 @@ function StudentDetailPageComponent() {
                     <span className="text-slate-900 font-bold">{student.name}</span>
                 </div>
                 
-                {/* HEADER DO PERFIL */}
+                {/* HEADER DO PERFIL - OCULTO */}
+                {/*}
                 <header className='relative flex flex-col md:flex-row md:items-center gap-6 rounded-3xl p-8 bg-white border border-slate-200 shadow-sm overflow-hidden'>
                     <div className="absolute top-0 left-0 w-2 h-full bg-brand-yellow"></div>
                     <Avatar className="h-24 w-24 border-4 border-white shadow-md">
@@ -287,7 +453,6 @@ function StudentDetailPageComponent() {
                     <div>
                         <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">{student.name}</h1>
                         <div className="flex gap-3 items-center mt-2">
-                            {/* Tag de Papel */}
                             <Badge variant="secondary" className="px-3 py-1 text-sm bg-slate-100 text-slate-600 border-none rounded-full">
                                 {student.role === 'teacher' ? <><GraduationCap className="w-4 h-4 mr-1"/> Professor</> : <><UserCircle className="w-4 h-4 mr-1"/> Aluno</>}
                             </Badge>
@@ -296,17 +461,189 @@ function StudentDetailPageComponent() {
                                 {student.status === 'active' ? 'Ativo' : (student.status === 'pending' ? 'Pendente' : 'Inativo')}
                             </Badge>
                             
-                            {/* TAG DE CRÉDITOS APENAS PARA ALUNOS */}
                             {student.role !== 'teacher' && (
                                 <Badge variant="outline" className="bg-amber-100 text-amber-800 border-none px-3 py-1 text-sm shadow-none font-bold rounded-full">
-                                    {student.credits || 0} Créditos
+                                    {Math.max(0, student.credits || 0)} Créditos
                                 </Badge>
                             )}
                         </div>
-                    </div>
+</div>
                 </header>
-                
-                {/* DADOS CADASTRAIS */}
+
+                {/* Container de Aulas - Apenas para professor/admin */}
+                {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
+                <div className="ml-28 mr-10">
+                    <h2 className="font-headline text-xl md:text-2xl font-bold mb-4 flex items-center gap-2 ml-0">
+                        <GraduationCap className="h-6 w-6" />
+                        Aulas
+                    </h2>
+
+                    {loadingLessons ? (
+                        <Card>
+                            <CardContent className="p-6 text-center text-muted-foreground">
+                                <p>Carregando...</p>
+                            </CardContent>
+                        </Card>
+                    ) : completedLessons.length === 0 ? (
+                        <Card>
+                            <CardContent className="p-6 text-center text-muted-foreground">
+                                <p>Nenhuma aula realizada.</p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-16"></TableHead>
+                                            <TableHead className="w-16"></TableHead>
+                                            <TableHead></TableHead>
+                                            <TableHead className="w-20"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {completedLessons.map((lesson: any, index: number) => (
+                                            <TableRow key={lesson.id} className="-mt-10 -mb-10">
+                                                <TableCell className="font-bold text-muted-foreground w-16 text-2xl py-0">
+                                                    {completedLessons.length - index}
+                                                </TableCell>
+                                                <TableCell className="w-16">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={lesson.student?.avatarUrl || undefined} alt={lesson.student?.name} />
+                                                        <AvatarFallback>{lesson.student?.name?.charAt(0) || 'A'}</AvatarFallback>
+                                                    </Avatar>
+                                                </TableCell>
+                                                <TableCell className="pt-10">
+                                                    {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') ? (
+                                                        <div className="mb-1">
+                                                            {editingLessonId === lesson.id ? (
+                                                                <input
+                                                                    type="text"
+                                                                    value={editedTitleText}
+                                                                    onChange={(e) => setEditedTitleText(e.target.value)}
+                                                                    onBlur={async () => {
+                                                                        if (editedTitleText.trim()) {
+                                                                            const result = await updateLesson(lesson.id, { customTitle: editedTitleText.trim() });
+                                                                            if (result.success) {
+                                                                                setLessons(lessons.map(l => l.id === lesson.id ? { ...l, customTitle: editedTitleText.trim() } : l));
+                                                                                router.refresh();
+                                                                            }
+                                                                        }
+                                                                        setEditingLessonId(null);
+                                                                    }}
+                                                                    onKeyDown={async (e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            const newTitle = editedTitleText.trim();
+                                                                            console.log('[DEBUG] Salvando título:', newTitle);
+                                                                            if (newTitle) {
+                                                                                const result = await updateLesson(lesson.id, { customTitle: newTitle });
+                                                                                console.log('[DEBUG] Resultado:', result);
+                                                                                if (result.success) {
+                                                                                    setLessons(lessons.map(l => l.id === lesson.id ? { ...l, customTitle: newTitle } : l));
+                                                                                    router.refresh();
+                                                                                }
+                                                                            }
+                                                                            setEditingLessonId(null);
+                                                                        }
+                                                                    }}
+                                                                    className="bg-amber-50 border border-amber-300 rounded px-1 py-0.5 text-2xl text-amber-600 w-full"
+                                                                    autoFocus
+                                                                />
+                                                            ) : (
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-2xl text-amber-600">
+                                                                        {lesson.customTitle || lesson.subject || 'Adicionar título da aula'}
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setEditingLessonId(lesson.id);
+                                                                            setEditedTitleText(lesson.customTitle || lesson.subject || '');
+                                                                        }}
+                                                                        className="text-amber-600 hover:text-amber-800 cursor-pointer"
+                                                                    >
+                                                                        <Edit className="h-4 w-4" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+) : (
+                                                        <div className="mb-1">
+                                                            <span className="text-2xl text-amber-600">
+                                                                {lesson.customTitle || lesson.subject || ''}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="mt-1">
+                                                        <span className="font-medium text-xs">{lesson.student?.name || '-'}</span>
+                                                        <span className="text-muted-foreground"> - </span>
+                                                        <span className="text-muted-foreground text-xs">{formatDateTimeLesson(lesson)}</span>
+                                                    </div>
+                                                    {lesson.materials && parseMaterials(lesson.materials).length > 0 && (
+                                                        <div className="mt-2 flex flex-wrap gap-2">
+                                                            {parseMaterials(lesson.materials).map((material: any) => (
+                                                                <div key={material.id} className="flex items-center gap-1">
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            if (material.url.startsWith('data:')) {
+                                                                                const byteCharacters = atob(material.url.split(',')[1]);
+                                                                                const byteNumbers = new Array(byteCharacters.length);
+                                                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                                                }
+                                                                                const byteArray = new Uint8Array(byteNumbers);
+                                                                                const blob = new Blob([byteArray], { type: material.type });
+                                                                                const url = URL.createObjectURL(blob);
+                                                                                window.open(url, '_blank');
+                                                                            } else {
+                                                                                window.open(material.url, '_blank');
+                                                                            }
+                                                                        }}
+                                                                        className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 cursor-pointer"
+                                                                    >
+                                                                        <File className="h-3 w-3" />
+                                                                        {material.name}
+                                                                    </button>
+                                                                    {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
+                                                                        <button
+                                                                            onClick={() => handleDeleteMaterial(lesson.id, material.id)}
+                                                                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                                        >
+                                                                            <X className="h-3 w-3" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
+                                                    <TableCell className="pt-10 text-right">
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="icon" 
+                                                            className="rounded-xl border-slate-200 text-slate-500 hover:bg-slate-50 h-8 w-8"
+                                                            onClick={() => {
+                                                                setSelectedClassForMaterial(lesson);
+                                                                setIsFileUploadDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                            <span className="sr-only">Adicionar Material</span>
+                                                        </Button>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+                )}
+
+                {currentUser?.role === "admin" && (
                 <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5 pt-6 px-8">
                         <CardTitle className="text-xl text-slate-800">Dados Cadastrais</CardTitle>
@@ -356,25 +693,26 @@ function StudentDetailPageComponent() {
                         )}
                     </CardContent>
                 </Card>
+                )}
 
-                {/* TABS DE AULAS E SIMULADOS */}
-                <Tabs defaultValue="classes" className="w-full mt-2">
+                {/* TABS DE AULAS E SIMULADOS - OCULTO */}
+                {/*
+                <Tabs defaultValue="completed" className="w-full mt-2">
                 <TabsList className="grid w-full grid-cols-3 bg-slate-100/80 p-1.5 rounded-2xl">
-                    <TabsTrigger value="classes" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-900 font-bold text-slate-500 py-2.5 transition-all">
+                    <TabsTrigger value="classes" className="rounded-xl data-[state=active]:bg-[#0f172a] data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-slate-500 py-2.5 transition-all">
                         <CalendarCheck className="mr-2 h-4 w-4" />
                         Aulas Agendadas
                     </TabsTrigger>
-                    <TabsTrigger value="completed" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-900 font-bold text-slate-500 py-2.5 transition-all">
+                    <TabsTrigger value="completed" className="rounded-xl data-[state=active]:bg-[#0f172a] data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-slate-500 py-2.5 transition-all">
                         <BookOpen className="mr-2 h-4 w-4" />
                         Aulas Realizadas
                     </TabsTrigger>
-                    <TabsTrigger value="simulations" disabled={student.role === 'teacher'} className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-900 font-bold text-slate-500 py-2.5 transition-all disabled:opacity-50">
+                    <TabsTrigger value="simulations" disabled={student.role === 'teacher'} className="rounded-xl data-[state=active]:bg-[#0f172a] data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-slate-500 py-2.5 transition-all disabled:opacity-50">
                         <BookCopy className="mr-2 h-4 w-4" />
                         Simulados
                     </TabsTrigger>
                 </TabsList>
 
-                {/* TAB DE AULAS AGENDADAS */}
                 <TabsContent value="classes" className="mt-6">
                     <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5 pt-6 px-8">
@@ -409,40 +747,38 @@ function StudentDetailPageComponent() {
                     </Card>
                 </TabsContent>
 
-                {/* TAB DE AULAS REALIZADAS */}
                 <TabsContent value="completed" className="mt-6">
                     <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5 pt-6 px-8">
-                            <CardTitle className="text-xl text-slate-800">Histórico de Aulas Realizadas</CardTitle>
-                            <CardDescription className="text-slate-500">Aulas que já foram concluídas com {student.name}.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4 pt-6 px-8 pb-8">
-                            {completedClasses.length > 0 ? (
-                                completedClasses.map(c => (
-                                    <div key={c.id} className="flex items-start justify-between rounded-2xl border border-slate-100 p-6 bg-white shadow-sm hover:shadow-md transition-all">
-                                        <div className="flex-1">
-                                            <p className="font-extrabold text-xl text-slate-900 tracking-tight">{c.title}</p>
-                                            {c.description && <p className="text-sm font-medium text-slate-500 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100">{c.description}</p>}
-                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-bold mt-4 border border-emerald-100">
-                                                <Check className="h-4 w-4" />
-                                                {c.subject} • Concluída em {format(c.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                            </div>
+                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5 pt-6 px-8">
+                        <CardTitle className="text-xl text-slate-800">Histórico de Aulas Realizadas</CardTitle>
+                        <CardDescription className="text-slate-500">Aulas que já foram concluídas com {student.name}.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-6 px-8 pb-8">
+                        {completedClasses.length > 0 ? (
+                            completedClasses.map(c => (
+                                <div key={c.id} className="flex items-start justify-between rounded-2xl border border-slate-100 p-6 bg-white shadow-sm hover:shadow-md transition-all">
+                                    <div className="flex-1">
+                                        <p className="font-extrabold text-xl text-slate-900 tracking-tight">{c.title}</p>
+                                        {c.description && <p className="text-sm font-medium text-slate-500 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100">{c.description}</p>}
+                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-bold mt-4 border border-emerald-100">
+                                            <Check className="h-4 w-4" />
+                                            {c.subject} • Concluída em {format(c.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                         </div>
-                                        {renderClassActions(c)}
                                     </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-16 text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                                    <BookOpen className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-                                    <p className="font-bold text-lg text-slate-600">Histórico vazio.</p>
-                                    <p className="text-slate-500 mt-1">Nenhuma aula foi concluída com este usuário ainda.</p>
+                                    {renderClassActions(c)}
                                 </div>
-                            )}
-                        </CardContent>
+                            ))
+                        ) : (
+                            <div className="text-center py-16 text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                                <BookOpen className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+                                <p className="font-bold text-lg text-slate-600">Histórico vazio.</p>
+                                <p className="text-slate-500 mt-1">Nenhuma aula foi concluída com este usuário ainda.</p>
+                            </div>
+                        )}
+                    </CardContent>
                     </Card>
                 </TabsContent>
 
-                {/* TAB DE SIMULADOS (Somente para Alunos) */}
                 {student.role !== 'teacher' && (
                     <TabsContent value="simulations" className="mt-6">
                         <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
@@ -502,6 +838,7 @@ function StudentDetailPageComponent() {
                     </TabsContent>
                 )}
                 </Tabs>
+                */}
             </div>
 
             {/* MODAL EDITAR AULA */}
@@ -530,34 +867,56 @@ function StudentDetailPageComponent() {
                 </DialogContent>
             </Dialog>
 
-            {/* MODAL ANEXAR ARQUIVO */}
-             <Dialog open={isFileUploadDialogOpen} onOpenChange={setIsFileUploadDialogOpen}>
-                <DialogContent className="sm:max-w-md rounded-3xl border-slate-100 shadow-2xl p-8">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-slate-900">Anexar Material</DialogTitle>
-                        <DialogDescription className="text-slate-500 mt-1">Anexe um arquivo para a aula de <span className="font-bold text-slate-700">{selectedClassForMaterial?.subject}</span>.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-5 py-4">
-                        <div className="grid gap-3">
-                            <Label htmlFor="file-upload" className="font-bold text-slate-700">Selecione o arquivo</Label>
-                            <div className="flex items-center gap-3">
-                                <Input id="file-upload" type="file" className="flex-1 cursor-pointer h-12 rounded-xl border-slate-200 file:bg-slate-100 file:text-slate-700 file:border-0 file:rounded-lg file:px-4 file:py-1 hover:file:bg-slate-200"/>
-                                <Button size="icon" variant="outline" className="h-12 w-12 rounded-xl border-slate-200 text-slate-500"><UploadCloud className="h-5 w-5" /></Button>
-                            </div>
-                            <p className="text-xs font-medium text-slate-400">Suporta PDFs, planilhas, vídeos e imagens.</p>
-                        </div>
-                    </div>
-                    <DialogFooter className="mt-4 gap-3 sm:gap-0">
-                        <DialogClose asChild>
-                            <Button variant="ghost" className="rounded-xl font-bold text-slate-500 hover:text-slate-700 h-11">Cancelar</Button>
-                        </DialogClose>
-                         <Button className="h-11 rounded-xl bg-brand-yellow px-6 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90" onClick={() => {
-                            toast({ title: 'Arquivo Anexado!', description: 'O material foi adicionado à aula.', className: 'bg-emerald-600 text-white border-none' });
-                            setIsFileUploadDialogOpen(false);
-                         }}>Fazer Upload</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+{/* MODAL ANEXAR ARQUIVO */}
+             <Dialog open={isFileUploadDialogOpen} onOpenChange={(open) => {
+                 setIsFileUploadDialogOpen(open);
+                 if (!open) setSelectedFile(null);
+             }}>
+                 <DialogContent className="sm:max-w-md rounded-3xl border-slate-100 shadow-2xl p-8">
+                     <DialogHeader>
+                         <DialogTitle className="text-2xl font-bold text-slate-900">Anexar Material</DialogTitle>
+                         <DialogDescription className="text-slate-500 mt-1">Anexe um arquivo para a aula de <span className="font-bold text-slate-700">{selectedClassForMaterial?.subject}</span>.</DialogDescription>
+                     </DialogHeader>
+                     <div className="grid gap-5 py-4">
+                         <div className="grid gap-3">
+                             <Label htmlFor="file-upload" className="font-bold text-slate-700">Selecione o arquivo</Label>
+                             <div className="flex items-center gap-3">
+                                 <Input 
+                                    id="file-upload" 
+                                    type="file" 
+                                    onChange={handleFileSelect}
+                                    className="flex-1 cursor-pointer h-12 rounded-xl border-slate-200 file:bg-slate-100 file:text-slate-700 file:border-0 file:rounded-lg file:px-4 file:py-1 hover:file:bg-slate-200"
+                                 />
+                             </div>
+                             {selectedFile && (
+                                 <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                                     <File className="h-5 w-5 text-amber-600" />
+                                     <span className="text-sm font-medium text-amber-700 flex-1">{selectedFile.name}</span>
+                                     <button 
+                                        onClick={() => setSelectedFile(null)}
+                                        className="text-amber-600 hover:text-amber-800"
+                                     >
+                                         <X className="h-4 w-4" />
+                                     </button>
+                                 </div>
+                             )}
+                             <p className="text-xs font-medium text-slate-400">Suporta PDFs, planilhas e imagens. Tamanho máx: 5MB.</p>
+                         </div>
+                     </div>
+                     <DialogFooter className="mt-4 gap-3 sm:gap-0">
+                         <DialogClose asChild>
+                             <Button variant="ghost" className="rounded-xl font-bold text-slate-500 hover:text-slate-700 h-11">Cancelar</Button>
+                         </DialogClose>
+                          <Button 
+                            className="h-11 rounded-xl bg-brand-yellow px-6 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90" 
+                            onClick={handleUploadFile}
+                            disabled={!selectedFile || uploadingFile}
+                          >
+                              {uploadingFile ? 'Enviando...' : 'Fazer Upload'}
+                          </Button>
+                     </DialogFooter>
+                 </DialogContent>
+             </Dialog>
         </>
     );
 }

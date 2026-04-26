@@ -173,3 +173,22 @@ export async function dislikePost(id: string) {
     return { success: false, error: 'Falha ao processar dislike.' };
   }
 }
+
+export async function getOtherPosts(currentPostId: string, limit: number = 30) {
+  try {
+    const posts = await prisma.blogPost.findMany({
+      where: { 
+        published: true,
+        id: { not: currentPostId }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    
+    const shuffled = posts.sort(() => Math.random() - 0.5);
+    return { success: true, data: shuffled };
+  } catch (error) {
+    console.error('Erro ao buscar outros posts:', error);
+    return { success: false, error: 'Falha ao buscar outros posts.' };
+  }
+}

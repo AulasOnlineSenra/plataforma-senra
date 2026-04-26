@@ -74,14 +74,16 @@ model Lesson {
   studentId                   String
   teacherId                   String
   subject                     String
+  customTitle                 String?
   date                        DateTime
   endDate                     DateTime @default(now())
   status                      String   @default("CONFIRMED")
   meetingLink                 String?
-  price                       Float?
+  price                      Float?
   isExperimental              Boolean  @default(false)
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime
+  materials                   String?  // JSON array of material URLs
   teacher                     User     @relation("Lesson_teacherIdToUser", fields: [teacherId], references: [id])
   student                     User     @relation("Lesson_studentIdToUser", fields: [studentId], references: [id])
   Rating                      Rating[]
@@ -117,12 +119,13 @@ model Plan {
   price        Float
   durationMins Int
   isPopular    Boolean  @default(false)
+  features    String   @default("[]")  // JSON array de features
   createdAt    DateTime @default(now())
-  updatedAt    DateTime
+  updatedAt   DateTime
 }
 
 model Rating {
-  id                          String   @id
+  id                          String   @id @default(cuid())
   studentId                   String
   teacherId                   String
   lessonId                    String?
@@ -253,4 +256,18 @@ model User {
   Transaction                                        Transaction[]
   User                                               User?              @relation("UserToUser", fields: [referredById], references: [id])
   other_User                                         User[]             @relation("UserToUser")
+}
+
+model QuizQuestion {
+  id          String   @id @default(cuid())
+  question    String
+  questionPt  String?
+  type        String   @default("text")
+  options     String?  @default("[]")
+  placeholder String?
+  isRequired  Boolean  @default(false)
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

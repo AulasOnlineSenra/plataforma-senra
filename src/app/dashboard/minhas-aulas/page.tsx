@@ -24,6 +24,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const subjectMap: Record<string, string> = {
+  'default-subj-1': 'Matemática',
+  'default-subj-2': 'Português',
+  'default-subj-3': 'Física',
+  'default-subj-4': 'Redação',
+  'default-subj-5': 'História',
+  'default-subj-6': 'Química',
+  'default-subj-7': 'Espanhol',
+  'default-subj-8': 'Filosofia',
+  'default-subj-9': 'Geografia',
+  'default-subj-10': 'Inglês',
+  'default-subj-11': 'Sociologia',
+  'default-subj-12': 'Biologia',
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,6 +93,8 @@ export default function MinhasAulasPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(undefined);
   const [isClient, setIsClient] = useState(false);
+  const [highlightCompleted, setHighlightCompleted] = useState(false);
+  const [highlightCancelled, setHighlightCancelled] = useState(false);
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     setLoading(true);
@@ -107,6 +124,36 @@ export default function MinhasAulasPage() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!loading && lessons.length >= 0) {
+      const hash = window.location.hash;
+      
+      if (hash === '#completed-history') {
+        setTimeout(() => {
+          const element = document.getElementById('completed-history');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+        
+        setHighlightCompleted(true);
+        setTimeout(() => setHighlightCompleted(false), 1500);
+      }
+      
+      if (hash === '#cancelled-history') {
+        setTimeout(() => {
+          const element = document.getElementById('cancelled-history');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+        
+        setHighlightCancelled(true);
+        setTimeout(() => setHighlightCancelled(false), 1500);
+      }
+    }
+  }, [loading, lessons]);
 
   const sortedLessons = useMemo(
     () =>
@@ -157,6 +204,11 @@ export default function MinhasAulasPage() {
   const handleOpenCancelDialog = (lesson: LessonItem) => {
     setLessonToCancel(lesson);
     setIsCancelDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (lesson: LessonItem) => {
+    setLessonToDelete(lesson);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleSaveEdit = async () => {
@@ -256,7 +308,7 @@ export default function MinhasAulasPage() {
         <TableCell>
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={studentAvatar} alt={studentName} />
+              <AvatarImage src={studentAvatar || undefined} alt={studentName} />
               <AvatarFallback>{studentName.charAt(0)}</AvatarFallback>
             </Avatar>
             <span className="font-medium">{studentName}</span>
@@ -271,10 +323,22 @@ export default function MinhasAulasPage() {
             <span className="font-medium">{teacherName}</span>
           </div>
         </TableCell>
-        <TableCell>{lesson.subject}</TableCell>
+        <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
         <TableCell>
           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + (lesson.endDate ? ' - ' + format(new Date(lesson.endDate), "HH:mm") : '')}
         </TableCell>
+        {role === "admin" && (
+          <TableCell className="text-right">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleOpenDeleteDialog(lesson)}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TableCell>
+        )}
       </TableRow>
     );
   };
@@ -313,10 +377,10 @@ export default function MinhasAulasPage() {
                 futureLessons.map((lesson) => (
                   <div
                     key={lesson.id}
-                    className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+                    className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[#f5b000] hover:shadow-[0_0_20px_rgba(245,176,0,0.5)]"
                   >
                     <div className="flex flex-wrap items-center gap-4">
-                      <p className="font-semibold text-slate-900">{lesson.subject}</p>
+                      <p className="font-semibold text-slate-900">{subjectMap[lesson.subject] || lesson.subject}</p>
                       <p className="text-sm text-slate-600">
                         {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", {
                           locale: ptBR,
@@ -335,42 +399,43 @@ export default function MinhasAulasPage() {
                       </p>
                     </div>
 
-                    {lesson.teacher?.videoUrl && (
-                      <Button
-                        asChild
-                        className="rounded-2xl bg-slate-900 px-4 text-slate-50 hover:bg-slate-800"
-                      >
-                        <a
-                          href={lesson.teacher?.videoUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                    <div className="flex items-center gap-2 mt-[-8px] mb-[-8px]">
+                      {lesson.teacher?.videoUrl && (
+                        <Button
+                          asChild
+                          className="rounded-2xl bg-slate-900 px-4 text-slate-50 hover:bg-slate-800 h-8"
                         >
-                          <Video className="mr-2 h-4 w-4" />
-                          Entrar na Sala
-                          <ExternalLink className="ml-2 h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-                {canEditOrCancel(lesson) && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleOpenEditDialog(lesson)}
-                      className="rounded-2xl"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleOpenCancelDialog(lesson)}
-                      className="rounded-2xl text-red-600 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+                          <a
+                            href={lesson.teacher?.videoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Entrar na Sala
+                            <Video className="ml-2 h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                      {canEditOrCancel(lesson) && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleOpenEditDialog(lesson)}
+                            className="rounded-2xl"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleOpenCancelDialog(lesson)}
+                            className="rounded-2xl text-red-600 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
               </div>
             ))}
             </div>
@@ -406,7 +471,7 @@ export default function MinhasAulasPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl border border-slate-200 shadow-sm">
+      <Card id="completed-history" className={`rounded-3xl border-2 shadow-sm transition-all duration-500 ${highlightCompleted ? 'border-[#f5b000] bg-amber-50' : 'border-slate-200'}`}>
         <CardHeader className="border-b border-slate-200 bg-white">
           <CardTitle className="flex items-center gap-2 text-slate-900">
             <History className="h-5 w-5 text-green-600" />
@@ -430,6 +495,7 @@ export default function MinhasAulasPage() {
                     <TableHead>Professor</TableHead>
                     <TableHead>Matéria</TableHead>
                     <TableHead>Data/Hora</TableHead>
+                    {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -441,7 +507,7 @@ export default function MinhasAulasPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl border border-slate-200 shadow-sm">
+      <Card id="cancelled-history" className={`rounded-3xl border-2 shadow-sm transition-all duration-500 ${highlightCancelled ? 'border-[#f5b000] bg-amber-50' : 'border-slate-200'}`}>
         <CardHeader className="border-b border-slate-200 bg-white">
           <CardTitle className="flex items-center gap-2 text-slate-900">
             <XCircle className="h-5 w-5 text-red-600" />
@@ -489,7 +555,7 @@ export default function MinhasAulasPage() {
                           <span className="font-medium">{lesson.teacher?.name || "-"}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{lesson.subject}</TableCell>
+<TableCell>{/* Título oculto */}</TableCell>
                       <TableCell>
                         {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </TableCell>

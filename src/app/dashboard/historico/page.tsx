@@ -22,6 +22,7 @@ type LessonItem = {
 export default function HistoricoPage() {
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [highlightCompleted, setHighlightCompleted] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -34,14 +35,22 @@ export default function HistoricoPage() {
 
       const result = await getLessonsForUser(userId, role);
       if (result.success && result.data) {
-        const now = new Date();
         setLessons(
-          (result.data as LessonItem[]).filter((l) => new Date(l.date) < now),
+          (result.data as LessonItem[]).filter((l) => l.status === "COMPLETED"),
         );
       }
       setLoading(false);
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash === '#completed') {
+      setHighlightCompleted(true);
+      setTimeout(() => {
+        setHighlightCompleted(false);
+      }, 1500);
+    }
   }, []);
 
   return (
@@ -55,7 +64,7 @@ export default function HistoricoPage() {
         </p>
       </div>
 
-      <Card className="rounded-3xl border-slate-200 shadow-sm">
+      <Card id="completed" className={`rounded-3xl border-2 shadow-sm transition-all duration-500 ${highlightCompleted ? 'border-[#f5b000] bg-amber-50' : 'border-slate-200'}`}>
         <CardHeader className="border-b border-slate-200">
           <CardTitle className="flex items-center gap-2 text-slate-900">
             <History className="h-5 w-5 text-[#FFC107]" />

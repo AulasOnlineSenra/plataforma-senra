@@ -23,6 +23,7 @@ export async function createPlan(data: {
   price: number;
   durationMins: number;
   isPopular: boolean;
+  features?: string[];
 }) {
   try {
     const newPlan = await prisma.plan.create({
@@ -32,6 +33,7 @@ export async function createPlan(data: {
         price: data.price,
         durationMins: data.durationMins,
         isPopular: data.isPopular,
+        features: JSON.stringify(data.features || []),
       }
     });
     
@@ -56,5 +58,36 @@ export async function deletePlan(id: string) {
   } catch (error) {
     console.error('Erro ao deletar plano:', error);
     return { success: false, error: 'Não foi possível deletar o pacote.' };
+  }
+}
+
+// 4. Atualizar um plano
+export async function updatePlan(id: string, data: {
+  name: string;
+  lessonsCount: number;
+  price: number;
+  durationMins: number;
+  isPopular: boolean;
+  features?: string[];
+}) {
+  try {
+    const updatedPlan = await prisma.plan.update({
+      where: { id },
+      data: {
+        name: data.name,
+        lessonsCount: data.lessonsCount,
+        price: data.price,
+        durationMins: data.durationMins,
+        isPopular: data.isPopular,
+        features: data.features ? JSON.stringify(data.features) : undefined,
+      }
+    });
+    
+    revalidatePath('/dashboard/plans');
+    
+    return { success: true, data: updatedPlan };
+  } catch (error) {
+    console.error('Erro ao atualizar plano:', error);
+    return { success: false, error: 'Falha ao atualizar o plano no banco.' };
   }
 }

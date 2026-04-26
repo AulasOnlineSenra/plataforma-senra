@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminFinancials from '@/components/admin-financials';
+import TeacherFinancials from '@/components/teacher-financials';
 
 type TransactionHistory = {
   id: string;
@@ -118,7 +119,7 @@ function StudentFinancialPanel() {
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-slate-500">Créditos Disponiveis</p>
-                <p className="text-3xl font-bold text-slate-900">{creditsAvailable}</p>
+                <p className="text-3xl font-bold text-slate-900">{Math.max(0, creditsAvailable)}</p>
                 <p className="text-xs text-slate-500">Prontos para novos agendamentos.</p>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5">
@@ -233,6 +234,30 @@ function AdminFinancialPanel() {
   );
 }
 
+function TeacherFinancialPanel() {
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-slate-900">Painel Financeiro</h1>
+          <p className="text-sm text-slate-500">
+            Acompanhe seus ganhos e histórico de pagamentos.
+          </p>
+        </div>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+        />
+      </div>
+      <TeacherFinancials selectedMonth={selectedMonth} />
+    </div>
+  );
+}
+
 export default function FinanceiroPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -244,6 +269,10 @@ export default function FinanceiroPage() {
 
   if (userRole === 'admin') {
     return <AdminFinancialPanel />;
+  }
+
+  if (userRole === 'teacher') {
+    return <TeacherFinancialPanel />;
   }
 
   return <StudentFinancialPanel />;

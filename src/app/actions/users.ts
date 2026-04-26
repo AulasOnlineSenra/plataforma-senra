@@ -147,15 +147,16 @@ export async function deleteStudentProfile(studentId: string) {
   }
 }
 
-// Buscar apenas professores ativos
-export async function getTeachers() {
+// Buscar apenas professores ativos (para alunos) ou todos (para admin)
+export async function getTeachers(showAll = false) {
   try {
     revalidatePath("/dashboard/teachers");
+    const whereCondition: any = {
+      role: "teacher",
+      status: showAll ? { not: "deleted" } : "active",
+    };
     const teachers = await prisma.user.findMany({
-      where: {
-        role: "teacher",
-        status: { not: "deleted" },
-      },
+      where: whereCondition,
       orderBy: { name: "asc" },
     });
     return { success: true, data: teachers };
@@ -164,6 +165,26 @@ export async function getTeachers() {
     return {
       success: false,
       error: "Falha ao buscar professores do banco de dados.",
+    };
+  }
+}
+
+// Buscar professores pendentes para aprovação (admin)
+export async function getPendingTeachers() {
+  try {
+    const teachers = await prisma.user.findMany({
+      where: {
+        role: "teacher",
+        status: "pending",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return { success: true, data: teachers };
+  } catch (error) {
+    console.error("Erro ao buscar professores pendentes:", error);
+    return {
+      success: false,
+      error: "Falha ao buscar professores pendentes.",
     };
   }
 }
@@ -831,6 +852,7 @@ export async function saveTeacherAvailability(
       prisma.availability.deleteMany({ where: { teacherId } }),
       prisma.availability.createMany({
         data: slots.map((slot) => ({
+          id: crypto.randomUUID(),
           teacherId,
           dayOfWeek: slot.dayOfWeek,
           startTime: slot.startTime,
