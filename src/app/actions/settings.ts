@@ -19,7 +19,7 @@ export async function getSettings() {
 
     if (!settings) {
       settings = await prisma.appSetting.create({
-        data: { id: 'global' },
+        data: { id: 'global', updatedAt: new Date() },
       });
     }
 

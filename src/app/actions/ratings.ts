@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import crypto from "crypto";
 
 export async function submitRating(
   studentId: string,
@@ -28,7 +29,15 @@ export async function submitRating(
     }
 
     const rating = await prisma.rating.create({
-      data: { studentId, teacherId, score, givenBy, lessonId: lessonId || null, comment: comment?.trim() || null },
+      data: {
+        id: crypto.randomUUID(),
+        studentId,
+        teacherId,
+        score,
+        givenBy,
+        lessonId: lessonId || null,
+        comment: comment?.trim() || null
+      },
     });
     return { success: true, data: rating };
   } catch (error) {

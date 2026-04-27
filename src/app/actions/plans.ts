@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
 
 // 1. Buscar todos os planos
 export async function getPlans() {
@@ -28,17 +29,20 @@ export async function createPlan(data: {
   try {
     const newPlan = await prisma.plan.create({
       data: {
+        id: crypto.randomUUID(),
         name: data.name,
         lessonsCount: data.lessonsCount,
         price: data.price,
         durationMins: data.durationMins,
         isPopular: data.isPopular,
         features: JSON.stringify(data.features || []),
+        updatedAt: new Date(),
       }
     });
     
     // Avisa o Next.js para atualizar a tela de planos
     revalidatePath('/dashboard/plans'); 
+    revalidatePath('/dashboard/admin/packages');
     
     return { success: true, data: newPlan };
   } catch (error) {
@@ -54,6 +58,7 @@ export async function deletePlan(id: string) {
       where: { id }
     });
     revalidatePath('/dashboard/plans');
+    revalidatePath('/dashboard/admin/packages');
     return { success: true };
   } catch (error) {
     console.error('Erro ao deletar plano:', error);
@@ -84,6 +89,7 @@ export async function updatePlan(id: string, data: {
     });
     
     revalidatePath('/dashboard/plans');
+    revalidatePath('/dashboard/admin/packages');
     
     return { success: true, data: updatedPlan };
   } catch (error) {

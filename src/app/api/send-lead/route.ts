@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import crypto from 'crypto';
 
 // Validação com Zod
 const leadSchema = z.object({
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
     // 2. Salvar no Banco de Dados (Prioridade Máxima)
     const newLead = await prisma.lead.create({
       data: {
+        id: crypto.randomUUID(),
         email,
         name: name || null,
         phone: phone || null,

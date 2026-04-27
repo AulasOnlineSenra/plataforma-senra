@@ -7,7 +7,15 @@ import {
   sendChatMessage,
 } from "@/app/actions/chat";
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Proteção básica para produção: apenas a Vercel pode chamar este endpoint via Cron
+  if (process.env.NODE_ENV === 'production') {
+    const cronHeader = request.headers.get('x-vercel-cron');
+    if (!cronHeader) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
+  }
+
   try {
     const result = await getDueScheduledMessages();
 

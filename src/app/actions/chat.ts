@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import crypto from "crypto";
 
 type SendMessageInput = {
   senderId: string;
@@ -169,6 +170,7 @@ export async function createScheduledMessage(input: CreateScheduledInput) {
 
     const message = await prisma.scheduledMessage.create({
       data: {
+        id: crypto.randomUUID(),
         senderId: input.senderId,
         receiverId: input.receiverId,
         content,
@@ -330,6 +332,7 @@ export async function sendPaymentChatToAdmins(
       try {
         await prisma.chatMessage.create({
           data: {
+            id: crypto.randomUUID(),
             senderId: studentId,
             receiverId: admin.id,
             content: messageContent,

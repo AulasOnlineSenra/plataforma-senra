@@ -1,6 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
+import crypto from 'crypto';
 
 type SimuladoQuestionOption = {
   id: string;
@@ -148,6 +149,7 @@ export async function upsertSimulado(input: UpsertSimuladoInput) {
 
     const created = await prisma.simulado.create({
       data: {
+        id: crypto.randomUUID(),
         ...payload,
         status: 'Pendente',
         attempts: [],

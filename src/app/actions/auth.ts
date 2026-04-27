@@ -106,40 +106,6 @@ export async function registerUser(data: {
       }
     }
 
-    // lógica de indicação
-    if (data.referralCode) {
-      const referrer = await prisma.user.findFirst({
-        where: { referralCode: data.referralCode },
-      });
-
-      if (referrer) {
-        // Notificação 1: para o dono do código de indicação
-        await prisma.notification.create({
-          data: {
-            userId: referrer.id,
-            title: "Nova Indicação!",
-            message: `O aluno ${data.name} se cadastrou usando seu código!`,
-            type: "REFERRAL",
-            read: false,
-          },
-        });
-
-        // Notificação 2: para o novo aluno
-        await prisma.notification.create({
-          data: {
-            userId: newUser.id,
-            title: "Bem-vindo!",
-            message: `Você se cadastrou com o código de indicação de ${referrer.name}! Aproveite a plataforma.`,
-            type: "REFERRAL",
-            read: false,
-          },
-        });
-
-        await applyReferralOnSignup(newUser.id, data.referralCode);
-        revalidatePath("/dashboard/notifications");
-      }
-    }
-
     return { success: true, user: newUser };
   } catch (error) {
     console.error("Erro no registro:", error);
@@ -156,8 +122,11 @@ export async function loginUser(data: { email: string; password: string }) {
     });
 
     if (!user) {
+      console.log(`[LOGIN_DEBUG] Falha: E-mail não encontrado - ${data.email}`);
       return { success: false, error: "E-mail não encontrado no sistema." };
     }
+
+    console.log(`[LOGIN_DEBUG] Usuário encontrado: ${user.email} (Role: ${user.role})`);
 
     // Verifica se a senha digitada bate com a criptografia do banco
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
@@ -315,5 +284,3 @@ export async function resetPasswordWithToken(
     return { success: false, error: "Erro interno ao atualizar a senha." };
   }
 }
-
-

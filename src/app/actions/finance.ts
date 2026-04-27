@@ -70,6 +70,7 @@ export async function addTransactionAndCredits(
     const result = await prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.create({
         data: {
+          id: crypto.randomUUID(),
           studentId,
           planName,
           creditsAdded: credits,
@@ -482,6 +483,7 @@ export async function requestTransactionReview(
     for (const admin of admins) {
       await prisma.notification.create({
         data: {
+          id: crypto.randomUUID(),
           userId: admin.id,
           type: 'payment_review',
           title: 'Revisão de pagamento solicitada',

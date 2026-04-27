@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
+import crypto from 'crypto';
 
 export type QuizQuestionType = 'text' | 'select' | 'multiselect' | 'radio';
 
@@ -65,6 +66,7 @@ export async function createQuizQuestion(data: QuizQuestionData) {
 
     const question = await prisma.quizQuestion.create({
       data: {
+        id: crypto.randomUUID(),
         question: data.question,
         questionPt: data.questionPt || data.question,
         type: data.type,
