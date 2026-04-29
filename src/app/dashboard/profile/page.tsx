@@ -696,14 +696,14 @@ export default function ProfilePage() {
     const { startTime, endTime } = getDefaultTimesForDay(dayOfWeek);
     setAvailabilitySlots((prev) => [
       ...prev,
-      { tempId: crypto.randomUUID(), dayOfWeek, startTime, endTime },
+      { tempId: Math.random().toString(36).substring(7), dayOfWeek, startTime, endTime },
     ]);
   };
 
   const addAvailabilitySlot = () => {
     setAvailabilitySlots((prev) => [
       ...prev,
-      { tempId: crypto.randomUUID(), dayOfWeek: 1, startTime: '08:00', endTime: '09:30' },
+      { tempId: Math.random().toString(36).substring(7), dayOfWeek: 1, startTime: '08:00', endTime: '09:30' },
     ]);
   };
 
