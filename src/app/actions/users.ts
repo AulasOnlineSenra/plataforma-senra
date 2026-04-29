@@ -501,7 +501,7 @@ export async function updateUserProfile(
       where: { id: userId },
       data: updateData,
     });
-    revalidatePath("/dashboard/profile");
+    revalidatePath("/", "layout");
     return { success: true, data: updatedUser };
   } catch (error) {
     console.error(error);
@@ -818,8 +818,7 @@ export async function updateTeacherProfile(
       }
     }
 
-    revalidatePath("/dashboard/profile");
-    revalidatePath("/dashboard/teachers");
+    revalidatePath("/", "layout");
     return { success: true, data: updated };
   } catch (error) {
     console.error("Erro ao atualizar perfil do professor:", error);
@@ -861,8 +860,7 @@ export async function saveTeacherAvailability(
       }),
     ]);
 
-    revalidatePath("/dashboard/profile");
-    revalidatePath("/dashboard/schedule");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
     console.error("Erro ao salvar disponibilidade:", error);
