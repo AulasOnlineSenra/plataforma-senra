@@ -52,10 +52,10 @@ import QuizCarousel from '@/components/quiz-carousel';
 const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-image-1');
 
 const navLinks = [
-  { href: '#como-funciona', label: 'Como funciona', storageKey: 'home-nav-how-it-works' },
-  { href: '#sobre-nos', label: 'Sobre nós', storageKey: 'home-nav-about' },
-  { href: '#contato', label: 'Contato', storageKey: 'home-nav-contact' },
+  { href: '/', label: 'Início', storageKey: 'home-nav-inicio' },
+  { href: '/dashboard/booking', label: 'Agendar aulas', storageKey: 'home-nav-agendar' },
   { href: '/blog', label: 'Blog', storageKey: 'home-nav-blog' },
+  { href: '/contato', label: 'Contato', storageKey: 'home-nav-contato' },
 ];
 
 

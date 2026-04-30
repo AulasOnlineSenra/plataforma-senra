@@ -139,7 +139,7 @@ function TeacherCard({
 
   return (
     <Card
-      style={{ width: 'calc(100% - 70px)' }}
+      style={{ width: 'calc(100% - 24px)' }}
       className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer ${
         isPendingAwaitingApproval
           ? "border-blue-400 bg-blue-50/80 hover:border-blue-500"
@@ -541,7 +541,7 @@ export default function TeachersPage() {
             )}
           </div>
         ) : (
-          <div className={`mt-2 grid gap-6 ${currentUser?.role === "admin" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"} justify-items-center`}>
+          <div className={`mt-2 grid gap-x-0 gap-y-4 ${currentUser?.role === "admin" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"} justify-items-center`}>
             {teacherList.map((teacher) => (
               <TeacherCard
                 key={teacher.id}
