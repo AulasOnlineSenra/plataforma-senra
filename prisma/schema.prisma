@@ -241,6 +241,11 @@ model User {
   subjects                                           String?
   suspendedAt                                        DateTime?
   phone                                              String?
+  googleCalendarConnected                             Boolean            @default(false)
+  googleCalendarToken                                 String?
+  googleCalendarRefreshToken                          String?
+  googleCalendarEmail                                 String?
+  googleCalendarTokenExpiry                           DateTime?
   Availability                                       Availability[]
   ChatMessage_ChatMessage_receiverIdToUser           ChatMessage[]      @relation("ChatMessage_receiverIdToUser")
   ChatMessage_ChatMessage_senderIdToUser             ChatMessage[]      @relation("ChatMessage_senderIdToUser")

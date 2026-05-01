@@ -852,17 +852,17 @@ function CheckoutContent() {
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4">Forma de Pagamento</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
-                className="h-14 rounded-2xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1DA851] transition-transform hover:scale-[1.02]"
-                onClick={handleWhatsAppClick}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp
-              </Button>
-              <Button
                 variant="outline"
                 className="h-14 rounded-2xl text-sm font-bold border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
                 onClick={handleOpenPix}
               >
                 <CreditCard className="mr-2 h-5 w-5" /> Pagar com Pix
+              </Button>
+              <Button
+                className="h-14 rounded-2xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1DA851] transition-transform hover:scale-[1.02]"
+                onClick={handleWhatsAppClick}
+              >
+                <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp
               </Button>
             </div>
           </div>

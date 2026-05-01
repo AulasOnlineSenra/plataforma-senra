@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, ArrowRight, PackageOpen, MessageCircle } from 'lucide-react';
+import { Check, ArrowRight, PackageOpen, MessageCircle, CalendarClock, TrendingUp, Trophy, Medal, Rocket, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
@@ -24,9 +24,10 @@ type ClassPackage = {
   pricePerClass: number;
   totalPrice: number;
   popular: boolean;
+  features: string[];
 };
 
-const packageFeatures = [
+const DEFAULT_FEATURES = [
   'Aulas individuais e personalizadas',
   'Flexibilidade de horários',
   'Professores especialistas',
@@ -52,14 +53,23 @@ function PackagesContent() {
       const [plansResult, settingsResult] = await Promise.all([getPlans(), getSettings()]);
 
       if (plansResult.success && plansResult.data) {
-        const formattedPackages: ClassPackage[] = plansResult.data.map((plan) => ({
-          id: plan.id,
-          name: plan.name,
-          numClasses: plan.lessonsCount,
-          totalPrice: plan.price,
-          pricePerClass: plan.price / plan.lessonsCount,
-          popular: plan.isPopular,
-        }));
+        const formattedPackages: ClassPackage[] = plansResult.data.map((plan) => {
+          let planFeatures: string[] = [];
+          try {
+            planFeatures = JSON.parse(plan.features || '[]');
+          } catch {
+            planFeatures = [];
+          }
+          return {
+            id: plan.id,
+            name: plan.name,
+            numClasses: plan.lessonsCount,
+            totalPrice: plan.price,
+            pricePerClass: plan.price / plan.lessonsCount,
+            popular: plan.isPopular,
+            features: planFeatures.length > 0 ? planFeatures : DEFAULT_FEATURES,
+          };
+        });
         setClassPackages(formattedPackages);
       }
 
@@ -127,10 +137,6 @@ function PackagesContent() {
     window.open(url, '_blank');
   };
 
-  const getPackageWhatsAppText = (pkg: ClassPackage) => {
-    return `Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento (PIX) e liberar meu acesso?`;
-  };
-
   const getCalculatorWhatsAppText = () => {
     return `Olá! Fiz uma simulação na plataforma e gostaria de adquirir um *Pacote Personalizado* com ${calculatedPackage.totalClasses} aulas totais, no valor de R$ ${calculatedPackage.total.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento e liberar meu acesso?`;
   };
@@ -158,14 +164,19 @@ function PackagesContent() {
       ) : (
         <>
           {/* GRID DE PACOTES */}
-          <div className="mx-auto mt-4 grid max-w-7xl gap-8 lg:gap-10 md:grid-cols-2 lg:grid-cols-3 items-center">
-            {classPackages.map((pkg) => (
+          <div className="mx-auto mt-4 grid max-w-7xl gap-4 lg:gap-6 md:grid-cols-2 lg:grid-cols-3 items-center">
+            {classPackages.map((pkg, index) => {
+              const icons = [CalendarClock, TrendingUp, Trophy];
+              const IconComponent = icons[index] || PackageOpen;
+              const buttonTexts = ['Comprar Agora', 'Quero evoluir mais rápido', 'Quero minha aprovação'];
+              const buttonText = buttonTexts[index] || 'Comprar Agora';
+              return (
               <Card
                 key={pkg.id}
                 className={cn(
-                  'relative flex flex-col rounded-3xl bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-xl',
-                  pkg.popular 
-                    ? 'z-10 border-2 border-brand-yellow shadow-lg scale-100 lg:scale-105' 
+                  'relative flex flex-col rounded-3xl bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(245,176,0,0.9)]',
+                  pkg.popular
+                    ? 'z-10 border-2 border-brand-yellow shadow-lg scale-100 lg:scale-105'
                     : 'border border-slate-200 shadow-sm'
                 )}
               >
@@ -175,35 +186,93 @@ function PackagesContent() {
                   </div>
                 )}
                 
-                <CardHeader className="items-center pt-8 pb-4 text-center">
-                  <CardTitle className="font-headline text-2xl text-slate-900">{pkg.name}</CardTitle>
+                <CardHeader className="items-center pt-10 text-center pb-6">
+                  <CardTitle className="font-headline text-xl text-slate-900 flex items-center gap-2">
+                    <IconComponent className="w-[34px] h-[34px] text-brand-yellow" />
+                    {pkg.name}
+                  </CardTitle>
+                  <p className="mt-2 text-sm font-semibold text-green-600 flex items-center justify-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Aulas ao vivo de 90 minutos
+                  </p>
                   <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-5xl font-extrabold text-slate-900 tracking-tight">
+                    <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
                       R$ {pkg.pricePerClass.toFixed(2).replace('.', ',')}
                     </span>
-                    <span className="text-lg font-medium text-slate-500">/aula</span>
+                    <span className="text-base font-medium text-slate-500">/aula</span>
                   </div>
-                  <p className="mt-2 text-base font-semibold text-slate-500">Total: R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}</p>
+                  {index === 1 && (
+                    <p className="mt-2 text-[10px] font-bold text-white bg-green-600 px-[calc(0.75rem+10px)] py-1 rounded-full inline-block">
+                      Economize até <span className="text-[#f5b000]">R$180</span> em comparação à aula avulsa
+                    </p>
+                  )}
+                  {index === 2 && (
+                    <p className="mt-2 text-xs font-bold text-white bg-[#f5b000] px-7 py-1 rounded-full inline-block whitespace-nowrap">
+                      Maior economia da plataforma
+                    </p>
+                  )}
                 </CardHeader>
                 
-                <CardContent className="mt-0 flex-1 px-8 pb-2">
-                  <ul className="grid gap-4 rounded-2xl bg-slate-50 p-6 text-sm border border-slate-100">
-                    <li className="flex items-center text-base font-bold text-slate-800 mb-1">
-                      <div className="rounded-full bg-green-100 p-1 mr-3">
-                        <Check className="h-4 w-4 text-green-600" />
+                <CardContent className="mt-0 flex-1 px-3 pb-2">
+                  <ul className="grid gap-1 rounded-2xl bg-slate-50 p-5 text-sm border border-slate-100">
+                    <li className="flex items-center font-medium text-slate-600">
+                      <div className="rounded-full bg-green-100 p-1 mr-2">
+                        <Check className="h-3 w-3 text-green-600" />
                       </div>
-                      <span>{pkg.numClasses} {pkg.numClasses > 1 ? 'aulas garantidas' : 'aula garantida'}</span>
+                      Pacote com <span className="font-bold text-slate-800 text-base mr-1 ml-1">{pkg.numClasses} aulas</span> +
                     </li>
-                    {packageFeatures.map((feature) => (
-                      <li key={feature} className="flex items-center font-medium text-slate-600">
-                        <ArrowRight className="mr-3 h-4 w-4 text-brand-yellow" />
-                        {feature}
+                    {pkg.features.slice(0, 3).map((feature, featureIndex) => {
+                      const adjustedFeature = (index >= 1 && featureIndex === 0) ? 'Plano personalizado de estudos' : feature;
+                      return (
+                      <li key={feature} className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                        <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                        {adjustedFeature}
                       </li>
-                    ))}
+                    )})}
+                    {index >= 1 && (
+                      <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                        <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                        Aulas individuais
+                      </li>
+                    )}
+                    <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                      <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                      Plataforma digital privada
+                    </li>
+                    {index === 1 && (
+                      <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                        <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                        Ideal para quem busca acompanhamento e evolução constante
+                      </li>
+                    )}
+                    {index === 2 && (
+                      <>
+                        <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                          <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                          Acompanhamento recorrente e estratégico
+                        </li>
+                        <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                          <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                          Melhor custo por aula
+                        </li>
+                        <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                          <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                          Mais consistência = Melhores resultados
+                        </li>
+                        <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                          <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                          Ideal para que tem metas altas: Enem/Vestibulares e concursos
+                        </li>
+                      </>
+                    )}
+                    <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
+                      <ArrowRight className="mr-2 h-4 w-4 text-brand-yellow shrink-0 mt-0.5" />
+                      Atendimento rápido e humanizado
+                    </li>
                   </ul>
                 </CardContent>
                 
-                <CardFooter className="flex-col gap-1 px-8 pb-5 pt-1">
+                <CardFooter className="flex-col gap-1 px-6 pb-5 pt-1">
                   <Button 
                     className="h-10 w-full rounded-2xl text-sm font-bold text-white shadow-sm transition-transform bg-slate-900 hover:bg-slate-800 hover:scale-[1.02]"
                     onClick={() => {
@@ -211,17 +280,18 @@ function PackagesContent() {
                       router.push(`/dashboard/checkout?needed=${pkg.numClasses}&current=0`);
                     }}
                   >
-                    Comprar Agora
+                    {index === 2 ? <><Medal className="mr-2 h-6 w-6" />Quero minha aprovação</> : index === 1 ? <><Rocket className="mr-2 h-6 w-6" />Quero evoluir mais rápido</> : <><ShoppingCart className="mr-2 h-6 w-6" />Comprar Agora</>}
                   </Button>
                   <Button
-                    className="h-10 w-full rounded-2xl text-sm font-bold text-white shadow-sm transition-transform bg-[#25D366] hover:bg-[#1DA851] hover:scale-[1.02]"
-                    onClick={() => handleWhatsAppClick(getPackageWhatsAppText(pkg))}
+                    className="h-10 w-full rounded-2xl text-sm font-bold text-white shadow-sm transition-transform bg-[#25D366] hover:bg-[#1DA851]"
+                    onClick={() => handleWhatsAppClick(`Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento?`)}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" /> Comprar via WhatsApp
                   </Button>
                 </CardFooter>
               </Card>
-            ))}
+              );
+            })}
           </div>
 
           {/* CALCULADORA */}

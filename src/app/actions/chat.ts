@@ -17,17 +17,65 @@ export async function getChatUsers(
   currentUserId: string,
 ) {
   try {
-    let where: any = { status: "active" };
+    // Admin vê todos os usuários ativos
+    if (currentUserRole === "admin") {
+      const users = await prisma.user.findMany({
+        where: {
+          status: "active",
+          NOT: { id: currentUserId },
+        },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          avatarUrl: true,
+        },
+        orderBy: [{ role: "asc" }, { name: "asc" }],
+      });
+      return { success: true, data: users };
+    }
+
+    // Aluno ou Professor: buscar apenas quem tem aulas agendadas + admins
+    const lessonStatus = ["PENDING", "CONFIRMED", "scheduled"];
+    
+    let relatedUserIds: string[] = [];
 
     if (currentUserRole === "student") {
-      where = { role: { in: ["teacher", "admin"] }, status: "active" };
+      // Aluno: buscar professores que têm aulas com este aluno
+      const lessons = await prisma.lesson.findMany({
+        where: {
+          studentId: currentUserId,
+          status: { in: lessonStatus },
+        },
+        select: { teacherId: true },
+      });
+      relatedUserIds = [...new Set(lessons.map((l) => l.teacherId))];
     } else if (currentUserRole === "teacher") {
-      where = { role: { in: ["student", "admin"] }, status: "active" };
+      // Professor: buscar alunos que têm aulas com este professor
+      const lessons = await prisma.lesson.findMany({
+        where: {
+          teacherId: currentUserId,
+          status: { in: lessonStatus },
+        },
+        select: { studentId: true },
+      });
+      relatedUserIds = [...new Set(lessons.map((l) => l.studentId))];
     }
+
+    // Buscar admins sempre visíveis
+    const admins = await prisma.user.findMany({
+      where: { role: "admin", status: "active" },
+      select: { id: true },
+    });
+    const adminIds = admins.map((a) => a.id);
+
+    // Unir IDs: usuários com aulas + admins
+    const allowedIds = [...relatedUserIds, ...adminIds];
 
     const users = await prisma.user.findMany({
       where: {
-        ...where,
+        id: { in: allowedIds },
+        status: "active",
         NOT: { id: currentUserId },
       },
       select: {
