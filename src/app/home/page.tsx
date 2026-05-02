@@ -171,7 +171,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-card">
-<header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:px-4 lg:py-[2px] bg-card border-b h-[47px] sm:h-[47px]">
+      <header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:px-4 lg:py-[2px] bg-card border-b h-[47px] sm:h-[47px]">
           <SenraLogo className="h-8 sm:h-10" />
 
         <nav className="hidden md:flex items-center gap-6">
@@ -347,7 +347,7 @@ export default function HomePage() {
                     {education && <p className="text-xs text-white/80">{education}</p>}
                   </div>
 </div>
-                )})}
+                )}
               </div>
               {/* Linha 2 */}
               <div className="flex justify-center gap-6 flex-wrap">
