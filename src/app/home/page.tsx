@@ -96,7 +96,7 @@ export default function HomePage() {
     const loadTeachers = async () => {
       const result = await getTeachers(false);
       if (result.success && result.data) {
-        const teachersData = result.data.slice(0, 6);
+        const teachersData = result.data.slice(0, 9);
         setTeachers(teachersData);
         
         const ratings: Record<string, { average: number; count: number }> = {};
@@ -296,8 +296,10 @@ export default function HomePage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Corpo</span> Docente
               </h2>
             </div>
-            <div className="flex justify-center gap-6 flex-wrap">
-              {teachers.map((teacher: any) => {
+            <div className="flex flex-col items-center gap-6">
+              {/* Linha 1 */}
+              <div className="flex justify-center gap-6 flex-wrap">
+                {teachers.slice(0, 3).map((teacher: any) => {
                 const rating = teacherRatings[teacher.id] || { average: 5.0, count: 0 };
                 const avatarUrl = teacher.avatarUrl || teacher.avatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&h=400&fit=crop';
                 
@@ -344,8 +346,113 @@ export default function HomePage() {
                     <p className="font-bold text-sm">{teacher.name}</p>
                     {education && <p className="text-xs text-white/80">{education}</p>}
                   </div>
-                </div>
-              )})}
+</div>
+                )})}
+              </div>
+              {/* Linha 2 */}
+              <div className="flex justify-center gap-6 flex-wrap">
+                {teachers.slice(3, 6).map((teacher: any) => {
+                  const rating = teacherRatings[teacher.id] || { average: 5.0, count: 0 };
+                  const avatarUrl = teacher.avatarUrl || teacher.avatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&h=400&fit=crop';
+                  
+                  const education = (() => {
+                    if (!teacher.education) return null;
+                    let eduList = teacher.education;
+                    if (typeof eduList === 'string') {
+                      try { eduList = JSON.parse(eduList); } catch { return null; }
+                    }
+                    if (Array.isArray(eduList) && eduList.length > 0) {
+                      return eduList[0].course || eduList[0].degree || null;
+                    }
+                    return null;
+                  })();
+                  
+                  return (
+                  <div 
+                    key={teacher.id}
+                    className="relative w-48 h-64 rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
+                    style={{
+                      backgroundImage: `url(${avatarUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div 
+                      className="absolute inset-0 transition-transform duration-300 group-hover:scale-110"
+                      style={{
+                        backgroundImage: `url(${avatarUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    
+                    {/* Rating no canto superior direito */}
+                    <div className="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-current" />
+                      {rating.average.toFixed(1)}
+                    </div>
+                    
+                    {/* Nome e formação na parte inferior */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <p className="font-bold text-sm">{teacher.name}</p>
+                      {education && <p className="text-xs text-white/80">{education}</p>}
+                    </div>
+</div>
+                )})}
+              </div>
+              {/* Linha 3 */}
+              <div className="flex justify-center gap-6 flex-wrap">
+                {teachers.slice(6, 9).map((teacher: any) => {
+                  const rating = teacherRatings[teacher.id] || { average: 5.0, count: 0 };
+                  const avatarUrl = teacher.avatarUrl || teacher.avatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&h=400&fit=crop';
+                  
+                  const education = (() => {
+                    if (!teacher.education) return null;
+                    let eduList = teacher.education;
+                    if (typeof eduList === 'string') {
+                      try { eduList = JSON.parse(eduList); } catch { return null; }
+                    }
+                    if (Array.isArray(eduList) && eduList.length > 0) {
+                      return eduList[0].course || eduList[0].degree || null;
+                    }
+                    return null;
+                  })();
+                  
+                  return (
+                  <div 
+                    key={teacher.id}
+                    className="relative w-48 h-64 rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
+                    style={{
+                      backgroundImage: `url(${avatarUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div 
+                      className="absolute inset-0 transition-transform duration-300 group-hover:scale-110"
+                      style={{
+                        backgroundImage: `url(${avatarUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    
+                    {/* Rating no canto superior direito */}
+                    <div className="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-current" />
+                      {rating.average.toFixed(1)}
+                    </div>
+                    
+                    {/* Nome e formação na parte inferior */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <p className="font-bold text-sm">{teacher.name}</p>
+                      {education && <p className="text-xs text-white/80">{education}</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
