@@ -621,7 +621,12 @@ function BookingPageComponent() {
     console.log('[DEBUG] createBookings result:', result);
 
     if (!result.success) {
-      toast({ variant: "destructive", title: "Erro ao confirmar", description: result.error || "Não foi possível concluir os agendamentos." });
+      const isConflictError = result.error?.includes("já tem uma aula") || result.error?.includes("professor já tem");
+      toast({ 
+        variant: "destructive", 
+        title: isConflictError ? "Horário Indisponível" : "Erro ao confirmar", 
+        description: result.error || "Não foi possível concluir os agendamentos."
+      });
       return;
     }
 
