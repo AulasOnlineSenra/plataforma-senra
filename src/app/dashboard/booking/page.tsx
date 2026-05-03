@@ -348,7 +348,6 @@ function BookingPageComponent() {
         });
 
         const preBookingConflicts = preBookings.some((booking) => {
-          if (booking.teacherId !== selectedTeacherId) return false;
           const bookingStart = new Date(booking.date);
           const [bh, bm] = booking.start.split(":").map(Number);
           bookingStart.setHours(bh, bm, 0, 0);
@@ -422,7 +421,6 @@ function BookingPageComponent() {
 
         const preBookingConflicts = preBookings.some((booking) => {
           if (booking.id === editingId) return false;
-          if (booking.teacherId !== editingTeacher) return false;
           const bookingStart = new Date(booking.date);
           const [bh, bm] = booking.start.split(":").map(Number);
           bookingStart.setHours(bh, bm, 0, 0);
