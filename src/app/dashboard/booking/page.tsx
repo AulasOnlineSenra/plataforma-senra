@@ -618,8 +618,6 @@ function BookingPageComponent() {
     const result = await createBookings(currentUser.id, bookingsToCreate);
     setIsConfirming(false);
 
-    console.log('[DEBUG] createBookings result:', result);
-
     if (!result.success) {
       const isConflictError = result.error?.includes("já tem uma aula") || result.error?.includes("professor já tem");
       toast({ 
@@ -627,6 +625,10 @@ function BookingPageComponent() {
         title: isConflictError ? "Horário Indisponível" : "Erro ao confirmar", 
         description: result.error || "Não foi possível concluir os agendamentos."
       });
+      setPreBookings([]);
+      if (currentUser?.id) {
+        safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);
+      }
       return;
     }
 
