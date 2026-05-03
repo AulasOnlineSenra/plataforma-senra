@@ -89,7 +89,7 @@ export async function createBookings(
         if (studentConflict) {
           const conflictingLesson = await transactionClient.lesson.findUnique({
             where: { id: studentConflict.id },
-            include: { teacher: { select: { name: true } }, subject: true }
+            include: { teacher: { select: { name: true } } }
           });
           throw new Error(`Você já tem uma aula agendada neste horário com o professor ${conflictingLesson?.teacher?.name || 'desconhecido'}.`);
         }
