@@ -463,7 +463,6 @@ function BookingPageComponent() {
       const end = addMinutes(start, CLASS_DURATION_MINUTES);
 
       const conflict = preBookings.some((b) => {
-        if (b.teacherId !== selectedTeacherId) return false;
         const bStart = new Date(b.date);
         const [bh, bm] = b.start.split(":").map(Number);
         bStart.setHours(bh, bm, 0, 0);
@@ -471,7 +470,14 @@ function BookingPageComponent() {
         return start < bEnd && end > bStart;
       });
 
-      if (conflict) continue;
+      // Verificar conflitos com aulas já agendadas do aluno
+      const existingConflict = lessons.some((lesson) => {
+        if (!["PENDING", "CONFIRMED", "scheduled"].includes(lesson.status)) return false;
+        if (lesson.studentId !== currentUser.id) return false;
+        return start < lesson.endDate && end > lesson.date;
+      });
+
+      if (conflict || existingConflict) continue;
 
       const generateId = () => {
         if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
