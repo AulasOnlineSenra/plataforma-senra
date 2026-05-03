@@ -679,7 +679,7 @@ export default function ProfilePage() {
 
   const getDefaultTimesForDay = (dayOfWeek: number) => {
     const daySlots = availabilitySlots.filter((s) => s.dayOfWeek === dayOfWeek);
-    if (daySlots.length === 0) return { startTime: '08:00', endTime: '09:30' };
+    if (daySlots.length === 0) return { startTime: '07:00', endTime: '08:30' };
 
     const lastSlot = daySlots.reduce((latest, slot) =>
       slot.endTime > latest.endTime ? slot : latest,
@@ -703,7 +703,7 @@ export default function ProfilePage() {
   const addAvailabilitySlot = () => {
     setAvailabilitySlots((prev) => [
       ...prev,
-      { tempId: Math.random().toString(36).substring(7), dayOfWeek: 1, startTime: '08:00', endTime: '09:30' },
+      { tempId: Math.random().toString(36).substring(7), dayOfWeek: 1, startTime: '07:00', endTime: '08:30' },
     ]);
   };
 
