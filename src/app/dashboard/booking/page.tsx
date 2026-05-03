@@ -341,9 +341,9 @@ function BookingPageComponent() {
         const conflicts = lessons.some((lesson) => {
           if (!["PENDING", "CONFIRMED", "scheduled"].includes(lesson.status))
             return false;
-          const teacherConflict = lesson.teacherId === selectedTeacherId;
+          // Verifica conflito pelo ALUNO (mesmo professor diferente)
           const studentConflict = lesson.studentId === currentUser.id;
-          if (!teacherConflict && !studentConflict) return false;
+          if (!studentConflict) return false;
           return start < lesson.endDate && end > lesson.date;
         });
 
@@ -414,9 +414,9 @@ function BookingPageComponent() {
         const conflicts = lessons.some((lesson) => {
           if (!["PENDING", "CONFIRMED", "scheduled"].includes(lesson.status))
             return false;
-          const teacherConflict = lesson.teacherId === editingTeacher;
+          // Verifica conflito pelo ALUNO (mesmo professor diferente)
           const studentConflict = lesson.studentId === currentUser.id;
-          if (!teacherConflict && !studentConflict) return false;
+          if (!studentConflict) return false;
           return start < lesson.endDate && end > lesson.date;
         });
 
