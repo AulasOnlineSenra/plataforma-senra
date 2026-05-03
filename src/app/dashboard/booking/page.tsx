@@ -618,6 +618,8 @@ function BookingPageComponent() {
     const result = await createBookings(currentUser.id, bookingsToCreate);
     setIsConfirming(false);
 
+    console.log('[DEBUG] createBookings result:', result);
+
     if (!result.success) {
       toast({ variant: "destructive", title: "Erro ao confirmar", description: result.error || "Não foi possível concluir os agendamentos." });
       return;

@@ -240,11 +240,12 @@ revalidatePath("/dashboard");
 return { success: true, data: updatedLesson };
   } catch (error: any) {
     console.error("Erro ao agendar aula:", error);
+    console.error("Erro stack:", error.stack);
     // Verificar se é um erro de conflito de horário
     if (error.message?.includes("já tem uma aula")) {
       return { success: false, error: error.message };
     }
-    return { success: false, error: "Não foi possivel confirmar a aula." };
+    return { success: false, error: "Não foi possivel confirmar a aula. Tente novamente." };
   }
 }
 
