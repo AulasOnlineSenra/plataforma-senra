@@ -19,6 +19,21 @@ type LessonItem = {
   teacher?: { name: string } | null;
 };
 
+const subjectMap: Record<string, string> = {
+  'default-subj-1': 'Matemática',
+  'default-subj-2': 'Português',
+  'default-subj-3': 'Física',
+  'default-subj-4': 'Redação',
+  'default-subj-5': 'História',
+  'default-subj-6': 'Química',
+  'default-subj-7': 'Espanhol',
+  'default-subj-8': 'Filosofia',
+  'default-subj-9': 'Geografia',
+  'default-subj-10': 'Inglês',
+  'default-subj-11': 'Sociologia',
+  'default-subj-12': 'Biologia',
+};
+
 export default function HistoricoPage() {
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +103,7 @@ export default function HistoricoPage() {
               >
                 <div className="space-y-1">
                   <p className="font-semibold text-slate-900">
-                    {lesson.subject}
+                    {subjectMap[lesson.subject] || lesson.subject}
                   </p>
                   <p className="text-sm text-slate-600">
                     Professor: {lesson.teacher?.name || "-"}

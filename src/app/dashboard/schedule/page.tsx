@@ -21,6 +21,21 @@ import { Badge } from '@/components/ui/badge';
 import { getTeachers, getStudents } from '@/app/actions/users';
 import { getLessons } from '@/app/actions/bookings';
 
+const subjectMap: Record<string, string> = {
+  'default-subj-1': 'Matemática',
+  'default-subj-2': 'Português',
+  'default-subj-3': 'Física',
+  'default-subj-4': 'Redação',
+  'default-subj-5': 'História',
+  'default-subj-6': 'Química',
+  'default-subj-7': 'Espanhol',
+  'default-subj-8': 'Filosofia',
+  'default-subj-9': 'Geografia',
+  'default-subj-10': 'Inglês',
+  'default-subj-11': 'Sociologia',
+  'default-subj-12': 'Biologia',
+};
+
 function SchedulePageComponent() {
   const searchParams = useSearchParams();
   const teacherIdFilterParam = searchParams.get('teacherId');
@@ -54,7 +69,7 @@ function SchedulePageComponent() {
     if (resLessons.success && resLessons.data) {
         const dbEvents = resLessons.data.map((lesson: any) => ({
              id: lesson.id,
-             title: `Aula de ${lesson.subject}`,
+             title: `Aula de ${subjectMap[lesson.subject] || lesson.subject}`,
              start: new Date(lesson.date),
              end: new Date(lesson.endDate),
              studentId: lesson.studentId,
@@ -189,7 +204,7 @@ function SchedulePageComponent() {
                                           <p className="text-sm font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">{currentUser?.role === 'teacher' ? 'Aluno(a)' : 'Professor(a)'}</p>
                                       </div>
                                       <div className="flex items-center gap-2 text-sm font-semibold">
-                                          <span className="text-slate-600">{event.subject}</span>
+                                          <span className="text-slate-600">{subjectMap[event.subject] || event.subject}</span>
                                           <span className="text-slate-400">•</span>
                                           <span className="text-brand-yellow">{formatScheduledDate(event.start, event.end)}</span>
                                       </div>
@@ -234,7 +249,7 @@ function SchedulePageComponent() {
                         <TableRow key={event.id}>
                             {currentUser?.role !== 'teacher' && <TableCell className="font-semibold text-slate-800">{teacher?.name || 'N/A'}</TableCell>}
                             {currentUser?.role !== 'student' && <TableCell className="font-semibold text-slate-800">{student?.name || 'N/A'}</TableCell>}
-                            <TableCell className="font-medium text-slate-600">{event.subject}</TableCell>
+                            <TableCell className="font-medium text-slate-600">{subjectMap[event.subject] || event.subject}</TableCell>
                             <TableCell className="text-right text-slate-500 font-medium">{formatHistoryDate(event.start, event.end)}</TableCell>
                         </TableRow>
                         );
