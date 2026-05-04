@@ -19,18 +19,18 @@ import { ArrowLeft, GraduationCap, File } from 'lucide-react';
 import { getLessonsForUser } from '@/app/actions/bookings';
 
 const subjectMap: Record<string, string> = {
-  'subj-1': 'Matemática',
-  'subj-2': 'Português',
-  'subj-3': 'Física',
-  'subj-4': 'Redação',
-  'subj-5': 'História',
-  'subj-6': 'Química',
-  'subj-7': 'Espanhol',
-  'subj-8': 'Filosofia',
-  'subj-9': 'Geografia',
-  'subj-10': 'Inglês',
-  'subj-11': 'Sociologia',
-  'subj-12': 'Biologia',
+  'default-subj-1': 'Matemática',
+  'default-subj-2': 'Português',
+  'default-subj-3': 'Física',
+  'default-subj-4': 'Redação',
+  'default-subj-5': 'História',
+  'default-subj-6': 'Química',
+  'default-subj-7': 'Espanhol',
+  'default-subj-8': 'Filosofia',
+  'default-subj-9': 'Geografia',
+  'default-subj-10': 'Inglês',
+  'default-subj-11': 'Sociologia',
+  'default-subj-12': 'Biologia',
 };
 
 type Material = {
@@ -100,10 +100,10 @@ export default function NotebookPage() {
   const completedLessons = useMemo(() => {
     return lessons
       .filter((lesson) =>
-        lesson.status === 'COMPLETED'
+        lesson.status === 'COMPLETED' && lesson.subject === rawSubjectId
       )
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [lessons]);
+  }, [lessons, rawSubjectId]);
 
   const formatDateTime = (lesson: LessonData) => {
     const startDate = new Date(lesson.date);

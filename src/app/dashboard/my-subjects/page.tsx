@@ -18,6 +18,21 @@ import { getLessonsForUser } from '@/app/actions/bookings';
 import { getMockUser } from '@/lib/data';
 import { User, Teacher } from '@/lib/types';
 
+const subjectMap: Record<string, string> = {
+  'default-subj-1': 'Matemática',
+  'default-subj-2': 'Português',
+  'default-subj-3': 'Física',
+  'default-subj-4': 'Redação',
+  'default-subj-5': 'História',
+  'default-subj-6': 'Química',
+  'default-subj-7': 'Espanhol',
+  'default-subj-8': 'Filosofia',
+  'default-subj-9': 'Geografia',
+  'default-subj-10': 'Inglês',
+  'default-subj-11': 'Sociologia',
+  'default-subj-12': 'Biologia',
+};
+
 type SubjectWithStats = {
   id: string;
   name: string;
@@ -94,9 +109,11 @@ export default function MySubjectsPage() {
     return Object.entries(subjectStats).map(([subjectKey, stats]) => {
       const subject = teachers.find(s => s.id === subjectKey || s.name === subjectKey);
       const subjectTeachers = teachers.filter(t => stats.teacherIds.has(t.id));
+      // Traduzir ID da disciplina para nome correto
+      const translatedName = subjectMap[subjectKey] || subject?.name || subjectKey;
       return {
         id: subject?.id || subjectKey,
-        name: subject?.name || subjectKey,
+        name: translatedName,
         classCount: stats.classCount,
         teachers: subjectTeachers,
         lessons: stats.lessons.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -106,15 +123,13 @@ export default function MySubjectsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="font-headline text-2xl md:text-3xl font-bold">Minhas Disciplinas</h1>
-      </div>
+      {/* Título ocultado - informações disponíveis nas páginas de reservas e histórico */}
 
-      {/* Cadernos - Aulas Concluídas */}
+      {/* Matérias com Aulas Concluídas */}
       <div>
         <h2 className="font-headline text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
           <GraduationCap className="h-6 w-6" />
-          Meus Cadernos
+          Minhas Matérias
         </h2>
         <p className="text-sm text-muted-foreground mb-4">
           Disciplinas com aulas concluídas — organize seus estudos por matéria.
@@ -168,8 +183,8 @@ export default function MySubjectsPage() {
           ) : (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
-                <p>Você ainda não possui cadernos.</p>
-                <p className="text-sm mt-1">Complete sua primeira aula para criar um caderno.</p>
+                <p>Você ainda não possui matérias.</p>
+                <p className="text-sm mt-1">Complete sua primeira aula para criar uma matéria.</p>
               </CardContent>
             </Card>
           )}
