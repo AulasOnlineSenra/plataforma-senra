@@ -632,7 +632,7 @@ function BookingPageComponent() {
       return;
     }
 
-    toast({ title: "Agendamentos confirmados!", description: `${preBookings.length} aula(s) agendada(s) com sucesso.` });
+    // Redireciona para página de schedule onde o usuário pode ver as aulas agendadas
     setPreBookings([]);
     if (currentUser?.id) {
       safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);

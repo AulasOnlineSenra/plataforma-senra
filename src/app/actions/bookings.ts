@@ -160,87 +160,101 @@ export async function createBookings(
       }
     });
 
-    // Notificação de novo Agendamento para o professor
+// Notificação de novo Agendamento para o professor
     if (teachersById.size > 0) {
+      try {
+        await Promise.allSettled(
+          Array.from(firstBookingByTeacher.entries()).map(
+            async ([teacherId, booking]) => {
+              const teacher = teachersById.get(teacherId);
+              if (!teacher) return;
+
+              const startDate = booking.start;
+              const endDate = new Date(startDate.getTime() + 90 * 60 * 1000);
+              const formattedDate = format(startDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
+
+              try {
+                await client.notification.create({
+                  data: {
+                    id: crypto.randomUUID(),
+                    userId: teacherId,
+                    type: "class_scheduled",
+                    title: "Nova Aula Agendada!",
+                    message: `O aluno ${student.name} agendou uma aula de ${booking.subjectId} para o dia ${formattedDate}.`,
+                    read: false,
+                  },
+                });
+              } catch (e) {
+                console.error("Notificação professor falhou:", e);
+              }
+            },
+          ),
+        );
+      } catch (e) {
+        console.error("Loop de notificações professor falhou:", e);
+      }
+    }
+
+    // Notificação confimando o agendamento para o aluno
+    try {
+      const studentFormattedDate = format(bookings[0].start, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(new Date(bookings[0].start.getTime() + 90 * 60 * 1000), "HH:mm");
+      await client.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: studentId,
+          type: "class_scheduled",
+          title: "Aula Agendada com Sucesso!",
+          message: `Sua aula de ${bookings[0].subjectId} foi agendada para o dia ${studentFormattedDate}.`,
+          read: false,
+        },
+      });
+    } catch (e) {
+      console.error("Notificação aluno falhou:", e);
+    }
+
+    // Notificacao de nova marcacao para o professor via Chat
+    try {
       await Promise.allSettled(
         Array.from(firstBookingByTeacher.entries()).map(
           async ([teacherId, booking]) => {
             const teacher = teachersById.get(teacherId);
             if (!teacher) return;
 
-            const startDate = booking.start;
-            const endDate = new Date(startDate.getTime() + 90 * 60 * 1000);
-            const formattedDate = format(startDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
-
-            await client.notification.create({
-              data: {
-                id: crypto.randomUUID(),
-                userId: teacherId,
-                type: "class_scheduled",
-                title: "Nova Aula Agendada!",
-                message: `O aluno ${student.name} agendou uma aula de ${booking.subjectId} para o dia ${formattedDate}.`,
-                read: false,
-              },
-            });
+            try {
+              await prisma.chatMessage.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  senderId: studentId,
+                  receiverId: teacherId,
+                  content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${booking.subjectId} para o dia ${format(booking.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
+                }
+              });
+            } catch (e) {
+              console.error("Chat message falhou:", e);
+            }
           },
         ),
       );
+    } catch (e) {
+      console.error("Loop de chat messages falhou:", e);
     }
 
-    // Notificação confimando o agendamento para o aluno
-    const studentFormattedDate = format(bookings[0].start, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(new Date(bookings[0].start.getTime() + 90 * 60 * 1000), "HH:mm");
-    await client.notification.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: studentId,
-        type: "class_scheduled",
-        title: "Aula Agendada com Sucesso!",
-        message: `Sua aula de ${bookings[0].subjectId} foi agendada para o dia ${studentFormattedDate}.`,
-        read: false,
-      },
-    });
+    // Revalidar paths (não afecta o resultado se falhar)
+    try {
+      revalidatePath("/dashboard");
+      revalidatePath("/dashboard/schedule");
+      revalidatePath("/dashboard/minhas-aulas");
+      revalidatePath("/dashboard/historico");
+      revalidatePath("/dashboard/my-subjects");
+      revalidatePath("/dashboard/student");
+      revalidatePath("/dashboard/teachers");
+    } catch (e) {
+      console.error("Revalidate falhou:", e);
+    }
 
-    // Notificacao de nova marcacao para o professor via Chat (substituindo e-mail com erro SMTP)
-    await Promise.allSettled(
-      Array.from(firstBookingByTeacher.entries()).map(
-        async ([teacherId, booking]) => {
-          const teacher = teachersById.get(teacherId);
-          if (!teacher) return;
-
-          await prisma.chatMessage.create({
-            data: {
-              id: crypto.randomUUID(),
-              senderId: studentId,
-              receiverId: teacherId,
-              content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${booking.subjectId} para o dia ${format(booking.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
-            }
-          });
-
-          /* O e-mail está sendo desativado temporariamente devido a erro de autenticação SMTP relatado.
-          await sendNewBookingNotificationEmail({
-            teacherEmail: teacher.email,
-            teacherName: teacher.name,
-            studentName: student.name,
-            subject: booking.subjectId,
-            startAt: booking.start,
-          });
-          */
-        },
-      ),
-    );
-
-revalidatePath("/dashboard");
-    revalidatePath("/dashboard/schedule");
-    revalidatePath("/dashboard/minhas-aulas");
-    revalidatePath("/dashboard/historico");
-    revalidatePath("/dashboard/my-subjects");
-    revalidatePath("/dashboard/student");
-    revalidatePath("/dashboard/teachers");
-
-return { success: true, data: updatedLesson };
+    return { success: true, data: { message: "Aula(s) agendada(s) com sucesso." } };
   } catch (error: any) {
     console.error("Erro ao agendar aula:", error);
-    console.error("Erro stack:", error.stack);
     // Verificar se é um erro de conflito de horário
     if (error.message?.includes("já tem uma aula")) {
       return { success: false, error: error.message };
