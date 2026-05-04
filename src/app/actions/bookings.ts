@@ -302,14 +302,19 @@ export async function getLessonsForUser(userId: string, role: string) {
     });
 
     const now = new Date();
+    console.log('[DEBUG] getLessonsForUser - Total lessons:', lessons.length, 'Now:', now.toISOString());
+    
     const lessonsToUpdate = lessons.filter((lesson) => {
       const lessonEndDate = lesson.endDate ? new Date(lesson.endDate) : new Date(lesson.date.getTime() + 90 * 60 * 1000);
+      console.log('[DEBUG] Lesson:', lesson.id, 'Status:', lesson.status, 'EndDate:', lessonEndDate.toISOString(), 'IsPast:', lessonEndDate < now);
       return (
         lesson.status !== "COMPLETED" &&
         lesson.status !== "CANCELLED" &&
         lessonEndDate < now
       );
     });
+
+    console.log('[DEBUG] Lessons to update:', lessonsToUpdate.length);
 
     if (lessonsToUpdate.length > 0) {
       await prisma.lesson.updateMany({
@@ -322,12 +327,16 @@ export async function getLessonsForUser(userId: string, role: string) {
       });
 
       const nonExperimentalLessons = lessonsToUpdate.filter(l => !l.isExperimental);
+      console.log('[DEBUG] Non-experimental lessons:', nonExperimentalLessons.length);
+      
       if (nonExperimentalLessons.length > 0) {
         const studentIds = [...new Set(nonExperimentalLessons.map(l => l.studentId))];
+        console.log('[DEBUG] Student IDs to decrement:', studentIds);
         await prisma.user.updateMany({
           where: { id: { in: studentIds } },
           data: { credits: { decrement: nonExperimentalLessons.length } },
         });
+        console.log('[DEBUG] Credits decremented for students');
       }
 
       lessons.forEach((lesson) => {
