@@ -167,7 +167,7 @@ export default function NotebookPage() {
                       </TableCell>
                       <TableCell className="pt-10">
                         <span className="text-amber-600 text-2xl">
-                          {lesson.customTitle || lesson.subject || ''}
+                          {lesson.customTitle || subjectMap[lesson.subject] || lesson.subject || ''}
                         </span>
                         <br />
                         <span className="font-medium text-xs">{lesson.teacher?.name || '-'}</span>
