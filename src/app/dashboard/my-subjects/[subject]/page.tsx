@@ -127,7 +127,7 @@ export default function NotebookPage() {
       <div className="ml-28 mr-10">
         <h2 className="font-headline text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
           <GraduationCap className="h-6 w-6" />
-          Aulas
+          Aulas de {subjectName}
         </h2>
 
         {loading ? (
