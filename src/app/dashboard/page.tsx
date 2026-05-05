@@ -353,9 +353,7 @@ export default function DashboardPage() {
       setLessonToEdit(null);
       
       if (user?.id && user?.role) {
-        console.log('[DASHBOARD] Calling getLessonsForUser for user:', user.id, 'role:', user.role);
         const response = await getLessonsForUser(user.id, user.role);
-        console.log('[DASHBOARD] getLessonsForUser response:', response.success, 'lessons count:', response.data?.length);
         if (response.success && response.data) {
           setLessons(response.data as LessonItem[]);
         }

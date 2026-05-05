@@ -302,19 +302,15 @@ export async function getLessonsForUser(userId: string, role: string) {
     });
 
     const now = new Date();
-    console.log('[DEBUG] getLessonsForUser - Total lessons:', lessons.length, 'Now:', now.toISOString());
     
     const lessonsToUpdate = lessons.filter((lesson) => {
       const lessonEndDate = lesson.endDate ? new Date(lesson.endDate) : new Date(lesson.date.getTime() + 90 * 60 * 1000);
-      console.log('[DEBUG] Lesson:', lesson.id, 'Status:', lesson.status, 'EndDate:', lessonEndDate.toISOString(), 'IsPast:', lessonEndDate < now);
       return (
         lesson.status !== "COMPLETED" &&
         lesson.status !== "CANCELLED" &&
         lessonEndDate < now
       );
     });
-
-    console.log('[DEBUG] Lessons to update:', lessonsToUpdate.length);
 
     if (lessonsToUpdate.length > 0) {
       await prisma.lesson.updateMany({
@@ -327,16 +323,13 @@ export async function getLessonsForUser(userId: string, role: string) {
       });
 
       const nonExperimentalLessons = lessonsToUpdate.filter(l => !l.isExperimental);
-      console.log('[DEBUG] Non-experimental lessons:', nonExperimentalLessons.length);
       
       if (nonExperimentalLessons.length > 0) {
         const studentIds = [...new Set(nonExperimentalLessons.map(l => l.studentId))];
-        console.log('[DEBUG] Student IDs to decrement:', studentIds);
         await prisma.user.updateMany({
           where: { id: { in: studentIds } },
           data: { credits: { decrement: nonExperimentalLessons.length } },
         });
-        console.log('[DEBUG] Credits decremented for students');
       }
 
       lessons.forEach((lesson) => {
@@ -362,6 +355,8 @@ export type LessonUpdateData = {
   teacherId?: string;
   studentId?: string;
   meetingLink?: string;
+  status?: string;
+  isExperimental?: boolean;
 };
 
 export async function updateLesson(lessonId: string, data: LessonUpdateData) {
@@ -394,8 +389,21 @@ export async function updateLesson(lessonId: string, data: LessonUpdateData) {
         ...(data.teacherId && { teacherId: data.teacherId }),
         ...(data.studentId && { studentId: data.studentId }),
         ...(data.meetingLink !== undefined && { meetingLink: data.meetingLink }),
+        ...(data.status && { status: data.status }),
+        ...(data.isExperimental !== undefined && { isExperimental: data.isExperimental }),
       },
     });
+
+    // Descontar crédito quando aula é marcada como COMPLETED
+    if (data.status === 'COMPLETED' && existingLesson.status !== 'COMPLETED' && existingLesson.status !== 'CANCELLED') {
+      if (!existingLesson.isExperimental) {
+        await prisma.user.update({
+          where: { id: existingLesson.studentId },
+          data: { credits: { decrement: 1 } },
+        });
+        console.log('[DEBUG] Credit decremented for student:', existingLesson.studentId);
+      }
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/schedule");
@@ -493,5 +501,50 @@ export async function deleteLesson(lessonId: string) {
   } catch (error) {
     console.error("Erro ao excluir aula do histórico:", error);
     return { success: false, error: "Não foi possível excluir o histórico da aula." };
+  }
+}
+
+// Função para corrigir créditos de aulas já concluídas
+export async function fixCompletedLessonsCredits() {
+  try {
+    // Buscar todas as aulas com status COMPLETED
+    const completedLessons = await prisma.lesson.findMany({
+      where: { status: 'COMPLETED' },
+      select: { id: true, studentId: true, isExperimental: true }
+    });
+
+    console.log('[FIX] Total completed lessons:', completedLessons.length);
+
+    // Para cada aluno, contar quantas aulas completas tem
+    const studentLessonCount = new Map<string, number>();
+    
+    for (const lesson of completedLessons) {
+      if (lesson.isExperimental) continue;
+      const count = studentLessonCount.get(lesson.studentId) || 0;
+      studentLessonCount.set(lesson.studentId, count + 1);
+    }
+
+    console.log('[FIX] Student lesson counts:', Object.fromEntries(studentLessonCount));
+
+    // Atualizar créditos de cada aluno
+    for (const [studentId, lessonCount] of studentLessonCount) {
+      const student = await prisma.user.findUnique({ where: { id: studentId } });
+      if (student) {
+        const currentCredits = student.credits || 0;
+        const expectedCredits = currentCredits - lessonCount;
+        if (expectedCredits >= 0) {
+          await prisma.user.update({
+            where: { id: studentId },
+            data: { credits: expectedCredits }
+          });
+          console.log('[FIX] Student:', studentId, 'lessons:', lessonCount, 'new credits:', expectedCredits);
+        }
+      }
+    }
+
+    return { success: true, message: `Corrigido ${completedLessons.length} aulas` };
+  } catch (error) {
+    console.error("Erro ao corrigir créditos:", error);
+    return { success: false, error: "Erro ao corrigir créditos" };
   }
 }
