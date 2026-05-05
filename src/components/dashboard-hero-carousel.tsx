@@ -194,8 +194,22 @@ export function DashboardHeroCarousel({
       const roleLabel = isAdmin || isTeacher ? "Aluno" : "Professor";
       const lessonDate = new Date(lesson.date);
       const endDate = lesson.end ? new Date(lesson.end) : new Date(lessonDate.getTime() + 90 * 60 * 1000);
-      const dayName = format(lessonDate, "EEEE", { locale: ptBR });
-      const dateStr = `${dayName} ${format(lessonDate, "dd/MM/yyyy 'às' HH:mm")} - ${format(endDate, "HH:mm")}`;
+      const nowCurrent = new Date();
+
+      const lessonDayStr = format(lessonDate, "yyyy-MM-dd");
+      const todayStr = format(nowCurrent, "yyyy-MM-dd");
+      const tomorrowDate = new Date(nowCurrent.getTime() + 24 * 60 * 60 * 1000);
+      const tomorrowStr = format(tomorrowDate, "yyyy-MM-dd");
+
+      let dayLabel: string;
+      if (lessonDayStr === todayStr) {
+        dayLabel = "Hoje";
+      } else if (lessonDayStr === tomorrowStr) {
+        dayLabel = "Amanhã";
+      } else {
+        dayLabel = format(lessonDate, "EEEE", { locale: ptBR });
+      }
+      const dateStr = `${dayLabel} ${format(lessonDate, "dd/MM/yyyy 'às' HH:mm")} - ${format(endDate, "HH:mm")}`;
 
       result.push({
         icon: CalendarCheck,

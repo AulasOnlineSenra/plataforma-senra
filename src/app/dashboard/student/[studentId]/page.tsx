@@ -86,6 +86,21 @@ function StudentDetailPageComponent() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploadingFile, setUploadingFile] = useState(false);
 
+    const subjectMap: Record<string, string> = {
+        'default-subj-1': 'Matemática',
+        'default-subj-2': 'Português',
+        'default-subj-3': 'Física',
+        'default-subj-4': 'Redação',
+        'default-subj-5': 'História',
+        'default-subj-6': 'Química',
+        'default-subj-7': 'Espanhol',
+        'default-subj-8': 'Filosofia',
+        'default-subj-9': 'Geografia',
+        'default-subj-10': 'Inglês',
+        'default-subj-11': 'Sociologia',
+        'default-subj-12': 'Biologia',
+    };
+
     // Helper to parse materials JSON
     const parseMaterials = (materialsStr: string | null): any[] => {
         if (!materialsStr) return [];
@@ -263,12 +278,16 @@ function StudentDetailPageComponent() {
         const loadStudentLessons = async () => {
             const result = await getLessonsForUser(studentId, 'student');
             if (result.success && result.data) {
-                setLessons(result.data);
+                // Se professor, mostrar apenas aulas dele com este aluno
+                const filteredLessons = currentUser?.role === 'teacher'
+                    ? result.data.filter((l: any) => l.teacher?.id === currentUser?.id)
+                    : result.data;
+                setLessons(filteredLessons);
             }
             setLoadingLessons(false);
         };
         if (studentId) loadStudentLessons();
-    }, [studentId]);
+    }, [studentId, currentUser]);
 
     // Aulas concluídas do aluno
     const completedLessons = useMemo(() => {
@@ -553,12 +572,16 @@ function StudentDetailPageComponent() {
                                                             ) : (
                                                                 <div className="flex items-center gap-1">
                                                                     <span className="text-2xl text-amber-600">
-                                                                        {lesson.customTitle || lesson.subject || 'Adicionar título da aula'}
+                                                                        {(() => {
+                                                                            const subjectName = subjectMap[lesson.subject] || lesson.subject;
+                                                                            const title = lesson.customTitle || '';
+                                                                            return title ? `${subjectName} - ${title}` : subjectName;
+                                                                        })()}
                                                                     </span>
                                                                     <button
                                                                         onClick={() => {
                                                                             setEditingLessonId(lesson.id);
-                                                                            setEditedTitleText(lesson.customTitle || lesson.subject || '');
+                                                                            setEditedTitleText(lesson.customTitle || '');
                                                                         }}
                                                                         className="text-amber-600 hover:text-amber-800 cursor-pointer"
                                                                     >
@@ -570,7 +593,11 @@ function StudentDetailPageComponent() {
 ) : (
                                                         <div className="mb-1">
                                                             <span className="text-2xl text-amber-600">
-                                                                {lesson.customTitle || lesson.subject || ''}
+                                                                {(() => {
+                                                                    const subjectName = subjectMap[lesson.subject] || lesson.subject;
+                                                                    const title = lesson.customTitle || '';
+                                                                    return title ? `${subjectName} - ${title}` : subjectName;
+                                                                })()}
                                                             </span>
                                                         </div>
                                                     )}
