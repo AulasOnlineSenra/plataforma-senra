@@ -278,15 +278,18 @@ function StudentDetailPageComponent() {
         const loadStudentLessons = async () => {
             const result = await getLessonsForUser(studentId, 'student');
             if (result.success && result.data) {
+                console.log(' Lessons from DB:', JSON.stringify(result.data.slice(0, 2), null, 2));
+                console.log('currentUser:', currentUser);
                 // Se professor, mostrar apenas aulas dele com este aluno
-                const filteredLessons = currentUser?.role === 'teacher'
+                const isTeacherUser = currentUser?.role === 'teacher';
+                const filteredLessons = isTeacherUser
                     ? result.data.filter((l: any) => l.teacher?.id === currentUser?.id)
                     : result.data;
                 setLessons(filteredLessons);
             }
             setLoadingLessons(false);
         };
-        if (studentId) loadStudentLessons();
+        if (studentId && currentUser) loadStudentLessons();
     }, [studentId, currentUser]);
 
     // Aulas concluídas do aluno
@@ -573,7 +576,7 @@ function StudentDetailPageComponent() {
                                                                 <div className="flex items-center gap-1">
                                                                     <span className="text-2xl text-amber-600">
                                                                         {(() => {
-                                                                            const subjectName = subjectMap[lesson.subject] || lesson.subject;
+                                                                            const subjectName = subjectMap[lesson.subject] || lesson.subject || 'Disciplina';
                                                                             const title = lesson.customTitle || '';
                                                                             return title ? `${subjectName} - ${title}` : subjectName;
                                                                         })()}
@@ -594,7 +597,7 @@ function StudentDetailPageComponent() {
                                                         <div className="mb-1">
                                                             <span className="text-2xl text-amber-600">
                                                                 {(() => {
-                                                                    const subjectName = subjectMap[lesson.subject] || lesson.subject;
+                                                                    const subjectName = subjectMap[lesson.subject] || lesson.subject || 'Disciplina';
                                                                     const title = lesson.customTitle || '';
                                                                     return title ? `${subjectName} - ${title}` : subjectName;
                                                                 })()}
