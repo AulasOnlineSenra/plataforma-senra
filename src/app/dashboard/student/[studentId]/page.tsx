@@ -276,9 +276,13 @@ function StudentDetailPageComponent() {
     // Carregar aulas do aluno (apenas carrega, sem filtro)
     useEffect(() => {
         const loadStudentLessons = async () => {
+            console.log('DEBUG USEFFECT: loading lessons for studentId:', studentId);
             const result = await getLessonsForUser(studentId, 'student');
+            console.log('DEBUG USEFFECT: result.success:', result.success);
+            console.log('DEBUG USEFFECT: result.data length:', result.data?.length);
             if (result.success && result.data) {
                 setLessons(result.data);
+                console.log('DEBUG USEFFECT: lessons set:', result.data.length);
             }
             setLoadingLessons(false);
         };
