@@ -273,11 +273,13 @@ function StudentDetailPageComponent() {
           .sort((a, b) => a.start.getTime() - b.start.getTime());
     }, [schedule, student, currentUser]);
 
-    // Carregar aulas do aluno (apenas carrega, sem filtro)
+    // Carregar aulas do aluno (com filtro por professor no servidor)
     useEffect(() => {
         const loadStudentLessons = async () => {
             console.log('DEBUG USEFFECT: loading lessons for studentId:', studentId);
-            const result = await getLessonsForUser(studentId, 'student');
+            // Passar teacherId se professor estiverlogado
+            const teacherId = currentUser?.role === 'teacher' ? currentUser.id : undefined;
+            const result = await getLessonsForUser(studentId, 'student', teacherId);
             console.log('DEBUG USEFFECT: result.success:', result.success);
             console.log('DEBUG USEFFECT: result.data length:', result.data?.length);
             if (result.success && result.data) {
@@ -287,7 +289,7 @@ function StudentDetailPageComponent() {
             setLoadingLessons(false);
         };
         if (studentId) loadStudentLessons();
-    }, [studentId]);
+    }, [studentId, currentUser?.id, currentUser?.role]);
 
     // Filtro usando useMemo (igual ao schedule que funciona)
     const filteredLessons = useMemo(() => {
