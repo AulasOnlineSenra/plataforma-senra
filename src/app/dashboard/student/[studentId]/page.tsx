@@ -287,14 +287,25 @@ function StudentDetailPageComponent() {
 
     // Filtro usando useMemo (igual ao schedule que funciona)
     const filteredLessons = useMemo(() => {
+        console.log('DEBUG: lessons loaded:', lessons?.length);
+        console.log('DEBUG: currentUser:', currentUser);
+        
         if (!lessons || !currentUser) return lessons || [];
         
         if (currentUser.role === 'teacher') {
+            // Log dos IDs para debug
+            console.log('DEBUG: teacher filter - currentUser.id:', currentUser.id);
+            if (lessons.length > 0) {
+                console.log('DEBUG: first lesson teacher?.id:', lessons[0].teacher?.id);
+            }
+            
             // Verifica teacher?.id OU teacherId (ambos formatos suportados)
-            return lessons.filter(l => 
+            const filtered = lessons.filter(l => 
                 l.teacher?.id === currentUser.id || 
                 l.teacherId === currentUser.id
             );
+            console.log('DEBUG: filtered count:', filtered.length);
+            return filtered;
         }
         return lessons;
     }, [lessons, currentUser?.id, currentUser?.role]);

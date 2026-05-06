@@ -237,6 +237,13 @@ export default function DashboardPage() {
         setLessons(lessonsResult.data as LessonItem[]);
       }
 
+      if (dbUser.role === "student") {
+        const updatedUserResult = await getUserById(dbUser.id);
+        if (updatedUserResult.success && updatedUserResult.data) {
+          setUser(updatedUserResult.data as DashboardUser);
+        }
+      }
+
       if (dbUser.role === "admin" && statsResult.success && statsResult.data) {
         setAdminStats(statsResult.data as AdminStats);
       }
