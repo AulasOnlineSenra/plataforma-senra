@@ -276,17 +276,14 @@ export async function getLessons() {
   }
 }
 
-export async function getLessonsForUser(userId: string, role: string, teacherId?: string) {
+export async function getLessonsForUser(userId: string, role: string) {
   try {
-    // Se teacherId for fornecido, filtrar por professor também (professor vendo perfil de aluno)
-    const where: any =
+    const where =
       role === "admin"
-        ? teacherId ? { teacherId } : {}
+        ? {}
         : role === "teacher"
           ? { teacherId: userId }
-          : teacherId 
-            ? { studentId: userId, teacherId }  // Professor veja aluno: filtro DUPLO
-            : { studentId: userId };
+          : { studentId: userId };
 
     const lessons = await prisma.lesson.findMany({
       where,
