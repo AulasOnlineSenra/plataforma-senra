@@ -632,12 +632,12 @@ function BookingPageComponent() {
       return;
     }
 
-    // Redireciona para página de schedule onde o usuário pode ver as aulas agendadas
+    // Redireciona para página de booking onde o usuário pode fazer novo agendamento
     setPreBookings([]);
     if (currentUser?.id) {
       safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);
     }
-    router.push("/dashboard/schedule");
+    router.push("/dashboard/booking");
   };
 
   const pageTitle = studentName
