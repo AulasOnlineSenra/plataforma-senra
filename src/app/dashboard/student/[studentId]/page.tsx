@@ -279,18 +279,18 @@ function StudentDetailPageComponent() {
             const result = await getLessonsForUser(studentId, 'student');
             if (result.success && result.data) {
                 console.log(' Lessons from DB:', JSON.stringify(result.data.slice(0, 2), null, 2));
-                console.log('currentUser:', currentUser);
+                console.log('currentUser in load:', currentUser);
                 // Se professor, mostrar apenas aulas dele com este aluno
-                const isTeacherUser = currentUser?.role === 'teacher';
-                const filteredLessons = isTeacherUser
+                const filteredLessons = currentUser?.role === 'teacher'
                     ? result.data.filter((l: any) => l.teacher?.id === currentUser?.id)
                     : result.data;
+                console.log('Filtered lessons:', filteredLessons.length, 'of', result.data.length);
                 setLessons(filteredLessons);
             }
             setLoadingLessons(false);
         };
-        if (studentId && currentUser) loadStudentLessons();
-    }, [studentId, currentUser]);
+        if (studentId) loadStudentLessons();
+    }, [studentId]);
 
     // Aulas concluídas do aluno
     const completedLessons = useMemo(() => {
