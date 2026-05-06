@@ -273,31 +273,34 @@ function StudentDetailPageComponent() {
           .sort((a, b) => a.start.getTime() - b.start.getTime());
     }, [schedule, student, currentUser]);
 
-    // Carregar aulas do aluno
+    // Carregar aulas do aluno (apenas carrega, sem filtro)
     useEffect(() => {
         const loadStudentLessons = async () => {
             const result = await getLessonsForUser(studentId, 'student');
             if (result.success && result.data) {
-                console.log(' Lessons from DB:', JSON.stringify(result.data.slice(0, 2), null, 2));
-                console.log('currentUser in load:', currentUser);
-                // Se professor, mostrar apenas aulas dele com este aluno
-                const filteredLessons = currentUser?.role === 'teacher'
-                    ? result.data.filter((l: any) => l.teacher?.id === currentUser?.id)
-                    : result.data;
-                console.log('Filtered lessons:', filteredLessons.length, 'of', result.data.length);
-                setLessons(filteredLessons);
+                setLessons(result.data);
             }
             setLoadingLessons(false);
         };
         if (studentId) loadStudentLessons();
     }, [studentId]);
 
+    // Filtro usando useMemo (igual ao schedule que funciona)
+    const filteredLessons = useMemo(() => {
+        if (!lessons || !currentUser) return lessons || [];
+        
+        if (currentUser.role === 'teacher') {
+            return lessons.filter(l => l.teacher?.id === currentUser.id);
+        }
+        return lessons;
+    }, [lessons, currentUser]);
+
     // Aulas concluídas do aluno
     const completedLessons = useMemo(() => {
-        return lessons
+        return filteredLessons
             .filter((l: any) => l.status === 'COMPLETED')
             .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [lessons]);
+    }, [filteredLessons]);
 
     const formatDateTimeLesson = (lesson: any) => {
         const startDate = new Date(lesson.date);
