@@ -290,10 +290,14 @@ function StudentDetailPageComponent() {
         if (!lessons || !currentUser) return lessons || [];
         
         if (currentUser.role === 'teacher') {
-            return lessons.filter(l => l.teacher?.id === currentUser.id);
+            // Verifica teacher?.id OU teacherId (ambos formatos suportados)
+            return lessons.filter(l => 
+                l.teacher?.id === currentUser.id || 
+                l.teacherId === currentUser.id
+            );
         }
         return lessons;
-    }, [lessons, currentUser]);
+    }, [lessons, currentUser?.id, currentUser?.role]);
 
     // Aulas concluídas do aluno
     const completedLessons = useMemo(() => {
