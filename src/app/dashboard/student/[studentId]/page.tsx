@@ -276,6 +276,10 @@ function StudentDetailPageComponent() {
     // Carregar aulas do aluno (apenas carrega, sem filtro)
     useEffect(() => {
         const loadStudentLessons = async () => {
+            if (!currentUser) {
+                console.log('DEBUG USEFFECT: currentUser not loaded yet, skipping');
+                return;
+            }
             console.log('DEBUG USEFFECT: loading lessons for studentId:', studentId);
             const result = await getLessonsForUser(studentId, 'student');
             console.log('DEBUG USEFFECT: result.success:', result.success);
@@ -286,8 +290,8 @@ function StudentDetailPageComponent() {
             }
             setLoadingLessons(false);
         };
-        if (studentId) loadStudentLessons();
-    }, [studentId]);
+        if (studentId && currentUser) loadStudentLessons();
+    }, [studentId, currentUser?.id, currentUser?.role]);
 
     // Filtro usando useMemo (igual ao schedule que funciona)
     const filteredLessons = useMemo(() => {
