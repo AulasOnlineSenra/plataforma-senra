@@ -368,7 +368,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     };
 
     const expenseItems = [
-      { id: 'exp-1', date: new Date(), category: 'Pagamentos', description: 'Professores (aulas concluídas)', amount: monthlyTeacherPaymentsCost },
+      { id: 'exp-1', date: new Date(), category: 'Pagamentos', description: 'Professores (aulas concluídas)', amount: selectedPeriodCost },
       { id: 'exp-2', date: new Date(), category: 'Pagamentos', description: 'Comissões (Marketing)', amount: marketingCosts.organicCommissions + marketingCosts.paidCommissions },
       { id: 'exp-3', date: new Date(), category: 'Custos de Marketing', description: 'Anúncios', amount: marketingCosts.ads },
       { id: 'exp-4', date: new Date(), category: 'Custos de Marketing', description: 'Equipe', amount: marketingCosts.team },
