@@ -284,8 +284,8 @@ export async function getLessonsForUser(userId: string, role: string, teacherIdT
         ? teacherIdToFilter ? { teacherId: teacherIdToFilter } : {}
         : role === "teacher"
           ? { teacherId: userId }
-          : teacherIdToFilter 
-            ? { studentId: userId, teacherId: teacherIdToFilter }  // Professor vendo perfil de aluno
+          : role === "student" && teacherIdToFilter
+            ? { studentId: userId, teacherId: teacherIdToFilter }
             : { studentId: userId };
 
     const lessons = await prisma.lesson.findMany({
@@ -301,6 +301,7 @@ export async function getLessonsForUser(userId: string, role: string, teacherIdT
         date: true,
         endDate: true,
         isExperimental: true,
+        teacherId: true,
         student: { select: { id: true, name: true, email: true, avatarUrl: true } },
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true, videoUrl: true } },
       },
@@ -330,11 +331,20 @@ export async function getLessonsForUser(userId: string, role: string, teacherIdT
       const nonExperimentalLessons = lessonsToUpdate.filter(l => !l.isExperimental);
       
       if (nonExperimentalLessons.length > 0) {
-        const studentIds = [...new Set(nonExperimentalLessons.map(l => l.studentId))];
-        await prisma.user.updateMany({
-          where: { id: { in: studentIds } },
-          data: { credits: { decrement: nonExperimentalLessons.length } },
-        });
+        // Decrementar créditos individualmente por aluno
+        const lessonsPerStudent = nonExperimentalLessons.reduce((acc: Record<string, number>, lesson) => {
+          acc[lesson.studentId] = (acc[lesson.studentId] || 0) + 1;
+          return acc;
+        }, {});
+
+        await Promise.all(
+          Object.entries(lessonsPerStudent).map(([id, count]) =>
+            prisma.user.update({
+              where: { id },
+              data: { credits: { decrement: count } },
+            })
+          )
+        );
       }
 
       lessons.forEach((lesson) => {

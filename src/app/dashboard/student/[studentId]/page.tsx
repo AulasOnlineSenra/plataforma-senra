@@ -225,7 +225,24 @@ function StudentDetailPageComponent() {
         const updateData = async () => {
             setIsLoading(true);
 
-            // BUSCA O USUÁRIO DIRETO DO BANCO DE DADOS
+            // Tenta pegar o ID do localStorage primeiro se o objeto currentUser estiver incompleto
+            const userId = localStorage.getItem('userId');
+            const storedUser = localStorage.getItem('currentUser');
+            let parsedUser = storedUser ? JSON.parse(storedUser) : null;
+            
+            // Se o objeto estiver incompleto mas tivermos o userId, buscamos no banco
+            if ((!parsedUser || !parsedUser.id) && userId) {
+                const res = await getUserById(userId);
+                if (res.success && res.data) {
+                    parsedUser = res.data;
+                    localStorage.setItem('currentUser', JSON.stringify(res.data));
+                }
+            }
+            
+            const finalUser = parsedUser || getMockUser('teacher');
+            setCurrentUser(finalUser);
+
+            // BUSCA O USUÁRIO (ALUNO/PROFESSOR) QUE ESTAMOS VENDO
             const result = await getUserById(studentId);
             if (result.success && result.data) {
                 setStudent(result.data);
@@ -239,9 +256,6 @@ function StudentDetailPageComponent() {
                 : initialSchedule;
             setSchedule(currentSchedule);
             
-            const storedUser = localStorage.getItem('currentUser');
-            setCurrentUser(storedUser ? JSON.parse(storedUser) : getMockUser('teacher'));
-
             const storedSimulados = localStorage.getItem(SIMULADOS_STORAGE_KEY);
             setSimulados(storedSimulados ? JSON.parse(storedSimulados).map((s:any) => ({...s, createdAt: new Date(s.createdAt), completedAt: s.completedAt ? new Date(s.completedAt) : undefined})) : initialSimulados);
             
@@ -253,71 +267,37 @@ function StudentDetailPageComponent() {
         return () => window.removeEventListener('storage', updateData);
     }, [studentId]);
 
-    const upcomingClasses = useMemo(() => {
-        if (!student || !currentUser) return [];
-
-        // Filtro adaptado para funcionar se o perfil visualizado for Professor ou Aluno
-        const baseFilter = (e: ScheduleEvent) => {
-          const isParticipant = student.role === 'teacher' ? e.teacherId === student.id : e.studentId === student.id;
-          return isParticipant && e.status === 'scheduled' && e.start > new Date();
-        };
-    
-        if (currentUser.role === 'teacher') {
-          return schedule
-            .filter(e => baseFilter(e) && e.teacherId === currentUser.id)
-            .sort((a, b) => a.start.getTime() - b.start.getTime());
-        }
-    
-        return schedule
-          .filter(baseFilter)
-          .sort((a, b) => a.start.getTime() - b.start.getTime());
-    }, [schedule, student, currentUser]);
-
     // Carregar aulas do aluno (com filtro por professor no servidor)
     useEffect(() => {
         const loadStudentLessons = async () => {
-            if (!currentUser) {
-                console.log('DEBUG USEFFECT: currentUser not loaded yet, skipping');
-                return;
-            }
-            console.log('DEBUG USEFFECT: loading lessons for studentId:', studentId);
+            if (!currentUser || !currentUser.id) return;
+            
+            setLoadingLessons(true);
             // Se professor, passar seu ID para filtrar no servidor
             const teacherIdToFilter = currentUser.role === 'teacher' ? currentUser.id : undefined;
             const result = await getLessonsForUser(studentId, 'student', teacherIdToFilter);
-            console.log('DEBUG USEFFECT: result.success:', result.success);
-            console.log('DEBUG USEFFECT: teacherIdToFilter:', teacherIdToFilter);
-            console.log('DEBUG USEFFECT: result.data length:', result.data?.length);
+            
             if (result.success && result.data) {
                 setLessons(result.data);
-                console.log('DEBUG USEFFECT: lessons set:', result.data.length);
             }
             setLoadingLessons(false);
         };
-        if (studentId && currentUser) loadStudentLessons();
+        if (studentId && currentUser?.id) loadStudentLessons();
     }, [studentId, currentUser?.id, currentUser?.role]);
 
-    // Filtro usando useMemo (igual ao schedule que funciona)
+    // Filtro usando useMemo (garantia adicional no cliente)
     const filteredLessons = useMemo(() => {
-        console.log('DEBUG: lessons loaded:', lessons?.length);
-        console.log('DEBUG: currentUser:', currentUser);
-        
         if (!lessons || !currentUser) return lessons || [];
         
+        // Se for professor, filtrar apenas as aulas dele com este aluno
         if (currentUser.role === 'teacher') {
-            // Log dos IDs para debug
-            console.log('DEBUG: teacher filter - currentUser.id:', currentUser.id);
-            if (lessons.length > 0) {
-                console.log('DEBUG: first lesson teacher?.id:', lessons[0].teacher?.id);
-            }
-            
-            // Verifica teacher?.id OU teacherId (ambos formatos suportados)
-            const filtered = lessons.filter(l => 
-                l.teacher?.id === currentUser.id || 
-                l.teacherId === currentUser.id
+            return lessons.filter(l => 
+                l.teacherId === currentUser.id || 
+                l.teacher?.id === currentUser.id
             );
-            console.log('DEBUG: filtered count:', filtered.length);
-            return filtered;
         }
+        
+        // Admins e Alunos (vendo seu próprio perfil) veem tudo que o servidor retornou
         return lessons;
     }, [lessons, currentUser?.id, currentUser?.role]);
 
