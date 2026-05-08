@@ -141,7 +141,9 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       return false;
     });
 
-    console.log(`[IA Agent Test] Running model: ${agent.model} for agent: ${agent.name}`);
+    console.log(`[IA DEBUG] Agente: ${agent.name}, Model: ${agent.model}`);
+    console.log(`[IA DEBUG] Enabled IDs: ${JSON.stringify(enabledToolIds)}`);
+    console.log(`[IA DEBUG] Final Tools Names: ${finalTools.map(t => t.name).join(', ')}`);
     
     let modelName = agent.model;
     if (!modelName.includes('/')) {
