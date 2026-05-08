@@ -1,10 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, KeyboardEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { 
+  DragDropContext, 
+  Droppable, 
+  Draggable, 
+  DropResult 
+} from '@hello-pangea/dnd';
 import { 
   Plus, 
   Search, 
@@ -14,7 +27,10 @@ import {
   LayoutGrid,
   List,
   ArrowLeft,
-  Loader2
+  Loader2,
+  ChevronRight,
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { 
   getCrmBoards, 
@@ -22,7 +38,10 @@ import {
   createCrmBoard, 
   updateCrmBoard,
   createCrmColumn,
-  createCrmLead
+  createCrmLead,
+  moveCrmLead,
+  deleteCrmLead,
+  deleteCrmColumn
 } from '@/app/actions/crm';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -54,6 +73,7 @@ interface LeadCard {
   tags?: string;
   temperature: string;
   lastContact?: Date;
+  order: number;
 }
 
 const getTemperatureColor = (temp: string) => {
@@ -77,6 +97,7 @@ const getTemperatureLabel = (temp: string) => {
 };
 
 export default function CrmComercial() {
+  const [isMounted, setIsMounted] = useState(false);
   const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<any>(null);
@@ -84,9 +105,21 @@ export default function CrmComercial() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
+  // Inline edit state
+  const [addingLeadToColumn, setAddingLeadToColumn] = useState<string | null>(null);
+  const [newLeadName, setNewLeadName] = useState('');
+  const newLeadInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
+    setIsMounted(true);
     loadBoards();
   }, []);
+
+  useEffect(() => {
+    if (addingLeadToColumn && newLeadInputRef.current) {
+      newLeadInputRef.current.focus();
+    }
+  }, [addingLeadToColumn]);
 
   const loadBoards = async () => {
     setLoading(true);
@@ -144,22 +177,97 @@ export default function CrmComercial() {
     setLoading(false);
   };
 
-  const handleCreateLead = async (columnId: string) => {
-    const name = prompt("Nome do lead:");
-    if (!name) return;
+  const submitNewLead = async (columnId: string) => {
+    if (!newLeadName.trim()) {
+      setAddingLeadToColumn(null);
+      return;
+    }
 
+    const tempName = newLeadName;
+    setNewLeadName('');
+    setAddingLeadToColumn(null);
     setLoading(true);
+
     const result = await createCrmLead({ 
-      name, 
+      name: tempName, 
       columnId, 
-      order: 0,
+      order: selectedBoard.columns.find((c: any) => c.id === columnId)?.leads.length || 0,
       temperature: 'frio'
     });
+    
     if (result.success) {
-      toast.success("Lead criado!");
       handleSelectBoard(selectedBoard);
+    } else {
+      toast.error("Erro ao criar lead");
     }
     setLoading(false);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, columnId: string) => {
+    if (e.key === 'Enter') {
+      submitNewLead(columnId);
+    } else if (e.key === 'Escape') {
+      setAddingLeadToColumn(null);
+      setNewLeadName('');
+    }
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este lead?")) return;
+    setLoading(true);
+    const result = await deleteCrmLead(leadId);
+    if (result.success) {
+      toast.success("Lead excluído.");
+      handleSelectBoard(selectedBoard);
+    } else {
+      toast.error("Erro ao excluir lead.");
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta coluna e todos os seus leads?")) return;
+    setLoading(true);
+    const result = await deleteCrmColumn(columnId);
+    if (result.success) {
+      toast.success("Coluna excluída.");
+      handleSelectBoard(selectedBoard);
+    } else {
+      toast.error("Erro ao excluir coluna.");
+    }
+    setLoading(false);
+  };
+
+  const onDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    // Optimistic UI update
+    const newBoard = { ...selectedBoard };
+    const sourceColIndex = newBoard.columns.findIndex((c: any) => c.id === source.droppableId);
+    const destColIndex = newBoard.columns.findIndex((c: any) => c.id === destination.droppableId);
+
+    const sourceCol = newBoard.columns[sourceColIndex];
+    const destCol = newBoard.columns[destColIndex];
+
+    const [movedLead] = sourceCol.leads.splice(source.index, 1);
+    destCol.leads.splice(destination.index, 0, movedLead);
+
+    // Update order values locally for rendering
+    destCol.leads.forEach((lead: any, index: number) => {
+      lead.order = index;
+    });
+
+    setSelectedBoard(newBoard);
+
+    // Persist to backend
+    const moveResult = await moveCrmLead(draggableId, destination.droppableId, destination.index);
+    if (!moveResult.success) {
+      toast.error("Falha ao mover lead. Recarregando...");
+      handleSelectBoard(selectedBoard); // Reload original state from db
+    }
   };
 
   const toggleFavorite = async (boardId: string, current: boolean) => {
@@ -175,6 +283,8 @@ export default function CrmComercial() {
     return matchesSearch && matchesFavorite;
   });
 
+  if (!isMounted) return null;
+
   if (loading && viewMode === 'boards') {
     return (
       <div className="flex items-center justify-center h-64">
@@ -184,23 +294,29 @@ export default function CrmComercial() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className={`flex flex-col gap-6 ${viewMode === 'kanban' ? 'h-[calc(100vh-120px)]' : ''}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {viewMode === 'kanban' && (
-            <Button variant="ghost" size="icon" onClick={() => setViewMode('boards')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+        <div className="flex items-center gap-2">
+          {viewMode === 'kanban' ? (
+            <>
+              <Button variant="ghost" size="icon" onClick={() => setViewMode('boards')} className="shrink-0">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center text-sm text-slate-500 gap-2 mb-1">
+                <span className="hover:text-slate-900 cursor-pointer" onClick={() => setViewMode('boards')}>CRM Comercial</span>
+                <ChevronRight className="h-4 w-4" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 truncate max-w-[300px]">
+                {selectedBoard?.name}
+              </h1>
+            </>
+          ) : (
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">CRM Comercial</h1>
+              <p className="text-sm text-slate-500">Gestão de leads e funil de vendas</p>
+            </div>
           )}
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              {viewMode === 'boards' ? 'CRM Comercial' : selectedBoard?.name}
-            </h1>
-            <p className="text-sm text-slate-500">
-              {viewMode === 'boards' ? 'Gestão de leads e funil de vendas' : 'Visualização em Kanban'}
-            </p>
-          </div>
         </div>
         <div className="flex items-center gap-2">
           {viewMode === 'boards' && (
@@ -211,7 +327,10 @@ export default function CrmComercial() {
           <Button variant="outline" size="sm" className={viewMode === 'boards' ? 'bg-slate-100' : ''} onClick={() => setViewMode('boards')}>
             <LayoutGrid className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" className={viewMode === 'kanban' ? 'bg-slate-100' : ''} onClick={() => setViewMode('kanban')}>
+          <Button variant="outline" size="sm" className={viewMode === 'kanban' ? 'bg-slate-100' : ''} onClick={() => {
+             if (selectedBoard) setViewMode('kanban');
+             else if (boards.length > 0) handleSelectBoard(boards[0]);
+          }}>
             <List className="h-4 w-4" />
           </Button>
         </div>
@@ -281,66 +400,143 @@ export default function CrmComercial() {
         </div>
       )}
 
-      {/* Kanban View */}
+      {/* Kanban View Trello-Style */}
       {viewMode === 'kanban' && selectedBoard && (
-        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[600px]">
-          <div className="flex gap-4">
-            {selectedBoard.columns.map((column: any) => (
-              <div key={column.id} className="w-[300px] flex-shrink-0">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${column.color || 'bg-slate-400'}`} />
-                    <span className="font-medium text-slate-900">{column.name}</span>
-                    <Badge variant="secondary" className="text-xs">{column.leads.length}</Badge>
+        <div className="flex-1 overflow-x-auto pb-4 bg-slate-100 -mx-6 px-6 pt-4 rounded-xl shadow-inner">
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-4 h-full items-start">
+              {selectedBoard.columns.map((column: any) => (
+                <div key={column.id} className="w-[300px] flex-shrink-0 bg-slate-200/60 rounded-xl flex flex-col max-h-full">
+                  
+                  {/* Column Header */}
+                  <div className="flex items-center justify-between p-3 cursor-grab active:cursor-grabbing">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${column.color || 'bg-slate-400'}`} />
+                      <span className="font-semibold text-slate-800 text-sm">{column.name}</span>
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{column.leads.length}</Badge>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:bg-slate-300/50">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteColumn(column.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Lista
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {column.leads.map((lead: any) => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardContent className="p-3">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-start justify-between">
-                            <span className="font-semibold text-sm text-slate-900">{lead.name}</span>
-                            <Badge className={`text-[10px] h-4 ${getTemperatureColor(lead.temperature)}`}>
-                              {getTemperatureLabel(lead.temperature)}
-                            </Badge>
-                          </div>
-                          {lead.phone && <p className="text-xs text-slate-500">{lead.phone}</p>}
-                          {lead.source && (
-                            <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                              <span>Origem:</span>
-                              <span className="font-medium">{lead.source}</span>
-                            </div>
-                          )}
+
+                  {/* Droppable Area for Leads */}
+                  <Droppable droppableId={column.id}>
+                    {(provided, snapshot) => (
+                      <div 
+                        {...provided.droppableProps} 
+                        ref={provided.innerRef}
+                        className={`flex-1 overflow-y-auto px-2 min-h-[50px] space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-slate-200/80 rounded-lg' : ''}`}
+                      >
+                        {column.leads.map((lead: any, index: number) => (
+                          <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="group relative"
+                              >
+                                <Card className={`hover:border-primary/50 transition-colors ${snapshot.isDragging ? 'rotate-2 shadow-xl' : 'shadow-sm'}`}>
+                                  <CardContent className="p-3">
+                                    <div className="flex flex-col gap-2">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <span className="font-medium text-sm text-slate-800 leading-snug">{lead.name}</span>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-slate-400 hover:text-slate-700">
+                                                <MoreHorizontal className="h-3 w-3" />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-40">
+                                              <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                              </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between mt-1">
+                                        {lead.source && (
+                                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                            {lead.source}
+                                          </span>
+                                        )}
+                                        <Badge className={`text-[9px] h-4 px-1.5 ml-auto ${getTemperatureColor(lead.temperature)}`}>
+                                          {getTemperatureLabel(lead.temperature)}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+
+                  {/* Inline Lead Creation or Add Button */}
+                  <div className="p-2">
+                    {addingLeadToColumn === column.id ? (
+                      <div className="space-y-2 bg-white p-2 rounded-lg shadow-sm border border-slate-200">
+                        <Input
+                          ref={newLeadInputRef}
+                          value={newLeadName}
+                          onChange={(e) => setNewLeadName(e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, column.id)}
+                          placeholder="Insira o título para este cartão..."
+                          className="h-auto py-1.5 text-sm border-none shadow-none focus-visible:ring-0 px-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" onClick={() => submitNewLead(column.id)} className="h-8">Adicionar cartão</Button>
+                          <Button size="icon" variant="ghost" onClick={() => { setAddingLeadToColumn(null); setNewLeadName(''); }} className="h-8 w-8 text-slate-500">
+                            <Plus className="h-5 w-5 rotate-45" />
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-slate-500 hover:text-slate-900 h-9"
-                    onClick={() => handleCreateLead(column.id)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar lead
-                  </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-slate-500 hover:text-slate-800 hover:bg-slate-300/50 h-9"
+                        onClick={() => setAddingLeadToColumn(column.id)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar um cartão
+                      </Button>
+                    )}
+                  </div>
+
                 </div>
+              ))}
+              
+              {/* Add New Column */}
+              <div className="w-[300px] flex-shrink-0">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-slate-600 bg-slate-200/50 hover:bg-slate-200 rounded-xl h-12 font-medium"
+                  onClick={handleCreateColumn}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar outra lista
+                </Button>
               </div>
-            ))}
-            <div className="w-[300px] flex-shrink-0">
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-slate-500 border-dashed border-2 border-slate-200 hover:border-slate-300 rounded-xl h-12"
-                onClick={handleCreateColumn}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar coluna
-              </Button>
             </div>
-          </div>
+          </DragDropContext>
         </div>
       )}
 
@@ -355,7 +551,6 @@ export default function CrmComercial() {
               </p>
             </CardContent>
           </Card>
-          {/* Outros cards de estatísticas poderiam ser dinâmicos também */}
           <Card className="rounded-xl">
             <CardContent className="p-4">
               <p className="text-sm text-slate-500">Taxa de Conversão</p>
