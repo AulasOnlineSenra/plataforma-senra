@@ -105,10 +105,7 @@ export async function getAvailableProviders() {
   }
 }
 
-import { genkit } from "genkit";
-import { googleAI } from "@genkit-ai/google-genai";
-import openAI from "genkitx-openai";
-import anthropic from "genkitx-anthropic";
+import { ai } from "@/ai/genkit";
 import { allTools } from "@/lib/ai/tools";
 
 export async function runAiAgentTest(agentId: string, prompt: string) {
@@ -118,23 +115,12 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
 
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
     
-    // Normalização robusta do nome do modelo para decidir qual plugin carregar
-    let modelName = agent.model;
-    const plugins = [];
-
-    if (modelName.includes('gemini') || !modelName.includes('/')) {
-      if (!modelName.includes('/')) modelName = `googleai/${modelName}`;
-      plugins.push(googleAI({ apiKey: settings?.geminiApiKey || process.env.GOOGLE_GENAI_API_KEY }));
-    } else if (modelName.startsWith('openai/') || modelName.includes('gpt')) {
-      if (!modelName.includes('/')) modelName = `openai/${modelName}`;
-      plugins.push(openAI({ apiKey: settings?.openaiApiKey || process.env.OPENAI_API_KEY }));
-    } else if (modelName.startsWith('anthropic/') || modelName.includes('claude')) {
-      if (!modelName.includes('/')) modelName = `anthropic/${modelName}`;
-      plugins.push(anthropic({ apiKey: settings?.anthropicApiKey || process.env.ANTHROPIC_API_KEY }));
+    // Configurar chaves de API conforme o provedor do modelo (usando process.env para os plugins do global ai)
+    if (settings) {
+      if (settings.geminiApiKey) process.env.GOOGLE_GENAI_API_KEY = settings.geminiApiKey;
+      if (settings.openaiApiKey) process.env.OPENAI_API_KEY = settings.openaiApiKey;
+      if (settings.anthropicApiKey) process.env.ANTHROPIC_API_KEY = settings.anthropicApiKey;
     }
-
-    // Inicialização dinâmica do Genkit apenas com o plugin necessário
-    const localAi = genkit({ plugins });
 
     const enabledToolIds = typeof agent.tools === 'string' ? JSON.parse(agent.tools || "[]") : (agent.tools || []);
     
@@ -155,7 +141,16 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       return false;
     });
 
-    const response = await localAi.generate({
+    console.log(`[IA Agent Test] Running model: ${agent.model} for agent: ${agent.name}`);
+    
+    let modelName = agent.model;
+    if (!modelName.includes('/')) {
+      if (modelName.includes('gemini')) modelName = `googleai/${modelName}`;
+      else if (modelName.includes('gpt')) modelName = `openai/${modelName}`;
+      else if (modelName.includes('claude')) modelName = `anthropic/${modelName}`;
+    }
+
+    const response = await ai.generate({
       model: modelName,
       system: agent.instructions || "Você é um assistente útil.",
       prompt: prompt,
