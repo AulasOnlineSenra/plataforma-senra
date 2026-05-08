@@ -6,8 +6,8 @@ import anthropic from 'genkitx-anthropic';
 export const ai = genkit({
   plugins: [
     googleAI(),
-    openAI(),
-    anthropic(),
+    openAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' }),
+    anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || 'dummy' }),
   ],
   model: 'googleai/gemini-1.5-flash',
 });
