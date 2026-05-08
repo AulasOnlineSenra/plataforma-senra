@@ -16,6 +16,7 @@ import {
   TrendingUp,
   HeartHandshake,
   Newspaper,
+  Sparkles,
 } from 'lucide-react';
 
 export const navItems: NavItem[] = [
@@ -39,4 +40,5 @@ export const adminNavItems: NavItem[] = [
   { href: '/dashboard/admin/packages', icon: Package, label: 'Planos', roles: ['admin'] },
   { href: '/dashboard/marketing', icon: TrendingUp, label: 'Marketing', roles: ['admin'] },
   { href: '/dashboard/crm', icon: HeartHandshake, label: 'CRM', roles: ['admin'] },
+  { href: '/dashboard/admin/ia', icon: Sparkles, label: 'IA', roles: ['admin'] },
 ];

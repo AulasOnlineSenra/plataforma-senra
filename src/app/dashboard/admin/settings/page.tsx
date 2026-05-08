@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X } from 'lucide-react';
+import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +37,15 @@ export default function SettingsPage() {
   const [availabilityType, setAvailabilityType] = useState('weekly');
   const [pixKey, setPixKey] = useState('');
   const [pixKeyType, setPixKeyType] = useState(DEFAULT_SETTINGS.pixKeyType);
+  
+  // AI API Keys
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [openaiApiKey, setOpenaiApiKey] = useState('');
+  const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+  const [minimaxApiKey, setMinimaxApiKey] = useState('');
+  const [grokApiKey, setGrokApiKey] = useState('');
+
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
@@ -65,6 +74,14 @@ export default function SettingsPage() {
       setAvailabilityType(result.data.availabilityType || 'weekly');
       setPixKey((result.data as any).pixKey || DEFAULT_SETTINGS.pixKey);
       setPixKeyType((result.data as any).pixKeyType || DEFAULT_SETTINGS.pixKeyType);
+      
+      // AI Keys
+      setGeminiApiKey((result.data as any).geminiApiKey || '');
+      setOpenaiApiKey((result.data as any).openaiApiKey || '');
+      setAnthropicApiKey((result.data as any).anthropicApiKey || '');
+      setOpenRouterApiKey((result.data as any).openRouterApiKey || '');
+      setMinimaxApiKey((result.data as any).minimaxApiKey || '');
+      setGrokApiKey((result.data as any).grokApiKey || '');
     };
 
     loadSettings();
@@ -122,6 +139,12 @@ export default function SettingsPage() {
       referralBonus: nextSettings.referralBonus,
       pixKey: pixKey.trim(),
       pixKeyType: pixKeyType.trim(),
+      geminiApiKey: geminiApiKey.trim(),
+      openaiApiKey: openaiApiKey.trim(),
+      anthropicApiKey: anthropicApiKey.trim(),
+      openRouterApiKey: openRouterApiKey.trim(),
+      minimaxApiKey: minimaxApiKey.trim(),
+      grokApiKey: grokApiKey.trim(),
     });
     console.log('[handleSave] Resultado:', result);
     setIsLoading(false);
@@ -366,6 +389,87 @@ export default function SettingsPage() {
             </div>
             <p className="mt-2 text-sm text-slate-500">
               Esta chave será exibida para os alunos ao escolherem pagar via Pix no checkout.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-shadow hover:shadow-md md:col-span-2">
+          <CardHeader className="border-b border-slate-100 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-indigo-100 p-3 text-indigo-600">
+                <Bot className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-slate-900">Configurações de IA</CardTitle>
+                <CardDescription>Chaves de API para os provedores de inteligência artificial</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">Google Gemini API Key</Label>
+                <Input
+                  type="password"
+                  value={geminiApiKey}
+                  onChange={(e) => setGeminiApiKey(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">OpenAI API Key</Label>
+                <Input
+                  type="password"
+                  value={openaiApiKey}
+                  onChange={(e) => setOpenaiApiKey(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">Anthropic (Claude) Key</Label>
+                <Input
+                  type="password"
+                  value={anthropicApiKey}
+                  onChange={(e) => setAnthropicApiKey(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-ant-..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">OpenRouter API Key</Label>
+                <Input
+                  type="password"
+                  value={openRouterApiKey}
+                  onChange={(e) => setOpenRouterApiKey(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-or-..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">Grok (xAI) API Key</Label>
+                <Input
+                  type="password"
+                  value={grokApiKey}
+                  onChange={(e) => setGrokApiKey(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="xai-..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">MiniMax API Key</Label>
+                <Input
+                  type="password"
+                  value={minimaxApiKey}
+                  onChange={(e) => setMinimaxApiKey(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="Key..."
+                />
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-slate-500 italic">
+              * Suas chaves são armazenadas de forma segura e usadas apenas para processar requisições de IA da plataforma.
             </p>
           </CardContent>
         </Card>

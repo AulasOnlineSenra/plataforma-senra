@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
@@ -15,6 +16,13 @@ model AppSetting {
   availabilityType String   @default("weekly")
   pixKey           String   @default("")
   pixKeyType       String   @default("cnpj")
+  geminiApiKey     String?
+  openaiApiKey     String?
+  anthropicApiKey  String?
+  openRouterApiKey String?
+  minimaxApiKey    String?
+  grokApiKey       String?
+  searchApiKey     String?
   updatedAt        DateTime @updatedAt
 }
 
@@ -67,6 +75,49 @@ model Lead {
   name      String?
   email     String?
   createdAt DateTime @default(now())
+}
+
+model CrmBoard {
+  id            String      @id @default(cuid())
+  name          String
+  coverColor    String?     @default("bg-gradient-to-r from-blue-500 to-cyan-500")
+  isFavorite    Boolean     @default(false)
+  columns       CrmColumn[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model CrmColumn {
+  id        String    @id @default(cuid())
+  name      String
+  color     String?   @default("bg-slate-400")
+  order     Int       @default(0)
+  boardId   String
+  board     CrmBoard  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  leads     CrmLead[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([boardId])
+}
+
+model CrmLead {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?
+  email       String?
+  source      String?
+  series      String?
+  tags        String?   @default("[]") // JSON array of strings
+  temperature String    @default("frio") // frio, morno, quente, muito-quente
+  lastContact DateTime?
+  order       Int       @default(0)
+  columnId    String
+  column      CrmColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([columnId])
 }
 
 model Lesson {
@@ -275,4 +326,16 @@ model QuizQuestion {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AiAgent {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  instructions String?
+  model        String   @default("gemini-2.0-flash")
+  tools        String?  @default("[]") // JSON array of enabled tool IDs
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

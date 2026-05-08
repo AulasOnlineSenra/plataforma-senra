@@ -9,6 +9,13 @@ type SettingsInput = {
   referralBonus: string;
   pixKey?: string;
   pixKeyType?: string;
+  geminiApiKey?: string;
+  openaiApiKey?: string;
+  anthropicApiKey?: string;
+  openRouterApiKey?: string;
+  minimaxApiKey?: string;
+  grokApiKey?: string;
+  searchApiKey?: string;
 };
 
 export async function getSettings() {
@@ -51,6 +58,13 @@ export async function updateSettings(data: SettingsInput) {
         referralBonus: referralBonus,
         pixKey: data.pixKey?.trim() || '',
         pixKeyType: data.pixKeyType?.trim() || 'cnpj',
+        geminiApiKey: data.geminiApiKey?.trim() || null,
+        openaiApiKey: data.openaiApiKey?.trim() || null,
+        anthropicApiKey: data.anthropicApiKey?.trim() || null,
+        openRouterApiKey: data.openRouterApiKey?.trim() || null,
+        minimaxApiKey: data.minimaxApiKey?.trim() || null,
+        grokApiKey: data.grokApiKey?.trim() || null,
+        searchApiKey: data.searchApiKey?.trim() || null,
         updatedAt: now,
       },
       update: {
@@ -59,6 +73,13 @@ export async function updateSettings(data: SettingsInput) {
         referralBonus: referralBonus,
         pixKey: data.pixKey?.trim() || '',
         pixKeyType: data.pixKeyType?.trim() || 'cnpj',
+        geminiApiKey: data.geminiApiKey?.trim() || null,
+        openaiApiKey: data.openaiApiKey?.trim() || null,
+        anthropicApiKey: data.anthropicApiKey?.trim() || null,
+        openRouterApiKey: data.openRouterApiKey?.trim() || null,
+        minimaxApiKey: data.minimaxApiKey?.trim() || null,
+        grokApiKey: data.grokApiKey?.trim() || null,
+        searchApiKey: data.searchApiKey?.trim() || null,
         updatedAt: now,
       },
     });

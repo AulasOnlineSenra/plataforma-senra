@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { triggerAiAutomation } from "@/lib/ai/automation-engine";
 
 // Buscar todos os alunos
 export async function getStudents() {
@@ -331,6 +332,10 @@ export async function createTeacher(data: {
       },
     });
     revalidatePath("/dashboard/teachers");
+    
+    // Automação de IA para novo professor
+    triggerAiAutomation('USER_REGISTERED', newTeacher).catch(console.error);
+
     return { success: true, data: newTeacher };
   } catch (error) {
     console.error(error);
@@ -408,6 +413,10 @@ export async function createStudent(data: {
       },
     });
     revalidatePath("/dashboard/students");
+    
+    // Automação de IA para novo aluno
+    triggerAiAutomation('USER_REGISTERED', newStudent).catch(console.error);
+
     return { success: true, data: newStudent };
   } catch (error) {
     console.error(error);

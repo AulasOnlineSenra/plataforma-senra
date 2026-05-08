@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendNewBookingNotificationEmail } from "@/lib/mailer";
+import { triggerAiAutomation } from "@/lib/ai/automation-engine";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import crypto from "crypto";
@@ -129,6 +130,9 @@ export async function createBookings(
           },
         });
       }
+      
+      // Automação de IA para agendamento
+      triggerAiAutomation('LESSON_BOOKED', { studentId, bookings }).catch(console.error);
     };
 
     if (tx) {
