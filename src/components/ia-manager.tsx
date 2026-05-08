@@ -71,7 +71,7 @@ interface Tool {
 }
 
 const MODELS_BY_PROVIDER: Record<string, { label: string, models: string[] }> = {
-  gemini: { label: 'Google Gemini', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'] },
+  gemini: { label: 'Google Gemini', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'] },
   openai: { label: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
   anthropic: { label: 'Anthropic (Claude)', models: ['claude-3-5-sonnet-latest', 'claude-3-opus-latest', 'claude-3-haiku-20240307'] },
   grok: { label: 'xAI (Grok)', models: ['grok-beta'] },
