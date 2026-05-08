@@ -8,8 +8,8 @@ const globalForAi = global as unknown as { ai: ReturnType<typeof genkit> };
 export const ai = globalForAi.ai || genkit({
   plugins: [
     googleAI(),
-    openAI(),
-    anthropic(),
+    openAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' }),
+    anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || 'dummy' }),
   ],
   model: 'googleai/gemini-1.5-flash',
 });
