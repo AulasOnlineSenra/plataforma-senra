@@ -165,6 +165,12 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
     };
   } catch (error: any) {
     console.error("ERRO CRÍTICO NO AGENTE DE IA:", error);
-    return { success: false, error: error.message || "Falha ao testar agente." };
+    let errorMsg = error.message || "Falha ao testar agente.";
+    
+    if (errorMsg.includes("429") || errorMsg.includes("quota exceeded")) {
+      errorMsg = "Limite de cota atingido (429). Dica: Tente usar o modelo 'gemini-1.5-flash', que possui limites maiores no plano gratuito.";
+    }
+
+    return { success: false, error: errorMsg };
   }
 }
