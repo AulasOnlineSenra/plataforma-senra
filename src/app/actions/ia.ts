@@ -105,7 +105,10 @@ export async function getAvailableProviders() {
   }
 }
 
-import { ai } from "@/ai/genkit";
+import { genkit } from "genkit";
+import { googleAI } from "@genkit-ai/google-genai";
+import openAI from "genkitx-openai";
+import anthropic from "genkitx-anthropic";
 import { allTools } from "@/lib/ai/tools";
 
 export async function runAiAgentTest(agentId: string, prompt: string) {
@@ -113,22 +116,19 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
     const agent = await prisma.aiAgent.findUnique({ where: { id: agentId } });
     if (!agent) return { success: false, error: "Agente não encontrado." };
 
-    // Buscar chaves de API das configurações
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
     
-    // Configurar chaves de API conforme o provedor do modelo
-    if (settings) {
-      if (agent.model.includes('gemini') || !agent.model.includes('/')) {
-        if (settings.geminiApiKey) process.env.GOOGLE_GENAI_API_KEY = settings.geminiApiKey;
-      } 
-      if (settings.openaiApiKey) process.env.OPENAI_API_KEY = settings.openaiApiKey;
-      if (settings.anthropicApiKey) process.env.ANTHROPIC_API_KEY = settings.anthropicApiKey;
-    }
+    // Inicialização dinâmica do Genkit para garantir o uso das chaves do DB
+    const localAi = genkit({
+      plugins: [
+        googleAI({ apiKey: settings?.geminiApiKey || process.env.GOOGLE_GENAI_API_KEY }),
+        openAI({ apiKey: settings?.openaiApiKey || process.env.OPENAI_API_KEY }),
+        anthropic({ apiKey: settings?.anthropicApiKey || process.env.ANTHROPIC_API_KEY }),
+      ],
+    });
 
-    // Filtrar ferramentas habilitadas para este agente
     const enabledToolIds = typeof agent.tools === 'string' ? JSON.parse(agent.tools || "[]") : (agent.tools || []);
     
-    // Mapeamento temporário entre IDs da UI e nomes das ferramentas
     const toolMapping: Record<string, string[]> = {
       'crm': ['searchLeads', 'createLead', 'updateLead'],
       'moveLead': ['moveLead'],
@@ -146,9 +146,6 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       return false;
     });
 
-    console.log(`[IA Agent Test] Running model: ${agent.model} for agent: ${agent.name}`);
-    
-    // Normalização robusta do nome do modelo para o Genkit
     let modelName = agent.model;
     if (!modelName.includes('/')) {
       if (modelName.includes('gemini')) modelName = `googleai/${modelName}`;
@@ -156,7 +153,7 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       else if (modelName.includes('claude')) modelName = `anthropic/${modelName}`;
     }
 
-    const response = await ai.generate({
+    const response = await localAi.generate({
       model: modelName,
       system: agent.instructions || "Você é um assistente útil.",
       prompt: prompt,
@@ -171,11 +168,9 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
   } catch (error: any) {
     console.error("ERRO CRÍTICO NO AGENTE DE IA:", error);
     let errorMsg = error.message || "Falha ao testar agente.";
-    
     if (errorMsg.includes("429") || errorMsg.includes("quota exceeded")) {
       errorMsg = "Limite de cota atingido (429). Dica: Tente usar o modelo 'gemini-1.5-flash', que possui limites maiores no plano gratuito.";
     }
-
     return { success: false, error: errorMsg };
   }
 }
