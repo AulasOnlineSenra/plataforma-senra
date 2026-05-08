@@ -115,21 +115,19 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
 
     // Buscar chaves de API das configurações
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
-    if (!settings?.geminiApiKey && !process.env.GOOGLE_GENAI_API_KEY) {
-      return { success: false, error: "Chave de API do Gemini não configurada." };
-    }
-
-    // Configurar a chave de API para o Genkit (se vier do DB)
-    // Nota: O Genkit normalmente usa env vars, mas podemos injetar aqui se necessário
-    // Por enquanto, assumimos que se a chave está no DB, ela deve ser usada.
-    if (settings?.geminiApiKey) {
-      process.env.GOOGLE_GENAI_API_KEY = settings.geminiApiKey;
+    
+    // Configurar chaves de API conforme o provedor do modelo
+    if (settings) {
+      if (agent.model.includes('gemini') || !agent.model.includes('/')) {
+        if (settings.geminiApiKey) process.env.GOOGLE_GENAI_API_KEY = settings.geminiApiKey;
+      } 
+      if (settings.openaiApiKey) process.env.OPENAI_API_KEY = settings.openaiApiKey;
+      if (settings.anthropicApiKey) process.env.ANTHROPIC_API_KEY = settings.anthropicApiKey;
     }
 
     // Filtrar ferramentas habilitadas para este agente
     const enabledToolIds = typeof agent.tools === 'string' ? JSON.parse(agent.tools || "[]") : (agent.tools || []);
-    const filteredTools = allTools.filter(t => enabledToolIds.includes(t.name) || (t.name === 'searchLeads' && enabledToolIds.includes('crm')));
-
+    
     // Mapeamento temporário entre IDs da UI e nomes das ferramentas
     const toolMapping: Record<string, string[]> = {
       'crm': ['searchLeads', 'createLead', 'updateLead'],
@@ -149,7 +147,14 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
     });
 
     console.log(`[IA Agent Test] Running model: ${agent.model} for agent: ${agent.name}`);
-    const modelName = agent.model.includes('/') ? agent.model : `googleai/${agent.model}`;
+    
+    // Normalização robusta do nome do modelo para o Genkit
+    let modelName = agent.model;
+    if (!modelName.includes('/')) {
+      if (modelName.includes('gemini')) modelName = `googleai/${modelName}`;
+      else if (modelName.includes('gpt')) modelName = `openai/${modelName}`;
+      else if (modelName.includes('claude')) modelName = `anthropic/${modelName}`;
+    }
 
     const response = await ai.generate({
       model: modelName,
