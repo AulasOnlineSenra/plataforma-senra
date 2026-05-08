@@ -136,7 +136,9 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       'moveLead': ['moveLead'],
       'blog': ['generateBlogPost'],
       'searchBlogPosts': ['searchBlogPosts'],
+      'webSearch': ['webSearch'],
       'stats': ['getSystemStats'],
+      'email': ['sendEmail'],
     };
 
     const finalTools = allTools.filter(t => {

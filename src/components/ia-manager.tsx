@@ -83,9 +83,11 @@ const AVAILABLE_TOOLS: Tool[] = [
   { id: 'crm', name: 'Gestão de CRM', description: 'Buscar leads, criar e gerenciar funil.', icon: Database },
   { id: 'moveLead', name: 'Mover Leads', description: 'Mover leads entre colunas do CRM.', icon: LayoutGrid },
   { id: 'blog', name: 'Escrita de Blog', description: 'Criar e editar artigos no blog.', icon: PenTool },
-  { id: 'searchBlogPosts', name: 'Pesquisar Blog', description: 'Buscar postagens existentes.', icon: Globe },
+  { id: 'searchBlogPosts', name: 'Pesquisar Blog', description: 'Buscar postagens existentes.', icon: Database },
+  { id: 'webSearch', name: 'Busca Web', description: 'Pesquisar notícias e dados atuais na internet.', icon: Globe },
   { id: 'stats', name: 'Estatísticas', description: 'Ver métricas de leads, alunos e professores.', icon: Zap },
   { id: 'chat', name: 'Atendimento', description: 'Responder mensagens de clientes.', icon: MessageCircle },
+  { id: 'email', name: 'E-mail', description: 'Enviar notificações por e-mail.', icon: MessageSquare },
 ];
 
 const AGENT_TEMPLATES = [
