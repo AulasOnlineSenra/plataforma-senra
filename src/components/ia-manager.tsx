@@ -218,12 +218,17 @@ export function IaManager() {
     setIsRunningTest(true);
     setTestResponse('');
     setToolCalls([]);
+    console.log("Iniciando teste do agente:", selectedAgent.id);
     const result = await runAiAgentTest(selectedAgent.id, testPrompt);
-    if (result.success) {
+    console.log("Resultado do teste:", result);
+
+    if (result && result.success) {
       setTestResponse(result.response || "");
       setToolCalls(result.toolCalls || []);
     } else {
-      toast.error(result.error || "Erro ao testar agente");
+      const errorMsg = result?.error || "Erro desconhecido ao testar agente";
+      toast.error(errorMsg);
+      setTestResponse(`Erro: ${errorMsg}`);
     }
     setIsRunningTest(false);
   };

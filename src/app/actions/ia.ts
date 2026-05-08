@@ -148,8 +148,11 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       return false;
     });
 
+    console.log(`[IA Agent Test] Running model: ${agent.model} for agent: ${agent.name}`);
+    const modelName = agent.model.includes('/') ? agent.model : `googleai/${agent.model}`;
+
     const response = await ai.generate({
-      model: agent.model.includes('gemini') ? `googleai/${agent.model}` : agent.model,
+      model: modelName,
       system: agent.instructions || "Você é um assistente útil.",
       prompt: prompt,
       tools: finalTools,
@@ -161,7 +164,7 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       toolCalls: response.toolCalls?.map(tc => ({ name: tc.name, args: tc.args }))
     };
   } catch (error: any) {
-    console.error("Erro ao testar agente de IA:", error);
+    console.error("ERRO CRÍTICO NO AGENTE DE IA:", error);
     return { success: false, error: error.message || "Falha ao testar agente." };
   }
 }
