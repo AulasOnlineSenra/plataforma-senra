@@ -28,7 +28,7 @@ export async function createAiAgent(data: {
         name: data.name,
         description: data.description,
         instructions: data.instructions,
-        model: data.model || "gemini-2.0-flash",
+        model: data.model || "gemini-2.5-flash-preview-04-17",
         tools: data.tools || "[]",
       },
     });
@@ -113,13 +113,14 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
     const agent = await prisma.aiAgent.findUnique({ where: { id: agentId } });
     if (!agent) return { success: false, error: "Agente não encontrado." };
 
+    // Injetar a chave do Google AI dinamicamente (buscando do banco de dados)
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
-    
-    // Configurar chaves de API conforme o provedor do modelo (usando process.env para os plugins do global ai)
-    if (settings) {
-      if (settings.geminiApiKey) process.env.GOOGLE_GENAI_API_KEY = settings.geminiApiKey;
-      if (settings.openaiApiKey) process.env.OPENAI_API_KEY = settings.openaiApiKey;
-      if (settings.anthropicApiKey) process.env.ANTHROPIC_API_KEY = settings.anthropicApiKey;
+    if (settings?.geminiApiKey) {
+      process.env.GOOGLE_GENAI_API_KEY = settings.geminiApiKey;
+    }
+
+    if (!process.env.GOOGLE_GENAI_API_KEY) {
+      return { success: false, error: "Chave de API do Google (Gemini) não configurada. Vá em Configurações e adicione sua GOOGLE_GENAI_API_KEY." };
     }
 
     const enabledToolIds = typeof agent.tools === 'string' ? JSON.parse(agent.tools || "[]") : (agent.tools || []);
@@ -141,20 +142,17 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       return false;
     });
 
-    console.log(`[IA DEBUG] Agente: ${agent.name}, Model: ${agent.model}`);
-    console.log(`[IA DEBUG] Enabled IDs: ${JSON.stringify(enabledToolIds)}`);
-    console.log(`[IA DEBUG] Final Tools Names: ${finalTools.map(t => t.name).join(', ')}`);
-    
+    // Normalizar o nome do modelo para o formato do Genkit: 'googleai/nome-do-modelo'
     let modelName = agent.model;
     if (!modelName.includes('/')) {
-      if (modelName.includes('gemini')) modelName = `googleai/${modelName}`;
-      else if (modelName.includes('gpt')) modelName = `openai/${modelName}`;
-      else if (modelName.includes('claude')) modelName = `anthropic/${modelName}`;
+      modelName = `googleai/${modelName}`;
     }
+
+    console.log(`[IA] Agente: ${agent.name} | Modelo: ${modelName} | Ferramentas: ${finalTools.map(t => t.name).join(', ') || 'nenhuma'}`);
 
     const response = await ai.generate({
       model: modelName,
-      system: agent.instructions || "Você é um assistente útil.",
+      system: agent.instructions || "Você é um assistente útil da Plataforma Senra.",
       prompt: prompt,
       tools: finalTools,
     });
@@ -165,10 +163,14 @@ export async function runAiAgentTest(agentId: string, prompt: string) {
       toolCalls: response.toolCalls?.map(tc => ({ name: tc.name, args: tc.args }))
     };
   } catch (error: any) {
-    console.error("ERRO CRÍTICO NO AGENTE DE IA:", error);
+    console.error("[IA ERRO]", error);
     let errorMsg = error.message || "Falha ao testar agente.";
     if (errorMsg.includes("429") || errorMsg.includes("quota exceeded")) {
-      errorMsg = "Limite de cota atingido (429). Dica: Tente usar o modelo 'gemini-1.5-flash', que possui limites maiores no plano gratuito.";
+      errorMsg = "Limite de cota atingido (429). Sua chave de API atingiu o limite gratuito. Considere habilitar o faturamento no Google AI Studio.";
+    } else if (errorMsg.includes("404") || errorMsg.includes("not found")) {
+      errorMsg = `Modelo '${error.message?.match(/models\/([^:]+)/)?.[1] || agent?.model}' não encontrado. Por favor, selecione um modelo Gemini 2.5 nas configurações do agente.`;
+    } else if (errorMsg.includes("API key") || errorMsg.includes("GOOGLE_GENAI_API_KEY")) {
+      errorMsg = "Chave de API inválida ou não configurada. Vá em Configurações e verifique sua chave do Google AI.";
     }
     return { success: false, error: errorMsg };
   }

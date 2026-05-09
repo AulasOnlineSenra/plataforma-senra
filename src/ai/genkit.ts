@@ -1,17 +1,11 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import openAI from 'genkitx-openai';
-import anthropic from 'genkitx-anthropic';
 
-const globalForAi = global as unknown as { ai: ReturnType<typeof genkit> };
-
-export const ai = globalForAi.ai || genkit({
+// Inicialização simples e estável apenas com Google AI
+// As chaves das demais APIs são injetadas dinamicamente em ia.ts
+export const ai = genkit({
   plugins: [
     googleAI(),
-    openAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' }),
-    anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || 'dummy' }),
   ],
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash-preview-04-17',
 });
-
-if (process.env.NODE_ENV !== 'production') globalForAi.ai = ai;

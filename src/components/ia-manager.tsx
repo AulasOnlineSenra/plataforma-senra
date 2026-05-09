@@ -71,12 +71,17 @@ interface Tool {
 }
 
 const MODELS_BY_PROVIDER: Record<string, { label: string, models: string[] }> = {
-  gemini: { label: 'Google Gemini', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'] },
+  gemini: { label: 'Google Gemini', models: [
+    'gemini-2.5-flash-preview-04-17',
+    'gemini-2.5-pro-preview-05-06',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+  ]},
   openai: { label: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
   anthropic: { label: 'Anthropic (Claude)', models: ['claude-3-5-sonnet-latest', 'claude-3-opus-latest', 'claude-3-haiku-20240307'] },
   grok: { label: 'xAI (Grok)', models: ['grok-beta'] },
   minimax: { label: 'MiniMax', models: ['abab6.5-chat', 'abab6-chat'] },
-  openrouter: { label: 'OpenRouter', models: ['google/gemini-2.0-flash-exp:free', 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet'] },
+  openrouter: { label: 'OpenRouter', models: ['google/gemini-2.5-flash-preview', 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet'] },
 };
 
 const AVAILABLE_TOOLS: Tool[] = [
@@ -96,21 +101,21 @@ const AGENT_TEMPLATES = [
     description: 'Especialista em conversão de leads e gestão de funil.',
     instructions: 'Você é um Agente Comercial sênior. Sua missão é analisar leads, sugerir movimentações no funil e garantir que nenhum contato esfrie. Use a ferramenta searchLeads para encontrar leads e moveLead para organizá-los.',
     tools: ['crm', 'moveLead'],
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash-preview-04-17',
   },
   {
     name: 'Redator de Blog',
     description: 'Cria conteúdos otimizados para SEO e gerencia o blog.',
     instructions: 'Você é um redator especializado em educação. Sua missão é criar posts engajadores para o blog. Sempre verifique posts existentes com searchBlogPosts antes de sugerir novos.',
     tools: ['blog', 'searchBlogPosts'],
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash-preview-04-17',
   },
   {
     name: 'Gestor de Operações',
     description: 'Monitora métricas e gera relatórios de desempenho.',
     instructions: 'Você é um gestor operacional. Sua missão é fornecer uma visão clara da saúde da plataforma. Use getSystemStats para reportar números de alunos e leads.',
     tools: ['stats'],
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash-preview-04-17',
   },
 ];
 
