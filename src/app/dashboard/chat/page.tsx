@@ -138,6 +138,10 @@ function ChatContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchResultIndices, setSearchResultIndices] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    students: true,
+    teachers: true,
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUnreadTotalRef = useRef(0);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -254,6 +258,19 @@ function ChatContent() {
     });
   }, [allUsers, currentUser, allMessages]);
 
+  // Separar contatos em grupos para o admin
+  const groupedContacts = useMemo(() => {
+    if (currentUser?.role !== "admin") return null;
+    
+    const students = contacts.filter(c => c.role === "student");
+    const teachers = contacts.filter(c => c.role === "teacher");
+    
+    return {
+      students,
+      teachers,
+    };
+  }, [contacts, currentUser?.role]);
+
   useEffect(() => {
     if (!contacts.length) return;
     if (initialContactId && contacts.some((c) => c.id === initialContactId)) {
@@ -282,6 +299,57 @@ function ChatContent() {
       {} as Record<string, number>,
     );
   }, [allMessages, currentUser?.id]);
+
+  // Função helper para renderizar botão de contato
+  const renderContactButton = (contact: ChatUser) => {
+    const isActive = contact.id === activeContactId;
+    const name = contact.name || "Usuario";
+    return (
+      <Button
+        key={contact.id}
+        type="button"
+        variant="ghost"
+        onClick={() => setActiveContactId(contact.id)}
+        className={`mx-2 my-1 h-auto w-[calc(100%-1rem)] justify-start gap-3 rounded-xl border-l-4 px-3 py-3 text-left ${
+          isActive
+            ? "border-primary bg-muted/50 text-foreground hover:bg-muted/60"
+            : "border-transparent hover:bg-muted/40"
+        }`}
+      >
+        <Avatar className="h-10 w-10 border border-border/60">
+          <AvatarImage
+            src={contact.avatarUrl || undefined}
+            alt={name}
+          />
+          <AvatarFallback className="bg-muted text-foreground">
+            {name.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{name}</p>
+          <p className="text-xs text-muted-foreground/90">
+            {typingContactIds.has(contact.id) ? (
+              <span className="text-primary font-medium">
+                digitando
+                <span className="inline-flex ml-0.5">
+                  <span className="animate-typing-dot" style={{ animationDelay: '0ms' }}>.</span>
+                  <span className="animate-typing-dot" style={{ animationDelay: '0.2s' }}>.</span>
+                  <span className="animate-typing-dot" style={{ animationDelay: '0.4s' }}>.</span>
+                </span>
+              </span>
+            ) : (
+              roleTranslations[contact.role] || contact.role || "contato"
+            )}
+          </p>
+        </div>
+        {(unreadCountByContact[contact.id] || 0) > 0 && (
+          <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-medium text-white">
+            {unreadCountByContact[contact.id]}
+          </span>
+        )}
+      </Button>
+    );
+  };
 
   const conversation = useMemo(() => {
     if (!currentUser?.id || !activeContact?.id) return [];
@@ -619,56 +687,32 @@ function ChatContent() {
             <p className="p-4 text-sm text-muted-foreground">
               Nenhum contato disponivel.
             </p>
+          ) : groupedContacts ? (
+            // Renderizar grupos para admin
+            <div className="flex flex-col">
+              {/* Grupo Alunos */}
+              <div 
+                className="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 uppercase bg-slate-100 cursor-pointer hover:bg-slate-200"
+                onClick={() => setExpandedGroups(prev => ({ ...prev, students: !prev.students }))}
+              >
+                <span>Alunos ({groupedContacts.students.length})</span>
+                <span>{expandedGroups.students ? "▼" : "▶"}</span>
+              </div>
+              {expandedGroups.students && groupedContacts.students.map((contact) => renderContactButton(contact))}
+              
+              {/* Grupo Professores */}
+              <div 
+                className="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 uppercase bg-slate-100 cursor-pointer hover:bg-slate-200 mt-2"
+                onClick={() => setExpandedGroups(prev => ({ ...prev, teachers: !prev.teachers }))}
+              >
+                <span>Professores ({groupedContacts.teachers.length})</span>
+                <span>{expandedGroups.teachers ? "▼" : "▶"}</span>
+              </div>
+              {expandedGroups.teachers && groupedContacts.teachers.map((contact) => renderContactButton(contact))}
+            </div>
           ) : (
-            contacts.map((contact) => {
-              const isActive = contact.id === activeContactId;
-              const name = contact.name || "Usuario";
-              return (
-                <Button
-                  key={contact.id}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setActiveContactId(contact.id)}
-                  className={`mx-2 my-1 h-auto w-[calc(100%-1rem)] justify-start gap-3 rounded-xl border-l-4 px-3 py-3 text-left ${
-                    isActive
-                      ? "border-primary bg-muted/50 text-foreground hover:bg-muted/60"
-                      : "border-transparent hover:bg-muted/40"
-                  }`}
-                >
-                  <Avatar className="h-10 w-10 border border-border/60">
-                    <AvatarImage
-                      src={contact.avatarUrl || undefined}
-                      alt={name}
-                    />
-                    <AvatarFallback className="bg-muted text-foreground">
-                      {name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{name}</p>
-                    <p className="text-xs text-muted-foreground/90">
-                      {typingContactIds.has(contact.id) ? (
-                        <span className="text-primary font-medium">
-                          digitando
-                          <span className="inline-flex ml-0.5">
-                            <span className="animate-typing-dot" style={{ animationDelay: '0ms' }}>.</span>
-                            <span className="animate-typing-dot" style={{ animationDelay: '0.2s' }}>.</span>
-                            <span className="animate-typing-dot" style={{ animationDelay: '0.4s' }}>.</span>
-                          </span>
-                        </span>
-                      ) : (
-                        roleTranslations[contact.role] || contact.role || "contato"
-                      )}
-                    </p>
-                  </div>
-                  {(unreadCountByContact[contact.id] || 0) > 0 && (
-                    <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-medium text-white">
-                      {unreadCountByContact[contact.id]}
-                    </span>
-                  )}
-                </Button>
-              );
-            })
+            // Renderização normal para não-admin
+            contacts.map((contact) => renderContactButton(contact))
           )}
         </ScrollArea>
       </section>

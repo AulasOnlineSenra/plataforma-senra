@@ -312,7 +312,7 @@ function TeacherDetailPageComponent() {
                         <Table className="text-xs w-full availability-scroll">
                           <TableHeader>
                             <TableRow className="bg-slate-100">
-                              <TableHead className="text-center font-bold text-slate-700 w-32">Horários</TableHead>
+                              <TableHead className="text-center font-bold text-slate-700 w-40">Horários</TableHead>
                               {dayLabels.map((day) => (
                                 <TableHead key={day} className="text-center font-bold text-slate-700 w-20">{day}</TableHead>
                               ))}
@@ -321,7 +321,7 @@ function TeacherDetailPageComponent() {
                           <TableBody>
                             {availabilityByTime.map((slot) => (
                               <TableRow key={slot.time}>
-                                <TableCell className="font-medium text-slate-700 text-center w-32">{slot.time}</TableCell>
+                                <TableCell className="font-medium text-slate-700 text-center w-40">{slot.time}</TableCell>
                                 {[0, 1, 2, 3, 4, 5, 6].map((day) => (
                                   <TableCell key={day} className="text-center w-20">
                                     {slot.days.includes(day) ? (
