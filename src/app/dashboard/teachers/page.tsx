@@ -777,8 +777,16 @@ export default function TeachersPage() {
                 return matchesStatus && matchesSubject;
               });
 
-              // Ordenar por prioridade quando filtro "pendentes" estiver ativo
-              const sortedTeachers = statusFilter === "pending"
+              // Ordenar: ativos primeiro, depois pendentes (quando filtro "all")
+              const sortedTeachers = statusFilter === "all"
+                ? [...filteredTeachers].sort((a, b) => {
+                    // Professores ativos primeiro
+                    const aIsActive = a.status !== "pending";
+                    const bIsActive = b.status !== "pending";
+                    if (aIsActive !== bIsActive) return aIsActive ? -1 : 1;
+                    return 0;
+                  })
+                : statusFilter === "pending"
                 ? [...filteredTeachers].sort((a, b) => {
                     // Prioridade 1: Foto de perfil
                     const aHasPhoto = !!(a.avatarUrl && a.avatarUrl.trim() !== "");
