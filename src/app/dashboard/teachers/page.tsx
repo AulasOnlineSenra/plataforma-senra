@@ -116,7 +116,8 @@ function TeacherCard({
     
     // Função para formatar a formação: university + year, ou university, ou course
     const formatEducation = (edu: any, withIndicator = false) => {
-      const indicator = withIndicator ? ` (+${eduList.length - 2})` : '';
+      const remaining = eduList.length - 2;
+      const indicator = withIndicator && remaining > 0 ? ` (+${remaining})` : '';
       if (edu.university && edu.conclusionYear) {
         return `${edu.university} - ${edu.conclusionYear}${indicator}`;
       } else if (edu.university) {

@@ -294,34 +294,42 @@ function TeacherDetailPageComponent() {
                   )}
 
                   {availability.length > 0 && (
-                    <div className="mt-3 w-full">
+                    <div className="mt-3 w-full h-full">
                       <h4 className="text-sm font-bold text-slate-700 mb-2 pl-[15px]">Disponibilidade</h4>
-                      <Table className="text-xs w-full pl-[15px]">
-                        <TableHeader>
-                          <TableRow className="bg-slate-100">
-                            <TableHead className="text-center font-bold text-slate-700 w-32">Horários</TableHead>
-                            {dayLabels.map((day) => (
-                              <TableHead key={day} className="text-center font-bold text-slate-700 w-20">{day}</TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {availabilityByTime.map((slot) => (
-                            <TableRow key={slot.time}>
-                              <TableCell className="font-medium text-slate-700 text-center w-32">{slot.time}</TableCell>
-                              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                                <TableCell key={day} className="text-center w-20">
-                                  {slot.days.includes(day) ? (
-                                    <span className="text-green-600 font-bold">✓</span>
-                                  ) : (
-                                    <span className="text-red-500 font-bold">X</span>
-                                  )}
-                                </TableCell>
+                      <div className="pl-[15px] overflow-y-auto" style={{ maxHeight: '460px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
+                        <style dangerouslySetInnerHTML={{__html: `
+                          .availability-scroll::-webkit-scrollbar { width: 6px; }
+                          .availability-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+                          .availability-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+                          .availability-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                        `}} />
+                        <Table className="text-xs w-full availability-scroll">
+                          <TableHeader>
+                            <TableRow className="bg-slate-100">
+                              <TableHead className="text-center font-bold text-slate-700 w-32">Horários</TableHead>
+                              {dayLabels.map((day) => (
+                                <TableHead key={day} className="text-center font-bold text-slate-700 w-20">{day}</TableHead>
                               ))}
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {availabilityByTime.map((slot) => (
+                              <TableRow key={slot.time}>
+                                <TableCell className="font-medium text-slate-700 text-center w-32">{slot.time}</TableCell>
+                                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                                  <TableCell key={day} className="text-center w-20">
+                                    {slot.days.includes(day) ? (
+                                      <span className="text-green-600 font-bold">✓</span>
+                                    ) : (
+                                      <span className="text-red-500 font-bold">X</span>
+                                    )}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   )}
                 </div>
