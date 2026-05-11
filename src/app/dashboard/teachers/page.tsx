@@ -60,8 +60,7 @@ function TeacherCard({
   onOpenDetails: (id: string) => void;
 }) {
   const isAdmin = currentUser?.role === "admin";
-  const isProfileComplete = teacher.bio && teacher.education && teacher.subject && teacher.pixKeyType && teacher.pixKey;
-  const isPendingAwaitingApproval = teacher.status === "pending" && isProfileComplete;
+  const isPending = teacher.status === "pending";
   const [rating, setRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
 
   useEffect(() => {
@@ -141,7 +140,7 @@ function TeacherCard({
     <Card
       style={{ width: 'calc(100% - 24px)' }}
       className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer ${
-        isPendingAwaitingApproval
+        isPending
           ? "border-blue-400 bg-blue-50/80 hover:border-blue-500"
           : teacher.status === "pending"
             ? "border-amber-300 bg-amber-50/60 hover:border-amber-400"
@@ -161,27 +160,20 @@ function TeacherCard({
       {/* Detalhe de cor no topo do card */}
       <div
         className={`h-24 w-full border-b absolute top-0 left-0 z-0 transition-colors ${
-          isPendingAwaitingApproval
+          isPending
             ? "bg-blue-100 border-blue-200"
-            : teacher.status === "pending"
-              ? "bg-amber-100 border-amber-200"
-              : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
+            : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
         }`}
       ></div>
 
       {/* Status no canto superior esquerdo */}
       <div className="absolute top-2 left-3 z-10">
-        {teacher.status === "pending" && teacher.bio && teacherEducation && teacherSubjects.length > 0 && teacher.pixKeyType && teacher.pixKey && (
+        {isPending && (
           <Badge className="border-none bg-blue-100 font-bold text-blue-700 px-3 py-1 rounded-full shadow-none animate-pulse">
-            Aguardando Aprovação
-          </Badge>
-        )}
-        {(teacher.status === "pending" && (!teacher.bio || !teacherEducation || teacherSubjects.length === 0 || !teacher.pixKeyType || !teacher.pixKey)) && (
-          <Badge className="border-none bg-amber-100 font-bold text-amber-700 px-3 py-1 rounded-full shadow-none">
             Pendente
           </Badge>
         )}
-        {teacher.status !== "pending" && (
+        {!isPending && (
           <Badge className="border-none bg-emerald-50 font-bold text-emerald-600 px-3 py-1 rounded-full shadow-none">
             Ativo
           </Badge>
@@ -238,11 +230,9 @@ function TeacherCard({
         <div className="relative">
           <Avatar
             className={`mb-1 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white ${
-              isPendingAwaitingApproval
+              isPending
                 ? "border-blue-400"
-                : teacher.status === "pending"
-                  ? "border-amber-300"
-                  : "border-white"
+                : "border-white"
             }`}
           >
             <AvatarImage
