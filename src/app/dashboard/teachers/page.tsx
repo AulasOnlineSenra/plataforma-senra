@@ -114,11 +114,24 @@ function TeacherCard({
     
     if (!Array.isArray(eduList) || eduList.length === 0) return [];
     
+    // Função para formatar a formação: university + year, ou university, ou course
+    const formatEducation = (edu: any, withIndicator = false) => {
+      const indicator = withIndicator ? ` (+${eduList.length - 2})` : '';
+      if (edu.university && edu.conclusionYear) {
+        return `${edu.university} - ${edu.conclusionYear}${indicator}`;
+      } else if (edu.university) {
+        return `${edu.university}${indicator}`;
+      } else if (edu.course) {
+        return `${edu.course}${indicator}`;
+      }
+      return null;
+    };
+    
     // Se tiver 1 formação: mostrar apenas 1
     if (eduList.length === 1) {
-      const first = eduList[0];
-      if (first.course) {
-        return [{ text: first.course, hasIndicator: false }];
+      const formatted = formatEducation(eduList[0]);
+      if (formatted) {
+        return [{ text: formatted, hasIndicator: false }];
       }
       return [];
     }
@@ -130,16 +143,15 @@ function TeacherCard({
     const result = [];
     
     // Primeira formação
-    const first = eduList[0];
-    if (first.course) {
-      result.push({ text: first.course, hasIndicator: false });
+    const firstFormatted = formatEducation(eduList[0]);
+    if (firstFormatted) {
+      result.push({ text: firstFormatted, hasIndicator: false });
     }
     
     // Segunda formação
-    const second = eduList[1];
-    if (second.course) {
-      const indicator = secondHasIndicator ? ` (+${remaining})` : '';
-      result.push({ text: `${second.course}${indicator}`, hasIndicator: secondHasIndicator });
+    const secondFormatted = formatEducation(eduList[1], true);
+    if (secondFormatted) {
+      result.push({ text: secondFormatted, hasIndicator: secondHasIndicator });
     }
     
     return result;
