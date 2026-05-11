@@ -774,7 +774,7 @@ export default function TeachersPage() {
                       if (teacher.pixKeyType) score += 1;
                       if (teacher.pixKey) score += 1;
                       if (teacher.phone) score += 1;
-                      if (teacher.avatarUrl) score += 1;
+                      if (teacher.avatarUrl) score += 2;
                       if (teacher.state) score += 1;
                       if (teacher.neighborhood) score += 1;
                       if (teacher.videoUrl) score += 1;

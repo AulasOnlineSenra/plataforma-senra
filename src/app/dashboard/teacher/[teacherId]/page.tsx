@@ -225,7 +225,7 @@ function TeacherDetailPageComponent() {
 
             {/* Lado direito - Bio do professor */}
             {teacher.bio && (
-              <div className="lg:w-1/3 w-full bg-slate-100 rounded-2xl p-4">
+              <div className="lg:w-1/3 w-full bg-slate-100 rounded-2xl p-4 max-h-[300px] overflow-y-auto">
                 <h3 className="font-bold text-slate-700 mb-2">Sobre mim</h3>
                 <p className="text-sm text-slate-600">{teacher.bio}</p>
                 
