@@ -286,7 +286,7 @@ function TeacherCard({
               <Badge
                 key={idx}
                 variant="secondary"
-                className="border-none bg-slate-100 font-semibold text-slate-600 px-3 py-1 rounded-full"
+                className="border-none bg-transparent font-semibold text-slate-600 px-3 py-1 rounded-full"
               >
                 {subjName}
               </Badge>
@@ -294,7 +294,7 @@ function TeacherCard({
           ) : (
             <Badge
               variant="secondary"
-              className="border-none bg-slate-100 font-semibold text-slate-600 px-3 py-1 rounded-full"
+              className="border-none bg-transparent font-semibold text-slate-600 px-3 py-1 rounded-full"
             >
               Geral
             </Badge>

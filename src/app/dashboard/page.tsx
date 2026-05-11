@@ -1220,7 +1220,7 @@ export default function DashboardPage() {
       </Dialog>
 
       <Dialog open={isCreditHistoryOpen} onOpenChange={setIsCreditHistoryOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden rounded-3xl">
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden rounded-3xl">
           <DialogHeader>
             <DialogTitle>Histórico de Créditos Consumidos</DialogTitle>
             <DialogDescription>
@@ -1267,22 +1267,26 @@ export default function DashboardPage() {
                   <TableBody>
                     {filteredCreditsHistory
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((lesson) => (
-                        <TableRow key={lesson.id}>
-                          <TableCell>
-                            <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                              {subjectMap[lesson.subject] || lesson.subject}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{lesson.teacher?.name || "Professor"}</TableCell>
-                          <TableCell>
-                            {format(new Date(lesson.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className="font-bold text-red-600">-1</span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      .map((lesson) => {
+                        const lessonDate = new Date(lesson.date);
+                        const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                        return (
+                          <TableRow key={lesson.id}>
+                            <TableCell>
+                              <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                                {subjectMap[lesson.subject] || lesson.subject}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{lesson.teacher?.name || "Professor"}</TableCell>
+                            <TableCell>
+                              {format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(endDate, "HH:mm")}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="font-bold text-red-600">-1</span>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               )}
