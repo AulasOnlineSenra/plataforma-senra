@@ -186,12 +186,18 @@ function TeacherDetailPageComponent() {
       };
       const endTime = endTimeCalc(startTime);
       const daysAvailable: number[] = [];
+
       availability.forEach((slot) => {
         const slotStart = slot.startTime.substring(0, 5);
-        if (slotStart === startTime && !daysAvailable.includes(slot.dayOfWeek)) {
+        const slotEnd = slot.endTime.substring(0, 5);
+        
+        const isWithinInterval = startTime >= slotStart && endTime <= slotEnd;
+        
+        if (isWithinInterval && !daysAvailable.includes(slot.dayOfWeek)) {
           daysAvailable.push(slot.dayOfWeek);
         }
       });
+
       return { time: timeSlot, days: daysAvailable.sort() };
     });
   }, [availability, allTimeSlots]);
