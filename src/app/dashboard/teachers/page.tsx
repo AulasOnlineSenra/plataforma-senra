@@ -491,7 +491,7 @@ export default function TeachersPage() {
 
   return (
     <>
-<div
+      <div
         id="teacher-list"
         className="mx-auto flex w-full flex-1 flex-col gap-6 md:gap-8"
       >
