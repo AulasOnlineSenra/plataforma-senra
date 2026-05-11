@@ -57,6 +57,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -206,6 +213,8 @@ export default function DashboardPage() {
   const [viewProofDialog, setViewProofDialog] = useState<{ open: boolean; url: string | null }>({ open: false, url: null });
   const [studentPendingTransactions, setStudentPendingTransactions] = useState<StudentPendingTransaction[]>([]);
   const [viewBookingDetails, setViewBookingDetails] = useState<StudentPendingTransaction | null>(null);
+  const [isCreditHistoryOpen, setIsCreditHistoryOpen] = useState(false);
+  const [creditHistoryMonth, setCreditHistoryMonth] = useState<string>("all");
 
   useEffect(() => {
     const load = async () => {
@@ -316,6 +325,27 @@ export default function DashboardPage() {
       );
     });
   }, [lessons]);
+
+  const creditHistoryMonths = useMemo(() => {
+    const months = new Set<string>();
+    completed.forEach((lesson) => {
+      const d = new Date(lesson.date);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months.add(monthKey);
+    });
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [completed]);
+
+  const filteredCreditsHistory = useMemo(() => {
+    if (creditHistoryMonth === "all") {
+      return completed;
+    }
+    const [year, month] = creditHistoryMonth.split("-").map(Number);
+    return completed.filter((lesson) => {
+      const d = new Date(lesson.date);
+      return d.getFullYear() === year && d.getMonth() + 1 === month;
+    });
+  }, [completed, creditHistoryMonth]);
 
   const handleOpenEditDialog = (lesson: any) => {
     const lessonDate = new Date(lesson.date);
@@ -735,21 +765,20 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {user.role === "student" ? (
               <>
-                <Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-md">
+<Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-md cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCreditHistoryOpen(true)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-slate-200">
                       Créditos Disponíveis
                     </CardTitle>
                   </CardHeader>
-<CardContent>
+                  <CardContent>
                     <p className="text-4xl font-extrabold text-[#FFC107]">
                       {Math.max(0, user.credits)}
                     </p>
                     <Button
-                      asChild
                       className="mt-3 rounded-2xl bg-[#FFC107] font-bold text-slate-900 hover:bg-amber-300"
                     >
-                      <Link href="/dashboard/packages">Comprar Créditos</Link>
+                      Ver Histórico
                     </Button>
                   </CardContent>
                 </Card>
@@ -1186,6 +1215,88 @@ export default function DashboardPage() {
             <Button variant="outline" onClick={() => setViewProofDialog({ open: false, url: null })}>
               Fechar
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreditHistoryOpen} onOpenChange={setIsCreditHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Histórico de Créditos Consumidos</DialogTitle>
+            <DialogDescription>
+              Lista de aulas que consumiram seus créditos. Cada aula concluída desconta 1 crédito.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="flex items-center gap-4 mb-4">
+              <Label htmlFor="credit-month-filter" className="text-sm font-semibold">Filtrar por:</Label>
+              <Select value={creditHistoryMonth} onValueChange={setCreditHistoryMonth}>
+                <SelectTrigger id="credit-month-filter" className="w-[180px]">
+                  <SelectValue placeholder="Todos os meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meses</SelectItem>
+                  {creditHistoryMonths.map((monthKey) => {
+                    const [year, month] = monthKey.split("-").map(Number);
+                    const monthName = format(new Date(year, month - 1, 1), "MMMM yyyy", { locale: ptBR });
+                    return (
+                      <SelectItem key={monthKey} value={monthKey}>
+                        {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <ScrollArea className="h-[400px] rounded-xl border">
+              {filteredCreditsHistory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-slate-500">
+                  <Coins className="h-12 w-12 mb-2 opacity-50" />
+                  <p>Nenhuma aula consumiu créditos no período selecionado.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead className="font-bold">Disciplina</TableHead>
+                      <TableHead className="font-bold">Professor</TableHead>
+                      <TableHead className="font-bold">Data</TableHead>
+                      <TableHead className="font-bold text-center">Créditos</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCreditsHistory
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((lesson) => (
+                        <TableRow key={lesson.id}>
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                              {subjectMap[lesson.subject] || lesson.subject}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{lesson.teacher?.name || "Professor"}</TableCell>
+                          <TableCell>
+                            {format(new Date(lesson.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-bold text-red-600">-1</span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </ScrollArea>
+          </div>
+          <DialogFooter>
+            <div className="flex items-center justify-between w-full pr-4">
+              <p className="text-sm text-slate-500">
+                Total consumido: <span className="font-bold text-red-600">{filteredCreditsHistory.length} crédito(s)</span>
+              </p>
+              <Button variant="outline" onClick={() => setIsCreditHistoryOpen(false)}>
+                Fechar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -495,7 +495,7 @@ export default function TeachersPage() {
         id="teacher-list"
         className="mx-auto flex w-full flex-1 flex-col gap-6 md:gap-8"
       >
-        {teacherList.length > 0 && (
+        {teacherList.length > 0 && currentUser?.role === "admin" && (
           <Card className="rounded-3xl border border-slate-200 bg-white p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
               <h2 className="text-xl font-bold text-slate-900">Gráfico de Professores</h2>
@@ -699,16 +699,18 @@ export default function TeachersPage() {
           </div>
 
           <div className="flex gap-3 items-center w-full md:w-auto flex-wrap">
-            <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all" className="cursor-pointer">Todos</SelectItem>
-                <SelectItem value="active" className="cursor-pointer">Ativos</SelectItem>
-                <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
-              </SelectContent>
-            </Select>
+            {currentUser?.role === "admin" && (
+              <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
+                <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all" className="cursor-pointer">Todos</SelectItem>
+                  <SelectItem value="active" className="cursor-pointer">Ativos</SelectItem>
+                  <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <Select value={subjectFilter} onValueChange={setSubjectFilter}>
               <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[180px]">
                 <SelectValue placeholder="Disciplina" />
@@ -733,7 +735,7 @@ export default function TeachersPage() {
             </p>
           </div>
         ) : (
-          <div className={`mt-2 grid gap-x-0 gap-y-4 ${currentUser?.role === "admin" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"} justify-items-center`}>
+          <div className={`mt-2 grid gap-x-0 gap-y-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center`}>
             {(() => {
               const filteredTeachers = teacherList.filter(teacher => {
                 const matchesStatus = statusFilter === "all" || 
