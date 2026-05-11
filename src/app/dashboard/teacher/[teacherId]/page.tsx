@@ -294,9 +294,9 @@ function TeacherDetailPageComponent() {
                   )}
 
                   {availability.length > 0 && (
-                    <div className="mt-3 w-full -ml-12">
-                      <h4 className="text-sm font-bold text-slate-700 mb-2 ml-12">Disponibilidade</h4>
-                      <Table className="text-xs w-full ml-12">
+                    <div className="mt-3 w-full">
+                      <h4 className="text-sm font-bold text-slate-700 mb-2 pl-[15px]">Disponibilidade</h4>
+                      <Table className="text-xs w-full pl-[15px]">
                         <TableHeader>
                           <TableRow className="bg-slate-100">
                             <TableHead className="text-center font-bold text-slate-700 w-32">Horários</TableHead>

@@ -285,6 +285,7 @@ function TeacherCard({
               <p 
                 key={idx} 
                 className="text-xs font-medium text-slate-400 truncate w-full overflow-hidden whitespace-nowrap"
+                title={edu.text}
               >
                 {edu.text}
               </p>
