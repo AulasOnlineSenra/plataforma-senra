@@ -535,10 +535,26 @@ export default function TeachersPage() {
               const filteredTeachers = teacherList.filter(teacher => {
                 const matchesStatus = statusFilter === "all" || 
                   (statusFilter === "pending" ? teacher.status === "pending" : teacher.status !== "pending");
-                const teacherSubjects = Array.isArray(teacher.subjects) ? teacher.subjects : 
-                  (teacher.subjects ? [teacher.subjects] : []);
+                let teacherSubjects: string[] = [];
+
+                if (teacher.subjects) {
+                  if (Array.isArray(teacher.subjects)) {
+                    teacherSubjects = teacher.subjects;
+                  } else if (typeof teacher.subjects === 'string') {
+                    try {
+                      teacherSubjects = JSON.parse(teacher.subjects);
+                    } catch {
+                      teacherSubjects = [];
+                    }
+                  }
+                }
+
+                if (teacher.subject && !teacherSubjects.includes(teacher.subject)) {
+                  teacherSubjects.push(teacher.subject);
+                }
+
                 const matchesSubject = subjectFilter === "all" || 
-                  teacherSubjects.includes(subjectFilter) || teacher.subject === subjectFilter;
+                  teacherSubjects.includes(subjectFilter);
                 return matchesStatus && matchesSubject;
               });
 
