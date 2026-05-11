@@ -489,53 +489,14 @@ export default function TeachersPage() {
 
   return (
     <>
-      <div
+<div
         id="teacher-list"
         className="mx-auto flex w-full flex-1 flex-col gap-6 md:gap-8"
       >
-        {/* HEADER LIMPO E MODERNO */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              Corpo Docente
-            </h1>
-            <p className="mt-1 text-slate-500">
-              Gerencie a equipe de professores da plataforma.
-            </p>
-          </div>
-
-          <div className="flex gap-3 items-center w-full md:w-auto flex-wrap">
-            <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all" className="cursor-pointer">Todos</SelectItem>
-                <SelectItem value="active" className="cursor-pointer">Ativos</SelectItem>
-                <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[180px]">
-                <SelectValue placeholder="Disciplina" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all" className="cursor-pointer">Todas as Disciplinas</SelectItem>
-                {subjects.map((subj) => (
-                  <SelectItem key={subj.id} value={subj.name} className="cursor-pointer">
-                    {subj.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* GRÁFICOS RESUMO */}
         {teacherList.length > 0 && (
           <Card className="rounded-3xl border border-slate-200 bg-white p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Resumo dos Professores</h2>
+              <div></div>
               <div className="flex gap-3 mt-3 md:mt-0">
                 <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
                   <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white w-[130px]">
@@ -718,6 +679,44 @@ export default function TeachersPage() {
             </div>
           </Card>
         )}
+
+        {/* HEADER LIMPO E MODERNO */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              Corpo Docente
+            </h1>
+            <p className="mt-1 text-slate-500">
+              Gerencie a equipe de professores da plataforma.
+            </p>
+          </div>
+
+          <div className="flex gap-3 items-center w-full md:w-auto flex-wrap">
+            <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all" className="cursor-pointer">Todos</SelectItem>
+                <SelectItem value="active" className="cursor-pointer">Ativos</SelectItem>
+                <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[180px]">
+                <SelectValue placeholder="Disciplina" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all" className="cursor-pointer">Todas as Disciplinas</SelectItem>
+                {subjects.map((subj) => (
+                  <SelectItem key={subj.id} value={subj.name} className="cursor-pointer">
+                    {subj.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {teacherList.length === 0 ? (
           <div className="mt-4 flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 py-24 text-slate-400">
