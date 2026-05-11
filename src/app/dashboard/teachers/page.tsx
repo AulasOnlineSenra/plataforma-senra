@@ -336,6 +336,8 @@ export default function TeachersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "active">("all");
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
+  const [graphStatusFilter, setGraphStatusFilter] = useState<"all" | "pending" | "active">("all");
+  const [graphSubjectFilter, setGraphSubjectFilter] = useState<string>("all");
 
   const [formData, setFormData] = useState({
     id: "",
@@ -495,10 +497,10 @@ export default function TeachersPage() {
       >
         {teacherList.length > 0 && (
           <Card className="rounded-3xl border border-slate-200 bg-white p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <div></div>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Gráfico de Professores</h2>
               <div className="flex gap-3 mt-3 md:mt-0">
-                <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
+                <Select value={graphStatusFilter} onValueChange={(v: "all" | "pending" | "active") => setGraphStatusFilter(v)}>
                   <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white w-[130px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -508,7 +510,7 @@ export default function TeachersPage() {
                     <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                <Select value={graphSubjectFilter} onValueChange={setGraphSubjectFilter}>
                   <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white w-[170px]">
                     <SelectValue placeholder="Disciplina" />
                   </SelectTrigger>
@@ -525,13 +527,32 @@ export default function TeachersPage() {
             </div>
 
             {/* Barras interativas de resumo */}
-            <div className="flex justify-center items-end gap-8 mb-8 py-4 bg-slate-50 rounded-2xl">
+            <div className="flex justify-center items-end gap-8 mb-6 py-4 bg-slate-50 rounded-2xl">
               {(() => {
-                const activeCount = teacherList.filter(t => t.status !== 'pending').length;
-                const pendingCount = teacherList.filter(t => t.status === 'pending').length;
+                const filteredForGraph = teacherList.filter(t => {
+                  const matchesStatus = graphStatusFilter === "all" || 
+                    (graphStatusFilter === "pending" ? t.status === "pending" : t.status !== "pending");
+                  let teacherSubjects: string[] = [];
+                  if (t.subjects) {
+                    if (Array.isArray(t.subjects)) {
+                      teacherSubjects = t.subjects;
+                    } else if (typeof t.subjects === 'string') {
+                      try { teacherSubjects = JSON.parse(t.subjects); } catch {}
+                    }
+                  }
+                  if (t.subject && !teacherSubjects.includes(t.subject)) {
+                    teacherSubjects.push(t.subject);
+                  }
+                  const matchesSubject = graphSubjectFilter === "all" || 
+                    teacherSubjects.includes(graphSubjectFilter) || t.subject === graphSubjectFilter;
+                  return matchesStatus && matchesSubject;
+                });
+
+                const activeCount = filteredForGraph.filter(t => t.status !== 'pending').length;
+                const pendingCount = filteredForGraph.filter(t => t.status === 'pending').length;
                 
                 const allSubjects = new Set<string>();
-                teacherList.forEach(t => {
+                filteredForGraph.forEach(t => {
                   if (t.subjects) {
                     if (Array.isArray(t.subjects)) {
                       t.subjects.forEach((s: string) => allSubjects.add(s));
@@ -549,12 +570,12 @@ export default function TeachersPage() {
 
                 return (
                   <>
-                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setStatusFilter('active')}>
+                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setGraphStatusFilter('active')}>
                       <div className="relative group">
                         <div 
                           className="w-16 rounded-t-lg transition-all hover:opacity-80"
                           style={{ 
-                            height: `${(activeCount / maxVal) * 120}px`,
+                            height: `${(activeCount / maxVal) * 100}px`,
                             backgroundColor: '#10b981'
                           }}
                         />
@@ -566,12 +587,12 @@ export default function TeachersPage() {
                       <span className="text-xs text-slate-500">Ativos</span>
                     </div>
 
-                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setStatusFilter('pending')}>
+                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setGraphStatusFilter('pending')}>
                       <div className="relative group">
                         <div 
                           className="w-16 rounded-t-lg transition-all hover:opacity-80"
                           style={{ 
-                            height: `${(pendingCount / maxVal) * 120}px`,
+                            height: `${(pendingCount / maxVal) * 100}px`,
                             backgroundColor: '#3b82f6'
                           }}
                         />
@@ -583,12 +604,12 @@ export default function TeachersPage() {
                       <span className="text-xs text-slate-500">Pendentes</span>
                     </div>
 
-                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setSubjectFilter('all')}>
+                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setGraphSubjectFilter('all')}>
                       <div className="relative group">
                         <div 
                           className="w-16 rounded-t-lg transition-all hover:opacity-80"
                           style={{ 
-                            height: `${(subjectCount / maxVal) * 120}px`,
+                            height: `${(subjectCount / maxVal) * 100}px`,
                             backgroundColor: '#8b5cf6'
                           }}
                         />
@@ -604,42 +625,65 @@ export default function TeachersPage() {
               })()}
             </div>
 
-            {/* Gráficos Detalhados */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Gráfico de Status */}
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h3 className="text-sm font-bold text-slate-600 mb-4 text-center">Professores por Status</h3>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart 
-                    data={[
-                      { name: 'Ativos', value: teacherList.filter(t => t.status !== 'pending').length, fill: '#10b981' },
-                      { name: 'Pendentes', value: teacherList.filter(t => t.status === 'pending').length, fill: '#3b82f6' },
-                    ]}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                  >
-                    <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={60} />
-                    <Tooltip 
-                      formatter={(value: number) => [`${value} professores`, '']}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-                    />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
-                      {[
-                        { name: 'Ativos', value: teacherList.filter(t => t.status !== 'pending').length, fill: '#10b981' },
-                        { name: 'Pendentes', value: teacherList.filter(t => t.status === 'pending').length, fill: '#3b82f6' },
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+            {/* Gráfico de Disciplinas */}
+            <div className="bg-slate-50 rounded-2xl p-4">
+              <h3 className="text-sm font-bold text-slate-600 mb-4 text-center">Professores por Disciplina</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={(() => {
+                    const filteredForGraph = teacherList.filter(t => {
+                      const matchesStatus = graphStatusFilter === "all" || 
+                        (graphStatusFilter === "pending" ? t.status === "pending" : t.status !== "pending");
+                      let teacherSubjects: string[] = [];
+                      if (t.subjects) {
+                        if (Array.isArray(t.subjects)) {
+                          teacherSubjects = t.subjects;
+                        } else if (typeof t.subjects === 'string') {
+                          try { teacherSubjects = JSON.parse(t.subjects); } catch {}
+                        }
+                      }
+                      if (t.subject && !teacherSubjects.includes(t.subject)) {
+                        teacherSubjects.push(t.subject);
+                      }
+                      const matchesSubject = graphSubjectFilter === "all" || 
+                        teacherSubjects.includes(graphSubjectFilter) || t.subject === graphSubjectFilter;
+                      return matchesStatus && matchesSubject;
+                    });
 
-              {/* Gráfico de Disciplinas */}
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h3 className="text-sm font-bold text-slate-600 mb-4 text-center">Professores por Disciplina</h3>
-                <ResponsiveContainer width="100%" height={180}>
+                    const subjectCounts: Record<string, number> = {};
+                    filteredForGraph.forEach(t => {
+                      let teacherSubjects: string[] = [];
+                      if (t.subjects) {
+                        if (Array.isArray(t.subjects)) {
+                          teacherSubjects = t.subjects;
+                        } else if (typeof t.subjects === 'string') {
+                          try { teacherSubjects = JSON.parse(t.subjects); } catch {}
+                        }
+                      }
+                      if (t.subject && !teacherSubjects.includes(t.subject)) {
+                        teacherSubjects.push(t.subject);
+                      }
+                      teacherSubjects.forEach((s: string) => {
+                        subjectCounts[s] = (subjectCounts[s] || 0) + 1;
+                      });
+                    });
+                    return Object.entries(subjectCounts)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 6)
+                      .map(([name, value]) => ({ name, value }));
+                  })()}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 60 }}
+                >
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [`${value} professores de ${name}`, '']}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
                   <BarChart
                     data={(() => {
                       const subjectCounts: Record<string, number> = {};
