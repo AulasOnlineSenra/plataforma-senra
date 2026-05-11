@@ -325,6 +325,8 @@ export default function TeachersPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "active">("all");
+  const [subjectFilter, setSubjectFilter] = useState<string>("all");
 
   const [formData, setFormData] = useState({
     id: "",
@@ -493,24 +495,30 @@ export default function TeachersPage() {
             </p>
           </div>
 
-          <div className="flex gap-2 items-center w-full md:w-auto">
-            {currentUser?.role === "admin" && (
-              <Button
-                onClick={() => {
-                  setFormData({
-                    id: "",
-                    name: "",
-                    email: "",
-                    password: "",
-                    subject: "",
-                  });
-                  setIsCreateOpen(true);
-                }}
-                className="w-full md:w-auto h-12 rounded-xl bg-brand-yellow px-6 text-base font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90"
-              >
-                <UserPlus className="mr-2 h-5 w-5" /> Novo Professor
-              </Button>
-            )}
+          <div className="flex gap-3 items-center w-full md:w-auto flex-wrap">
+            <Select value={statusFilter} onValueChange={(v: "all" | "pending" | "active") => setStatusFilter(v)}>
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all" className="cursor-pointer">Todos</SelectItem>
+                <SelectItem value="active" className="cursor-pointer">Ativos</SelectItem>
+                <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white w-[180px]">
+                <SelectValue placeholder="Disciplina" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all" className="cursor-pointer">Todas as Disciplinas</SelectItem>
+                {subjects.map((subj) => (
+                  <SelectItem key={subj.id} value={subj.name} className="cursor-pointer">
+                    {subj.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -520,27 +528,45 @@ export default function TeachersPage() {
             <p className="text-lg font-bold text-slate-600">
               Nenhum professor encontrado.
             </p>
-            {currentUser?.role === "admin" && (
-              <p className="text-sm mt-1 text-slate-500">
-                Clique em "Novo Professor" para cadastrar a equipe.
-              </p>
-            )}
           </div>
         ) : (
           <div className={`mt-2 grid gap-x-0 gap-y-4 ${currentUser?.role === "admin" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"} justify-items-center`}>
-            {teacherList.map((teacher) => (
-              <TeacherCard
-                key={teacher.id}
-                teacher={teacher}
-                currentUser={currentUser}
-                onEdit={openEditModal}
-                onDelete={handleDelete}
-                onApprove={handleApprove}
-                onOpenDetails={(teacherId) =>
-                  router.push(`/dashboard/teacher/${teacherId}`)
-                }
-              />
-            ))}
+            {(() => {
+              const filteredTeachers = teacherList.filter(teacher => {
+                const matchesStatus = statusFilter === "all" || 
+                  (statusFilter === "pending" ? teacher.status === "pending" : teacher.status !== "pending");
+                const teacherSubjects = Array.isArray(teacher.subjects) ? teacher.subjects : 
+                  (teacher.subjects ? [teacher.subjects] : []);
+                const matchesSubject = subjectFilter === "all" || 
+                  teacherSubjects.includes(subjectFilter) || teacher.subject === subjectFilter;
+                return matchesStatus && matchesSubject;
+              });
+
+              if (filteredTeachers.length === 0) {
+                return (
+                  <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 py-16 text-slate-400 w-full col-span-full">
+                    <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
+                    <p className="text-base font-bold text-slate-500">
+                      Nenhum professor encontrado com os filtros selecionados.
+                    </p>
+                  </div>
+                );
+              }
+
+              return filteredTeachers.map((teacher) => (
+                <TeacherCard
+                  key={teacher.id}
+                  teacher={teacher}
+                  currentUser={currentUser}
+                  onEdit={openEditModal}
+                  onDelete={handleDelete}
+                  onApprove={handleApprove}
+                  onOpenDetails={(teacherId) =>
+                    router.push(`/dashboard/teacher/${teacherId}`)
+                  }
+                />
+              ));
+            })()}
           </div>
         )}
       </div>
