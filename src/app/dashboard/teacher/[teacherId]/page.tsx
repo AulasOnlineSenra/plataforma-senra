@@ -143,12 +143,17 @@ function TeacherDetailPageComponent() {
 
   const dayLabels = ['Dom', 'Seg', 'Ter', 'Quar', 'Quin', 'Sex', 'Sab'];
 
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    return `${parseInt(hours)}:${minutes}`;
+  };
+
   const availabilityByTime = useMemo(() => {
     const timeSlots: { time: string; days: number[] }[] = [];
     const timeMap = new Map<string, number[]>();
 
     availability.forEach((slot) => {
-      const timeKey = `${slot.startTime} - ${slot.endTime}`;
+      const timeKey = `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
       if (!timeMap.has(timeKey)) {
         timeMap.set(timeKey, []);
       }
@@ -298,7 +303,15 @@ function TeacherDetailPageComponent() {
             {teacher.bio && (
               <div className="lg:w-1/3 w-full bg-slate-100 rounded-2xl p-4 max-h-[500px] flex flex-col">
                 <h3 className="font-bold text-slate-700 mb-2">Sobre mim</h3>
-                <p className="text-sm text-slate-600 overflow-y-auto flex-1 mb-4" style={{ maxHeight: '400px' }}>{teacher.bio}</p>
+                <div className="text-sm text-slate-600 overflow-y-auto flex-1 mb-4 bio-scroll" style={{ maxHeight: '400px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
+                  <style dangerouslySetInnerHTML={{__html: `
+                    .bio-scroll::-webkit-scrollbar { width: 6px; }
+                    .bio-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+                    .bio-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+                    .bio-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                  `}} />
+                  {teacher.bio}
+                </div>
                 
                 <Button
                   asChild

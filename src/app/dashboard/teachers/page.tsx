@@ -763,24 +763,55 @@ export default function TeachersPage() {
                 return matchesStatus && matchesSubject;
               });
 
-              // Ordenar por completude do perfil quando filtro "pendentes" estiver ativo
+              // Ordenar por prioridade quando filtro "pendentes" estiver ativo
               const sortedTeachers = statusFilter === "pending"
                 ? [...filteredTeachers].sort((a, b) => {
-                    const getScore = (teacher: any) => {
-                      let score = 0;
-                      if (teacher.bio && teacher.bio.trim() !== "") score += 1;
-                      if (teacher.education && teacher.education.trim() !== "") score += 1;
-                      if (teacher.subjects && teacher.subjects.trim() !== "") score += 1;
-                      if (teacher.pixKeyType && teacher.pixKeyType.trim() !== "") score += 1;
-                      if (teacher.pixKey && teacher.pixKey.trim() !== "") score += 1;
-                      if (teacher.phone && teacher.phone.trim() !== "") score += 1;
-                      if (teacher.avatarUrl && teacher.avatarUrl.trim() !== "") score += 2;
-                      if (teacher.state && teacher.state.trim() !== "") score += 1;
-                      if (teacher.neighborhood && teacher.neighborhood.trim() !== "") score += 1;
-                      if (teacher.videoUrl && teacher.videoUrl.trim() !== "") score += 1;
-                      return score;
-                    };
-                    return getScore(b) - getScore(a);
+                    // Prioridade 1: Foto de perfil
+                    const aHasPhoto = !!(a.avatarUrl && a.avatarUrl.trim() !== "");
+                    const bHasPhoto = !!(b.avatarUrl && b.avatarUrl.trim() !== "");
+                    if (aHasPhoto !== bHasPhoto) return bHasPhoto ? 1 : -1;
+
+                    // Prioridade 2: Disponibilidade semanal
+                    const aHasAvailability = a.Availability && a.Availability.length > 0;
+                    const bHasAvailability = b.Availability && b.Availability.length > 0;
+                    if (aHasAvailability !== bHasAvailability) return bHasAvailability ? 1 : -1;
+
+                    // Prioridade 3: Formação acadêmica
+                    const aHasEducation = !!(a.education && a.education.trim() !== "");
+                    const bHasEducation = !!(b.education && b.education.trim() !== "");
+                    if (aHasEducation !== bHasEducation) return bHasEducation ? 1 : -1;
+
+                    // Prioridade 4: Disciplinas lecionadas
+                    const aHasSubjects = !!(a.subjects && a.subjects.trim() !== "");
+                    const bHasSubjects = !!(b.subjects && b.subjects.trim() !== "");
+                    if (aHasSubjects !== bHasSubjects) return bHasSubjects ? 1 : -1;
+
+                    // Prioridade 5: Telefone de contato
+                    const aHasPhone = !!(a.phone && a.phone.trim() !== "");
+                    const bHasPhone = !!(b.phone && b.phone.trim() !== "");
+                    if (aHasPhone !== bHasPhone) return bHasPhone ? 1 : -1;
+
+                    // Prioridade 6: Bairro
+                    const aHasNeighborhood = !!(a.neighborhood && a.neighborhood.trim() !== "");
+                    const bHasNeighborhood = !!(b.neighborhood && b.neighborhood.trim() !== "");
+                    if (aHasNeighborhood !== bHasNeighborhood) return bHasNeighborhood ? 1 : -1;
+
+                    // Prioridade 7: Estado
+                    const aHasState = !!(a.state && a.state.trim() !== "");
+                    const bHasState = !!(b.state && b.state.trim() !== "");
+                    if (aHasState !== bHasState) return bHasState ? 1 : -1;
+
+                    // Prioridade 8: Tipo de chave Pix
+                    const aHasPixType = !!(a.pixKeyType && a.pixKeyType.trim() !== "");
+                    const bHasPixType = !!(b.pixKeyType && b.pixKeyType.trim() !== "");
+                    if (aHasPixType !== bHasPixType) return bHasPixType ? 1 : -1;
+
+                    // Prioridade 9: Chave Pix
+                    const aHasPixKey = !!(a.pixKey && a.pixKey.trim() !== "");
+                    const bHasPixKey = !!(b.pixKey && b.pixKey.trim() !== "");
+                    if (aHasPixKey !== bHasPixKey) return bHasPixKey ? 1 : -1;
+
+                    return 0;
                   })
                 : filteredTeachers;
 

@@ -159,6 +159,9 @@ export async function getTeachers(showAll = false) {
     const teachers = await prisma.user.findMany({
       where: whereCondition,
       orderBy: { name: "asc" },
+      include: {
+        Availability: true,
+      },
     });
     return { success: true, data: teachers };
   } catch (error) {
