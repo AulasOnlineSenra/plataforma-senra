@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -490,7 +490,7 @@ export default function TeachersPage() {
   }
 
   return (
-    <React.Fragment>
+    <>
       <div
         id="teacher-list"
         className="mx-auto flex w-full flex-1 flex-col gap-6 md:gap-8"
@@ -683,43 +683,6 @@ export default function TeachersPage() {
                   <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-                  <BarChart
-                    data={(() => {
-                      const subjectCounts: Record<string, number> = {};
-                      teacherList.forEach(t => {
-                        let teacherSubjects: string[] = [];
-                        if (t.subjects) {
-                          if (Array.isArray(t.subjects)) {
-                            teacherSubjects = t.subjects;
-                          } else if (typeof t.subjects === 'string') {
-                            try { teacherSubjects = JSON.parse(t.subjects); } catch {}
-                          }
-                        }
-                        if (t.subject && !teacherSubjects.includes(t.subject)) {
-                          teacherSubjects.push(t.subject);
-                        }
-                        teacherSubjects.forEach((s: string) => {
-                          subjectCounts[s] = (subjectCounts[s] || 0) + 1;
-                        });
-                      });
-                      return Object.entries(subjectCounts)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 6)
-                        .map(([name, value]) => ({ name, value }));
-                    })()}
-                    margin={{ top: 5, right: 20, left: 10, bottom: 25 }}
-                  >
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip 
-                      formatter={(value: number, name: string) => [`${value} professores de ${name}`, '']}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-                    />
-                    <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
             </div>
           </Card>
         )}
@@ -1005,6 +968,6 @@ export default function TeachersPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </React.Fragment>
+    </>
   );
 }
