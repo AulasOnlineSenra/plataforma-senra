@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -490,7 +490,7 @@ export default function TeachersPage() {
   }
 
   return (
-    <>
+    <React.Fragment>
       <div
         id="teacher-list"
         className="mx-auto flex w-full flex-1 flex-col gap-6 md:gap-8"
@@ -1005,6 +1005,6 @@ export default function TeachersPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </>
+    </React.Fragment>
   );
 }
