@@ -148,24 +148,53 @@ function TeacherDetailPageComponent() {
     return `${parseInt(hours)}:${minutes}`;
   };
 
-  const availabilityByTime = useMemo(() => {
-    const timeSlots: { time: string; days: number[] }[] = [];
-    const timeMap = new Map<string, number[]>();
-
-    availability.forEach((slot) => {
-      const timeKey = `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
-      if (!timeMap.has(timeKey)) {
-        timeMap.set(timeKey, []);
+  const generateTimeSlots = () => {
+    const slots: string[] = [];
+    let startHour = 7;
+    let startMinute = 0;
+    while (startHour < 22 || (startHour === 22 && startMinute === 0)) {
+      const endHour = startHour + 1;
+      const endMinute = startMinute + 30;
+      let actualEndHour = endHour;
+      let actualEndMinute = endMinute;
+      if (actualEndMinute >= 60) {
+        actualEndHour += 1;
+        actualEndMinute -= 60;
       }
-      timeMap.get(timeKey)!.push(slot.dayOfWeek);
-    });
+      const startStr = `${startHour}:${startMinute.toString().padStart(2, '0')}`;
+      const endStr = `${actualEndHour}:${actualEndMinute.toString().padStart(2, '0')}`;
+      slots.push(`${formatTime(startStr)} - ${formatTime(endStr)}`);
+      startHour = actualEndHour;
+      startMinute = actualEndMinute;
+    }
+    return slots;
+  };
 
-    timeMap.forEach((days, time) => {
-      timeSlots.push({ time, days: days.sort() });
-    });
+  const allTimeSlots = useMemo(() => generateTimeSlots(), []);
 
-    return timeSlots.sort((a, b) => a.time.localeCompare(b.time));
-  }, [availability]);
+  const availabilityByTime = useMemo(() => {
+    return allTimeSlots.map((timeSlot) => {
+      const [startStr] = timeSlot.split(' - ');
+      const startTime = `${startStr.split(':')[0].padStart(2, '0')}:${startStr.split(':')[1].padStart(2, '0')}`;
+      const endTimeCalc = (s: string) => {
+        const [h, m] = s.split(':').map(Number);
+        const endH = h + 1;
+        const endM = m + 30;
+        const finalH = endM >= 60 ? endH + 1 : endH;
+        const finalM = endM >= 60 ? endM - 60 : endM;
+        return `${finalH.toString().padStart(2, '0')}:${finalM.toString().padStart(2, '0')}`;
+      };
+      const endTime = endTimeCalc(startTime);
+      const daysAvailable: number[] = [];
+      availability.forEach((slot) => {
+        const slotStart = slot.startTime.substring(0, 5);
+        if (slotStart === startTime && !daysAvailable.includes(slot.dayOfWeek)) {
+          daysAvailable.push(slot.dayOfWeek);
+        }
+      });
+      return { time: timeSlot, days: daysAvailable.sort() };
+    });
+  }, [availability, allTimeSlots]);
 
   const teacherSubjects = teacher?.subjects
     ? (() => {
