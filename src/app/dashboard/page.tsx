@@ -1220,7 +1220,7 @@ export default function DashboardPage() {
       </Dialog>
 
       <Dialog open={isCreditHistoryOpen} onOpenChange={setIsCreditHistoryOpen}>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden rounded-3xl">
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden rounded-[12px]">
           <DialogHeader>
             <DialogTitle>Histórico de Créditos Consumidos</DialogTitle>
             <DialogDescription>

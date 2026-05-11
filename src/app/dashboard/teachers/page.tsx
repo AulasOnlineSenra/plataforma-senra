@@ -763,7 +763,28 @@ export default function TeachersPage() {
                 return matchesStatus && matchesSubject;
               });
 
-              if (filteredTeachers.length === 0) {
+              // Ordenar por completude do perfil quando filtro "pendentes" estiver ativo
+              const sortedTeachers = statusFilter === "pending"
+                ? [...filteredTeachers].sort((a, b) => {
+                    const getScore = (teacher: any) => {
+                      let score = 0;
+                      if (teacher.bio) score += 1;
+                      if (teacher.education) score += 1;
+                      if (teacher.subjects) score += 1;
+                      if (teacher.pixKeyType) score += 1;
+                      if (teacher.pixKey) score += 1;
+                      if (teacher.phone) score += 1;
+                      if (teacher.avatarUrl) score += 1;
+                      if (teacher.state) score += 1;
+                      if (teacher.neighborhood) score += 1;
+                      if (teacher.videoUrl) score += 1;
+                      return score;
+                    };
+                    return getScore(b) - getScore(a);
+                  })
+                : filteredTeachers;
+
+              if (sortedTeachers.length === 0) {
                 return (
                   <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 py-16 text-slate-400 w-full col-span-full">
                     <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
@@ -774,7 +795,7 @@ export default function TeachersPage() {
                 );
               }
 
-              return filteredTeachers.map((teacher) => (
+              return sortedTeachers.map((teacher) => (
                 <TeacherCard
                   key={teacher.id}
                   teacher={teacher}

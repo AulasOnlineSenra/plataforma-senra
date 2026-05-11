@@ -27,7 +27,6 @@ export const navItems: NavItem[] = [
   { href: '/dashboard/chat', icon: MessageSquare, label: 'Chat', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/students', icon: Users, label: 'Alunos', roles: ['teacher', 'admin'] },
   { href: '/dashboard/teachers', icon: Briefcase, label: 'Professores', roles: ['admin', 'student'] },
-  { href: '/dashboard/my-teachers', icon: Briefcase, label: 'Meus Professores', roles: ['student'] },
   { href: '/dashboard/my-subjects', icon: BookCopy, label: 'Minhas Disciplinas', roles: ['student'] },
   { href: '/dashboard/simulados', icon: FileText, label: 'Simulados', roles: ['teacher', 'admin', 'student'] },
   { href: '/dashboard/packages', icon: WalletCards, label: 'Pacotes', roles: ['student'] },
