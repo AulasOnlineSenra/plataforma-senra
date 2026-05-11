@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,15 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getUserById } from '@/app/actions/users';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { getUserById, getTeacherAvailability } from '@/app/actions/users';
 import { getTeacherAverageRating, getTeacherRatings } from '@/app/actions/ratings';
 import { getLessonsForUser } from '@/app/actions/bookings';
 
@@ -88,6 +96,12 @@ function TeacherDetailPageComponent() {
   const [rating, setRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
   const [ratings, setRatings] = useState<RatingData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [availability, setAvailability] = useState<{
+    id: string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -104,9 +118,10 @@ function TeacherDetailPageComponent() {
         setTeacher(teacherResult.data as TeacherData);
       }
 
-      const [avgResult, ratingsResult] = await Promise.all([
+      const [avgResult, ratingsResult, availabilityResult] = await Promise.all([
         getTeacherAverageRating(teacherId),
         getTeacherRatings(teacherId),
+        getTeacherAvailability(teacherId),
       ]);
 
       if (avgResult.success && avgResult.data) {
@@ -115,6 +130,9 @@ function TeacherDetailPageComponent() {
       if (ratingsResult.success && ratingsResult.data) {
         setRatings(ratingsResult.data as RatingData[]);
       }
+      if (availabilityResult.success && availabilityResult.data) {
+        setAvailability(availabilityResult.data);
+      }
 
       setIsLoading(false);
     };
@@ -122,6 +140,27 @@ function TeacherDetailPageComponent() {
   }, [teacherId]);
 
   const isAdmin = currentUser?.role === 'admin';
+
+  const dayLabels = ['Dom', 'Seg', 'Ter', 'Quar', 'Quin', 'Sex', 'Sab'];
+
+  const availabilityByTime = useMemo(() => {
+    const timeSlots: { time: string; days: number[] }[] = [];
+    const timeMap = new Map<string, number[]>();
+
+    availability.forEach((slot) => {
+      const timeKey = `${slot.startTime} - ${slot.endTime}`;
+      if (!timeMap.has(timeKey)) {
+        timeMap.set(timeKey, []);
+      }
+      timeMap.get(timeKey)!.push(slot.dayOfWeek);
+    });
+
+    timeMap.forEach((days, time) => {
+      timeSlots.push({ time, days: days.sort() });
+    });
+
+    return timeSlots.sort((a, b) => a.time.localeCompare(b.time));
+  }, [availability]);
 
   const teacherSubjects = teacher?.subjects
     ? (() => {
@@ -219,19 +258,51 @@ function TeacherDetailPageComponent() {
                       ))}
                     </div>
                   )}
+
+                  {availability.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-bold text-slate-700 mb-2">Disponibilidade</h4>
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow className="bg-slate-100">
+                            <TableHead className="text-center font-bold text-slate-700">Horários</TableHead>
+                            {dayLabels.map((day) => (
+                              <TableHead key={day} className="text-center font-bold text-slate-700">{day}</TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {availabilityByTime.map((slot) => (
+                            <TableRow key={slot.time}>
+                              <TableCell className="font-medium text-slate-700 text-center">{slot.time}</TableCell>
+                              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                                <TableCell key={day} className="text-center">
+                                  {slot.days.includes(day) ? (
+                                    <span className="text-green-600 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-slate-300">–</span>
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Lado direito - Bio do professor */}
             {teacher.bio && (
-              <div className="lg:w-1/3 w-full bg-slate-100 rounded-2xl p-4 max-h-[300px] overflow-y-auto">
+              <div className="lg:w-1/3 w-full bg-slate-100 rounded-2xl p-4 max-h-[500px] flex flex-col">
                 <h3 className="font-bold text-slate-700 mb-2">Sobre mim</h3>
-                <p className="text-sm text-slate-600">{teacher.bio}</p>
+                <p className="text-sm text-slate-600 overflow-y-auto flex-1 mb-4" style={{ maxHeight: '400px' }}>{teacher.bio}</p>
                 
                 <Button
                   asChild
-                  className="w-full h-9 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90 mt-4"
+                  className="w-full h-9 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90"
                 >
                   <Link href={`/dashboard/booking?teacherId=${teacher.id}`}>
                     Agendar Aula

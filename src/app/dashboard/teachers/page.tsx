@@ -768,16 +768,16 @@ export default function TeachersPage() {
                 ? [...filteredTeachers].sort((a, b) => {
                     const getScore = (teacher: any) => {
                       let score = 0;
-                      if (teacher.bio) score += 1;
-                      if (teacher.education) score += 1;
-                      if (teacher.subjects) score += 1;
-                      if (teacher.pixKeyType) score += 1;
-                      if (teacher.pixKey) score += 1;
-                      if (teacher.phone) score += 1;
-                      if (teacher.avatarUrl) score += 2;
-                      if (teacher.state) score += 1;
-                      if (teacher.neighborhood) score += 1;
-                      if (teacher.videoUrl) score += 1;
+                      if (teacher.bio && teacher.bio.trim() !== "") score += 1;
+                      if (teacher.education && teacher.education.trim() !== "") score += 1;
+                      if (teacher.subjects && teacher.subjects.trim() !== "") score += 1;
+                      if (teacher.pixKeyType && teacher.pixKeyType.trim() !== "") score += 1;
+                      if (teacher.pixKey && teacher.pixKey.trim() !== "") score += 1;
+                      if (teacher.phone && teacher.phone.trim() !== "") score += 1;
+                      if (teacher.avatarUrl && teacher.avatarUrl.trim() !== "") score += 2;
+                      if (teacher.state && teacher.state.trim() !== "") score += 1;
+                      if (teacher.neighborhood && teacher.neighborhood.trim() !== "") score += 1;
+                      if (teacher.videoUrl && teacher.videoUrl.trim() !== "") score += 1;
                       return score;
                     };
                     return getScore(b) - getScore(a);
