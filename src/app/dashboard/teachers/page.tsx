@@ -229,11 +229,7 @@ function TeacherCard({
 
         <div className="relative">
           <Avatar
-            className={`mb-1 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white ${
-              isPending
-                ? "border-blue-400"
-                : "border-white"
-            }`}
+            className={`mb-1 h-24 w-24 border-4 shadow-md transition-transform group-hover:scale-105 bg-white border-white`}
           >
             <AvatarImage
               src={teacher.avatarUrl}
