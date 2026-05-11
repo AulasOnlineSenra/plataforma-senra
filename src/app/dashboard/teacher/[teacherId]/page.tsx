@@ -245,7 +245,7 @@ function TeacherDetailPageComponent() {
 
       <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
         <div className="bg-slate-50 border-b p-8">
-          <div className="flex flex-col lg:flex-row items-start gap-8">
+          <div className="flex flex-col lg:flex-row items-start gap-4">
             {/* Lado esquerdo - Informações do professor (sem alterações) */}
             <div className="flex-1">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -294,27 +294,27 @@ function TeacherDetailPageComponent() {
                   )}
 
                   {availability.length > 0 && (
-                    <div className="mt-3">
+                    <div className="mt-3 w-full">
                       <h4 className="text-sm font-bold text-slate-700 mb-2">Disponibilidade</h4>
-                      <Table className="text-xs">
+                      <Table className="text-xs w-full">
                         <TableHeader>
                           <TableRow className="bg-slate-100">
-                            <TableHead className="text-center font-bold text-slate-700">Horários</TableHead>
+                            <TableHead className="text-center font-bold text-slate-700 w-32">Horários</TableHead>
                             {dayLabels.map((day) => (
-                              <TableHead key={day} className="text-center font-bold text-slate-700">{day}</TableHead>
+                              <TableHead key={day} className="text-center font-bold text-slate-700 w-20">{day}</TableHead>
                             ))}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {availabilityByTime.map((slot) => (
                             <TableRow key={slot.time}>
-                              <TableCell className="font-medium text-slate-700 text-center">{slot.time}</TableCell>
+                              <TableCell className="font-medium text-slate-700 text-center w-32">{slot.time}</TableCell>
                               {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                                <TableCell key={day} className="text-center">
+                                <TableCell key={day} className="text-center w-20">
                                   {slot.days.includes(day) ? (
                                     <span className="text-green-600 font-bold">✓</span>
                                   ) : (
-                                    <span className="text-slate-300">–</span>
+                                    <span className="text-red-500 font-bold">X</span>
                                   )}
                                 </TableCell>
                               ))}
@@ -404,7 +404,7 @@ function TeacherDetailPageComponent() {
                           {r.student.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
+<div className="flex-1 w-full">
                         <div className="flex items-center justify-between">
                           <p className="font-bold text-sm text-slate-800">{r.student.name}</p>
                           <span className="text-xs text-slate-400">

@@ -280,13 +280,13 @@ function TeacherCard({
           </div>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-0.5">
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-px">
           {teacherSubjects.length > 0 ? (
             teacherSubjects.map((subjName: string, idx: number) => (
               <Badge
                 key={idx}
                 variant="secondary"
-                className="border-none bg-transparent font-semibold text-slate-600 px-2 py-0.5 rounded-full hover:bg-transparent"
+                className="border-none bg-transparent font-semibold text-slate-600 px-1 py-0 rounded-full hover:bg-transparent"
               >
                 {subjName}
               </Badge>
@@ -294,7 +294,7 @@ function TeacherCard({
           ) : (
             <Badge
               variant="secondary"
-              className="border-none bg-transparent font-semibold text-slate-600 px-2 py-0.5 rounded-full hover:bg-transparent"
+              className="border-none bg-transparent font-semibold text-slate-600 px-1 py-0 rounded-full hover:bg-transparent"
             >
               Geral
             </Badge>
