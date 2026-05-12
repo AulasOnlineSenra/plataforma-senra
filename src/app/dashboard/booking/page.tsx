@@ -1006,48 +1006,6 @@ function BookingPageComponent() {
                     );
                   })}
                 </div>
-              )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
-                            <AvatarImage
-                              src={teacher.avatarUrl || ""}
-                              alt={teacher.name}
-                            />
-                            <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
-                              {teacher.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-slate-900">
-                              {teacher.name}
-                            </p>
-                            {teacherEducation.length > 0 && (
-                              <div className="space-y-0.5">
-                                {teacherEducation.map((edu, idx) => (
-                                  <p key={idx} className="text-sm font-medium text-slate-400 truncate">
-                                    {edu.text}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                            <div className="mt-2 flex items-center gap-1 text-amber-500">
-                              {Array.from({ length: fullStars }).map((_, i) => (
-                                <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
-                              ))}
-                              {hasHalf && (
-                                <Star className="h-4 w-4 fill-current opacity-50" />
-                              )}
-                              {Array.from({ length: emptyStars }).map((_, i) => (
-                                <Star key={`empty-${i}`} className="h-4 w-4" />
-                              ))}
-                              <span className="ml-1 text-xs font-semibold text-slate-600">
-                                {rating.average.toFixed(1)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
                     );
                   })}
                 </div>
