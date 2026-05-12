@@ -818,10 +818,10 @@ function BookingPageComponent() {
                 Professores disponíveis
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-h-[500px] overflow-y-auto">
               {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
               {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   {teachers.map((teacher) => {
                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
                     const fullStars = Math.floor(rating.average);
@@ -861,46 +861,42 @@ function BookingPageComponent() {
                         type="button"
                         onClick={() => setSelectedTeacherId(teacher.id)}
                         className={cn(
-                          "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                          "w-full rounded-xl border border-slate-100 bg-white p-2.5 text-left shadow-sm transition",
                           selectedTeacherId === teacher.id
                             ? "ring-2 ring-amber-400"
                             : "hover:-translate-y-0.5 hover:border-slate-200",
                         )}
                       >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-9 w-9 border border-slate-100 shrink-0">
                             <AvatarImage
                               src={teacher.avatarUrl || ""}
                               alt={teacher.name}
                             />
-                            <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
+                            <AvatarFallback className="bg-amber-100 text-xs font-bold text-amber-700">
                               {teacher.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-slate-900">
+                            <p className="truncate text-xs font-bold text-slate-900">
                               {teacher.name}
                             </p>
                             {teacherEducation.length > 0 && (
-                              <div className="space-y-0.5">
-                                {teacherEducation.map((edu, idx) => (
-                                  <p key={idx} className="text-sm font-medium text-slate-400 truncate">
-                                    {edu.text}
-                                  </p>
-                                ))}
-                              </div>
+                              <p className="text-[10px] font-medium text-slate-400 truncate">
+                                {teacherEducation[0].text}
+                              </p>
                             )}
-                            <div className="mt-2 flex items-center gap-1 text-amber-500">
+                            <div className="mt-1 flex items-center gap-1 text-amber-500">
                               {Array.from({ length: fullStars }).map((_, i) => (
-                                <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
+                                <Star key={`full-${i}`} className="h-3 w-3 fill-current" />
                               ))}
                               {hasHalf && (
-                                <Star className="h-4 w-4 fill-current opacity-50" />
+                                <Star className="h-3 w-3 fill-current opacity-50" />
                               )}
                               {Array.from({ length: emptyStars }).map((_, i) => (
-                                <Star key={`empty-${i}`} className="h-4 w-4" />
+                                <Star key={`empty-${i}`} className="h-3 w-3" />
                               ))}
-                              <span className="ml-1 text-xs font-semibold text-slate-600">
+                              <span className="ml-0.5 text-[10px] font-semibold text-slate-600">
                                 {rating.average.toFixed(1)}
                               </span>
                             </div>
@@ -924,8 +920,8 @@ function BookingPageComponent() {
                     Tente selecionar outra matéria para continuar.
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-3">
+) : (
+                <div className="space-y-1.5">
                   {availableTeachers.map((teacher) => {
                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
                     const fullStars = Math.floor(rating.average);
@@ -965,11 +961,52 @@ function BookingPageComponent() {
                         type="button"
                         onClick={() => setSelectedTeacherId(teacher.id)}
                         className={cn(
-                          "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                          "w-full rounded-xl border border-slate-100 bg-white p-2.5 text-left shadow-sm transition",
                           selectedTeacherId === teacher.id
                             ? "ring-2 ring-amber-400"
                             : "hover:-translate-y-0.5 hover:border-slate-200",
                         )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-9 w-9 border border-slate-100 shrink-0">
+                            <AvatarImage
+                              src={teacher.avatarUrl || ""}
+                              alt={teacher.name}
+                            />
+                            <AvatarFallback className="bg-amber-100 text-xs font-bold text-amber-700">
+                              {teacher.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-bold text-slate-900">
+                              {teacher.name}
+                            </p>
+                            {teacherEducation.length > 0 && (
+                              <p className="text-[10px] font-medium text-slate-400 truncate">
+                                {teacherEducation[0].text}
+                              </p>
+                            )}
+                            <div className="mt-1 flex items-center gap-1 text-amber-500">
+                              {Array.from({ length: fullStars }).map((_, i) => (
+                                <Star key={`full-${i}`} className="h-3 w-3 fill-current" />
+                              ))}
+                              {hasHalf && (
+                                <Star className="h-3 w-3 fill-current opacity-50" />
+                              )}
+                              {Array.from({ length: emptyStars }).map((_, i) => (
+                                <Star key={`empty-${i}`} className="h-3 w-3" />
+                              ))}
+                              <span className="ml-0.5 text-[10px] font-semibold text-slate-600">
+                                {rating.average.toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border border-slate-100 shrink-0">

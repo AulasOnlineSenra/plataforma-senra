@@ -49,8 +49,11 @@ import {
   updateColumnOrder
 } from '@/app/actions/crm';
 import LeadDrawer from '@/components/crm/lead-drawer';
-import { formatDistanceToNow, isPast, isToday, addDays, parseISO } from 'date-fns';
+import TimelineView from '@/components/crm/timeline-view';
+import { formatDistanceToNow, isPast, isToday, addDays, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { Mail, Calendar, GanttChart } from 'lucide-react';
 
 interface Board {
   id: string;
@@ -122,7 +125,7 @@ const getTemperatureLabel = (temp: string) => {
 
 export default function CrmComercial() {
   const [isMounted, setIsMounted] = useState(false);
-  const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
+  const [viewMode, setViewMode] = useState<'boards' | 'kanban' | 'timeline'>('boards');
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -414,6 +417,17 @@ export default function CrmComercial() {
           }}>
             <List className="h-4 w-4" />
           </Button>
+          {selectedBoard && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={viewMode === 'timeline' ? 'bg-slate-100' : ''} 
+              onClick={() => setViewMode('timeline')}
+              title="Timeline"
+            >
+              <GanttChart className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -695,6 +709,14 @@ export default function CrmComercial() {
             </div>
           </DragDropContext>
         </div>
+      )}
+
+      {/* Timeline View */}
+      {viewMode === 'timeline' && selectedBoard && (
+        <TimelineView 
+          board={selectedBoard} 
+          onRefresh={() => handleSelectBoard(selectedBoard)} 
+        />
       )}
 
       {/* Statistics */}

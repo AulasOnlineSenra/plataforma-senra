@@ -14,7 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { BarChart3 } from 'lucide-react';
 import CrmComercial from './crm-comercial';
+import AnalyticsDashboard from '@/components/crm/analytics-dashboard';
+import AutomationRules from '@/components/crm/automation-rules';
 
 type CrmUser = {
   id: string;
@@ -28,7 +31,7 @@ type CrmUser = {
 export default function CrmPage() {
   const [users, setUsers] = useState<CrmUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [crmType, setCrmType] = useState<string>('administrativo');
+  const [crmType, setCrmType] = useState<string>('comercial');
 
   const loadUsers = async () => {
     const result = await getCrmUsers();
@@ -50,8 +53,10 @@ export default function CrmPage() {
             <SelectValue placeholder="Selecione o tipo" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="comercial">CRM Comercial</SelectItem>
+            <SelectItem value="analytics">Analytics</SelectItem>
+            <SelectItem value="automations">Automações</SelectItem>
             <SelectItem value="administrativo">Administrativo</SelectItem>
-            <SelectItem value="comercial">Comercial</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -105,6 +110,10 @@ export default function CrmPage() {
             )}
           </CardContent>
         </Card>
+      ) : crmType === 'analytics' ? (
+        <AnalyticsDashboard />
+      ) : crmType === 'automations' ? (
+        <AutomationRules />
       ) : (
         <CrmComercial />
       )}

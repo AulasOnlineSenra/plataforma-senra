@@ -215,6 +215,7 @@ export default function DashboardPage() {
   const [viewBookingDetails, setViewBookingDetails] = useState<StudentPendingTransaction | null>(null);
   const [isCreditHistoryOpen, setIsCreditHistoryOpen] = useState(false);
   const [creditHistoryMonth, setCreditHistoryMonth] = useState<string>("all");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -257,12 +258,17 @@ export default function DashboardPage() {
         setAdminStats(statsResult.data as AdminStats);
       }
 
-      if (dbUser.role === "student") {
-        const pendingResult = await getStudentPendingTransactions(dbUser.id);
-        if (pendingResult.success && pendingResult.data) {
-          setStudentPendingTransactions(pendingResult.data as StudentPendingTransaction[]);
-        }
-      }
+if (dbUser.role === "student") {
+         const pendingResult = await getStudentPendingTransactions(dbUser.id);
+         if (pendingResult.success && pendingResult.data) {
+           setStudentPendingTransactions(pendingResult.data as StudentPendingTransaction[]);
+         }
+         
+         const transactionsResult = await getStudentTransactions(dbUser.id);
+         if (transactionsResult.success && transactionsResult.data) {
+           setTransactions(transactionsResult.data as Transaction[]);
+         }
+       }
 
       if (dbUser.role === "admin") {
         const allPendingResult = await getAllPendingTransactions();
@@ -1294,9 +1300,14 @@ export default function DashboardPage() {
           </div>
           <DialogFooter>
             <div className="flex items-center justify-between w-full pr-4">
-              <p className="text-sm text-slate-500">
-                Total consumido: <span className="font-bold text-red-600">{filteredCreditsHistory.length} crédito(s)</span>
-              </p>
+              <div className="flex-1">
+                <p className="text-sm text-slate-500">
+                  Total consumido: <span className="font-bold text-red-600">{filteredCreditsHistory.length} crédito(s)</span>
+                </p>
+                <p className="text-sm text-slate-500">
+                  Total adquirido: <span className="font-bold text-green-600">{transactions.reduce((sum, t) => sum + t.creditsAdded, 0)} crédito(s)</span>
+                </p>
+              </div>
               <Button variant="outline" onClick={() => setIsCreditHistoryOpen(false)}>
                 Fechar
               </Button>

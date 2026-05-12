@@ -33,15 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { TeacherChartsCarousel } from "@/components/teacher-charts-carousel";
 
 // IMPORTANDO AS FUNÇÕES DO MOTOR
 import {
@@ -350,8 +342,7 @@ export default function TeachersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "active">("all");
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
-  const [graphStatusFilter, setGraphStatusFilter] = useState<"all" | "pending" | "active">("all");
-  const [graphSubjectFilter, setGraphSubjectFilter] = useState<string>("all");
+  const [teacherRatings, setTeacherRatings] = useState<Record<string, { average: number; count: number }>>({});
 
   const [formData, setFormData] = useState({
     id: "",
@@ -369,6 +360,16 @@ export default function TeachersPage() {
     const result = await getTeachers(showAll);
     if (result.success && result.data) {
       setTeacherList(result.data);
+      const ratingsResult: Record<string, { average: number; count: number }> = {};
+      await Promise.all(
+        (result.data as any[]).map(async (t) => {
+          const r = await getTeacherAverageRating(t.id);
+          if (r.success && r.data) {
+            ratingsResult[t.id] = r.data as { average: number; count: number };
+          }
+        })
+      );
+      setTeacherRatings(ratingsResult);
     } else {
       toast({
         variant: "destructive",
@@ -509,196 +510,11 @@ export default function TeachersPage() {
         id="teacher-list"
         className="mx-auto flex w-full flex-1 flex-col gap-6 md:gap-8"
       >
-        {teacherList.length > 0 && currentUser?.role === "admin" && (
-          <Card className="rounded-3xl border border-slate-200 bg-white p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-              <h2 className="text-xl font-bold text-slate-900">Gráfico de Professores</h2>
-              <div className="flex gap-3 mt-3 md:mt-0">
-                <Select value={graphStatusFilter} onValueChange={(v: "all" | "pending" | "active") => setGraphStatusFilter(v)}>
-                  <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white w-[130px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="all" className="cursor-pointer">Todos</SelectItem>
-                    <SelectItem value="active" className="cursor-pointer">Ativos</SelectItem>
-                    <SelectItem value="pending" className="cursor-pointer">Pendentes</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={graphSubjectFilter} onValueChange={setGraphSubjectFilter}>
-                  <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white w-[170px]">
-                    <SelectValue placeholder="Disciplina" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="all" className="cursor-pointer">Todas</SelectItem>
-                    {subjects.map((subj) => (
-                      <SelectItem key={subj.id} value={subj.name} className="cursor-pointer">
-                        {subj.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Barras interativas de resumo */}
-            <div className="flex justify-center items-end gap-8 mb-6 py-4 bg-slate-50 rounded-2xl">
-              {(() => {
-                const filteredForGraph = teacherList.filter(t => {
-                  const matchesStatus = graphStatusFilter === "all" || 
-                    (graphStatusFilter === "pending" ? t.status === "pending" : t.status !== "pending");
-                  let teacherSubjects: string[] = [];
-                  if (t.subjects) {
-                    if (Array.isArray(t.subjects)) {
-                      teacherSubjects = t.subjects;
-                    } else if (typeof t.subjects === 'string') {
-                      try { teacherSubjects = JSON.parse(t.subjects); } catch {}
-                    }
-                  }
-                  if (t.subject && !teacherSubjects.includes(t.subject)) {
-                    teacherSubjects.push(t.subject);
-                  }
-                  const matchesSubject = graphSubjectFilter === "all" || 
-                    teacherSubjects.includes(graphSubjectFilter) || t.subject === graphSubjectFilter;
-                  return matchesStatus && matchesSubject;
-                });
-
-                const activeCount = filteredForGraph.filter(t => t.status !== 'pending').length;
-                const pendingCount = filteredForGraph.filter(t => t.status === 'pending').length;
-                
-                const allSubjects = new Set<string>();
-                filteredForGraph.forEach(t => {
-                  if (t.subjects) {
-                    if (Array.isArray(t.subjects)) {
-                      t.subjects.forEach((s: string) => allSubjects.add(s));
-                    } else if (typeof t.subjects === 'string') {
-                      try {
-                        JSON.parse(t.subjects).forEach((s: string) => allSubjects.add(s));
-                      } catch {}
-                    }
-                  }
-                  if (t.subject) allSubjects.add(t.subject);
-                });
-                const subjectCount = allSubjects.size;
-
-                const maxVal = Math.max(activeCount, pendingCount, subjectCount) || 1;
-
-                return (
-                  <>
-                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setGraphStatusFilter('active')}>
-                      <div className="relative group">
-                        <div 
-                          className="w-16 rounded-t-lg transition-all hover:opacity-80"
-                          style={{ 
-                            height: `${(activeCount / maxVal) * 100}px`,
-                            backgroundColor: '#10b981'
-                          }}
-                        />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                          {activeCount} professores ativos
-                        </div>
-                      </div>
-                      <span className="text-sm font-bold text-emerald-600 mt-2">{activeCount}</span>
-                      <span className="text-xs text-slate-500">Ativos</span>
-                    </div>
-
-                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setGraphStatusFilter('pending')}>
-                      <div className="relative group">
-                        <div 
-                          className="w-16 rounded-t-lg transition-all hover:opacity-80"
-                          style={{ 
-                            height: `${(pendingCount / maxVal) * 100}px`,
-                            backgroundColor: '#3b82f6'
-                          }}
-                        />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                          {pendingCount} professores pendentes
-                        </div>
-                      </div>
-                      <span className="text-sm font-bold text-blue-600 mt-2">{pendingCount}</span>
-                      <span className="text-xs text-slate-500">Pendentes</span>
-                    </div>
-
-                    <div className="flex flex-col items-center cursor-pointer" onClick={() => setGraphSubjectFilter('all')}>
-                      <div className="relative group">
-                        <div 
-                          className="w-16 rounded-t-lg transition-all hover:opacity-80"
-                          style={{ 
-                            height: `${(subjectCount / maxVal) * 100}px`,
-                            backgroundColor: '#8b5cf6'
-                          }}
-                        />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                          {subjectCount} disciplinas
-                        </div>
-                      </div>
-                      <span className="text-sm font-bold text-violet-600 mt-2">{subjectCount}</span>
-                      <span className="text-xs text-slate-500">Disciplinas</span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-
-            {/* Gráfico de Disciplinas */}
-            <div className="bg-slate-50 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-slate-600 mb-4 text-center">Professores por Disciplina</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart
-                  data={(() => {
-                    const filteredForGraph = teacherList.filter(t => {
-                      const matchesStatus = graphStatusFilter === "all" || 
-                        (graphStatusFilter === "pending" ? t.status === "pending" : t.status !== "pending");
-                      let teacherSubjects: string[] = [];
-                      if (t.subjects) {
-                        if (Array.isArray(t.subjects)) {
-                          teacherSubjects = t.subjects;
-                        } else if (typeof t.subjects === 'string') {
-                          try { teacherSubjects = JSON.parse(t.subjects); } catch {}
-                        }
-                      }
-                      if (t.subject && !teacherSubjects.includes(t.subject)) {
-                        teacherSubjects.push(t.subject);
-                      }
-                      const matchesSubject = graphSubjectFilter === "all" || 
-                        teacherSubjects.includes(graphSubjectFilter) || t.subject === graphSubjectFilter;
-                      return matchesStatus && matchesSubject;
-                    });
-
-                    const subjectCounts: Record<string, number> = {};
-                    filteredForGraph.forEach(t => {
-                      let teacherSubjects: string[] = [];
-                      if (t.subjects) {
-                        if (Array.isArray(t.subjects)) {
-                          teacherSubjects = t.subjects;
-                        } else if (typeof t.subjects === 'string') {
-                          try { teacherSubjects = JSON.parse(t.subjects); } catch {}
-                        }
-                      }
-                      if (t.subject && !teacherSubjects.includes(t.subject)) {
-                        teacherSubjects.push(t.subject);
-                      }
-                      teacherSubjects.forEach((s: string) => {
-                        subjectCounts[s] = (subjectCounts[s] || 0) + 1;
-                      });
-                    });
-                    return Object.entries(subjectCounts)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 6)
-                      .map(([name, value]) => ({ name, value }));
-                  })()}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 60 }}
-                >
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => [`${value} professores de ${name}`, '']}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+        {currentUser?.role === "admin" && (
+          <TeacherChartsCarousel
+            teachers={teacherList as any[]}
+            ratings={teacherRatings}
+          />
         )}
 
         {/* HEADER LIMPO E MODERNO */}
