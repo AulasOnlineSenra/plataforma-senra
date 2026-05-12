@@ -30,7 +30,11 @@ import {
   Loader2,
   ChevronRight,
   Trash2,
-  Edit2
+  Edit2,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Pencil
 } from 'lucide-react';
 import { 
   getCrmBoards, 
@@ -41,12 +45,12 @@ import {
   createCrmLead,
   moveCrmLead,
   deleteCrmLead,
-  deleteCrmColumn
+  deleteCrmColumn,
+  updateColumnOrder
 } from '@/app/actions/crm';
 import LeadDrawer from '@/components/crm/lead-drawer';
 import { formatDistanceToNow, isPast, isToday, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Pencil } from 'lucide-react';
 
 interface Board {
   id: string;
@@ -133,6 +137,12 @@ export default function CrmComercial() {
   // Lead Drawer state
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Column collapse state
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+
+  // Column drag state
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -301,6 +311,53 @@ export default function CrmComercial() {
     }
   };
 
+  const toggleCollapseColumn = (columnId: string) => {
+    setCollapsedColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(columnId)) {
+        newSet.delete(columnId);
+      } else {
+        newSet.add(columnId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleColumnDragStart = (e: React.DragEvent, columnId: string) => {
+    setDraggedColumnId(columnId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleColumnDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleColumnDrop = (e: React.DragEvent, targetColumnId: string) => {
+    e.preventDefault();
+    if (!draggedColumnId || draggedColumnId === targetColumnId || !selectedBoard) return;
+
+    const newColumns = [...selectedBoard.columns];
+    const draggedIndex = newColumns.findIndex(c => c.id === draggedColumnId);
+    const targetIndex = newColumns.findIndex(c => c.id === targetColumnId);
+
+    const [draggedColumn] = newColumns.splice(draggedIndex, 1);
+    newColumns.splice(targetIndex, 0, draggedColumn);
+
+    newColumns.forEach((col, index) => {
+      col.order = index;
+    });
+
+    setSelectedBoard({ ...selectedBoard, columns: newColumns });
+    setDraggedColumnId(null);
+
+    updateColumnOrder(newColumns.map(c => c.id)).catch(console.error);
+  };
+
+  const handleColumnDragEnd = () => {
+    setDraggedColumnId(null);
+  };
+
   const filteredBoards = boards.filter(board => {
     const matchesSearch = board.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFavorite = showFavoritesOnly ? board.isFavorite : true;
@@ -429,39 +486,69 @@ export default function CrmComercial() {
         <div className="flex-1 overflow-x-auto pb-4 bg-slate-100 -mx-6 px-6 pt-4 rounded-xl shadow-inner">
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 h-full items-start">
-              {selectedBoard.columns.map((column: any) => (
-                <div key={column.id} className="w-[300px] flex-shrink-0 bg-slate-200/60 rounded-xl flex flex-col max-h-full">
+              {selectedBoard.columns.map((column: any) => {
+                const isCollapsed = collapsedColumns.has(column.id);
+                const isDragging = draggedColumnId === column.id;
+                return (
+                <div 
+                  key={column.id} 
+                  className={`w-[300px] flex-shrink-0 bg-slate-200/60 rounded-xl flex flex-col max-h-full transition-all duration-200 ${isDragging ? 'opacity-50 scale-95 ring-2 ring-primary' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleColumnDragStart(e, column.id)}
+                  onDragOver={handleColumnDragOver}
+                  onDrop={(e) => handleColumnDrop(e, column.id)}
+                  onDragEnd={handleColumnDragEnd}
+                >
                   
                   {/* Column Header */}
-                  <div className="flex items-center justify-between p-3 cursor-grab active:cursor-grabbing">
+                  <div className="flex items-center justify-between p-3 group/header">
                     <div className="flex items-center gap-2">
+                      <GripVertical className="h-4 w-4 text-slate-400 opacity-0 group-hover/header:opacity-100 cursor-grab active:cursor-grabbing transition-opacity" />
                       <div className={`w-3 h-3 rounded-full ${column.color || 'bg-slate-400'}`} />
                       <span className="font-semibold text-slate-800 text-sm">{column.name}</span>
-                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{column.leads.length}</Badge>
+                      {!isCollapsed && (
+                        <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{column.leads.length}</Badge>
+                      )}
                     </div>
                     
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:bg-slate-300/50">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteColumn(column.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Lista
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-slate-400 hover:text-slate-700 opacity-0 group-hover/header:opacity-100 transition-opacity"
+                        onClick={() => toggleCollapseColumn(column.id)}
+                      >
+                        {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:bg-slate-300/50">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => toggleCollapseColumn(column.id)}>
+                            {isCollapsed ? 'Expandir' : 'Colapsar'} Lista
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteColumn(column.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Lista
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
                   {/* Droppable Area for Leads */}
-                  <Droppable droppableId={column.id}>
-                    {(provided, snapshot) => (
-                      <div 
-                        {...provided.droppableProps} 
-                        ref={provided.innerRef}
-                        className={`flex-1 overflow-y-auto px-2 min-h-[50px] space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-slate-200/80 rounded-lg' : ''}`}
-                      >
+                  {!isCollapsed && (
+                    <>
+                    <Droppable droppableId={column.id}>
+                      {(provided, snapshot) => (
+                        <div 
+                          {...provided.droppableProps} 
+                          ref={provided.innerRef}
+                          className={`flex-1 overflow-y-auto px-2 min-h-[50px] space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-slate-200/80 rounded-lg' : ''}`}
+                        >
                         {column.leads.map((lead: any, index: number) => (
                           <Draggable key={lead.id} draggableId={lead.id} index={index}>
                             {(provided, snapshot) => (
@@ -560,7 +647,7 @@ export default function CrmComercial() {
                   </Droppable>
 
                   {/* Inline Lead Creation or Add Button */}
-                  <div className="p-2">
+                    <div className="p-2">
                     {addingLeadToColumn === column.id ? (
                       <div className="space-y-2 bg-white p-2 rounded-lg shadow-sm border border-slate-200">
                         <Input
@@ -587,12 +674,13 @@ export default function CrmComercial() {
                         <Plus className="h-4 w-4 mr-2" />
                         Adicionar um cartão
                       </Button>
-                    )}
-                  </div>
-
+)}
+                    </div>
+                    </>
+                  )}
                 </div>
-              ))}
-              
+              )})}
+               
               {/* Add New Column */}
               <div className="w-[300px] flex-shrink-0">
                 <Button 

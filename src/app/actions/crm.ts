@@ -177,6 +177,24 @@ export async function deleteCrmColumn(id: string) {
   }
 }
 
+export async function updateColumnOrder(columnIds: string[]) {
+  try {
+    await Promise.all(
+      columnIds.map((id, index) =>
+        prisma.crmColumn.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+    revalidatePath("/dashboard/crm");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao reordenar colunas:", error);
+    return { success: false, error: "Falha ao reordenar colunas." };
+  }
+}
+
 // --- Leads ---
 
 import { triggerAiAutomation } from "@/lib/ai/automation-engine";
