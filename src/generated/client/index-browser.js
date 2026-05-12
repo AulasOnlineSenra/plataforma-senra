@@ -135,7 +135,6 @@ exports.Prisma.AppSettingScalarFieldEnum = {
   openRouterApiKey: 'openRouterApiKey',
   minimaxApiKey: 'minimaxApiKey',
   grokApiKey: 'grokApiKey',
-  searchApiKey: 'searchApiKey',
   updatedAt: 'updatedAt'
 };
 

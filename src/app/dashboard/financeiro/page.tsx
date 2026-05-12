@@ -101,7 +101,9 @@ function StudentFinancialPanel() {
   }, []);
 
   const totalInvested = useMemo(() => {
-    return transactions.reduce((sum, transaction) => sum + (transaction.amountPaid || 0), 0);
+    return transactions
+      .filter(t => t.status.toUpperCase() !== 'CANCELADO')
+      .reduce((sum, transaction) => sum + (transaction.amountPaid || 0), 0);
   }, [transactions]);
 
   return (
@@ -135,7 +137,7 @@ function StudentFinancialPanel() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-slate-500">Total Investido</p>
                 <p className="text-3xl font-bold text-slate-900">{currencyFormatter.format(totalInvested)}</p>
-                <p className="text-xs text-slate-500">Soma de todas as transações confirmadas.</p>
+                <p className="text-xs text-slate-500">Soma das transações confirmadas (exclui cancelados).</p>
               </div>
               <div className="rounded-xl border border-sky-200 bg-sky-50 p-2.5">
                 <Wallet className="h-5 w-5 text-sky-600" />

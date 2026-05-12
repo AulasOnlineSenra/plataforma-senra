@@ -13,9 +13,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
     "@genkit-ai/google-genai": "^1.20.0",
     "@genkit-ai/next": "^1.20.0",
     "@hello-pangea/dnd": "^18.0.1",
@@ -54,7 +51,6 @@
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.9.1",
     "firebase-admin": "^13.0.0",
-    "framer-motion": "^12.38.0",
     "genkit": "^1.20.0",
     "genkitx-anthropic": "^0.30.0",
     "genkitx-openai": "^0.30.0",
