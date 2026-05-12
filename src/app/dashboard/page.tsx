@@ -85,7 +85,7 @@ import { getUserById } from "@/app/actions/users";
 import { getLessonsForUser, updateLesson, cancelLesson } from "@/app/actions/bookings";
 import { getDashboardStats } from "@/app/actions/dashboard";
 import { getUnratedPeopleForUser, submitRating, getUserAverageReceivedRating } from "@/app/actions/ratings";
-import { approveTransaction, rejectTransaction, getStudentPendingTransactions, getAllPendingTransactions } from "@/app/actions/finance";
+import { approveTransaction, rejectTransaction, getStudentPendingTransactions, getAllPendingTransactions, getStudentTransactions } from "@/app/actions/finance";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type DashboardUser = {
@@ -1222,7 +1222,7 @@ export default function DashboardPage() {
       <Dialog open={isCreditHistoryOpen} onOpenChange={setIsCreditHistoryOpen}>
         <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden rounded-[12px]">
           <DialogHeader>
-            <DialogTitle>Histórico de Créditos Consumidos</DialogTitle>
+            <DialogTitle>Histórico de Créditos</DialogTitle>
             <DialogDescription>
               Lista de aulas que consumiram seus créditos. Cada aula concluída desconta 1 crédito.
             </DialogDescription>

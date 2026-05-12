@@ -310,7 +310,7 @@ function ChatContent() {
         type="button"
         variant="ghost"
         onClick={() => setActiveContactId(contact.id)}
-        className={`mx-2 my-1 h-auto w-[calc(100%-1rem)] justify-start gap-3 rounded-xl border-l-4 px-3 py-3 text-left ${
+        className={`mx-2 my-0.5 h-auto w-[calc(100%-1rem)] justify-start gap-2 rounded-xl border-l-4 px-3 py-2 text-left ${
           isActive
             ? "border-primary bg-muted/50 text-foreground hover:bg-muted/60"
             : "border-transparent hover:bg-muted/40"
@@ -692,7 +692,7 @@ function ChatContent() {
             <div className="flex flex-col">
               {/* Grupo Alunos */}
               <div 
-                className="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 uppercase bg-slate-100 cursor-pointer hover:bg-slate-200"
+                className="flex items-center justify-between px-3 py-1 text-xs font-bold text-slate-600 uppercase bg-slate-100 cursor-pointer hover:bg-slate-200"
                 onClick={() => setExpandedGroups(prev => ({ ...prev, students: !prev.students }))}
               >
                 <span>Alunos ({groupedContacts.students.length})</span>
@@ -702,7 +702,7 @@ function ChatContent() {
               
               {/* Grupo Professores */}
               <div 
-                className="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-600 uppercase bg-slate-100 cursor-pointer hover:bg-slate-200 mt-2"
+                className="flex items-center justify-between px-3 py-1 text-xs font-bold text-slate-600 uppercase bg-slate-100 cursor-pointer hover:bg-slate-200 mt-1"
                 onClick={() => setExpandedGroups(prev => ({ ...prev, teachers: !prev.teachers }))}
               >
                 <span>Professores ({groupedContacts.teachers.length})</span>

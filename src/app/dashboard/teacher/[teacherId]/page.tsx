@@ -301,8 +301,8 @@ function TeacherDetailPageComponent() {
 
                   {availability.length > 0 && (
                     <div className="mt-3 w-full h-full">
-                      <h4 className="text-sm font-bold text-slate-700 mb-2 pl-[15px]">Disponibilidade</h4>
-                      <div className="pl-[15px] overflow-y-auto" style={{ maxHeight: '380px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
+                      <h4 className="text-sm font-bold text-slate-700 mb-2 pl-[10px]">Disponibilidade</h4>
+                      <div className="pl-[10px] overflow-y-auto" style={{ maxHeight: '380px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
                         <style dangerouslySetInnerHTML={{__html: `
                           .availability-scroll::-webkit-scrollbar { width: 6px; }
                           .availability-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
