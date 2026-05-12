@@ -22,6 +22,7 @@ model AppSetting {
   openRouterApiKey String?
   minimaxApiKey    String?
   grokApiKey       String?
+  searchApiKey     String?
   updatedAt        DateTime @updatedAt
 }
 

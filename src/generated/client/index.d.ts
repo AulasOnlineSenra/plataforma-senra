@@ -2854,6 +2854,7 @@ export namespace Prisma {
     openRouterApiKey: string | null
     minimaxApiKey: string | null
     grokApiKey: string | null
+    searchApiKey: string | null
     updatedAt: Date | null
   }
 
@@ -2871,6 +2872,7 @@ export namespace Prisma {
     openRouterApiKey: string | null
     minimaxApiKey: string | null
     grokApiKey: string | null
+    searchApiKey: string | null
     updatedAt: Date | null
   }
 
@@ -2888,6 +2890,7 @@ export namespace Prisma {
     openRouterApiKey: number
     minimaxApiKey: number
     grokApiKey: number
+    searchApiKey: number
     updatedAt: number
     _all: number
   }
@@ -2907,6 +2910,7 @@ export namespace Prisma {
     openRouterApiKey?: true
     minimaxApiKey?: true
     grokApiKey?: true
+    searchApiKey?: true
     updatedAt?: true
   }
 
@@ -2924,6 +2928,7 @@ export namespace Prisma {
     openRouterApiKey?: true
     minimaxApiKey?: true
     grokApiKey?: true
+    searchApiKey?: true
     updatedAt?: true
   }
 
@@ -2941,6 +2946,7 @@ export namespace Prisma {
     openRouterApiKey?: true
     minimaxApiKey?: true
     grokApiKey?: true
+    searchApiKey?: true
     updatedAt?: true
     _all?: true
   }
@@ -3031,6 +3037,7 @@ export namespace Prisma {
     openRouterApiKey: string | null
     minimaxApiKey: string | null
     grokApiKey: string | null
+    searchApiKey: string | null
     updatedAt: Date
     _count: AppSettingCountAggregateOutputType | null
     _min: AppSettingMinAggregateOutputType | null
@@ -3065,6 +3072,7 @@ export namespace Prisma {
     openRouterApiKey?: boolean
     minimaxApiKey?: boolean
     grokApiKey?: boolean
+    searchApiKey?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["appSetting"]>
 
@@ -3082,6 +3090,7 @@ export namespace Prisma {
     openRouterApiKey?: boolean
     minimaxApiKey?: boolean
     grokApiKey?: boolean
+    searchApiKey?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["appSetting"]>
 
@@ -3099,6 +3108,7 @@ export namespace Prisma {
     openRouterApiKey?: boolean
     minimaxApiKey?: boolean
     grokApiKey?: boolean
+    searchApiKey?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["appSetting"]>
 
@@ -3116,10 +3126,11 @@ export namespace Prisma {
     openRouterApiKey?: boolean
     minimaxApiKey?: boolean
     grokApiKey?: boolean
+    searchApiKey?: boolean
     updatedAt?: boolean
   }
 
-  export type AppSettingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "whatsapp" | "classValue" | "referralBonus" | "availabilityType" | "pixKey" | "pixKeyType" | "geminiApiKey" | "openaiApiKey" | "anthropicApiKey" | "openRouterApiKey" | "minimaxApiKey" | "grokApiKey" | "updatedAt", ExtArgs["result"]["appSetting"]>
+  export type AppSettingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "whatsapp" | "classValue" | "referralBonus" | "availabilityType" | "pixKey" | "pixKeyType" | "geminiApiKey" | "openaiApiKey" | "anthropicApiKey" | "openRouterApiKey" | "minimaxApiKey" | "grokApiKey" | "searchApiKey" | "updatedAt", ExtArgs["result"]["appSetting"]>
 
   export type $AppSettingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "AppSetting"
@@ -3138,6 +3149,7 @@ export namespace Prisma {
       openRouterApiKey: string | null
       minimaxApiKey: string | null
       grokApiKey: string | null
+      searchApiKey: string | null
       updatedAt: Date
     }, ExtArgs["result"]["appSetting"]>
     composites: {}
@@ -3575,6 +3587,7 @@ export namespace Prisma {
     readonly openRouterApiKey: FieldRef<"AppSetting", 'String'>
     readonly minimaxApiKey: FieldRef<"AppSetting", 'String'>
     readonly grokApiKey: FieldRef<"AppSetting", 'String'>
+    readonly searchApiKey: FieldRef<"AppSetting", 'String'>
     readonly updatedAt: FieldRef<"AppSetting", 'DateTime'>
   }
     
@@ -25971,6 +25984,7 @@ export namespace Prisma {
     openRouterApiKey: 'openRouterApiKey',
     minimaxApiKey: 'minimaxApiKey',
     grokApiKey: 'grokApiKey',
+    searchApiKey: 'searchApiKey',
     updatedAt: 'updatedAt'
   };
 
@@ -26432,6 +26446,7 @@ export namespace Prisma {
     openRouterApiKey?: StringNullableFilter<"AppSetting"> | string | null
     minimaxApiKey?: StringNullableFilter<"AppSetting"> | string | null
     grokApiKey?: StringNullableFilter<"AppSetting"> | string | null
+    searchApiKey?: StringNullableFilter<"AppSetting"> | string | null
     updatedAt?: DateTimeFilter<"AppSetting"> | Date | string
   }
 
@@ -26449,6 +26464,7 @@ export namespace Prisma {
     openRouterApiKey?: SortOrderInput | SortOrder
     minimaxApiKey?: SortOrderInput | SortOrder
     grokApiKey?: SortOrderInput | SortOrder
+    searchApiKey?: SortOrderInput | SortOrder
     updatedAt?: SortOrder
   }
 
@@ -26469,6 +26485,7 @@ export namespace Prisma {
     openRouterApiKey?: StringNullableFilter<"AppSetting"> | string | null
     minimaxApiKey?: StringNullableFilter<"AppSetting"> | string | null
     grokApiKey?: StringNullableFilter<"AppSetting"> | string | null
+    searchApiKey?: StringNullableFilter<"AppSetting"> | string | null
     updatedAt?: DateTimeFilter<"AppSetting"> | Date | string
   }, "id">
 
@@ -26486,6 +26503,7 @@ export namespace Prisma {
     openRouterApiKey?: SortOrderInput | SortOrder
     minimaxApiKey?: SortOrderInput | SortOrder
     grokApiKey?: SortOrderInput | SortOrder
+    searchApiKey?: SortOrderInput | SortOrder
     updatedAt?: SortOrder
     _count?: AppSettingCountOrderByAggregateInput
     _max?: AppSettingMaxOrderByAggregateInput
@@ -26509,6 +26527,7 @@ export namespace Prisma {
     openRouterApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
     minimaxApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
     grokApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
+    searchApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
     updatedAt?: DateTimeWithAggregatesFilter<"AppSetting"> | Date | string
   }
 
@@ -28161,6 +28180,7 @@ export namespace Prisma {
     openRouterApiKey?: string | null
     minimaxApiKey?: string | null
     grokApiKey?: string | null
+    searchApiKey?: string | null
     updatedAt?: Date | string
   }
 
@@ -28178,6 +28198,7 @@ export namespace Prisma {
     openRouterApiKey?: string | null
     minimaxApiKey?: string | null
     grokApiKey?: string | null
+    searchApiKey?: string | null
     updatedAt?: Date | string
   }
 
@@ -28195,6 +28216,7 @@ export namespace Prisma {
     openRouterApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -28212,6 +28234,7 @@ export namespace Prisma {
     openRouterApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -28229,6 +28252,7 @@ export namespace Prisma {
     openRouterApiKey?: string | null
     minimaxApiKey?: string | null
     grokApiKey?: string | null
+    searchApiKey?: string | null
     updatedAt?: Date | string
   }
 
@@ -28246,6 +28270,7 @@ export namespace Prisma {
     openRouterApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -28263,6 +28288,7 @@ export namespace Prisma {
     openRouterApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -30169,6 +30195,7 @@ export namespace Prisma {
     openRouterApiKey?: SortOrder
     minimaxApiKey?: SortOrder
     grokApiKey?: SortOrder
+    searchApiKey?: SortOrder
     updatedAt?: SortOrder
   }
 
@@ -30186,6 +30213,7 @@ export namespace Prisma {
     openRouterApiKey?: SortOrder
     minimaxApiKey?: SortOrder
     grokApiKey?: SortOrder
+    searchApiKey?: SortOrder
     updatedAt?: SortOrder
   }
 
@@ -30203,6 +30231,7 @@ export namespace Prisma {
     openRouterApiKey?: SortOrder
     minimaxApiKey?: SortOrder
     grokApiKey?: SortOrder
+    searchApiKey?: SortOrder
     updatedAt?: SortOrder
   }
 

@@ -210,11 +210,24 @@ export async function createCrmLead(data: {
   }
 }
 
-export async function updateCrmLead(id: string, data: any) {
+export async function updateCrmLead(id: string, data: { 
+  name?: string; 
+  email?: string; 
+  phone?: string; 
+  source?: string; 
+  tags?: string; 
+  temperature?: string; 
+  dueDate?: string;
+  description?: string;
+}) {
   try {
+    const updateData: any = { ...data };
+    if (data.dueDate) {
+      updateData.dueDate = new Date(data.dueDate);
+    }
     await prisma.crmLead.update({
       where: { id },
-      data,
+      data: updateData,
     });
     revalidatePath("/dashboard/crm");
     return { success: true };

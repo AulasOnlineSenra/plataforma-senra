@@ -43,9 +43,10 @@ import {
   deleteCrmLead,
   deleteCrmColumn
 } from '@/app/actions/crm';
-import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
+import LeadDrawer from '@/components/crm/lead-drawer';
+import { formatDistanceToNow, isPast, isToday, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Pencil } from 'lucide-react';
 
 interface Board {
   id: string;
@@ -68,13 +69,32 @@ interface LeadCard {
   id: string;
   name: string;
   phone?: string;
+  email?: string;
   source?: string;
   series?: string;
   tags?: string;
+  description?: string;
   temperature: string;
+  dueDate?: string;
   lastContact?: Date;
   order: number;
 }
+
+const getDueDateStatus = (dueDate: string | null) => {
+  if (!dueDate) return null;
+  const date = parseISO(dueDate);
+  if (isPast(date) && !isToday(date)) return 'atrasado';
+  if (isToday(date) || (date <= addDays(new Date(), 2))) return 'vencendo';
+  return 'no-prazo';
+};
+
+const getDueDateColor = (status: string | null) => {
+  switch (status) {
+    case 'atrasado': return 'bg-red-100 text-red-700 border border-red-200';
+    case 'vencendo': return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
+    default: return 'bg-green-100 text-green-700 border border-green-200';
+  }
+};
 
 const getTemperatureColor = (temp: string) => {
   switch (temp) {
@@ -109,6 +129,10 @@ export default function CrmComercial() {
   const [addingLeadToColumn, setAddingLeadToColumn] = useState<string | null>(null);
   const [newLeadName, setNewLeadName] = useState('');
   const newLeadInputRef = useRef<HTMLInputElement>(null);
+
+  // Lead Drawer state
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -447,12 +471,23 @@ export default function CrmComercial() {
                                 {...provided.dragHandleProps}
                                 className="group relative"
                               >
-                                <Card className={`hover:border-primary/50 transition-colors ${snapshot.isDragging ? 'rotate-2 shadow-xl' : 'shadow-sm'}`}>
+                                <Card 
+                                  className={`hover:border-primary/50 transition-all cursor-pointer ${snapshot.isDragging ? 'rotate-2 shadow-xl' : 'shadow-sm'}`}
+                                  onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}
+                                >
                                   <CardContent className="p-3">
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-start justify-between gap-2">
                                         <span className="font-medium text-sm text-slate-800 leading-snug">{lead.name}</span>
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-6 w-6 -mr-1 text-slate-400 hover:text-primary"
+                                            onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}
+                                          >
+                                            <Pencil className="h-3 w-3" />
+                                          </Button>
                                           <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                               <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-slate-400 hover:text-slate-700">
@@ -460,6 +495,10 @@ export default function CrmComercial() {
                                               </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-40">
+                                              <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }} className="text-primary">
+                                                <Edit2 className="mr-2 h-4 w-4" /> Editar
+                                              </DropdownMenuItem>
+                                              <DropdownMenuSeparator />
                                               <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
                                                 <Trash2 className="mr-2 h-4 w-4" /> Excluir
                                               </DropdownMenuItem>
@@ -468,16 +507,46 @@ export default function CrmComercial() {
                                         </div>
                                       </div>
                                       
-                                      <div className="flex items-center justify-between mt-1">
-                                        {lead.source && (
-                                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                                            {lead.source}
-                                          </span>
-                                        )}
-                                        <Badge className={`text-[9px] h-4 px-1.5 ml-auto ${getTemperatureColor(lead.temperature)}`}>
+                                      <div className="flex items-center justify-between flex-wrap gap-1">
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                          {lead.source && (
+                                            <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                              {lead.source}
+                                            </span>
+                                          )}
+                                          {lead.email && (
+                                            <span className="text-[10px] text-slate-400 flex items-center">
+                                              <Mail className="h-3 w-3 mr-0.5" />
+                                              {lead.email.split('@')[0]}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <Badge className={`text-[9px] h-4 px-1.5 ${getTemperatureColor(lead.temperature)}`}>
                                           {getTemperatureLabel(lead.temperature)}
                                         </Badge>
                                       </div>
+
+                                      {/* Tags */}
+                                      {lead.tags && JSON.parse(lead.tags).length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                          {JSON.parse(lead.tags).slice(0, 3).map((tag: string, i: number) => (
+                                            <span key={i} className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">
+                                              {tag}
+                                            </span>
+                                          ))}
+                                          {JSON.parse(lead.tags).length > 3 && (
+                                            <span className="text-[9px] text-slate-400">+{JSON.parse(lead.tags).length - 3}</span>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Due Date */}
+                                      {lead.dueDate && (
+                                        <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded ${getDueDateColor(getDueDateStatus(lead.dueDate))}`}>
+                                          <Calendar className="h-3 w-3" />
+                                          {format(parseISO(lead.dueDate), 'dd/MM', { locale: ptBR })}
+                                        </div>
+                                      )}
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -571,6 +640,26 @@ export default function CrmComercial() {
           </Card>
         </div>
       )}
+    {/* Lead Drawer */}
+      <LeadDrawer
+        lead={selectedLead}
+        isOpen={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setSelectedLead(null); }}
+        onSave={(updatedLead) => {
+          if (selectedBoard) {
+            const newBoard = { ...selectedBoard };
+            newBoard.columns = newBoard.columns.map((col: any) => ({
+              ...col,
+              leads: col.leads.map((lead: any) => 
+                lead.id === updatedLead.id ? { ...lead, ...updatedLead } : lead
+              )
+            }));
+            setSelectedBoard(newBoard);
+          }
+          setDrawerOpen(false);
+          setSelectedLead(null);
+        }}
+      />
     </div>
   );
 }
