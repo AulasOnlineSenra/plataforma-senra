@@ -812,16 +812,16 @@ function BookingPageComponent() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-slate-900">
-                Professores disponíveis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
-              {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
-                <div className="space-y-3">
+           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
+             <CardHeader>
+               <CardTitle className="text-slate-900">
+                 Professores disponíveis
+               </CardTitle>
+             </CardHeader>
+             <CardContent className="max-h-[450px] overflow-y-auto">
+               {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
+               {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
+                 <div className="space-y-2">
                   {teachers.map((teacher) => {
                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
                     const fullStars = Math.floor(rating.average);
@@ -924,8 +924,8 @@ function BookingPageComponent() {
                     Tente selecionar outra matéria para continuar.
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-3">
+               ) : (
+                 <div className="space-y-2">
                   {availableTeachers.map((teacher) => {
                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
                     const fullStars = Math.floor(rating.average);

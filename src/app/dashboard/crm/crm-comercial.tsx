@@ -208,9 +208,23 @@ export default function CrmComercial() {
     });
     if (result.success) {
       toast.success("Coluna criada!");
+      // Update local state optimistically
+      setSelectedBoard(prev => {
+        if (!prev) return prev;
+        const newColumn = {
+          id: result.data.id,
+          name: name,
+          order: prev.columns.length,
+          color: undefined,
+          leads: []
+        };
+        return {
+          ...prev,
+          columns: [...prev.columns, newColumn]
+        };
+      });
       setColumnName('');
       setIsAddingColumn(false);
-      handleSelectBoard(selectedBoard);
     }
     setLoading(false);
   };
@@ -570,32 +584,24 @@ export default function CrmComercial() {
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-start justify-between gap-2">
                                         <span className="font-medium text-sm text-slate-800 leading-snug">{lead.name}</span>
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-6 w-6 -mr-1 text-slate-400 hover:text-primary"
-                                            onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}
-                                          >
-                                            <Pencil className="h-3 w-3" />
-                                          </Button>
-                                          <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-slate-400 hover:text-slate-700">
-                                                <MoreHorizontal className="h-3 w-3" />
-                                              </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-40">
-                                              <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }} className="text-primary">
-                                                <Edit2 className="mr-2 h-4 w-4" /> Editar
-                                              </DropdownMenuItem>
-                                              <DropdownMenuSeparator />
-                                              <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                                              </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                          </DropdownMenu>
-                                        </div>
+                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                           <DropdownMenu>
+                                             <DropdownMenuTrigger asChild>
+                                               <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-slate-400 hover:text-slate-700">
+                                                 <MoreHorizontal className="h-3 w-3" />
+                                               </Button>
+                                             </DropdownMenuTrigger>
+                                             <DropdownMenuContent align="end" className="w-40">
+                                               <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }} className="text-primary">
+                                                 <Edit2 className="mr-2 h-4 w-4" /> Editar
+                                               </DropdownMenuItem>
+                                               <DropdownMenuSeparator />
+                                               <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
+                                                 <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                               </DropdownMenuItem>
+                                             </DropdownMenuContent>
+                                           </DropdownMenu>
+                                         </div>
                                       </div>
                                       
                                       <div className="flex items-center justify-between flex-wrap gap-1">
@@ -688,7 +694,7 @@ export default function CrmComercial() {
                {/* Add New Column */}
                <div className="w-[300px] flex-shrink-0">
                  {isAddingColumn ? (
-                   <div className="flex space-x-2 items-center">
+                   <div className="flex items-center">
                      <input
                        type="text"
                        value={columnName}
@@ -703,17 +709,10 @@ export default function CrmComercial() {
                            setIsAddingColumn(false);
                          }
                        }}
-                       className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                       className="flex-1 min-w-0 w-[240px] px-3 py-2 bg-slate-200/50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-yellow text-slate-900 placeholder:text-slate-400 font-medium"
                        placeholder="Nome da lista..."
                        autoFocus
                      />
-                     <Button 
-                       variant="ghost"
-                       className="h-10 px-4 rounded-r-xl border-slate-300 bg-slate-200/50 hover:bg-slate-200"
-                       onClick={handleCreateColumn}
-                     >
-                       Salvar
-                     </Button>
                    </div>
                  ) : (
                    <Button 
