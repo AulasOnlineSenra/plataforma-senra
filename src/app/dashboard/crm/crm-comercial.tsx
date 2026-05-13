@@ -125,8 +125,6 @@ export default function CrmComercial() {
   const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
-  const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
