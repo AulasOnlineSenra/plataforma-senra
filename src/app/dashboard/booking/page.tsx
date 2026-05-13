@@ -864,7 +864,7 @@ function BookingPageComponent() {
                            "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
                            selectedTeacherId === teacher.id
                              ? "ring-2 ring-amber-400"
-                             : "hover:border-[#f5b000] hover:shadow-[0_0_0_2px_#f5b000]",
+                             : "hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/50",
                          )}
                        >
                         <div className="flex items-center gap-3">
@@ -968,7 +968,7 @@ function BookingPageComponent() {
                            "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
                            selectedTeacherId === teacher.id
                              ? "ring-2 ring-amber-400"
-                             : "hover:border-[#f5b000] hover:shadow-[0_0_0_2px_#f5b000]",
+                             : "hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/50",
                          )}
                        >
                         <div className="flex items-center gap-3">
