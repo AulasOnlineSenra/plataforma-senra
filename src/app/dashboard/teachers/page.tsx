@@ -749,8 +749,8 @@ export default function TeachersPage() {
             </p>
           </div>
         ) : (
-          <div className="mt-2 max-h-[420px] overflow-y-auto pr-1">
-            <div className={`grid gap-x-0 gap-y-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center`}>
+          <div className="mt-2">
+            <div className={`grid gap-x-0 gap-y-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center`}>
             {(() => {
               const filteredTeachers = teacherList.filter(teacher => {
                 const matchesStatus = statusFilter === "all" || 

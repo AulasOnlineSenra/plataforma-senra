@@ -818,55 +818,55 @@ function BookingPageComponent() {
                  Professores disponíveis
                </CardTitle>
              </CardHeader>
-             <CardContent className="max-h-[450px] overflow-y-auto">
+              <CardContent className="max-h-[500px] overflow-y-auto">
                {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
-               {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
-                 <div className="space-y-2">
-                  {teachers.map((teacher) => {
-                    const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
-                    const fullStars = Math.floor(rating.average);
-                    const hasHalf = rating.average - fullStars >= 0.5;
-                    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+                {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
+                  <div className="space-y-1">
+                   {teachers.map((teacher) => {
+                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
+                     const fullStars = Math.floor(rating.average);
+                     const hasHalf = rating.average - fullStars >= 0.5;
+                     const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
-                    const teacherEducation = (() => {
-                      if (!teacher.education) return [];
-                      let eduList: any = teacher.education;
-                      if (typeof eduList === "string") {
-                        try { eduList = JSON.parse(eduList); } catch { return []; }
-                      }
-                      if (!Array.isArray(eduList) || eduList.length === 0) return [];
+                     const teacherEducation = (() => {
+                       if (!teacher.education) return [];
+                       let eduList: any = teacher.education;
+                       if (typeof eduList === "string") {
+                         try { eduList = JSON.parse(eduList); } catch { return []; }
+                       }
+                       if (!Array.isArray(eduList) || eduList.length === 0) return [];
 
-                      if (eduList.length === 1) {
-                        const first = eduList[0];
-                        if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
-                        if (first.course) return [{ text: first.course }];
-                        return [];
-                      }
+                       if (eduList.length === 1) {
+                         const first = eduList[0];
+                         if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
+                         if (first.course) return [{ text: first.course }];
+                         return [];
+                       }
 
-                      const remaining = eduList.length - 2;
-                      const result: { text: string }[] = [];
-                      const first = eduList[0];
-                      if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
-                      else if (first.course) result.push({ text: first.course });
-                      const second = eduList[1];
-                      const indicator = remaining > 0 ? ` (+${remaining})` : '';
-                      if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
-                      else if (second.course) result.push({ text: `${second.course}${indicator}` });
-                      return result;
-                    })();
+                       const remaining = eduList.length - 2;
+                       const result: { text: string }[] = [];
+                       const first = eduList[0];
+                       if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
+                       else if (first.course) result.push({ text: first.course });
+                       const second = eduList[1];
+                       const indicator = remaining > 0 ? ` (+${remaining})` : '';
+                       if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
+                       else if (second.course) result.push({ text: `${second.course}${indicator}` });
+                       return result;
+                     })();
 
-                    return (
-                      <button
-                        key={teacher.id}
-                        type="button"
-                        onClick={() => setSelectedTeacherId(teacher.id)}
-                        className={cn(
-                          "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
-                          selectedTeacherId === teacher.id
-                            ? "ring-2 ring-amber-400"
-                            : "hover:-translate-y-0.5 hover:border-slate-200",
-                        )}
-                      >
+                     return (
+                       <button
+                         key={teacher.id}
+                         type="button"
+                         onClick={() => setSelectedTeacherId(teacher.id)}
+                         className={cn(
+                           "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                           selectedTeacherId === teacher.id
+                             ? "ring-2 ring-amber-400"
+                             : "hover:border-[#f5b000] hover:shadow-[0_0_0_2px_#f5b000]",
+                         )}
+                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
                             <AvatarImage
@@ -925,7 +925,7 @@ function BookingPageComponent() {
                   </p>
                 </div>
                ) : (
-                 <div className="space-y-2">
+                 <div className="space-y-1">
                   {availableTeachers.map((teacher) => {
                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
                     const fullStars = Math.floor(rating.average);
@@ -959,18 +959,18 @@ function BookingPageComponent() {
                       return result;
                     })();
 
-                    return (
-                      <button
-                        key={teacher.id}
-                        type="button"
-                        onClick={() => setSelectedTeacherId(teacher.id)}
-                        className={cn(
-                          "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
-                          selectedTeacherId === teacher.id
-                            ? "ring-2 ring-amber-400"
-                            : "hover:-translate-y-0.5 hover:border-slate-200",
-                        )}
-                      >
+                     return (
+                       <button
+                         key={teacher.id}
+                         type="button"
+                         onClick={() => setSelectedTeacherId(teacher.id)}
+                         className={cn(
+                           "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                           selectedTeacherId === teacher.id
+                             ? "ring-2 ring-amber-400"
+                             : "hover:border-[#f5b000] hover:shadow-[0_0_0_2px_#f5b000]",
+                         )}
+                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
                             <AvatarImage

@@ -206,27 +206,32 @@ export default function CrmComercial() {
       boardId: selectedBoard.id, 
       order: selectedBoard.columns.length 
     });
-    if (result.success) {
+    
+    if (result.success && result.data) {
       toast.success("Coluna criada!");
-      // Update local state optimistically
-      setSelectedBoard(prev => {
-        if (!prev) return prev;
-        const newColumn = {
-          id: result.data.id,
-          name: name,
-          order: prev.columns.length,
-          color: undefined,
-          leads: []
-        };
-        return {
-          ...prev,
-          columns: [...prev.columns, newColumn]
-        };
-      });
+      // Update local state optimistically with the new column from the database
+      const newColumn = {
+        id: result.data.id,
+        name: result.data.name,
+        order: result.data.order,
+        color: result.data.color,
+        leads: []
+      };
+      
+      // Create new board object to trigger re-render
+      const updatedBoard = {
+        ...selectedBoard,
+        columns: [...selectedBoard.columns, newColumn]
+      };
+      
+      setSelectedBoard(updatedBoard);
       setColumnName('');
       setIsAddingColumn(false);
+      setLoading(false);
+    } else {
+      toast.error(result.error || "Erro ao criar lista");
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const submitNewLead = async (columnId: string) => {
