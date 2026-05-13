@@ -161,12 +161,12 @@ function TeacherCard({
   return (
     <Card
       style={{ width: 'calc(100% - 24px)' }}
-      className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer ${
+      className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all cursor-pointer ${
         isPending
-          ? "border-blue-400 bg-blue-50/80 hover:border-blue-500"
+          ? "border-blue-400 bg-blue-50/80 hover:border-[#f5b000] hover:shadow-[0_0_16px_2px_#f5b000]"
           : teacher.status === "pending"
-            ? "border-amber-300 bg-amber-50/60 hover:border-amber-400"
-            : "border-slate-200 bg-white hover:border-brand-yellow/50"
+            ? "border-amber-300 bg-amber-50/60 hover:border-[#f5b000] hover:shadow-[0_0_16px_2px_#f5b000]"
+            : "border-slate-200 bg-white hover:border-[#f5b000] hover:shadow-[0_0_16px_2px_#f5b000]"
       }`}
       onClick={() => onOpenDetails(teacher.id)}
       role="button"
@@ -181,7 +181,7 @@ function TeacherCard({
     >
       {/* Detalhe de cor no topo do card */}
       <div
-        className={`h-24 w-full border-b absolute top-0 left-0 z-0 transition-colors ${
+        className={`h-16 w-full border-b absolute top-0 left-0 z-0 transition-colors ${
           isPending
             ? "bg-blue-100 border-blue-200"
             : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
@@ -202,7 +202,7 @@ function TeacherCard({
         )}
       </div>
 
-      <CardHeader className="items-center text-center pb-3 pt-8 relative z-10">
+      <CardHeader className="items-center text-center pb-2 pt-6 relative z-10">
         {isAdmin && (
           <div className="absolute right-[17px] top-[8px] z-20 flex gap-0.5 rounded-full border border-slate-100 bg-white/80 backdrop-blur-md p-0.5 shadow-sm opacity-100 md:opacity-0 transition-opacity group-hover:opacity-100">
             {teacher.status === "pending" && (
@@ -251,7 +251,7 @@ function TeacherCard({
 
         <div className="relative">
           <Avatar
-            className="mb-1 h-24 w-24 border-4 transition-transform group-hover:scale-105 bg-white border-[#f5b000] shadow-[0_0_20px_rgba(245,176,0,0.8)]"
+            className="mb-1 h-20 w-20 border-4 transition-transform group-hover:scale-105 bg-white border-[#f5b000] shadow-[0_0_20px_rgba(245,176,0,0.8)]"
           >
             <AvatarImage
               src={teacher.avatarUrl}
@@ -276,7 +276,7 @@ function TeacherCard({
           </div>
         </div>
 
-        <CardTitle className="font-headline text-xl text-slate-900 tracking-tight flex items-center justify-center gap-2 flex-wrap">
+        <CardTitle className="font-headline text-base text-slate-900 tracking-tight flex items-center justify-center gap-2 flex-wrap">
           {teacher.name}
         </CardTitle>
 
@@ -294,7 +294,7 @@ function TeacherCard({
           </div>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-px">
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-px">
           {teacherSubjects.length > 0 ? (
             teacherSubjects.map((subjName: string, idx: number) => (
               <Badge
@@ -319,11 +319,11 @@ function TeacherCard({
       <CardContent className="flex-1 relative z-10 p-0">
       </CardContent>
 
-      <CardFooter className="flex-col gap-2 pt-[-15px] pb-3 px-6 relative z-10">
+      <CardFooter className="flex-col gap-1 pb-2 px-6 relative z-10">
         {!isAdmin && (
           <Button
             asChild
-            className="w-full h-11 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90 mt-[-15px]"
+            className="w-full h-10 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-brand-yellow/90"
           >
             <Link 
               href={`/dashboard/booking?teacherId=${teacher.id}`}
@@ -749,7 +749,8 @@ export default function TeachersPage() {
             </p>
           </div>
         ) : (
-          <div className={`mt-2 grid gap-x-0 gap-y-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center`}>
+          <div className="mt-2 max-h-[420px] overflow-y-auto pr-1">
+            <div className={`grid gap-x-0 gap-y-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center`}>
             {(() => {
               const filteredTeachers = teacherList.filter(teacher => {
                 const matchesStatus = statusFilter === "all" || 
@@ -862,6 +863,7 @@ export default function TeachersPage() {
                 />
               ));
             })()}
+            </div>
           </div>
         )}
       </div>

@@ -102,7 +102,7 @@ function StudentFinancialPanel() {
 
   const totalInvested = useMemo(() => {
     return transactions
-      .filter(t => t.status.toUpperCase() !== 'CANCELADO')
+      .filter(t => t.status.trim().toUpperCase() === 'COMPROVADO')
       .reduce((sum, transaction) => sum + (transaction.amountPaid || 0), 0);
   }, [transactions]);
 

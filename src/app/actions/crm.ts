@@ -80,30 +80,6 @@ export async function createCrmBoard(data: { name: string; coverColor?: string }
       },
     });
 
-    // Criar colunas padrão
-    const defaultColumns = [
-      "Novo Lead",
-      "Primeiro Contato",
-      "Qualificação",
-      "Proposta Enviada",
-      "Negociação",
-      "Fechado",
-      "Perdido",
-    ];
-
-    await Promise.all(
-      defaultColumns.map((name, index) =>
-        prisma.crmColumn.create({
-          data: {
-            name,
-            order: index,
-            boardId: board.id,
-            color: name === "Fechado" ? "bg-green-400" : name === "Perdido" ? "bg-red-400" : undefined,
-          },
-        })
-      )
-    );
-
     revalidatePath("/dashboard/crm");
     return { success: true, data: board };
   } catch (error) {

@@ -125,9 +125,13 @@ export default function CrmComercial() {
   const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
+  const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [columnName, setColumnName] = useState('');
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
 
   // Inline edit state
   const [addingLeadToColumn, setAddingLeadToColumn] = useState<string | null>(null);
@@ -195,7 +199,7 @@ export default function CrmComercial() {
 
   const handleCreateColumn = async () => {
     if (!selectedBoard) return;
-    const name = prompt("Nome da nova coluna:");
+    const name = columnName.trim();
     if (!name) return;
 
     setLoading(true);
@@ -206,6 +210,8 @@ export default function CrmComercial() {
     });
     if (result.success) {
       toast.success("Coluna criada!");
+      setColumnName('');
+      setIsAddingColumn(false);
       handleSelectBoard(selectedBoard);
     }
     setLoading(false);
@@ -681,17 +687,47 @@ export default function CrmComercial() {
                 </div>
               )})}
                
-              {/* Add New Column */}
-              <div className="w-[300px] flex-shrink-0">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-slate-600 bg-slate-200/50 hover:bg-slate-200 rounded-xl h-12 font-medium"
-                  onClick={handleCreateColumn}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar outra lista
-                </Button>
-              </div>
+               {/* Add New Column */}
+               <div className="w-[300px] flex-shrink-0">
+                 {isAddingColumn ? (
+                   <div className="flex space-x-2 items-center">
+                     <input
+                       type="text"
+                       value={columnName}
+                       onChange={(e) => setColumnName(e.target.value)}
+                       onKeyDown={(e) => {
+                         if (e.key === 'Enter') {
+                           e.preventDefault();
+                           handleCreateColumn();
+                         } else if (e.key === 'Escape') {
+                           e.preventDefault();
+                           setColumnName('');
+                           setIsAddingColumn(false);
+                         }
+                       }}
+                       className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                       placeholder="Nome da lista..."
+                       autoFocus
+                     />
+                     <Button 
+                       variant="ghost"
+                       className="h-10 px-4 rounded-r-xl border-slate-300 bg-slate-200/50 hover:bg-slate-200"
+                       onClick={handleCreateColumn}
+                     >
+                       Salvar
+                     </Button>
+                   </div>
+                 ) : (
+                   <Button 
+                     variant="ghost" 
+                     className="w-full justify-start text-slate-600 bg-slate-200/50 hover:bg-slate-200 rounded-xl h-12 font-medium"
+                     onClick={() => setIsAddingColumn(true)}
+                   >
+                     <Plus className="h-4 w-4 mr-2" />
+                      Adicionar lista
+                   </Button>
+                 )}
+               </div>
             </div>
           </DragDropContext>
         </div>
