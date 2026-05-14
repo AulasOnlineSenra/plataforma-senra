@@ -351,12 +351,18 @@ export async function createTeacher(data: {
 
 export async function updateTeacher(
   id: string,
-  data: { name: string; email: string; subject: string },
+  data: { name?: string; email?: string; subject?: string; status?: string },
 ) {
   try {
+    const updateData: { name?: string; email?: string; subject?: string; status?: string } = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.subject !== undefined) updateData.subject = data.subject;
+    if (data.status !== undefined) updateData.status = data.status;
+
     await prisma.user.update({
       where: { id },
-      data: { name: data.name, email: data.email, subject: data.subject },
+      data: updateData,
     });
     revalidatePath("/dashboard/teachers");
     return { success: true };

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { BookOpen, UserPlus, Edit, Trash2, Check, Star } from "lucide-react";
+import { BookOpen, UserPlus, Edit, Trash2, Check, Star, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
@@ -22,6 +22,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +77,7 @@ function TeacherCard({
   onDelete,
   onApprove,
   onOpenDetails,
+  onToggleVisibility,
 }: {
   teacher: any;
   currentUser: any;
@@ -77,6 +85,7 @@ function TeacherCard({
   onDelete: (id: string) => void;
   onApprove: (id: string) => void;
   onOpenDetails: (id: string) => void;
+  onToggleVisibility: (id: string, isHidden: boolean) => void;
 }) {
   const isAdmin = currentUser?.role === "admin";
   const isPending = teacher.status === "pending";
@@ -229,31 +238,45 @@ function TeacherCard({
                 <Check className="h-2.5 w-2.5" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 rounded-full text-slate-400 hover:text-brand-yellow hover:bg-amber-100"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(teacher);
-              }}
-              title="Editar Dados"
-            >
-              <Edit className="h-2.5 w-2.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-100"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm("Excluir este professor permanentemente?"))
-                  onDelete(teacher.id);
-              }}
-              title="Excluir Professor"
-            >
-              <Trash2 className="h-2.5 w-2.5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Mais opções"
+                >
+                  <MoreVertical className="h-2.5 w-2.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => onEdit(teacher)}>
+                  <Edit className="mr-2 h-4 w-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onToggleVisibility(teacher.id, teacher.status === 'hidden')}>
+                  {teacher.status === 'hidden' ? (
+                    <>
+                      <Eye className="mr-2 h-4 w-4" /> Exibir
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="mr-2 h-4 w-4" /> Ocultar
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => {
+                    if (confirm("Excluir este professor permanentemente?"))
+                      onDelete(teacher.id);
+                  }} 
+                  className="text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
 
@@ -501,6 +524,27 @@ export default function TeachersPage() {
         variant: "destructive",
         title: "Erro",
         description: result.error || "Falha ao aprovar professor.",
+      });
+    }
+  };
+
+  const handleToggleVisibility = async (id: string, isCurrentlyHidden: boolean) => {
+    const newStatus = isCurrentlyHidden ? 'active' : 'hidden';
+    const result = await updateTeacher(id, { status: newStatus });
+    if (result.success) {
+      toast({
+        title: newStatus === 'hidden' ? "Professor ocultado" : "Professor exibido",
+        description: newStatus === 'hidden' 
+          ? "O professor não aparecerá mais para os alunos."
+          : "O professor voltará a aparecer para os alunos.",
+        className: "bg-emerald-600 text-white border-none",
+      });
+      fetchDBTeachers();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Falha ao alterar visibilidade do professor.",
       });
     }
   };
@@ -935,6 +979,7 @@ export default function TeachersPage() {
                   onOpenDetails={(teacherId) =>
                     router.push(`/dashboard/teacher/${teacherId}`)
                   }
+                  onToggleVisibility={handleToggleVisibility}
                 />
               ));
             })()}
