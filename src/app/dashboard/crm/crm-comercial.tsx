@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, KeyboardEvent, useRef } from 'react';
+import { toast } from 'sonner';
+import { useRouter, usePathname } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +23,7 @@ import {
 import { 
   Plus, 
   Search, 
-  MoreHorizontal, 
+  MoreVertical, 
   Star, 
   Users,
   LayoutGrid,
@@ -34,7 +36,11 @@ import {
   ChevronDown,
   ChevronUp,
   GripVertical,
-  Pencil
+  Pencil,
+  Calendar,
+  Mail,
+  Check,
+  X
 } from 'lucide-react';
 import { 
   getCrmBoards, 
@@ -46,10 +52,12 @@ import {
   moveCrmLead,
   deleteCrmLead,
   deleteCrmColumn,
-  updateColumnOrder
+  updateColumnOrder,
+  updateCrmLead,
+  deleteCrmBoard
 } from '@/app/actions/crm';
 import LeadDrawer from '@/components/crm/lead-drawer';
-import { formatDistanceToNow, isPast, isToday, addDays, parseISO } from 'date-fns';
+import { formatDistanceToNow, isPast, isToday, addDays, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Board {
@@ -120,9 +128,11 @@ const getTemperatureLabel = (temp: string) => {
   }
 };
 
-export default function CrmComercial() {
+export default function CrmComercial({ initialBoardId }: { initialBoardId?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
-  const [viewMode, setViewMode] = useState<'boards' | 'kanban'>('boards');
+  const [viewMode, setViewMode] = useState<'boards' | 'kanban'>(initialBoardId ? 'kanban' : 'boards');
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -131,7 +141,7 @@ export default function CrmComercial() {
   const [columnName, setColumnName] = useState('');
   const [isAddingColumn, setIsAddingColumn] = useState(false);
 
-  // Inline edit state
+  // Inline edit state for NEW leads
   const [addingLeadToColumn, setAddingLeadToColumn] = useState<string | null>(null);
   const [newLeadName, setNewLeadName] = useState('');
   const newLeadInputRef = useRef<HTMLInputElement>(null);
@@ -146,16 +156,37 @@ export default function CrmComercial() {
   // Column drag state
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
 
+  // Inline name editing state for EXISTING leads
+  const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [editingLeadName, setEditingLeadName] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setIsMounted(true);
     loadBoards();
   }, []);
 
   useEffect(() => {
+    if (initialBoardId) {
+      loadBoardDetails(initialBoardId);
+    } else {
+      setViewMode('boards');
+      setSelectedBoard(null);
+    }
+  }, [initialBoardId]);
+
+  useEffect(() => {
     if (addingLeadToColumn && newLeadInputRef.current) {
       newLeadInputRef.current.focus();
     }
   }, [addingLeadToColumn]);
+
+  useEffect(() => {
+    if (editingLeadId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingLeadId]);
 
   const loadBoards = async () => {
     setLoading(true);
@@ -168,16 +199,21 @@ export default function CrmComercial() {
     setLoading(false);
   };
 
-  const handleSelectBoard = async (board: Board) => {
+  const loadBoardDetails = async (boardId: string) => {
     setLoading(true);
-    const result = await getCrmBoardDetails(board.id);
+    const result = await getCrmBoardDetails(boardId);
     if (result.success && result.data) {
       setSelectedBoard(result.data);
       setViewMode('kanban');
     } else {
       toast.error(result.error || "Erro ao carregar detalhes do quadro");
+      router.push('/dashboard/crm/comercial');
     }
     setLoading(false);
+  };
+
+  const handleSelectBoard = (board: Board) => {
+    router.push(`/dashboard/crm/comercial/${board.id}`);
   };
 
   const handleCreateBoard = async () => {
@@ -209,7 +245,6 @@ export default function CrmComercial() {
     
     if (result.success && result.data) {
       toast.success("Coluna criada!");
-      // Update local state optimistically with the new column from the database
       const newColumn = {
         id: result.data.id,
         name: result.data.name,
@@ -218,7 +253,6 @@ export default function CrmComercial() {
         leads: []
       };
       
-      // Create new board object to trigger re-render
       const updatedBoard = {
         ...selectedBoard,
         columns: [...selectedBoard.columns, newColumn]
@@ -227,11 +261,10 @@ export default function CrmComercial() {
       setSelectedBoard(updatedBoard);
       setColumnName('');
       setIsAddingColumn(false);
-      setLoading(false);
     } else {
       toast.error(result.error || "Erro ao criar lista");
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const submitNewLead = async (columnId: string) => {
@@ -253,11 +286,37 @@ export default function CrmComercial() {
     });
     
     if (result.success) {
-      handleSelectBoard(selectedBoard);
+      loadBoardDetails(selectedBoard.id);
     } else {
       toast.error("Erro ao criar lead");
     }
     setLoading(false);
+  };
+
+  const handleUpdateLeadName = async (leadId: string) => {
+    if (!editingLeadName.trim()) {
+      setEditingLeadId(null);
+      return;
+    }
+
+    const oldName = editingLeadName;
+    setEditingLeadId(null);
+
+    // Optimistic update
+    const newBoard = { ...selectedBoard };
+    newBoard.columns = newBoard.columns.map((col: any) => ({
+      ...col,
+      leads: col.leads.map((lead: any) => 
+        lead.id === leadId ? { ...lead, name: oldName } : lead
+      )
+    }));
+    setSelectedBoard(newBoard);
+
+    const result = await updateCrmLead(leadId, { name: oldName });
+    if (!result.success) {
+      toast.error("Erro ao atualizar nome do lead");
+      loadBoardDetails(selectedBoard.id); // Reload on error
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, columnId: string) => {
@@ -269,30 +328,50 @@ export default function CrmComercial() {
     }
   };
 
+  const handleEditKeyDown = (e: KeyboardEvent<HTMLInputElement>, leadId: string) => {
+    if (e.key === 'Enter') {
+      handleUpdateLeadName(leadId);
+    } else if (e.key === 'Escape') {
+      setEditingLeadId(null);
+      setEditingLeadName('');
+    }
+  };
+
   const handleDeleteLead = async (leadId: string) => {
     if (!confirm("Tem certeza que deseja excluir este lead?")) return;
-    setLoading(true);
+    
+    // Optimistic update
+    const newBoard = { ...selectedBoard };
+    newBoard.columns = newBoard.columns.map((col: any) => ({
+      ...col,
+      leads: col.leads.filter((lead: any) => lead.id !== leadId)
+    }));
+    setSelectedBoard(newBoard);
+
     const result = await deleteCrmLead(leadId);
     if (result.success) {
       toast.success("Lead excluído.");
-      handleSelectBoard(selectedBoard);
     } else {
       toast.error("Erro ao excluir lead.");
+      loadBoardDetails(selectedBoard.id); // Rollback/Refresh
     }
-    setLoading(false);
   };
 
   const handleDeleteColumn = async (columnId: string) => {
     if (!confirm("Tem certeza que deseja excluir esta coluna e todos os seus leads?")) return;
-    setLoading(true);
+    
+    // Optimistic update
+    const newBoard = { ...selectedBoard };
+    newBoard.columns = newBoard.columns.filter((col: any) => col.id !== columnId);
+    setSelectedBoard(newBoard);
+
     const result = await deleteCrmColumn(columnId);
     if (result.success) {
       toast.success("Coluna excluída.");
-      handleSelectBoard(selectedBoard);
     } else {
       toast.error("Erro ao excluir coluna.");
+      loadBoardDetails(selectedBoard.id); // Rollback/Refresh
     }
-    setLoading(false);
   };
 
   const onDragEnd = async (result: DropResult) => {
@@ -323,7 +402,7 @@ export default function CrmComercial() {
     const moveResult = await moveCrmLead(draggableId, destination.droppableId, destination.index);
     if (!moveResult.success) {
       toast.error("Falha ao mover lead. Recarregando...");
-      handleSelectBoard(selectedBoard); // Reload original state from db
+      loadBoardDetails(selectedBoard.id); // Reload original state from db
     }
   };
 
@@ -331,6 +410,23 @@ export default function CrmComercial() {
     const result = await updateCrmBoard(boardId, { isFavorite: !current });
     if (result.success) {
       loadBoards();
+    }
+  };
+
+  const handleDeleteBoard = async (boardId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Tem certeza que deseja excluir este quadro? Todos os leads serão removidos.")) return;
+    
+    const result = await deleteCrmBoard(boardId);
+    if (result.success) {
+      toast.success("Quadro excluído.");
+      loadBoards();
+      if (selectedBoard?.id === boardId) {
+        setSelectedBoard(null);
+        setViewMode('boards');
+      }
+    } else {
+      toast.error("Erro ao excluir quadro.");
     }
   };
 
@@ -404,11 +500,11 @@ export default function CrmComercial() {
         <div className="flex items-center gap-2">
           {viewMode === 'kanban' ? (
             <>
-              <Button variant="ghost" size="icon" onClick={() => setViewMode('boards')} className="shrink-0">
+              <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/crm/comercial')} className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center text-sm text-slate-500 gap-2 mb-1">
-                <span className="hover:text-slate-900 cursor-pointer" onClick={() => setViewMode('boards')}>CRM Comercial</span>
+                <span className="hover:text-slate-900 cursor-pointer" onClick={() => router.push('/dashboard/crm/comercial')}>CRM Comercial</span>
                 <ChevronRight className="h-4 w-4" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900 truncate max-w-[300px]">
@@ -428,11 +524,11 @@ export default function CrmComercial() {
               <Star className={`h-4 w-4 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
             </Button>
           )}
-          <Button variant="outline" size="sm" className={viewMode === 'boards' ? 'bg-slate-100' : ''} onClick={() => setViewMode('boards')}>
+          <Button variant="outline" size="sm" className={viewMode === 'boards' ? 'bg-slate-100' : ''} onClick={() => router.push('/dashboard/crm/comercial')}>
             <LayoutGrid className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" className={viewMode === 'kanban' ? 'bg-slate-100' : ''} onClick={() => {
-             if (selectedBoard) setViewMode('kanban');
+             if (selectedBoard) router.push(`/dashboard/crm/comercial/${selectedBoard.id}`);
              else if (boards.length > 0) handleSelectBoard(boards[0]);
           }}>
             <List className="h-4 w-4" />
@@ -469,15 +565,26 @@ export default function CrmComercial() {
               onClick={() => handleSelectBoard(board)}
             >
               <div className={`h-24 ${board.coverColor || 'bg-slate-200'} relative`}>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(board.id, board.isFavorite);
-                  }}
-                  className="absolute top-3 right-3 p-1 hover:scale-110 transition-transform"
-                >
-                  <Star className={`h-5 w-5 ${board.isFavorite ? 'fill-white text-white' : 'text-white/50'}`} />
-                </button>
+                <div className="absolute top-3 right-3 flex items-center gap-1">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBoard(board.id, e);
+                    }}
+                    className="p-1 hover:bg-white/20 rounded transition-colors"
+                  >
+                    <X className="h-4 w-4 text-white/70 hover:text-white" />
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(board.id, board.isFavorite);
+                    }}
+                    className="p-1 hover:bg-white/20 rounded transition-colors"
+                  >
+                    <Star className={`h-5 w-5 ${board.isFavorite ? 'fill-white text-white' : 'text-white/50'}`} />
+                  </button>
+                </div>
               </div>
               <CardContent className="p-4">
                 <CardTitle className="text-base font-semibold mb-3">{board.name}</CardTitle>
@@ -546,7 +653,7 @@ export default function CrmComercial() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:bg-slate-300/50">
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -583,22 +690,56 @@ export default function CrmComercial() {
                               >
                                 <Card 
                                   className={`hover:border-primary/50 transition-all cursor-pointer ${snapshot.isDragging ? 'rotate-2 shadow-xl' : 'shadow-sm'}`}
-                                  onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}
+                                  onClick={() => { 
+                                    if (editingLeadId !== lead.id) {
+                                      setSelectedLead(lead); 
+                                      setDrawerOpen(true); 
+                                    }
+                                  }}
                                 >
                                   <CardContent className="p-3">
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-start justify-between gap-2">
-                                        <span className="font-medium text-sm text-slate-800 leading-snug">{lead.name}</span>
+                                        {editingLeadId === lead.id ? (
+                                          <div className="flex-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                            <Input
+                                              ref={editInputRef}
+                                              value={editingLeadName}
+                                              onChange={(e) => setEditingLeadName(e.target.value)}
+                                              onKeyDown={(e) => handleEditKeyDown(e, lead.id)}
+                                              onBlur={() => handleUpdateLeadName(lead.id)}
+                                              className="h-7 py-0 text-sm focus-visible:ring-1"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span 
+                                            className="font-medium text-sm text-slate-800 leading-snug flex-1 hover:text-primary transition-colors"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingLeadId(lead.id);
+                                              setEditingLeadName(lead.name);
+                                            }}
+                                          >
+                                            {lead.name}
+                                          </span>
+                                        )}
+                                        
                                          <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                                            <DropdownMenu>
                                              <DropdownMenuTrigger asChild>
                                                <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-slate-400 hover:text-slate-700">
-                                                 <MoreHorizontal className="h-3 w-3" />
+                                                 <MoreVertical className="h-3 w-3" />
                                                </Button>
                                              </DropdownMenuTrigger>
                                              <DropdownMenuContent align="end" className="w-40">
-                                               <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }} className="text-primary">
-                                                 <Edit2 className="mr-2 h-4 w-4" /> Editar
+                                               <DropdownMenuItem onClick={() => { 
+                                                 setEditingLeadId(lead.id);
+                                                 setEditingLeadName(lead.name);
+                                               }} className="text-primary">
+                                                 <Edit2 className="mr-2 h-4 w-4" /> Renomear
+                                               </DropdownMenuItem>
+                                               <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}>
+                                                 <Pencil className="mr-2 h-4 w-4" /> Detalhes
                                                </DropdownMenuItem>
                                                <DropdownMenuSeparator />
                                                <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
