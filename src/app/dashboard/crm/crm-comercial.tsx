@@ -693,7 +693,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                         />
                       ) : (
                         <span 
-                          className="font-semibold text-slate-800 text-sm cursor-text hover:bg-slate-300/30 px-1 py-0.5 rounded transition-colors inline-block min-w-[50px]"
+                          className="font-semibold text-slate-800 text-[13px] cursor-text hover:bg-slate-300/30 px-1 py-0.5 rounded transition-colors inline-block min-w-[50px]"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingColumnId(column.id);
@@ -782,7 +782,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                           </div>
                                         ) : (
                                           <span 
-                                            className="font-medium text-sm text-slate-800 leading-snug flex-1 hover:text-primary transition-colors"
+                                            className="font-medium text-[13px] text-slate-800 leading-snug flex-1 hover:text-primary transition-colors"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setEditingLeadId(lead.id);

@@ -240,7 +240,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                       value={formData.name}
                       onChange={(e) => handleChange('name', e.target.value)}
                       onBlur={() => handleSave()}
-                      className="text-2xl font-bold border-none p-0 h-auto focus-visible:ring-0 bg-transparent hover:bg-slate-50 transition-colors"
+                      className="text-2xl font-bold border-none p-0 h-auto focus-visible:ring-0 bg-transparent hover:bg-slate-50 transition-colors w-full break-words whitespace-normal"
                       placeholder="Título do Lead"
                     />
                     <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -300,35 +300,35 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                     className="bg-white border-slate-200 hover:bg-slate-50 gap-2 h-9"
                     onClick={() => setIsAddingLink(true)}
                   >
-                    <Plus className="h-4 w-4 text-slate-500" /> Adicionar
+                    <Plus className="h-4 w-4 text-slate-500" /> Anexo
                   </Button>
                 </div>
               </div>
 
               {/* Informações de Contato */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">E-mail</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">E-mail</label>
                   <div className="flex items-center gap-2 group">
                     <Mail className="h-4 w-4 text-slate-400" />
                     <Input
                       value={formData.email}
                       onChange={(e) => handleChange('email', e.target.value)}
                       onBlur={() => handleSave()}
-                      className="border-none p-0 h-auto focus-visible:ring-0 bg-transparent text-sm"
+                      className="border-none p-0 h-7 focus-visible:ring-0 bg-transparent text-sm"
                       placeholder="Adicionar e-mail"
                     />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Telefone</label>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Telefone</label>
                   <div className="flex items-center gap-2 group">
                     <Phone className="h-4 w-4 text-slate-400" />
                     <Input
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
                       onBlur={() => handleSave()}
-                      className="border-none p-0 h-auto focus-visible:ring-0 bg-transparent text-sm"
+                      className="border-none p-0 h-7 focus-visible:ring-0 bg-transparent text-sm"
                       placeholder="Adicionar telefone"
                     />
                   </div>
@@ -345,7 +345,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                   onChange={(e) => handleChange('description', e.target.value)}
                   onBlur={() => handleSave()}
                   placeholder="Adicione uma descrição mais detalhada..."
-                  className="bg-slate-50/50 border-slate-200 focus-visible:ring-primary rounded-xl min-h-[100px]"
+                  className="bg-slate-50/50 border-slate-200 focus-visible:ring-primary rounded-xl min-h-[160px] resize-none"
                 />
               </div>
 
@@ -485,9 +485,6 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                   <div className="flex items-center gap-2 text-slate-800 font-semibold">
                     <MessageSquare className="h-5 w-5" /> Atividade
                   </div>
-                  <Button variant="ghost" size="sm" className="text-xs font-medium text-slate-500 hover:text-slate-900 h-7 px-2">
-                    Mostrar Detalhes
-                  </Button>
                 </div>
 
                 {/* Área de Comentário */}
