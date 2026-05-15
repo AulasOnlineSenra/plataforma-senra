@@ -213,6 +213,8 @@ export async function updateCrmLead(id: string, data: {
   temperature?: string; 
   dueDate?: string;
   description?: string;
+  attachments?: string;
+  checklist?: string;
 }) {
   try {
     const updateData: any = { ...data };
@@ -256,5 +258,30 @@ export async function deleteCrmLead(id: string) {
   } catch (error) {
     console.error("Erro ao deletar lead:", error);
     return { success: false, error: "Falha ao deletar lead." };
+  }
+}
+export async function addCrmComment(data: { leadId: string; userId: string; content: string }) {
+  try {
+    const comment = await prisma.crmComment.create({
+      data,
+    });
+    revalidatePath("/dashboard/crm");
+    return { success: true, data: comment };
+  } catch (error) {
+    console.error("Erro ao adicionar comentário:", error);
+    return { success: false, error: "Falha ao adicionar comentário." };
+  }
+}
+
+export async function getCrmComments(leadId: string) {
+  try {
+    const comments = await prisma.crmComment.findMany({
+      where: { leadId },
+      orderBy: { createdAt: "desc" },
+    });
+    return { success: true, data: comments };
+  } catch (error) {
+    console.error("Erro ao buscar comentários:", error);
+    return { success: false, error: "Falha ao carregar comentários." };
   }
 }

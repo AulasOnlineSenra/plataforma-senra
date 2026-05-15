@@ -54,7 +54,8 @@ import {
   deleteCrmColumn,
   updateColumnOrder,
   updateCrmLead,
-  deleteCrmBoard
+  deleteCrmBoard,
+  updateCrmColumn
 } from '@/app/actions/crm';
 import LeadDrawer from '@/components/crm/lead-drawer';
 import { formatDistanceToNow, isPast, isToday, addDays, parseISO, format } from 'date-fns';
@@ -161,6 +162,11 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
   const [editingLeadName, setEditingLeadName] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
 
+  // Inline name editing state for COLUMNS (listas)
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnName, setEditingColumnName] = useState('');
+  const columnEditInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setIsMounted(true);
     loadBoards();
@@ -187,6 +193,13 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
       editInputRef.current.select();
     }
   }, [editingLeadId]);
+
+  useEffect(() => {
+    if (editingColumnId && columnEditInputRef.current) {
+      columnEditInputRef.current.focus();
+      columnEditInputRef.current.select();
+    }
+  }, [editingColumnId]);
 
   const loadBoards = async () => {
     setLoading(true);
@@ -334,6 +347,38 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
     } else if (e.key === 'Escape') {
       setEditingLeadId(null);
       setEditingLeadName('');
+    }
+  };
+
+  const handleUpdateColumnName = async (columnId: string) => {
+    if (!editingColumnName.trim()) {
+      setEditingColumnId(null);
+      return;
+    }
+
+    const newName = editingColumnName.trim();
+    setEditingColumnId(null);
+
+    // Optimistic update
+    const newBoard = { ...selectedBoard };
+    newBoard.columns = newBoard.columns.map((col: any) =>
+      col.id === columnId ? { ...col, name: newName } : col
+    );
+    setSelectedBoard(newBoard);
+
+    const result = await updateCrmColumn(columnId, { name: newName });
+    if (!result.success) {
+      toast.error("Erro ao atualizar nome da lista");
+      loadBoardDetails(selectedBoard.id);
+    }
+  };
+
+  const handleColumnEditKeyDown = (e: KeyboardEvent<HTMLInputElement>, columnId: string) => {
+    if (e.key === 'Enter') {
+      handleUpdateColumnName(columnId);
+    } else if (e.key === 'Escape') {
+      setEditingColumnId(null);
+      setEditingColumnName('');
     }
   };
 
@@ -635,7 +680,28 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                     <div className="flex items-center gap-2">
                       <GripVertical className="h-4 w-4 text-slate-400 opacity-0 group-hover/header:opacity-100 cursor-grab active:cursor-grabbing transition-opacity" />
                       <div className={`w-3 h-3 rounded-full ${column.color || 'bg-slate-400'}`} />
-                      <span className="font-semibold text-slate-800 text-sm">{column.name}</span>
+                      {editingColumnId === column.id ? (
+                        <Input
+                          ref={columnEditInputRef}
+                          value={editingColumnName}
+                          onChange={(e) => setEditingColumnName(e.target.value)}
+                          onKeyDown={(e) => handleColumnEditKeyDown(e, column.id)}
+                          onBlur={() => handleUpdateColumnName(column.id)}
+                          className="h-6 py-0 text-sm font-semibold bg-white border-slate-300 focus-visible:ring-1"
+                          autoFocus
+                        />
+                      ) : (
+                        <span 
+                          className="font-semibold text-slate-800 text-sm cursor-pointer hover:text-primary transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingColumnId(column.id);
+                            setEditingColumnName(column.name);
+                          }}
+                        >
+                          {column.name}
+                        </span>
+                      )}
                       {!isCollapsed && (
                         <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{column.leads.length}</Badge>
                       )}
