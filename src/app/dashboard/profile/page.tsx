@@ -34,6 +34,7 @@ import {
   saveTeacherAvailability,
   getSubjects,
   getTeacherAvailability,
+  blacklistUser,
 } from '@/app/actions/users';
 import { changePassword } from '@/app/actions/auth';
 import { getTeacherAverageRating } from '@/app/actions/ratings';
@@ -1381,7 +1382,7 @@ export default function ProfilePage() {
                     </Button>
                   </CardFooter>
                 </form>
-              </CollapsibleContent>
+              </CardContent>
             </Card>
           </Collapsible>
 
@@ -1456,6 +1457,38 @@ export default function ProfilePage() {
               </Card>
             </Collapsible>
           )}
+
+          {/* Exclusão de Perfil (Apenas para Professores) */}
+          <div className="mt-8 border-t border-red-100 pt-8 px-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-red-50 p-6 rounded-3xl border border-red-200">
+              <div>
+                <h3 className="text-lg font-bold text-red-900">Excluir Conta</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Ao excluir sua conta, você será removido da plataforma e não poderá mais se cadastrar com este e-mail. Esta ação é irreversível.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                className="h-12 px-8 rounded-xl font-bold bg-red-600 hover:bg-red-700 transition-all shrink-0"
+                onClick={async () => {
+                  if (confirm("Tem certeza que deseja excluir seu perfil permanentemente? Você não poderá mais acessar a plataforma.")) {
+                    if (currentUser?.id) {
+                      const result = await blacklistUser(currentUser.id);
+                      if (result.success) {
+                        toast({ title: "Perfil Excluído", description: "Sua conta foi desativada e você será desconectado." });
+                        localStorage.clear();
+                        router.push('/login');
+                      } else {
+                        toast({ variant: "destructive", title: "Erro ao excluir", description: result.error });
+                      }
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="mr-2 h-5 w-5" /> Excluir meu Perfil
+              </Button>
+            </div>
+          </div>
         </>
       )}
     </div>

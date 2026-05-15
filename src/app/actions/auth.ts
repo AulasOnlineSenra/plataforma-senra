@@ -29,6 +29,12 @@ export async function registerUser(data: {
     });
 
     if (existingUser) {
+      if (existingUser.status === "blacklisted") {
+        return {
+          success: false,
+          error: "Este usuário está na lista negra e não pode mais se cadastrar na plataforma.",
+        };
+      }
       return {
         success: false,
         error: "Este e-mail já está cadastrado. Vá para a tela de login.",

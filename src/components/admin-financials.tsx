@@ -43,6 +43,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label';
 import { getMarketingCosts } from '@/app/actions/marketing';
 import { getApprovedTransactions, getCompletedClassesByPeriod, deleteTransaction } from '@/app/actions/finance';
+import { getStudents } from '@/app/actions/users';
 
 
 const PAYMENT_HISTORY_STORAGE_KEY = 'paymentHistory';
@@ -103,6 +104,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     
     const [paymentPeriods, setPaymentPeriods] = useState<{ label: string, value: string, start: Date, end: Date }[]>([]);
     const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | undefined>();
+    const [selectedStudentId, setSelectedStudentId] = useState<string>('all');
 
 
     const totalMarketingExpenses = marketingCosts.ads + marketingCosts.team + marketingCosts.organicCommissions + marketingCosts.paidCommissions;
@@ -206,7 +208,12 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             if (storedUsers) {
                 setUsers(JSON.parse(storedUsers));
             } else {
-                setUsers(initialUsers);
+                const studentsResult = await getStudents();
+                if (studentsResult.success && studentsResult.data) {
+                    setUsers(studentsResult.data as any);
+                } else {
+                    setUsers(initialUsers);
+                }
             }
             
             const marketingResult = await getMarketingCosts(selectedMonth);
@@ -283,14 +290,18 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             return;
         };
 
-        const selectedPeriod = paymentPeriods.find(p => p.value === selectedPeriodKey);
+            const selectedPeriod = paymentPeriods.find(p => p.value === selectedPeriodKey);
         if (!selectedPeriod) return;
 
         const fetchTeacherPayments = async () => {
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
 
-            const lessonsResult = await getCompletedClassesByPeriod(selectedPeriod.start, selectedPeriod.end);
+            const lessonsResult = await getCompletedClassesByPeriod(
+                selectedPeriod.start, 
+                selectedPeriod.end,
+                selectedStudentId
+            );
             
             if (!lessonsResult.success || !lessonsResult.data) {
                 setTeacherPaymentDetails([]);
@@ -328,7 +339,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
         };
 
         fetchTeacherPayments();
-    }, [selectedPeriodKey, paymentPeriods, selectedMonth]); // Rerun when month changes to recalculate periods
+    }, [selectedPeriodKey, paymentPeriods, selectedMonth, selectedStudentId]); // Rerun when month or student changes
 
     const getUserById = (id: string): AppUser | undefined => {
         return users.find(u => u.id === id);
@@ -406,7 +417,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <Landmark className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</div>
+                <div className="text-2xl font-bold">R$ {(totalMarketingExpenses + monthlyTeacherPaymentsCost).toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground flex items-center">
                     <ArrowDown className="h-4 w-4 text-red-500" />
                      -5.2% vs. mês anterior
@@ -419,7 +430,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue - totalMonthlyExpenses).toFixed(2).replace('.',',')}</div>
+                <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue - (totalMarketingExpenses + monthlyTeacherPaymentsCost)).toFixed(2).replace('.',',')}</div>
                 <p className="text-xs text-muted-foreground">
                     Margem: {totalRevenue > 0 ? ((totalRevenue - totalMonthlyExpenses) / totalRevenue * 100).toFixed(1) : 0}%
                 </p>
@@ -431,7 +442,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                   <CardDescription className="text-xs">Resultado do mês</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">R$ {(totalRevenue - totalMonthlyExpenses).toFixed(2).replace('.',',')}</div>
+                  <div className="text-2xl font-bold">R$ {(totalRevenue - (totalMarketingExpenses + monthlyTeacherPaymentsCost)).toFixed(2).replace('.',',')}</div>
                 </CardContent>
             </Card>
         </div>
@@ -494,16 +505,16 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <span className="font-bold text-green-600">R$ {totalRevenue.toFixed(2).replace('.',',')}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total de Despesas</span>
-                        <span className="font-bold text-red-600">- R$ {totalMonthlyExpenses.toFixed(2).replace('.',',')}</span>
+                        <span className="text-muted-foreground">Total de Despesas (Mês)</span>
+                        <span className="font-bold text-red-600">- R$ {(totalMarketingExpenses + monthlyTeacherPaymentsCost).toFixed(2).replace('.',',')}</span>
                     </div>
                 </CardContent>
                 <CardContent className="mt-auto">
                     <Separator className="my-2" />
                     <div className="flex items-center justify-between font-bold text-lg">
                         <span>Resultado Líquido</span>
-                        <span className={(totalRevenue - totalMonthlyExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}>
-                            R$ {(totalRevenue - totalMonthlyExpenses).toFixed(2).replace('.',',')}
+                        <span className={(totalRevenue - (totalMarketingExpenses + monthlyTeacherPaymentsCost)) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            R$ {(totalRevenue - (totalMarketingExpenses + monthlyTeacherPaymentsCost)).toFixed(2).replace('.',',')}
                         </span>
                     </div>
                 </CardContent>
@@ -628,17 +639,33 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         <div className="flex w-full sm:w-auto items-center gap-2">
                              <Label htmlFor="period-filter" className="sr-only">Filtrar Período</Label>
                              <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
-                                <SelectTrigger id="period-filter" className="w-full justify-center text-center sm:w-[180px]">
+                                <SelectTrigger id="period-filter" className="h-10 rounded-xl border-slate-200 bg-white w-full sm:w-[180px]">
                                     <SelectValue placeholder="Selecione um período" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="rounded-xl">
                                     {paymentPeriods.map(p => (
-                                        <SelectItem key={p.value} value={p.value}>
+                                        <SelectItem key={p.value} value={p.value} className="cursor-pointer">
                                             {p.label}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+
+                            <Label htmlFor="student-filter" className="sr-only">Filtrar Aluno</Label>
+                             <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                                <SelectTrigger id="student-filter" className="h-10 rounded-xl border-slate-200 bg-white w-full sm:w-[180px]">
+                                    <SelectValue placeholder="Filtrar por Aluno" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    <SelectItem value="all" className="cursor-pointer">Todos os Alunos</SelectItem>
+                                    {users.filter(u => u.role === 'student').map(student => (
+                                        <SelectItem key={student.id} value={student.id} className="cursor-pointer">
+                                            {student.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
                             <Button variant="ghost" size="icon" className='hidden sm:inline-flex'>
                                 {isTeacherPaymentsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                             </Button>

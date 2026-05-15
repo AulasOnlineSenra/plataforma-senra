@@ -50,6 +50,9 @@ import {
   Cell,
   PieChart,
   Pie,
+  LineChart,
+  Line,
+  CartesianGrid,
 } from "recharts";
 
 import {
@@ -811,6 +814,52 @@ export default function TeachersPage() {
                     </div>
                   </Card>
                 </CarouselItem>
+                {/* Slide 4: Crescimento dos Professores */}
+                <CarouselItem>
+                  <Card className="rounded-3xl border border-slate-200 bg-white p-6 h-full">
+                    <CardHeader className="p-0 mb-6">
+                      <CardTitle className="text-sm font-bold text-slate-600 uppercase tracking-wider">Crescimento da Equipe</CardTitle>
+                    </CardHeader>
+                    <div className="bg-slate-50 rounded-2xl p-6 h-[250px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={(() => {
+                            const sortedByDate = [...teacherList].sort((a, b) => 
+                              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                            );
+                            
+                            const growthData: Record<string, number> = {};
+                            let runningTotal = 0;
+                            
+                            sortedByDate.forEach(t => {
+                              const month = format(new Date(t.createdAt), 'MMM/yy', { locale: ptBR });
+                              runningTotal++;
+                              growthData[month] = runningTotal;
+                            });
+                            
+                            return Object.entries(growthData).map(([name, total]) => ({ name, total }));
+                          })()}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="total" 
+                            stroke="#f59e0b" 
+                            strokeWidth={3} 
+                            dot={{ r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }}
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                </CarouselItem>
               </CarouselContent>
               <div className="flex justify-center gap-2 mt-4">
                  <CarouselPrevious className="static translate-y-0 h-9 w-9 rounded-xl border-slate-200" />
@@ -873,7 +922,10 @@ export default function TeachersPage() {
             {(() => {
               const filteredTeachers = teacherList.filter(teacher => {
                 const matchesStatus = statusFilter === "all" || 
-                  (statusFilter === "pending" ? teacher.status === "pending" : teacher.status !== "pending");
+                  (statusFilter === "pending" ? teacher.status === "pending" : teacher.status === "active" || teacher.status === "hidden");
+                
+                // Excluir blacklisted da lista principal
+                if (teacher.status === 'blacklisted') return false;
                 let teacherSubjects: string[] = [];
 
                 if (teacher.subjects) {
@@ -1166,6 +1218,73 @@ export default function TeachersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* SEÇÃO BLACKLIST (Apenas Admin) */}
+      {currentUser?.role === "admin" && (
+        <div className="mt-16 border-t pt-12 pb-24">
+          <div className="flex flex-col gap-2 mb-8">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <Trash2 className="h-6 w-6 text-red-500" />
+              Blacklist
+            </h2>
+            <p className="text-slate-500">
+              Professores que solicitaram exclusão ou foram banidos. Estes usuários não podem se recadastrar.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Professor</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Data de Exclusão</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {teacherList.filter(t => t.status === 'blacklisted').length > 0 ? (
+                    teacherList.filter(t => t.status === 'blacklisted').map((teacher) => (
+                      <tr key={teacher.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                              <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold text-slate-900">{teacher.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{teacher.email}</td>
+                        <td className="px-6 py-4 text-sm text-slate-500">
+                          {format(new Date(teacher.updatedAt), 'dd/MM/yyyy', { locale: ptBR })}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-emerald-600 font-bold hover:text-emerald-700 hover:bg-emerald-50 rounded-xl"
+                            onClick={() => handleApprove(teacher.id)}
+                          >
+                            Reativar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                        Nenhum professor na blacklist.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

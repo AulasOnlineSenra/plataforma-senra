@@ -534,17 +534,23 @@ export async function getApprovedTransactions(month?: string) {
   }
 }
 
-export async function getCompletedClassesByPeriod(startDate: Date, endDate: Date) {
+export async function getCompletedClassesByPeriod(startDate: Date, endDate: Date, studentId?: string) {
   try {
-    const lessons = await prisma.lesson.findMany({
-      where: {
-        status: 'COMPLETED',
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-        isExperimental: false,
+    const where: any = {
+      status: 'COMPLETED',
+      date: {
+        gte: startDate,
+        lte: endDate,
       },
+      isExperimental: false,
+    };
+
+    if (studentId && studentId !== 'all') {
+      where.studentId = studentId;
+    }
+
+    const lessons = await prisma.lesson.findMany({
+      where,
       include: {
         teacher: {
           select: { id: true, name: true, avatarUrl: true, pixKey: true, pixKeyType: true },

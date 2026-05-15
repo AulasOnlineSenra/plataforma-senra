@@ -155,8 +155,14 @@ export async function getTeachers(showAll = false) {
     revalidatePath("/dashboard/teachers");
     const whereCondition: any = {
       role: "teacher",
-      status: showAll ? { not: "deleted" } : "active",
     };
+
+    if (showAll) {
+      whereCondition.status = { not: "deleted" };
+    } else {
+      whereCondition.status = "active";
+    }
+
     const teachers = await prisma.user.findMany({
       where: whereCondition,
       orderBy: { name: "asc" },
@@ -397,14 +403,33 @@ export async function deleteTeacher(id: string) {
       }),
       prisma.simulado.deleteMany({ where: { creatorId: id } }),
       prisma.lesson.deleteMany({ where: { teacherId: id } }),
-      prisma.user.delete({ where: { id } }),
+      prisma.user.update({
+        where: { id },
+        data: { status: "blacklisted" },
+      }),
     ]);
 
     revalidatePath("/dashboard/teachers");
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { success: false, error: "Não foi possível deletar o professor." };
+    return { success: false, error: "Não foi possível remover o professor." };
+  }
+}
+
+export async function blacklistUser(userId: string) {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { status: "blacklisted" },
+    });
+    revalidatePath("/dashboard/teachers");
+    revalidatePath("/dashboard/admin/teachers");
+    revalidatePath("/dashboard/profile");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao banir usuário:", error);
+    return { success: false, error: "Falha ao colocar usuário na lista negra." };
   }
 }
 
