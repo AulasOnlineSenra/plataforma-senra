@@ -687,12 +687,12 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                           onChange={(e) => setEditingColumnName(e.target.value)}
                           onKeyDown={(e) => handleColumnEditKeyDown(e, column.id)}
                           onBlur={() => handleUpdateColumnName(column.id)}
-                          className="h-6 py-0 text-sm font-semibold bg-white border-slate-300 focus-visible:ring-1"
+                          className="h-7 py-0 text-sm font-semibold bg-white border-slate-300 focus-visible:ring-1 w-[180px]"
                           autoFocus
                         />
                       ) : (
                         <span 
-                          className="font-semibold text-slate-800 text-sm cursor-pointer hover:text-primary transition-colors"
+                          className="font-semibold text-slate-800 text-sm cursor-text hover:bg-slate-300/30 px-1 py-0.5 rounded transition-colors inline-block min-w-[50px]"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingColumnId(column.id);
