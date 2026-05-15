@@ -753,7 +753,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-2 max-w-4xl mx-auto w-full pb-10">
+    <>
+      <div className="flex flex-1 flex-col gap-2 max-w-4xl mx-auto w-full pb-10">
       {/* Informações Pessoais */}
       <Collapsible open={openSection === 'personal'} onOpenChange={(open) => handleToggleSection('personal')}>
         <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
@@ -1492,5 +1493,6 @@ export default function ProfilePage() {
         </>
       )}
     </div>
+    </>
   );
 }
