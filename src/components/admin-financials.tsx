@@ -68,6 +68,8 @@ interface TeacherPaymentDetails {
   teacherId: string;
   teacherName: string;
   teacherAvatarUrl?: string;
+  pixKey?: string | null;
+  pixKeyType?: string | null;
   completedClasses: number;
   paymentRate: number;
   totalAmount: number;
@@ -304,6 +306,8 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                         teacherId: lesson.teacherId,
                         teacherName: lesson.teacher?.name || 'Professor Desconhecido',
                         teacherAvatarUrl: lesson.teacher?.avatarUrl,
+                        pixKey: lesson.teacher?.pixKey,
+                        pixKeyType: lesson.teacher?.pixKeyType,
                         completedClasses: 0,
                         paymentRate: paymentRate,
                         totalAmount: 0,
@@ -662,7 +666,14 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                                                         <AvatarImage src={payment.teacherAvatarUrl} alt={payment.teacherName} />
                                                         <AvatarFallback>{payment.teacherName.charAt(0)}</AvatarFallback>
                                                     </Avatar>
-                                                    <div className="font-medium">{payment.teacherName}</div>
+                                                    <div className="flex flex-col">
+                                                        <div className="font-medium">{payment.teacherName}</div>
+                                                        {payment.pixKey && (
+                                                            <div className="text-[10px] text-muted-foreground leading-tight">
+                                                                PIX: {payment.pixKeyType?.toUpperCase()} - {payment.pixKey}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>{payment.period}</TableCell>

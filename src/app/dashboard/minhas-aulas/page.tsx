@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2 } from "lucide-react";
+import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon } from "lucide-react";
 import { getLessonsForUser, updateLesson, cancelLesson, deleteLesson } from "@/app/actions/bookings";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -24,6 +24,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getStudents } from "@/app/actions/users";
 
 const subjectMap: Record<string, string> = {
   'default-subj-1': 'Matemática',
@@ -95,6 +98,9 @@ export default function MinhasAulasPage() {
   const [isClient, setIsClient] = useState(false);
   const [highlightCompleted, setHighlightCompleted] = useState(false);
   const [highlightCancelled, setHighlightCancelled] = useState(false);
+  const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
+  const [completedStudentFilter, setCompletedStudentFilter] = useState("all");
+  const [cancelledStudentFilter, setCancelledStudentFilter] = useState("all");
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     setLoading(true);
@@ -120,6 +126,14 @@ export default function MinhasAulasPage() {
 
     if (currentRole && currentUserId) {
       loadLessons(currentUserId, currentRole);
+      
+      if (currentRole === "admin") {
+        getStudents().then(res => {
+          if (res.success && res.data) {
+            setStudents(res.data.map(s => ({ id: s.id, name: s.name })));
+          }
+        });
+      }
     } else {
       setLoading(false);
     }
@@ -171,16 +185,29 @@ export default function MinhasAulasPage() {
   }, [sortedLessons]);
 
   const completedLessons = useMemo(() => {
-    return sortedLessons.filter((l) => l.status === "COMPLETED");
-  }, [sortedLessons]);
+    let filtered = lessons.filter((l) => l.status === "COMPLETED");
+    if (completedStudentFilter !== "all") {
+      filtered = filtered.filter(l => l.student?.id === completedStudentFilter);
+    }
+    // Reverse order: newest first
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [lessons, completedStudentFilter]);
 
   const cancelledLessons = useMemo(() => {
-    return sortedLessons.filter((l) => l.status === "CANCELLED");
-  }, [sortedLessons]);
+    let filtered = lessons.filter((l) => l.status === "CANCELLED");
+    if (cancelledStudentFilter !== "all") {
+      filtered = filtered.filter(l => l.student?.id === cancelledStudentFilter);
+    }
+    // Reverse order: newest first
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [lessons, cancelledStudentFilter]);
 
   const calendarMarkedDays = useMemo(() => {
-    return futureLessons.map(lesson => new Date(lesson.date));
-  }, [futureLessons]);
+    const now = new Date();
+    return sortedLessons
+      .filter(l => new Date(l.date) >= now && ['PENDING', 'CONFIRMED', 'scheduled'].includes(l.status))
+      .map(lesson => new Date(lesson.date));
+  }, [sortedLessons]);
 
   const canEditOrCancel = (lesson: LessonItem) => {
     if (role === "admin") return true;
@@ -473,13 +500,35 @@ export default function MinhasAulasPage() {
 
       <Card id="completed-history" className={`rounded-3xl border-2 shadow-sm transition-all duration-500 ${highlightCompleted ? 'border-[#f5b000] bg-amber-50' : 'border-slate-200'}`}>
         <CardHeader className="border-b border-slate-200 bg-white">
-          <CardTitle className="flex items-center gap-2 text-slate-900">
-            <History className="h-5 w-5 text-green-600" />
-            Histórico de aulas realizadas
-          </CardTitle>
-          <CardDescription>
-            Aulas concluídas com sucesso.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <History className="h-5 w-5 text-green-600" />
+                Histórico de aulas realizadas
+              </CardTitle>
+              <CardDescription>
+                Aulas concluídas com sucesso.
+              </CardDescription>
+            </div>
+            {role === "admin" && (
+              <div className="w-full sm:w-64">
+                <Select value={completedStudentFilter} onValueChange={setCompletedStudentFilter}>
+                  <SelectTrigger className="rounded-2xl">
+                    <div className="flex items-center gap-2 truncate">
+                      <Search className="h-3 w-3 text-slate-400" />
+                      <SelectValue placeholder="Filtrar por aluno" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="all">Todos os alunos</SelectItem>
+                    {students.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-6">
           {!loading && completedLessons.length === 0 && (
@@ -487,35 +536,59 @@ export default function MinhasAulasPage() {
           )}
 
           {!loading && completedLessons.length > 0 && (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Professor</TableHead>
-                    <TableHead>Matéria</TableHead>
-                    <TableHead>Data/Hora</TableHead>
-                    {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {completedLessons.map(renderTableRow)}
-                </TableBody>
-              </Table>
-            </div>
+            <ScrollArea className="h-96">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Professor</TableHead>
+                      <TableHead>Matéria</TableHead>
+                      <TableHead>Data/Hora</TableHead>
+                      {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {completedLessons.map(renderTableRow)}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
 
       <Card id="cancelled-history" className={`rounded-3xl border-2 shadow-sm transition-all duration-500 ${highlightCancelled ? 'border-[#f5b000] bg-amber-50' : 'border-slate-200'}`}>
         <CardHeader className="border-b border-slate-200 bg-white">
-          <CardTitle className="flex items-center gap-2 text-slate-900">
-            <XCircle className="h-5 w-5 text-red-600" />
-            Histórico de aulas canceladas
-          </CardTitle>
-          <CardDescription>
-            Aulas canceladas por qualquer motivo.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <XCircle className="h-5 w-5 text-red-600" />
+                Histórico de aulas canceladas
+              </CardTitle>
+              <CardDescription>
+                Aulas canceladas por qualquer motivo.
+              </CardDescription>
+            </div>
+            {role === "admin" && (
+              <div className="w-full sm:w-64">
+                <Select value={cancelledStudentFilter} onValueChange={setCancelledStudentFilter}>
+                  <SelectTrigger className="rounded-2xl">
+                    <div className="flex items-center gap-2 truncate">
+                      <Search className="h-3 w-3 text-slate-400" />
+                      <SelectValue placeholder="Filtrar por aluno" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="all">Todos os alunos</SelectItem>
+                    {students.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-6">
           {!loading && cancelledLessons.length === 0 && (
@@ -523,62 +596,64 @@ export default function MinhasAulasPage() {
           )}
 
           {!loading && cancelledLessons.length > 0 && (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Professor</TableHead>
-                    <TableHead>Matéria</TableHead>
-                    <TableHead>Data/Hora</TableHead>
-                    {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cancelledLessons.map((lesson) => (
-                    <TableRow key={lesson.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={lesson.student?.avatarUrl} alt={lesson.student?.name} />
-                            <AvatarFallback>{lesson.student?.name?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{lesson.student?.name || "-"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={lesson.teacher?.avatarUrl} alt={lesson.teacher?.name} />
-                            <AvatarFallback>{lesson.teacher?.name?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{lesson.teacher?.name || "-"}</span>
-                        </div>
-                      </TableCell>
-<TableCell>{/* Título oculto */}</TableCell>
-                      <TableCell>
-                        {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </TableCell>
-                      {role === "admin" && (
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => {
-                              setLessonToDelete(lesson);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      )}
+            <ScrollArea className="h-96">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Professor</TableHead>
+                      <TableHead>Matéria</TableHead>
+                      <TableHead>Data/Hora</TableHead>
+                      {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {cancelledLessons.map((lesson) => (
+                      <TableRow key={lesson.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={lesson.student?.avatarUrl || undefined} alt={lesson.student?.name} />
+                              <AvatarFallback>{lesson.student?.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{lesson.student?.name || "-"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={lesson.teacher?.avatarUrl || undefined} alt={lesson.teacher?.name} />
+                              <AvatarFallback>{lesson.teacher?.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{lesson.teacher?.name || "-"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
+                        <TableCell>
+                          {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        {role === "admin" && (
+                          <TableCell className="text-right">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => {
+                                setLessonToDelete(lesson);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>

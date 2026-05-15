@@ -547,7 +547,7 @@ export async function getCompletedClassesByPeriod(startDate: Date, endDate: Date
       },
       include: {
         teacher: {
-          select: { id: true, name: true, avatarUrl: true },
+          select: { id: true, name: true, avatarUrl: true, pixKey: true, pixKeyType: true },
         },
         student: {
           select: { id: true, name: true },

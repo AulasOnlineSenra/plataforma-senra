@@ -498,11 +498,11 @@ export async function updateUserProfile(
     const updateData: Prisma.UserUpdateInput = {
       name: data.name,
       email: data.email,
-      avatarUrl:
-        data.avatarUrl === undefined
-          ? `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`
-          : data.avatarUrl,
     };
+
+    if (data.avatarUrl !== undefined) {
+      updateData.avatarUrl = data.avatarUrl;
+    }
 
     if (data.cpf !== undefined)
       updateData.cpf = normalizeOptionalText(data.cpf);
