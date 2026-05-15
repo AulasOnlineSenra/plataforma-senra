@@ -60,6 +60,7 @@ import {
 import LeadDrawer from '@/components/crm/lead-drawer';
 import { formatDistanceToNow, isPast, isToday, addDays, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface Board {
   id: string;
@@ -111,11 +112,11 @@ const getDueDateColor = (status: string | null) => {
 
 const getTemperatureColor = (temp: string) => {
   switch (temp) {
-    case 'frio': return 'bg-slate-200 text-slate-600';
-    case 'morno': return 'bg-yellow-200 text-yellow-700';
-    case 'quente': return 'bg-orange-200 text-orange-700';
-    case 'muito-quente': return 'bg-red-200 text-red-700';
-    default: return 'bg-slate-200 text-slate-600';
+    case 'frio': return 'bg-blue-400';
+    case 'morno': return 'bg-yellow-400';
+    case 'quente': return 'bg-orange-500';
+    case 'muito-quente': return 'bg-red-500';
+    default: return 'bg-slate-300';
   }
 };
 
@@ -755,7 +756,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                 className="group relative"
                               >
                                 <Card 
-                                  className={`hover:border-primary/50 transition-all cursor-pointer ${snapshot.isDragging ? 'rotate-2 shadow-xl' : 'shadow-sm'}`}
+                                  className={`hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden ${snapshot.isDragging ? 'rotate-2 shadow-xl' : 'shadow-sm'}`}
                                   onClick={() => { 
                                     if (editingLeadId !== lead.id) {
                                       setSelectedLead(lead); 
@@ -763,7 +764,9 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                     }
                                   }}
                                 >
-                                  <CardContent className="p-3">
+                                  {/* Color Indicator Bar */}
+                                  <div className={cn("absolute top-0 left-0 right-0 h-1", getTemperatureColor(lead.temperature))} />
+                                  <CardContent className="p-3 pt-4">
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-start justify-between gap-2">
                                         {editingLeadId === lead.id ? (
@@ -802,7 +805,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                                  setEditingLeadId(lead.id);
                                                  setEditingLeadName(lead.name);
                                                }} className="text-primary">
-                                                 <Edit2 className="mr-2 h-4 w-4" /> Renomear
+                                                 <Edit2 className="mr-2 h-4 w-4" /> ---
                                                </DropdownMenuItem>
                                                <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}>
                                                  <Pencil className="mr-2 h-4 w-4" /> Detalhes
@@ -830,9 +833,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                             </span>
                                           )}
                                         </div>
-                                        <Badge className={`text-[9px] h-4 px-1.5 ${getTemperatureColor(lead.temperature)}`}>
-                                          {getTemperatureLabel(lead.temperature)}
-                                        </Badge>
                                       </div>
 
                                       {/* Tags */}
@@ -989,8 +989,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
             }));
             setSelectedBoard(newBoard);
           }
-          setDrawerOpen(false);
-          setSelectedLead(null);
         }}
       />
     </div>

@@ -58,10 +58,10 @@ interface LeadDrawerProps {
 }
 
 const temperatures = [
-  { value: 'frio', label: 'Frio', color: 'bg-slate-200 text-slate-600', dot: 'bg-slate-400' },
-  { value: 'morno', label: 'Morno', color: 'bg-yellow-200 text-yellow-700', dot: 'bg-yellow-500' },
-  { value: 'quente', label: 'Quente', color: 'bg-orange-200 text-orange-700', dot: 'bg-orange-500' },
-  { value: 'muito-quente', label: 'Muito Quente', color: 'bg-red-200 text-red-700', dot: 'bg-red-500' },
+  { value: 'frio', label: 'Frio', color: 'bg-blue-100 text-blue-700', dot: 'bg-blue-400' },
+  { value: 'morno', label: 'Morno', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400' },
+  { value: 'quente', label: 'Quente', color: 'bg-orange-100 text-orange-700', dot: 'bg-orange-500' },
+  { value: 'muito-quente', label: 'Muito Quente', color: 'bg-red-100 text-red-700', dot: 'bg-red-500' },
 ];
 
 export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawerProps) {
@@ -222,7 +222,10 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col rounded-2xl shadow-2xl border-slate-200">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col rounded-2xl shadow-2xl border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6 overflow-y-auto flex-1">
           <div className="flex flex-col lg:flex-row gap-8">
             
