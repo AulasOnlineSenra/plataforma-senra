@@ -234,7 +234,7 @@ export default function LoginPage() {
     e.preventDefault();
     
     // Login 100% Blindado no Banco de Dados
-    const result = await loginUser({ email, password });
+    const result = await loginUser({ email: email.trim(), password });
 
     if (!result.success || !result.user) {
         toast({

@@ -61,7 +61,7 @@ function RegisterContent() {
 
     const result = await registerUser({
       name,
-      email,
+      email: email.trim(),
       password,
       role,
       referralCode,

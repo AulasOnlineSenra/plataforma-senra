@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { triggerAiAutomation } from "@/lib/ai/automation-engine";
+import bcrypt from "bcryptjs";
 
 // Buscar todos os alunos
 export async function getStudents() {
@@ -322,11 +323,14 @@ export async function createTeacher(data: {
   subject: string;
 }) {
   try {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
     const newTeacher = await prisma.user.create({
       data: {
         name: data.name,
-        email: data.email,
-        password: data.password,
+        email: normalizedEmail,
+        password: hashedPassword,
         role: "teacher",
         status: "active",
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
@@ -410,11 +414,14 @@ export async function createStudent(data: {
   password: string;
 }) {
   try {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
     const newStudent = await prisma.user.create({
       data: {
         name: data.name,
-        email: data.email,
-        password: data.password,
+        email: normalizedEmail,
+        password: hashedPassword,
         role: "student",
         status: "active",
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=03A9F4&textColor=000000`,
@@ -542,13 +549,18 @@ export async function updateUserPassword(
       return { success: false, error: "Usuario não encontrado." };
     }
 
-    if (user.password !== currentPassword) {
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isLegacyPassword = user.password === currentPassword;
+
+    if (!isPasswordValid && !isLegacyPassword) {
       return { success: false, error: "Senha atual incorreta." };
     }
 
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: { password: newPassword },
+      data: { password: hashedNewPassword },
     });
 
     return { success: true, data: updated };

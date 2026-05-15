@@ -22,8 +22,10 @@ export async function registerUser(data: {
       return { success: false, error: "Ação não permitida." };
     }
 
+    const normalizedEmail = data.email.trim().toLowerCase();
+
     const existingUser = await prisma.user.findUnique({
-      where: { email: data.email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -42,7 +44,7 @@ export async function registerUser(data: {
       data: {
         id: crypto.randomUUID(),
         name: data.name,
-        email: data.email,
+        email: normalizedEmail,
         password: hashedPassword, // Salva o hash (ex: $2a$10$wY... ), ninguém nunca saberá a senha real
         role: normalizedRole,
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
@@ -117,12 +119,14 @@ export async function registerUser(data: {
 //  LOGIN (Comparando o Hash)
 export async function loginUser(data: { email: string; password: string }) {
   try {
+    const normalizedEmail = data.email.trim().toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email: data.email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
-      console.log(`[LOGIN_DEBUG] Falha: E-mail não encontrado - ${data.email}`);
+      console.log(`[LOGIN_DEBUG] Falha: E-mail não encontrado - ${normalizedEmail}`);
       return { success: false, error: "E-mail não encontrado no sistema." };
     }
 
