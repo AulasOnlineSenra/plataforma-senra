@@ -228,18 +228,20 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 setMarketingCosts(DEFAULT_COSTS);
             }
 
-            const storedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-            const schedule: ScheduleEvent[] = storedSchedule ? JSON.parse(storedSchedule).map((e: any) => ({...e, start: new Date(e.start)})) : initialScheduleEvents;
-            
-            
             const storedRate = localStorage.getItem(TEACHER_PAYMENT_RATE_KEY);
             const paymentRate = storedRate ? parseFloat(storedRate) : 50;
             
             // --- Monthly Calculation for Top Cards ---
-            const monthlyCompletedClasses = schedule.filter(e => 
-                e.status === 'completed' && isWithinInterval(new Date(e.start), monthInterval) && !e.isExperimental
+            const monthlyLessonsResult = await getCompletedClassesByPeriod(
+                monthInterval.start,
+                monthInterval.end
             );
-            const totalMonthlyTeacherCost = monthlyCompletedClasses.length * paymentRate;
+            let totalMonthlyTeacherCost = 0;
+            
+            if (monthlyLessonsResult.success && monthlyLessonsResult.data) {
+                totalMonthlyTeacherCost = monthlyLessonsResult.data.length * paymentRate;
+            }
+            
             setMonthlyTeacherPaymentsCost(totalMonthlyTeacherCost);
             
             // --- Payment Period Generation ---
