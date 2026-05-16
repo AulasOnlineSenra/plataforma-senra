@@ -1383,7 +1383,7 @@ export default function ProfilePage() {
                     </Button>
                   </CardFooter>
                 </form>
-              </CardContent>
+              </CollapsibleContent>
             </Card>
           </Collapsible>
 
