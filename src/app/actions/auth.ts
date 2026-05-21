@@ -24,8 +24,8 @@ export async function registerUser(data: {
 
     const normalizedEmail = data.email.trim().toLowerCase();
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
+    const existingUser = await prisma.user.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
 
     if (existingUser) {
@@ -127,8 +127,8 @@ export async function loginUser(data: { email: string; password: string }) {
   try {
     const normalizedEmail = data.email.trim().toLowerCase();
 
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
 
     if (!user) {
@@ -217,8 +217,11 @@ export async function changePassword(
 // 4. SOLICITAR RECUPERAÇÃO DE SENHA (MODO DEBUG LIGADO 🐛)
 export async function requestPasswordReset(email: string) {
   try {
-    console.log(`[DEBUG] 1. A procurar o e-mail no banco de dados: "${email}"`);
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log(`[DEBUG] 1. A procurar o e-mail no banco de dados: "${normalizedEmail}"`);
+    const user = await prisma.user.findFirst({ 
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } } 
+    });
 
     if (!user) {
       console.log(
