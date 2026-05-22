@@ -24,31 +24,36 @@ export async function POST(request: NextRequest) {
 
     // USANDO FIREBASE STORAGE (Ideal para Vercel)
     if (process.env.FIREBASE_PROJECT_ID) {
-      console.log("[Upload] Usando Firebase Storage...");
-      
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const firebaseFile = bucket.file(`uploads/chat/${fileName}`);
+      try {
+        console.log("[Upload] Usando Firebase Storage...");
+        
+        const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const firebaseFile = bucket.file(`uploads/chat/${fileName}`);
 
-      await firebaseFile.save(buffer, {
-        metadata: {
-          contentType: file.type,
-        },
-      });
+        await firebaseFile.save(buffer, {
+          metadata: {
+            contentType: file.type,
+          },
+        });
 
-      // Omitir makePublic() pois o Firebase Storage via GCP costuma bloquear isso
-      // Vamos gerar a URL padrão de leitura do Firebase Storage
-      const encodedPath = encodeURIComponent(`uploads/chat/${fileName}`);
-      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
+        // Omitir makePublic() pois o Firebase Storage via GCP costuma bloquear isso
+        // Vamos gerar a URL padrão de leitura do Firebase Storage
+        const encodedPath = encodeURIComponent(`uploads/chat/${fileName}`);
+        const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          url: publicUrl,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-        },
-      });
+        return NextResponse.json({
+          success: true,
+          data: {
+            url: publicUrl,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+          },
+        });
+      } catch (fbError) {
+        console.error("[Upload] Falha no Firebase, caindo para armazenamento local:", fbError);
+        // Continua para o fallback local abaixo
+      }
     }
 
     // FALLBACK LOCAL (Apenas para teste em localhost, falha no Vercel)
