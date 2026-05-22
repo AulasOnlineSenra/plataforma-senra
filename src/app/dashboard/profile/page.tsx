@@ -179,6 +179,7 @@ export default function ProfilePage() {
   const [videoUrl, setVideoUrl] = useState('');
   const [videoUrlSaveTimer, setVideoUrlSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [isSavingVideoUrl, setIsSavingVideoUrl] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleVideoUrlChange = async (value: string) => {
     setVideoUrl(value);
@@ -439,17 +440,32 @@ export default function ProfilePage() {
     };
   }, [cep]);
 
-  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAvatarUrl(reader.result);
+    setIsUploadingAvatar(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (result.success && result.data?.url) {
+        setAvatarUrl(result.data.url);
+        toast({ title: 'Foto enviada', description: 'Clique em "Salvar Informações" para aplicar.' });
+      } else {
+        toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Erro no upload da foto.' });
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao enviar a foto.' });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -471,6 +487,7 @@ export default function ProfilePage() {
       avatarUrl: avatarUrl || null,
       cpf,
       birthDate: birthDate || null,
+      phone: phone || null,
       cep,
       state,
       neighborhood,
@@ -555,49 +572,53 @@ export default function ProfilePage() {
 
     setIsSavingProfile(true);
 
-    const profileResult = await updateUserProfile(currentUser.id, {
-      name,
-      email,
-      avatarUrl: avatarUrl || null,
-      cpf,
-      birthDate: birthDate || null,
-      phone,
-      cep,
-      state,
-      neighborhood,
-      street,
-      number,
-      videoUrl: currentUser.role === 'teacher' ? videoUrl : null,
-    });
-
-    if (!profileResult.success) {
-      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: profileResult.error || 'Não foi possivel atualizar o perfil.' });
-      setIsSavingProfile(false);
-      return;
-    }
-
-    if (currentUser.role === 'teacher') {
-      const educationJson = JSON.stringify(educationEntries);
-      const teacherResult = await updateTeacherProfile(currentUser.id, { 
-        bio, 
-        education: educationJson, 
-        subject,
-        subjects: JSON.stringify(selectedSubjects),
+    try {
+      const profileResult = await updateUserProfile(currentUser.id, {
+        name,
+        email,
+        avatarUrl: avatarUrl || null,
+        cpf,
+        birthDate: birthDate || null,
+        phone,
+        cep,
+        state,
+        neighborhood,
+        street,
+        number,
+        videoUrl: currentUser.role === 'teacher' ? videoUrl : null,
       });
-      if (!teacherResult.success) {
-        toast({ variant: 'destructive', title: 'Erro ao atualizar', description: teacherResult.error });
-        setIsSavingProfile(false);
+
+      if (!profileResult.success) {
+        toast({ variant: 'destructive', title: 'Erro ao atualizar', description: profileResult.error || 'Não foi possivel atualizar o perfil.' });
         return;
       }
-    }
 
-    const updated = profileResult.data as ProfileUser;
-    toast({ title: 'Perfil atualizado', description: 'As informacoes foram salvas com sucesso.' });
-    setCurrentUser(updated);
-    setAvatarUrl(updated.avatarUrl || '');
-    localStorage.setItem('currentUser', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-    setIsSavingProfile(false);
+      if (currentUser.role === 'teacher') {
+        const educationJson = JSON.stringify(educationEntries);
+        const teacherResult = await updateTeacherProfile(currentUser.id, { 
+          bio, 
+          education: educationJson, 
+          subject,
+          subjects: JSON.stringify(selectedSubjects),
+        });
+        if (!teacherResult.success) {
+          toast({ variant: 'destructive', title: 'Erro ao atualizar professor', description: teacherResult.error });
+          return;
+        }
+      }
+
+      const updated = profileResult.data as ProfileUser;
+      toast({ title: 'Perfil atualizado', description: 'As informacoes foram salvas com sucesso.' });
+      setCurrentUser(updated);
+      setAvatarUrl(updated.avatarUrl || '');
+      localStorage.setItem('currentUser', JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+    } catch (error: any) {
+      console.error("Erro critico ao salvar perfil:", error);
+      toast({ variant: 'destructive', title: 'Erro Fatal', description: 'Ocorreu um erro na conexão. Tente novamente ou reduza o tamanho da imagem.' });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleSaveAvailability = async () => {
@@ -780,15 +801,21 @@ export default function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => avatarInputRef.current?.click()}
-                          className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow focus-visible:ring-offset-2"
+                          className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow focus-visible:ring-offset-2 relative"
                           aria-label="Trocar imagem de perfil"
+                          disabled={isUploadingAvatar}
                         >
-                          <Avatar className="h-24 w-24 border-2 border-brand-yellow shadow-[0_4px_16px_rgba(245,176,0,0.5)] cursor-pointer">
+                          <Avatar className={`h-24 w-24 border-2 border-brand-yellow shadow-[0_4px_16px_rgba(245,176,0,0.5)] cursor-pointer ${isUploadingAvatar ? 'opacity-50' : ''}`}>
                             <AvatarImage src={avatarUrl || currentUser?.avatarUrl || ''} alt={currentUser?.name} />
                             <AvatarFallback className="bg-amber-100 text-amber-700 font-black text-3xl">
                               {currentUser?.name?.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
+                          {isUploadingAvatar && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="animate-spin h-6 w-6 border-2 border-amber-600 border-t-transparent rounded-full" />
+                            </div>
+                          )}
                         </button>
     <div
       className="absolute bg-slate-900/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"

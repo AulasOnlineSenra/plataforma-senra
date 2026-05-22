@@ -247,11 +247,11 @@ export default function LoginPage() {
 
     const loggedUser = result.user;
 
-    if (loggedUser.role !== role) {
+    if (loggedUser.role?.toLowerCase() !== role?.toLowerCase()) {
         toast({
             variant: "destructive",
             title: "Perfil Incorreto",
-            description: `Este e-mail pertence a um perfil de ${loggedUser.role === 'teacher' ? 'Professor' : loggedUser.role === 'admin' ? 'Administrador' : 'Aluno'}. Volte e selecione o perfil correto.`,
+            description: `Este e-mail pertence a um perfil de ${loggedUser.role.toLowerCase() === 'teacher' ? 'Professor' : loggedUser.role.toLowerCase() === 'admin' ? 'Administrador' : 'Aluno'}. Volte e selecione o perfil correto.`,
         });
         return;
     }

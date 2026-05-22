@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Tornar o arquivo público (opcional, dependendo das regras do bucket)
-      // Se o bucket não for público, você precisará usar getSignedUrl
-      await firebaseFile.makePublic();
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${firebaseFile.name}`;
+      // Omitir makePublic() pois o Firebase Storage via GCP costuma bloquear isso
+      // Vamos gerar a URL padrão de leitura do Firebase Storage
+      const encodedPath = encodeURIComponent(`uploads/chat/${fileName}`);
+      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
 
       return NextResponse.json({
         success: true,
