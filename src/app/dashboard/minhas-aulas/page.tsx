@@ -197,7 +197,7 @@ export default function MinhasAulasPage() {
       const d = new Date(lesson.date);
       const start = startOfWeek(d, { weekStartsOn: 1 });
       const end = endOfWeek(d, { weekStartsOn: 1 });
-      const label = \`Semana de \${format(start, "dd/MM")} até \${format(end, "dd/MM/yyyy")}\`;
+      const label = `Semana de ${format(start, "dd/MM")} até ${format(end, "dd/MM/yyyy")}`;
       
       let group = groups.find(g => g.weekLabel === label);
       if (!group) {
