@@ -93,6 +93,17 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     };
 
     loadUser();
+
+    const handleStorageChange = () => {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [router]);
 
   useEffect(() => {
