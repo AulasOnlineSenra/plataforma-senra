@@ -313,7 +313,13 @@ export default function ProfilePage() {
   const [openSection, setOpenSection] = useState<string | null>('personal');
 
   const handleToggleSection = (section: string) => {
-    setOpenSection(openSection === section ? null : section);
+    const isOpening = openSection !== section;
+    setOpenSection(isOpening ? section : null);
+    if (isOpening) {
+      setTimeout(() => {
+        document.getElementById(`section-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
   };
 
   useEffect(() => {
@@ -775,9 +781,9 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-2 max-w-2xl mx-auto w-full pb-10">
+      <div className="flex flex-1 flex-col gap-2 max-w-4xl mx-auto w-full pb-10">
       {/* Informações Pessoais */}
-      <Collapsible open={openSection === 'personal'} onOpenChange={(open) => handleToggleSection('personal')}>
+      <Collapsible id="section-personal" open={openSection === 'personal'} onOpenChange={(open) => handleToggleSection('personal')}>
         <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
           <CollapsibleTrigger asChild>
             <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -970,7 +976,7 @@ export default function ProfilePage() {
       </Collapsible>
 
       {/* Segurança */}
-      <Collapsible open={openSection === 'security'} onOpenChange={(open) => handleToggleSection('security')}>
+      <Collapsible id="section-security" open={openSection === 'security'} onOpenChange={(open) => handleToggleSection('security')}>
         <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
           <CollapsibleTrigger asChild>
             <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -1015,7 +1021,7 @@ export default function ProfilePage() {
 
       {/* Formação Acadêmica */}
       {currentUser?.role === 'teacher' && (
-        <Collapsible open={openSection === 'education'} onOpenChange={(open) => handleToggleSection('education')}>
+        <Collapsible id="section-education" open={openSection === 'education'} onOpenChange={(open) => handleToggleSection('education')}>
           <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
             <CollapsibleTrigger asChild>
               <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -1101,7 +1107,7 @@ export default function ProfilePage() {
 
       {/* Sala de Aula Virtual */}
       {currentUser?.role === 'teacher' && (
-        <Collapsible open={openSection === 'classroom'} onOpenChange={(open) => handleToggleSection('classroom')}>
+        <Collapsible id="section-classroom" open={openSection === 'classroom'} onOpenChange={(open) => handleToggleSection('classroom')}>
           <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
             <CollapsibleTrigger asChild>
               <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -1142,7 +1148,7 @@ export default function ProfilePage() {
       {currentUser?.role === 'teacher' && (
         <>
           {/* Disciplinas Lecionadas */}
-          <Collapsible open={openSection === 'subjects'} onOpenChange={(open) => handleToggleSection('subjects')}>
+          <Collapsible id="section-subjects" open={openSection === 'subjects'} onOpenChange={(open) => handleToggleSection('subjects')}>
             <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
               <CollapsibleTrigger asChild>
                 <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -1195,7 +1201,7 @@ export default function ProfilePage() {
           </Collapsible>
 
           {/* Gestão de Disponibilidade */}
-          <Collapsible open={openSection === 'availability'} onOpenChange={(open) => handleToggleSection('availability')}>
+          <Collapsible id="section-availability" open={openSection === 'availability'} onOpenChange={(open) => handleToggleSection('availability')}>
             <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
               <CollapsibleTrigger asChild>
                 <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -1334,7 +1340,7 @@ export default function ProfilePage() {
           </Collapsible>
 
           {/* Dados para Recebimento (Pix) */}
-          <Collapsible open={openSection === 'pix'} onOpenChange={(open) => handleToggleSection('pix')}>
+          <Collapsible id="section-pix" open={openSection === 'pix'} onOpenChange={(open) => handleToggleSection('pix')}>
             <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
               <CollapsibleTrigger asChild>
                 <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">
@@ -1416,7 +1422,7 @@ export default function ProfilePage() {
 
           {/* Integrações (Google Calendar) - Apenas para professores */}
           {currentUser?.role === 'teacher' && (
-            <Collapsible open={openSection === 'integrations'} onOpenChange={(open) => handleToggleSection('integrations')}>
+            <Collapsible id="section-integrations" open={openSection === 'integrations'} onOpenChange={(open) => handleToggleSection('integrations')}>
               <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden transition-colors hover:border-[#f5b000]">
                 <CollapsibleTrigger asChild>
                   <CardHeader className="bg-slate-50 border-b pb-3 pt-4 rounded-t-3xl cursor-pointer select-none hover:bg-slate-100 transition-colors">

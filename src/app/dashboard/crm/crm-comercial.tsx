@@ -659,7 +659,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
 
       {/* Kanban View Trello-Style */}
       {viewMode === 'kanban' && selectedBoard && (
-        <div className="flex-1 overflow-x-auto pb-4 bg-slate-100 -mx-6 px-6 pt-4 rounded-xl shadow-inner">
+        <div id="kanban-container" className="flex-1 overflow-x-auto pb-4 bg-slate-100 -mx-6 px-6 pt-4 rounded-xl shadow-inner">
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 h-full items-start">
               {selectedBoard.columns.map((column: any) => {
@@ -930,7 +930,15 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                    <Button 
                      variant="ghost" 
                      className="w-full justify-start text-slate-600 bg-slate-200/50 hover:bg-slate-200 rounded-xl h-12 font-medium"
-                     onClick={() => setIsAddingColumn(true)}
+                     onClick={() => {
+                       setIsAddingColumn(true);
+                       setTimeout(() => {
+                         const container = document.getElementById('kanban-container');
+                         if (container) {
+                           container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+                         }
+                       }, 50);
+                     }}
                    >
                      <Plus className="h-4 w-4 mr-2" />
                       Adicionar lista

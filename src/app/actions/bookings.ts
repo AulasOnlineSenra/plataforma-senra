@@ -74,14 +74,9 @@ export async function createBookings(
             studentId,
             status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
             OR: [
-              // Aula existente começa antes e termina depois do novo horário (sobreposição total)
               {
-                date: { lte: newEnd },
-                endDate: { gte: newStart }
-              },
-              // Aula existente começa dentro do novo horário
-              {
-                date: { gte: newStart, lt: newEnd }
+                date: { lt: newEnd },
+                endDate: { gt: newStart }
               }
             ]
           }
