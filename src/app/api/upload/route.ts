@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        url: `/uploads/chat/${fileName}`,
+        url: `/api/uploads/chat/${fileName}`,
         name: file.name,
         type: file.type,
         size: file.size,
