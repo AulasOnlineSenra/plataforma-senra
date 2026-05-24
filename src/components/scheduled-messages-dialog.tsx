@@ -203,7 +203,7 @@ export function ScheduledMessagesDialog({
             <CalendarIcon className="h-3 w-3" />
             Histórico de agendamentos
           </p>
-          <ScrollArea className="max-h-[240px]">
+          <ScrollArea className="h-[340px]">
             {messages.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Nenhuma mensagem agendada.

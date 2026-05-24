@@ -349,24 +349,28 @@ export default function MinhasAulasPage() {
 
     return (
       <TableRow key={lesson.id}>
-        <TableCell>
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={studentAvatar || undefined} alt={studentName} />
-              <AvatarFallback>{studentName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <span className="font-medium">{studentName}</span>
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={teacherAvatar} alt={teacherName} />
-              <AvatarFallback>{teacherName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <span className="font-medium">{teacherName}</span>
-          </div>
-        </TableCell>
+        {(role === "admin" || role === "teacher") && (
+          <TableCell>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={studentAvatar || undefined} alt={studentName} />
+                <AvatarFallback>{studentName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span className="font-medium">{studentName}</span>
+            </div>
+          </TableCell>
+        )}
+        {(role === "admin" || role === "student") && (
+          <TableCell>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={teacherAvatar || undefined} alt={teacherName} />
+                <AvatarFallback>{teacherName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span className="font-medium">{teacherName}</span>
+            </div>
+          </TableCell>
+        )}
         <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
         <TableCell>
           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + (lesson.endDate ? ' - ' + format(new Date(lesson.endDate), "HH:mm") : '')}
@@ -563,8 +567,8 @@ export default function MinhasAulasPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Aluno</TableHead>
-                          <TableHead>Professor</TableHead>
+                          {(role === "admin" || role === "teacher") && <TableHead>Aluno</TableHead>}
+                          {(role === "admin" || role === "student") && <TableHead>Professor</TableHead>}
                           <TableHead>Matéria</TableHead>
                           <TableHead>Data/Hora</TableHead>
                           {role === "admin" && <TableHead className="text-right">Ações</TableHead>}

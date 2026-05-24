@@ -92,34 +92,33 @@ export default function MySubjectsPage() {
       (event.status === 'COMPLETED')
     );
     
-    const subjectStats: Record<string, { classCount: number, teacherIds: Set<string>, lessons: any[] }> = {};
+    const subjectStats: Record<string, { classCount: number, teachersMap: Map<string, any>, lessons: any[] }> = {};
     
     completedClasses.forEach((event: any) => {
       const subjectName = event.subject;
       if (!subjectName) return;
       
       if (!subjectStats[subjectName]) {
-        subjectStats[subjectName] = { classCount: 0, teacherIds: new Set(), lessons: [] };
+        subjectStats[subjectName] = { classCount: 0, teachersMap: new Map(), lessons: [] };
       }
       subjectStats[subjectName].classCount++;
-      subjectStats[subjectName].teacherIds.add(event.teacherId);
+      if (event.teacher) {
+        subjectStats[subjectName].teachersMap.set(event.teacher.id, event.teacher);
+      }
       subjectStats[subjectName].lessons.push(event);
     });
 
     return Object.entries(subjectStats).map(([subjectKey, stats]) => {
-      const subject = teachers.find(s => s.id === subjectKey || s.name === subjectKey);
-      const subjectTeachers = teachers.filter(t => stats.teacherIds.has(t.id));
-      // Traduzir ID da disciplina para nome correto
-      const translatedName = subjectMap[subjectKey] || subject?.name || subjectKey;
+      const translatedName = subjectMap[subjectKey] || subjectKey;
       return {
-        id: subject?.id || subjectKey,
+        id: subjectKey,
         name: translatedName,
         classCount: stats.classCount,
-        teachers: subjectTeachers,
+        teachers: Array.from(stats.teachersMap.values()),
         lessons: stats.lessons.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
       };
     }).sort((a, b) => b.classCount - a.classCount);
-  }, [currentUser, dbLessons, teachers, loading]);
+  }, [currentUser, dbLessons, loading]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -140,7 +139,7 @@ export default function MySubjectsPage() {
               {myNotebooks.map((notebook) => (
                 <Link 
                   key={notebook.id} 
-                  href={`/dashboard/my-subjects/${notebook.id}`}
+                  href={`/dashboard/my-subjects/${encodeURIComponent(notebook.id)}`}
                   className="block"
                 >
                   <Card className="flex flex-col hover:shadow-md hover:border-brand-yellow/50 transition-all cursor-pointer">

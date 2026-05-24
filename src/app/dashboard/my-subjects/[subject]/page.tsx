@@ -68,7 +68,7 @@ const parseMaterials = (materialsStr: string | null): Material[] => {
 export default function NotebookPage() {
   const params = useParams();
   const router = useRouter();
-  const rawSubjectId = params.subject as string;
+  const rawSubjectId = decodeURIComponent(params.subject as string);
   const subjectName = subjectMap[rawSubjectId] || rawSubjectId;
 
   const [lessons, setLessons] = useState<LessonData[]>([]);
