@@ -23,7 +23,7 @@ export async function submitRating(
     if (existing) {
       const updated = await prisma.rating.update({
         where: { id: existing.id },
-        data: { score, comment: comment?.trim() || null, lessonId: lessonId || existing.lessonId },
+        data: { score, comment: comment?.trim() || null, lessonId: lessonId || existing.lessonId, createdAt: new Date() },
       });
       return { success: true, data: updated };
     }
@@ -127,24 +127,48 @@ export async function getUnratedTeachersForStudent(studentId: string) {
       where: {
         studentId,
         date: { lt: new Date() },
-        status: { not: "CANCELLED" },
+        status: "COMPLETED",
       },
       include: {
         teacher: { select: { id: true, name: true, avatarUrl: true } },
       },
-      distinct: ["teacherId"],
       orderBy: { date: "desc" },
     });
 
     const ratedTeachers = await prisma.rating.findMany({
       where: { studentId, givenBy: "student" },
-      select: { teacherId: true },
+      orderBy: { createdAt: "desc" },
     });
-    const ratedIds = new Set(ratedTeachers.map((r) => r.teacherId));
 
-    const unrated = completedLessons
-      .filter((l) => !ratedIds.has(l.teacherId))
-      .map((l) => l.teacher);
+    const latestLessonByTeacher = new Map<string, Date>();
+    for (const lesson of completedLessons) {
+      if (!latestLessonByTeacher.has(lesson.teacherId)) {
+        latestLessonByTeacher.set(lesson.teacherId, new Date(lesson.date));
+      }
+    }
+
+    const latestRatingByTeacher = new Map<string, Date>();
+    for (const rating of ratedTeachers) {
+      if (!latestRatingByTeacher.has(rating.teacherId)) {
+        latestRatingByTeacher.set(rating.teacherId, new Date(rating.createdAt));
+      }
+    }
+
+    const unrated: any[] = [];
+    const seenTeachers = new Set<string>();
+
+    for (const lesson of completedLessons) {
+      const teacherId = lesson.teacherId;
+      if (seenTeachers.has(teacherId)) continue;
+      
+      const lastLessonDate = latestLessonByTeacher.get(teacherId)!;
+      const lastRatingDate = latestRatingByTeacher.get(teacherId);
+
+      if (!lastRatingDate || lastLessonDate > lastRatingDate) {
+        unrated.push(lesson.teacher);
+        seenTeachers.add(teacherId);
+      }
+    }
 
     return { success: true, data: unrated };
   } catch (error) {
@@ -159,24 +183,48 @@ export async function getUnratedStudentsForTeacher(teacherId: string) {
       where: {
         teacherId,
         date: { lt: new Date() },
-        status: { not: "CANCELLED" },
+        status: "COMPLETED",
       },
       include: {
         student: { select: { id: true, name: true, avatarUrl: true } },
       },
-      distinct: ["studentId"],
       orderBy: { date: "desc" },
     });
 
     const ratedStudents = await prisma.rating.findMany({
       where: { teacherId, givenBy: "teacher" },
-      select: { studentId: true },
+      orderBy: { createdAt: "desc" },
     });
-    const ratedIds = new Set(ratedStudents.map((r) => r.studentId));
 
-    const unrated = completedLessons
-      .filter((l) => !ratedIds.has(l.studentId))
-      .map((l) => l.student);
+    const latestLessonByStudent = new Map<string, Date>();
+    for (const lesson of completedLessons) {
+      if (!latestLessonByStudent.has(lesson.studentId)) {
+        latestLessonByStudent.set(lesson.studentId, new Date(lesson.date));
+      }
+    }
+
+    const latestRatingByStudent = new Map<string, Date>();
+    for (const rating of ratedStudents) {
+      if (!latestRatingByStudent.has(rating.studentId)) {
+        latestRatingByStudent.set(rating.studentId, new Date(rating.createdAt));
+      }
+    }
+
+    const unrated: any[] = [];
+    const seenStudents = new Set<string>();
+
+    for (const lesson of completedLessons) {
+      const studentId = lesson.studentId;
+      if (seenStudents.has(studentId)) continue;
+      
+      const lastLessonDate = latestLessonByStudent.get(studentId)!;
+      const lastRatingDate = latestRatingByStudent.get(studentId);
+
+      if (!lastRatingDate || lastLessonDate > lastRatingDate) {
+        unrated.push(lesson.student);
+        seenStudents.add(studentId);
+      }
+    }
 
     return { success: true, data: unrated };
   } catch (error) {

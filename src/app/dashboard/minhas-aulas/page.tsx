@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon } from "lucide-react";
 import { getLessonsForUser, updateLesson, cancelLesson, deleteLesson } from "@/app/actions/bookings";
@@ -184,13 +184,30 @@ export default function MinhasAulasPage() {
     );
   }, [sortedLessons]);
 
-  const completedLessons = useMemo(() => {
+  const groupedCompletedLessons = useMemo(() => {
     let filtered = lessons.filter((l) => l.status === "COMPLETED");
     if (completedStudentFilter !== "all") {
       filtered = filtered.filter(l => l.student?.id === completedStudentFilter);
     }
-    // Reverse order: newest first
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const groups: { weekLabel: string; lessons: LessonItem[] }[] = [];
+    
+    filtered.forEach(lesson => {
+      const d = new Date(lesson.date);
+      const start = startOfWeek(d, { weekStartsOn: 1 });
+      const end = endOfWeek(d, { weekStartsOn: 1 });
+      const label = \`Semana de \${format(start, "dd/MM")} até \${format(end, "dd/MM/yyyy")}\`;
+      
+      let group = groups.find(g => g.weekLabel === label);
+      if (!group) {
+        group = { weekLabel: label, lessons: [] };
+        groups.push(group);
+      }
+      group.lessons.push(lesson);
+    });
+    
+    return groups;
   }, [lessons, completedStudentFilter]);
 
   const cancelledLessons = useMemo(() => {
@@ -531,27 +548,34 @@ export default function MinhasAulasPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {!loading && completedLessons.length === 0 && (
+          {!loading && groupedCompletedLessons.length === 0 && (
             renderEmptyMessage("Nenhuma aula realizada.")
           )}
 
-          {!loading && completedLessons.length > 0 && (
+          {!loading && groupedCompletedLessons.length > 0 && (
             <ScrollArea className="h-96">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Aluno</TableHead>
-                      <TableHead>Professor</TableHead>
-                      <TableHead>Matéria</TableHead>
-                      <TableHead>Data/Hora</TableHead>
-                      {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completedLessons.map(renderTableRow)}
-                  </TableBody>
-                </Table>
+                {groupedCompletedLessons.map(group => (
+                  <div key={group.weekLabel} className="mb-6">
+                    <h3 className="font-semibold text-slate-800 bg-slate-100 px-3 py-2 rounded-lg mb-2">
+                      {group.weekLabel}
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Aluno</TableHead>
+                          <TableHead>Professor</TableHead>
+                          <TableHead>Matéria</TableHead>
+                          <TableHead>Data/Hora</TableHead>
+                          {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.lessons.map(renderTableRow)}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           )}
