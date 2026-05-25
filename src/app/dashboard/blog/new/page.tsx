@@ -12,9 +12,9 @@ import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, LayoutTem
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/app/actions/blog';
 import dynamic from 'next/dynamic';
-import 'react-quill/dist/quill.snow.css';
+import 'react-quill-new/dist/quill.snow.css';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 import {
   Sheet,
