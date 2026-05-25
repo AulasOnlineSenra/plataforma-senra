@@ -152,7 +152,7 @@ export function ScheduledMessagesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[710px] max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[710px] max-h-[80vh] flex flex-col rounded-[14px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -203,7 +203,7 @@ export function ScheduledMessagesDialog({
             <CalendarIcon className="h-3 w-3" />
             Histórico de agendamentos
           </p>
-          <ScrollArea className="h-[340px]">
+          <ScrollArea className="h-[310px]">
             {messages.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Nenhuma mensagem agendada.

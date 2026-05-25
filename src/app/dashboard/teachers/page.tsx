@@ -712,11 +712,12 @@ export default function TeachersPage() {
                             return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
                           })()}
                           margin={{ top: 5, right: 20, left: 0, bottom: 50 }}
+                          barCategoryGap="2%"
                         >
-                          <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 500 }} angle={-35} textAnchor="end" height={70} interval={0} />
+                          <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 500, width: 60 }} angle={-35} textAnchor="end" height={70} interval={0} />
                           <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                           <Tooltip cursor={{ fill: 'rgba(245,158,11,0.1)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }} />
-                          <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                          <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} maxBarSize={16} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

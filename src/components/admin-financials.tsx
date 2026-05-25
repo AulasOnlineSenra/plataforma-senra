@@ -42,7 +42,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
 import { getMarketingCosts } from '@/app/actions/marketing';
-import { getApprovedTransactions, getCompletedClassesByPeriod, deleteTransaction } from '@/app/actions/finance';
+import { getApprovedTransactions, getCompletedClassesByPeriod, deleteTransaction, getAccumulatedNetWorth } from '@/app/actions/finance';
 import { getStudents } from '@/app/actions/users';
 
 
@@ -98,6 +98,7 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
     
     // State for the top cards (monthly total)
     const [monthlyTeacherPaymentsCost, setMonthlyTeacherPaymentsCost] = useState(0);
+    const [accumulatedNetWorth, setAccumulatedNetWorth] = useState(0);
 
     const [paymentDay, setPaymentDay] = useState('friday');
     const [paymentFrequency, setPaymentFrequency] = useState('weekly');
@@ -243,6 +244,11 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
             }
             
             setMonthlyTeacherPaymentsCost(totalMonthlyTeacherCost);
+            
+            const netWorthResult = await getAccumulatedNetWorth(paymentRate);
+            if (netWorthResult.success && netWorthResult.data) {
+                setAccumulatedNetWorth(netWorthResult.data.netWorth);
+            }
             
             // --- Payment Period Generation ---
             const periods: { label: string, value: string, start: Date, end: Date }[] = [];
@@ -439,12 +445,15 @@ export default function AdminFinancials({ selectedMonth }: AdminFinancialsProps)
                 </CardContent>
             </Card>
             <Card className="rounded-3xl border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#f5b000] hover:shadow-[0_0_15px_rgba(245,176,0,0.3)]">
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Patrimônio Líquido (Mês)</CardTitle>
-                  <CardDescription className="text-xs">Resultado do mês</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Patrimônio Líquido</CardTitle>
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">R$ {(totalRevenue - (totalMarketingExpenses + monthlyTeacherPaymentsCost)).toFixed(2).replace('.',',')}</div>
+                  <div className="text-2xl font-bold">R$ {accumulatedNetWorth.toFixed(2).replace('.',',')}</div>
+                  <p className="text-xs text-muted-foreground">
+                      Acumulado total
+                  </p>
                 </CardContent>
             </Card>
         </div>

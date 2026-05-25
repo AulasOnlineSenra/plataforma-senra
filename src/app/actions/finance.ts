@@ -606,3 +606,29 @@ export async function deleteTransaction(transactionId: string, removeCredits: bo
     return { success: false, error: 'Falha ao excluir transação.' };
   }
 }
+
+export async function getAccumulatedNetWorth(teacherRate: number = 50) {
+  try {
+    const transactions = await prisma.transaction.findMany({
+      where: { status: 'COMPROVADO' },
+      select: { amountPaid: true },
+    });
+    const totalRevenue = transactions.reduce((acc, t) => acc + Number(t.amountPaid), 0);
+
+    const lessons = await prisma.lesson.count({
+      where: { status: 'COMPLETED', isExperimental: false },
+    });
+    const totalLessonsCost = lessons * teacherRate;
+
+    const marketingCosts = await prisma.marketingCost.findMany();
+    const totalMarketing = marketingCosts.reduce((acc, m) => acc + Number(m.ads) + Number(m.team) + Number(m.organicCommissions) + Number(m.paidCommissions), 0);
+
+    const totalExpenses = totalLessonsCost + totalMarketing;
+    const netWorth = totalRevenue - totalExpenses;
+
+    return { success: true, data: { totalRevenue, totalExpenses, netWorth } };
+  } catch (error) {
+    console.error('Erro ao buscar patrimonio acumulado:', error);
+    return { success: false, error: 'Falha ao buscar patrimonio.' };
+  }
+}

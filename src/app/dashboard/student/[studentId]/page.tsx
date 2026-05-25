@@ -35,6 +35,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // MOTOR DO BANCO PARA BUSCAR O ALUNO/PROFESSOR
 import { getUserById } from '@/app/actions/users';
@@ -85,6 +86,7 @@ function StudentDetailPageComponent() {
     const [uploadingLessonId, setUploadingLessonId] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploadingFile, setUploadingFile] = useState(false);
+    const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
     const subjectMap: Record<string, string> = {
         'default-subj-1': 'Matemática',
@@ -303,10 +305,15 @@ function StudentDetailPageComponent() {
 
     // Aulas concluídas do aluno
     const completedLessons = useMemo(() => {
-        return filteredLessons
+        let list = filteredLessons
             .filter((l: any) => l.status === 'COMPLETED')
             .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [filteredLessons]);
+            
+        if (selectedSubject && selectedSubject !== 'all') {
+            list = list.filter((l: any) => l.subject === selectedSubject || subjectMap[l.subject] === subjectMap[selectedSubject] || (subjectMap[l.subject] === selectedSubject));
+        }
+        return list;
+    }, [filteredLessons, selectedSubject]);
 
     const formatDateTimeLesson = (lesson: any) => {
         const startDate = new Date(lesson.date);
@@ -504,10 +511,24 @@ function StudentDetailPageComponent() {
                 {/* Container de Aulas - Apenas para professor/admin */}
                 {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
                 <div className="ml-28 mr-10">
-                    <h2 className="font-headline text-xl md:text-2xl font-bold mb-4 flex items-center gap-2 ml-0">
-                        <GraduationCap className="h-6 w-6" />
-                        Aulas
-                    </h2>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+                        <h2 className="font-headline text-xl md:text-2xl font-bold flex items-center gap-2 ml-0">
+                            <GraduationCap className="h-6 w-6" />
+                            Aulas
+                        </h2>
+                        
+                        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                            <SelectTrigger className="w-[200px] rounded-xl border-slate-200 h-10 bg-white">
+                                <SelectValue placeholder="Todas as Disciplinas" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                <SelectItem value="all">Todas as Disciplinas</SelectItem>
+                                {Object.entries(subjectMap).map(([id, name]) => (
+                                    <SelectItem key={id} value={name}>{name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     {loadingLessons ? (
                         <Card>
@@ -657,19 +678,33 @@ function StudentDetailPageComponent() {
                                                     )}
                                                 </TableCell>
                                                 {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
-                                                    <TableCell className="pt-10 text-right">
-                                                        <Button 
-                                                            variant="outline" 
-                                                            size="icon" 
-                                                            className="rounded-xl border-slate-200 text-slate-500 hover:bg-slate-50 h-8 w-8"
-                                                            onClick={() => {
-                                                                setSelectedClassForMaterial(lesson);
-                                                                setIsFileUploadDialogOpen(true);
-                                                            }}
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                            <span className="sr-only">Adicionar Material</span>
-                                                        </Button>
+                                                    <TableCell className="pt-10 text-right align-top">
+                                                        <div className="flex flex-col items-end gap-3 h-full">
+                                                            {currentUser?.role === 'admin' && lesson.teacher && (
+                                                                <div className="flex items-center gap-2 text-right justify-end">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Professor</span>
+                                                                        <span className="text-sm font-bold text-slate-800">{lesson.teacher.name}</span>
+                                                                    </div>
+                                                                    <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                                                        <AvatarImage src={lesson.teacher.avatarUrl} />
+                                                                        <AvatarFallback className="bg-brand-yellow/20 text-brand-yellow font-bold">{lesson.teacher.name.charAt(0)}</AvatarFallback>
+                                                                    </Avatar>
+                                                                </div>
+                                                            )}
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="icon" 
+                                                                className="rounded-xl border-slate-200 text-slate-500 hover:bg-slate-50 h-8 w-8 mt-auto"
+                                                                onClick={() => {
+                                                                    setSelectedClassForMaterial(lesson);
+                                                                    setIsFileUploadDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                                <span className="sr-only">Adicionar Material</span>
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 )}
                                             </TableRow>
