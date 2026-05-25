@@ -286,7 +286,6 @@ export default function EditBlogPostPage() {
                   />
                 </div>
               )}
-            </div>
           </CardContent>
         </Card>
 
