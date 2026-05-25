@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -47,7 +47,7 @@ export default function NewBlogPostPage() {
     published: false,
   });
 
-  const modules = {
+  const modules = useMemo(() => ({
     toolbar: [
       [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
       ['bold', 'italic', 'underline', 'strike'],
@@ -56,7 +56,7 @@ export default function NewBlogPostPage() {
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       ['clean']
     ],
-  };
+  }), []);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

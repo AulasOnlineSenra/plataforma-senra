@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,7 +71,7 @@ export default function EditBlogPostPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const modules = {
+  const modules = useMemo(() => ({
     toolbar: [
       [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
       ['bold', 'italic', 'underline', 'strike'],
@@ -80,7 +80,7 @@ export default function EditBlogPostPage() {
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       ['clean']
     ],
-  };
+  }), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
