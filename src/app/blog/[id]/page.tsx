@@ -170,13 +170,10 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         </div>
       )}
 
-      <div className="space-y-6">
-        {post.content.split('\n\n').map((paragraph, index) => (
-          <p key={index} className="text-slate-800 dark:text-muted-foreground leading-relaxed">
-            {paragraph}
-          </p>
-        ))}
-      </div>
+      <div 
+        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert ql-editor px-0"
+        dangerouslySetInnerHTML={{ __html: post.content }}
+      />
 
       {tags.length > 0 && (
         <div className="mt-8 flex flex-wrap gap-2">

@@ -11,6 +11,11 @@ import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, LayoutTemplate } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/app/actions/blog';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+
 import {
   Sheet,
   SheetContent,
@@ -42,22 +47,28 @@ export default function NewBlogPostPage() {
     published: false,
   });
 
-  const [fontSize, setFontSize] = useState<'text-sm' | 'text-base' | 'text-lg' | 'text-xl' | 'text-2xl'>('text-lg');
+  const modules = {
+    toolbar: [
+      [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      ['link', 'image', 'video'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean']
+    ],
+  };
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const adjustTextareaHeight = () => {
-    if (contentRef.current) {
-      contentRef.current.style.height = 'auto';
-      contentRef.current.style.height = `${contentRef.current.scrollHeight}px`;
-    }
+    // Only adjust if we fallback to textarea (not using quill)
   };
 
   useEffect(() => {
     adjustTextareaHeight();
-  }, [formData.content, fontSize]);
+  }, [formData.content]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,22 +117,6 @@ export default function NewBlogPostPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-600 hidden md:flex">
-                <Type className="h-4 w-4 mr-2" />
-                Tamanho da Fonte
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-2xl shadow-xl border-slate-100">
-              <DropdownMenuItem onClick={() => setFontSize('text-sm')} className="text-sm cursor-pointer rounded-xl">Pequeno</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFontSize('text-base')} className="text-base cursor-pointer rounded-xl">Normal</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFontSize('text-lg')} className="text-lg cursor-pointer rounded-xl">Grande</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFontSize('text-xl')} className="text-xl cursor-pointer rounded-xl">Muito Grande</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFontSize('text-2xl')} className="text-2xl cursor-pointer rounded-xl">Gigante</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-600">
@@ -232,13 +227,40 @@ export default function NewBlogPostPage() {
 
         <div className="w-full h-px bg-slate-100 my-8"></div>
 
-        <Textarea
-          ref={contentRef}
-          placeholder="Comece a escrever seu conteúdo épico aqui..."
-          value={formData.content}
-          onChange={(e) => handleChange('content', e.target.value)}
-          className={`w-full ${fontSize} text-slate-700 leading-relaxed placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 min-h-[500px] resize-none overflow-hidden font-medium`}
-        />
+        <div className="mb-4 text-slate-800">
+          <style dangerouslySetInnerHTML={{__html: `
+            .ql-toolbar.ql-snow {
+              border: none;
+              border-bottom: 1px solid #f1f5f9;
+              padding: 12px 0;
+              margin-bottom: 16px;
+              background: #fff;
+              position: sticky;
+              top: 70px;
+              z-index: 10;
+            }
+            .ql-container.ql-snow {
+              border: none;
+              font-size: 1.125rem;
+              font-family: inherit;
+              min-height: 500px;
+            }
+            .ql-editor {
+              padding: 0;
+              line-height: 1.8;
+            }
+            .ql-editor p {
+              margin-bottom: 1.2rem;
+            }
+          `}} />
+          <ReactQuill 
+            theme="snow"
+            value={formData.content}
+            onChange={(val) => handleChange('content', val)}
+            modules={modules}
+            placeholder="Comece a escrever seu conteúdo épico aqui..."
+          />
+        </div>
       </main>
     </div>
   );

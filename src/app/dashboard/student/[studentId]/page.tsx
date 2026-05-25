@@ -516,18 +516,19 @@ function StudentDetailPageComponent() {
                             <GraduationCap className="h-6 w-6" />
                             Aulas
                         </h2>
-                        
-                        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                            <SelectTrigger className="w-[200px] rounded-xl border-slate-200 h-10 bg-white">
-                                <SelectValue placeholder="Todas as Disciplinas" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                                <SelectItem value="all">Todas as Disciplinas</SelectItem>
-                                {Object.entries(subjectMap).map(([id, name]) => (
-                                    <SelectItem key={id} value={name}>{name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {currentUser?.role === 'admin' && (
+                            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                                <SelectTrigger className="w-[200px] rounded-xl border-slate-200 h-10 bg-white">
+                                    <SelectValue placeholder="Todas as Disciplinas" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    <SelectItem value="all">Todas as Disciplinas</SelectItem>
+                                    {Object.entries(subjectMap).map(([id, name]) => (
+                                        <SelectItem key={id} value={name}>{name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
 
                     {loadingLessons ? (
@@ -684,7 +685,7 @@ function StudentDetailPageComponent() {
                                                                 <div className="flex items-center gap-2 text-right justify-end">
                                                                     <div className="flex flex-col">
                                                                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Professor</span>
-                                                                        <span className="text-sm font-bold text-slate-800">{lesson.teacher.name}</span>
+                                                                        <span className="text-sm font-bold text-slate-800 w-[150px] leading-tight break-words">{lesson.teacher.name}</span>
                                                                     </div>
                                                                     <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
                                                                         <AvatarImage src={lesson.teacher.avatarUrl} />

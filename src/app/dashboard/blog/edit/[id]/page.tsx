@@ -12,6 +12,10 @@ import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPostById, updatePost } from '@/app/actions/blog';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function EditBlogPostPage() {
   const router = useRouter();
@@ -65,6 +69,17 @@ export default function EditBlogPostPage() {
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const modules = {
+    toolbar: [
+      [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      ['link', 'image', 'video'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean']
+    ],
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,14 +180,15 @@ export default function EditBlogPostPage() {
 
             <div className="space-y-2">
               <Label htmlFor="content">Conteúdo *</Label>
-              <Textarea
-                id="content"
-                placeholder="Conteúdo completo do artigo (suporta Markdown)"
-                value={formData.content}
-                onChange={(e) => handleChange('content', e.target.value)}
-                rows={12}
-                required
-              />
+              <div className="bg-white text-slate-800 rounded-md">
+                <ReactQuill 
+                  theme="snow"
+                  value={formData.content}
+                  onChange={(val) => handleChange('content', val)}
+                  modules={modules}
+                  placeholder="Escreva seu artigo aqui..."
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
