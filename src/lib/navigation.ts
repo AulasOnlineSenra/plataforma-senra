@@ -32,6 +32,7 @@ export const navItems: NavItem[] = [
   { href: '/dashboard/packages', icon: WalletCards, label: 'Pacotes', roles: ['student'] },
   { href: '/dashboard/financeiro', icon: DollarSign, label: 'Financeiro', roles: ['student', 'teacher', 'admin'] },
   { href: '/dashboard/indicacoes', icon: Gift, label: 'Indicações', roles: ['student', 'teacher', 'admin'] },
+  { href: '/dashboard/suggestions', icon: MessageSquare, label: 'Sugestões', roles: ['student', 'teacher', 'admin'] },
 ];
 
 export const adminNavItems: NavItem[] = [
@@ -40,4 +41,5 @@ export const adminNavItems: NavItem[] = [
   { href: '/dashboard/marketing', icon: TrendingUp, label: 'Marketing', roles: ['admin'] },
   { href: '/dashboard/crm', icon: HeartHandshake, label: 'CRM', roles: ['admin'] },
   { href: '/dashboard/admin/ia', icon: Sparkles, label: 'IA', roles: ['admin'] },
+  { href: '/dashboard/admin/feedback-analysis', icon: FileText, label: 'Análise de Feedback', roles: ['admin'] },
 ];

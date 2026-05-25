@@ -8,13 +8,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, LayoutTemplate } from 'lucide-react';
+import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/app/actions/blog';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+const ReactQuill = dynamic(() => {
+  return import('react-quill-new').then((mod) => {
+    const Quill = mod.default.Quill;
+    const Font = Quill.import('formats/font');
+    Font.whitelist = ['arial', 'courier', 'garamond', 'tahoma', 'verdana', 'times-new-roman'];
+    Quill.register(Font, true);
+    return mod;
+  });
+}, { ssr: false });
 
 import {
   Sheet,
@@ -45,17 +53,13 @@ export default function NewBlogPostPage() {
     image: '',
     tags: '',
     published: false,
+    createdAt: '',
   });
 
   const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      ['link', 'image', 'video'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['clean']
-    ],
+    toolbar: {
+      container: '#custom-toolbar',
+    },
   }), []);
 
   const handleChange = (field: string, value: string | boolean) => {
@@ -180,9 +184,9 @@ export default function NewBlogPostPage() {
 
                 <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4">
                   <div className="space-y-0.5">
-                    <Label htmlFor="published" className="text-base font-bold text-slate-800">Publicar agora</Label>
+                    <Label htmlFor="published" className="text-base font-bold text-slate-800">Publicar Imediatamente</Label>
                     <p className="text-sm text-slate-500">
-                      O artigo ficará visível publicamente.
+                      O artigo ficará visível publicamente de imediato.
                     </p>
                   </div>
                   <Switch
@@ -191,6 +195,22 @@ export default function NewBlogPostPage() {
                     onCheckedChange={(checked) => handleChange('published', checked)}
                   />
                 </div>
+
+                {!formData.published && (
+                  <div className="space-y-2 border border-slate-200 bg-slate-50 p-4 rounded-2xl">
+                    <Label htmlFor="createdAt" className="text-slate-700 font-bold flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" /> Data e Hora de Publicação
+                    </Label>
+                    <p className="text-xs text-slate-500 mb-2">Defina para quando o artigo deve ser agendado.</p>
+                    <Input
+                      id="createdAt"
+                      type="datetime-local"
+                      value={formData.createdAt}
+                      onChange={(e) => handleChange('createdAt', e.target.value)}
+                      className="h-12 rounded-xl border-slate-300 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
+                    />
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>
@@ -211,55 +231,87 @@ export default function NewBlogPostPage() {
       </header>
 
       {/* Editor Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-8 md:p-16 lg:px-24">
-        {formData.image && (
-          <div className="mb-8 rounded-3xl overflow-hidden shadow-sm border border-slate-100 h-[300px] w-full">
-            <img src={formData.image} alt="Capa" className="w-full h-full object-cover" />
-          </div>
-        )}
+      <main className="flex-1 w-full bg-[#f8fafc] flex flex-col relative">
+        {/* Custom Toolbar */}
+        <div id="custom-toolbar" className="sticky top-[72px] z-20 w-full bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center gap-2 shadow-sm justify-center">
+          <select className="ql-font border-slate-200 rounded-md" defaultValue="">
+            <option value="">Padrão</option>
+            <option value="arial">Arial</option>
+            <option value="courier">Courier</option>
+            <option value="garamond">Garamond</option>
+            <option value="tahoma">Tahoma</option>
+            <option value="times-new-roman">Times New Roman</option>
+            <option value="verdana">Verdana</option>
+          </select>
+          <select className="ql-size border-slate-200 rounded-md" defaultValue="">
+            <option value="small">Pequeno</option>
+            <option value="">Normal</option>
+            <option value="large">Grande</option>
+            <option value="huge">Gigante</option>
+          </select>
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <button className="ql-bold text-slate-700 hover:text-slate-900" />
+          <button className="ql-italic text-slate-700 hover:text-slate-900" />
+          <button className="ql-underline text-slate-700 hover:text-slate-900" />
+          <button className="ql-strike text-slate-700 hover:text-slate-900" />
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <select className="ql-color border-slate-200 rounded-md" />
+          <select className="ql-background border-slate-200 rounded-md" />
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <button className="ql-list text-slate-700 hover:text-slate-900" value="ordered" />
+          <button className="ql-list text-slate-700 hover:text-slate-900" value="bullet" />
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <button className="ql-link text-slate-700 hover:text-slate-900" />
+          <button className="ql-image text-slate-700 hover:text-slate-900" />
+          <button className="ql-video text-slate-700 hover:text-slate-900" />
+          <button className="ql-clean text-slate-700 hover:text-slate-900" />
+        </div>
 
-        <Input
-          placeholder="Título do Artigo"
-          value={formData.title}
-          onChange={(e) => handleChange('title', e.target.value)}
-          className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight"
-        />
+        <div className="max-w-4xl w-full mx-auto p-8 md:p-12 lg:px-24 bg-white min-h-[800px] shadow-sm my-8 border border-slate-100 rounded-xl">
+          {formData.image && (
+            <div className="mb-8 rounded-3xl overflow-hidden shadow-sm border border-slate-100 h-[300px] w-full">
+              <img src={formData.image} alt="Capa" className="w-full h-full object-cover" />
+            </div>
+          )}
 
-        <div className="w-full h-px bg-slate-100 my-8"></div>
-
-        <div className="mb-4 text-slate-800">
-          <style dangerouslySetInnerHTML={{__html: `
-            .ql-toolbar.ql-snow {
-              border: none;
-              border-bottom: 1px solid #f1f5f9;
-              padding: 12px 0;
-              margin-bottom: 16px;
-              background: #fff;
-              position: sticky;
-              top: 70px;
-              z-index: 10;
-            }
-            .ql-container.ql-snow {
-              border: none;
-              font-size: 1.125rem;
-              font-family: inherit;
-              min-height: 500px;
-            }
-            .ql-editor {
-              padding: 0;
-              line-height: 1.8;
-            }
-            .ql-editor p {
-              margin-bottom: 1.2rem;
-            }
-          `}} />
-          <ReactQuill 
-            theme="snow"
-            value={formData.content}
-            onChange={(val) => handleChange('content', val)}
-            modules={modules}
-            placeholder="Comece a escrever seu conteúdo épico aqui..."
+          <Input
+            placeholder="Título do Artigo"
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
+            className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight"
           />
+
+          <div className="w-full h-px bg-slate-100 my-8"></div>
+
+          <div className="text-slate-800">
+            <style dangerouslySetInnerHTML={{__html: `
+              .ql-toolbar.ql-snow { display: none; }
+              .ql-container.ql-snow {
+                border: none;
+                font-size: 1.125rem;
+                font-family: inherit;
+                min-height: 500px;
+              }
+              .ql-editor {
+                padding: 0;
+                line-height: 1.8;
+              }
+              .ql-editor p { margin-bottom: 1.2rem; }
+              .ql-font-arial { font-family: Arial, sans-serif; }
+              .ql-font-courier { font-family: "Courier New", Courier, monospace; }
+              .ql-font-garamond { font-family: Garamond, serif; }
+              .ql-font-tahoma { font-family: Tahoma, sans-serif; }
+              .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
+              .ql-font-verdana { font-family: Verdana, sans-serif; }
+            `}} />
+            <ReactQuill 
+              theme="snow"
+              value={formData.content}
+              onChange={(val) => handleChange('content', val)}
+              modules={modules}
+              placeholder="Comece a escrever seu conteúdo épico aqui..."
+            />
+          </div>
         </div>
       </main>
     </div>

@@ -18,7 +18,10 @@ export async function getBlogPosts() {
 export async function getPublishedPosts() {
   try {
     const posts = await prisma.blogPost.findMany({
-      where: { published: true },
+      where: { 
+        published: true,
+        createdAt: { lte: new Date() }
+      },
       orderBy: { createdAt: 'desc' },
     });
     return { success: true, data: posts };
@@ -51,6 +54,7 @@ export async function createPost(data: {
   image?: string;
   tags?: string;
   published?: boolean;
+  createdAt?: string;
 }) {
   try {
     const post = await prisma.blogPost.create({
@@ -63,6 +67,7 @@ export async function createPost(data: {
         image: data.image || null,
         tags: data.tags || '[]',
         published: data.published ?? false,
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
         updatedAt: new Date(),
       },
     });
@@ -85,6 +90,7 @@ export async function updatePost(
     image?: string;
     tags?: string;
     published?: boolean;
+    createdAt?: string;
   }
 ) {
   try {
@@ -98,6 +104,7 @@ export async function updatePost(
         image: data.image || null,
         tags: data.tags || '[]',
         published: data.published ?? false,
+        ...(data.createdAt && { createdAt: new Date(data.createdAt) }),
       },
     });
     revalidatePath('/dashboard/blog');
@@ -179,7 +186,8 @@ export async function getOtherPosts(currentPostId: string, limit: number = 30) {
     const posts = await prisma.blogPost.findMany({
       where: { 
         published: true,
-        id: { not: currentPostId }
+        id: { not: currentPostId },
+        createdAt: { lte: new Date() }
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
