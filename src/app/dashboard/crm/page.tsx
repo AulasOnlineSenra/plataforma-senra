@@ -84,9 +84,9 @@ export default function CrmPage() {
         <p className="text-sm text-slate-500">Visão geral dos usuários cadastrados na plataforma.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-0 border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
         {/* Alunos */}
-        <Card className="rounded-3xl border-slate-200 shadow-sm">
+        <Card className="rounded-none border-x-0 border-t-0 border-b border-slate-200 shadow-none">
           <CardHeader className="border-b border-slate-200 pb-3">
             <CardTitle className="text-slate-900 flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-blue-500" />
@@ -106,7 +106,7 @@ export default function CrmPage() {
         </Card>
 
         {/* Professores */}
-        <Card className="rounded-3xl border-slate-200 shadow-sm">
+        <Card className="rounded-none border-0 shadow-none">
           <CardHeader className="border-b border-slate-200 pb-3">
             <CardTitle className="text-slate-900 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-emerald-500" />

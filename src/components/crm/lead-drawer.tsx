@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { format, isPast, isToday, addDays } from 'date-fns';
+import { useState, useEffect, useRef } from 'react';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Dialog, 
@@ -24,7 +24,6 @@ import {
   Mail, 
   Phone, 
   Tag, 
-  Thermometer, 
   Loader2, 
   X, 
   Paperclip, 
@@ -32,13 +31,14 @@ import {
   Plus, 
   CheckSquare, 
   MessageSquare,
-  MoreHorizontal,
   Trash2,
   ChevronDown,
   Clock,
   User,
   ExternalLink,
-  FileText
+  FileText,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -84,8 +84,9 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
   const [loadingComments, setLoadingComments] = useState(false);
   const [isAddingChecklist, setIsAddingChecklist] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [isAddingLink, setIsAddingLink] = useState(false);
-  const [newLink, setNewLink] = useState('');
+  const [showDateInput, setShowDateInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (lead) {
@@ -101,6 +102,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
       });
       setAttachments(lead.attachments ? JSON.parse(lead.attachments) : []);
       setChecklist(lead.checklist ? JSON.parse(lead.checklist) : []);
+      setShowDateInput(!!lead.dueDate);
       loadComments();
     }
   }, [lead]);
@@ -201,20 +203,45 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
     handleSave({ checklist: JSON.stringify(updated) });
   };
 
-  const handleAddLink = () => {
-    if (!newLink.trim()) return;
-    const newItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      type: 'link',
-      url: newLink.trim(),
-      name: newLink.trim().split('/').pop() || 'Link',
-      createdAt: new Date().toISOString()
-    };
-    const updated = [...attachments, newItem];
-    setAttachments(updated);
-    setNewLink('');
-    setIsAddingLink(false);
-    handleSave({ attachments: JSON.stringify(updated) });
+  // === FILE UPLOAD: Converts file to base64 and stores inline ===
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        const newItem = {
+          id: Math.random().toString(36).substr(2, 9),
+          type: file.type.startsWith('image/') ? 'image' : 'file',
+          url: dataUrl,
+          name: file.name,
+          size: file.size,
+          createdAt: new Date().toISOString()
+        };
+        setAttachments(prev => {
+          const updated = [...prev, newItem];
+          handleSave({ attachments: JSON.stringify(updated) });
+          return updated;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // === PASTE IMAGE: Capture ctrl+v paste anywhere in the dialog ===
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          handleFileUpload(dt.files);
+        }
+      }
+    }
   };
 
   const completedCount = checklist.filter(item => item.completed).length;
@@ -225,6 +252,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
       <DialogContent 
         className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col rounded-2xl shadow-2xl border-slate-200"
         onClick={(e) => e.stopPropagation()}
+        onPaste={handlePaste}
       >
         <div className="p-6 overflow-y-auto flex-1">
           <div className="flex flex-col lg:flex-row gap-8">
@@ -232,10 +260,10 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
             {/* Coluna Esquerda: Detalhes e Ações */}
             <div className="flex-1 space-y-8">
               
-              {/* Cabeçalho do Card */}
+              {/* Cabeçalho do Card - nome editável */}
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <Input
                       value={formData.name}
                       onChange={(e) => handleChange('name', e.target.value)}
@@ -276,13 +304,18 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                     </DropdownMenuContent>
                   </DropdownMenu>
 
+                  {/* DATA: Toggle que mostra/esconde o input de data */}
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="bg-white border-slate-200 hover:bg-slate-50 gap-2 h-9"
-                    onClick={() => document.getElementById('date-input')?.focus()}
+                    className={cn("border-slate-200 hover:bg-slate-50 gap-2 h-9", showDateInput ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white")}
+                    onClick={() => {
+                      setShowDateInput(true);
+                      setTimeout(() => dateInputRef.current?.showPicker?.(), 100);
+                    }}
                   >
-                    <Calendar className="h-4 w-4 text-slate-500" /> Datas
+                    <Calendar className="h-4 w-4" /> 
+                    {formData.dueDate ? format(new Date(formData.dueDate + 'T12:00:00'), 'dd/MM/yyyy') : 'Datas'}
                   </Button>
 
                   <Button 
@@ -294,16 +327,59 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                     <CheckSquare className="h-4 w-4 text-slate-500" /> Checklist
                   </Button>
 
+                  {/* ANEXO: Abre seletor de arquivo */}
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="bg-white border-slate-200 hover:bg-slate-50 gap-2 h-9"
-                    onClick={() => setIsAddingLink(true)}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    <Plus className="h-4 w-4 text-slate-500" /> Anexo
+                    <Paperclip className="h-4 w-4 text-slate-500" /> Anexo
                   </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e.target.files)}
+                  />
                 </div>
               </div>
+
+              {/* Input de Data — visível quando ativado */}
+              {showDateInput && (
+                <div className="space-y-2 bg-blue-50/60 p-3 rounded-xl border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" /> Data de Entrega / Alarme
+                    </label>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-slate-400"
+                      onClick={() => {
+                        setShowDateInput(false);
+                        handleChange('dueDate', '');
+                        handleSave({ dueDate: undefined });
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <input
+                    ref={dateInputRef}
+                    id="date-input"
+                    type="datetime-local"
+                    value={formData.dueDate}
+                    onChange={(e) => {
+                      handleChange('dueDate', e.target.value);
+                      handleSave({ dueDate: e.target.value });
+                    }}
+                    className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+              )}
 
               {/* Informações de Contato */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
@@ -407,7 +483,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
               )}
 
               {/* Anexos */}
-              {(attachments.length > 0 || isAddingLink) && (
+              {attachments.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-slate-800 font-semibold">
@@ -418,8 +494,14 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {attachments.map((file) => (
                       <div key={file.id} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:shadow-md transition-all group">
-                        <div className="bg-slate-100 p-2 rounded-lg">
-                          {file.type === 'link' ? <LinkIcon className="h-5 w-5 text-slate-500" /> : <FileText className="h-5 w-5 text-slate-500" />}
+                        <div className="bg-slate-100 p-2 rounded-lg shrink-0">
+                          {file.type === 'image' ? (
+                            <img src={file.url} alt={file.name} className="h-10 w-10 object-cover rounded" />
+                          ) : file.type === 'link' ? (
+                            <LinkIcon className="h-5 w-5 text-slate-500" />
+                          ) : (
+                            <FileText className="h-5 w-5 text-slate-500" />
+                          )}
                         </div>
                         <div className="flex-1 overflow-hidden">
                           <p className="text-sm font-medium text-slate-800 truncate">{file.name}</p>
@@ -443,38 +525,21 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                     ))}
                   </div>
 
-                  {isAddingLink ? (
-                    <div className="flex flex-col gap-2 pt-2">
-                      <Input
-                        autoFocus
-                        value={newLink}
-                        onChange={(e) => setNewLink(e.target.value)}
-                        placeholder="Cole o link aqui..."
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleAddLink}>Salvar Link</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setIsAddingLink(false)}>Cancelar</Button>
-                      </div>
-                    </div>
-                  ) : null}
+                  {/* Drop Zone */}
+                  <div
+                    className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center text-slate-400 text-sm cursor-pointer hover:border-slate-400 hover:bg-slate-50 transition-all"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleFileUpload(e.dataTransfer.files);
+                    }}
+                  >
+                    <Upload className="h-5 w-5 mx-auto mb-1 text-slate-300" />
+                    Clique ou arraste arquivos · Cole imagem com Ctrl+V
+                  </div>
                 </div>
               )}
-
-              {/* Data de Entrega (Oculta mas acessível via botão) */}
-              <div className={cn("space-y-2", !formData.dueDate && "hidden")}>
-                <label className="text-sm font-medium text-slate-700">Data de Entrega</label>
-                <Input
-                  id="date-input"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => {
-                    handleChange('dueDate', e.target.value);
-                    handleSave({ dueDate: e.target.value });
-                  }}
-                  className="w-full sm:max-w-[200px]"
-                />
-              </div>
 
             </div>
 
@@ -531,11 +596,6 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                           </div>
                           <div className="bg-slate-50 p-3 rounded-2xl rounded-tl-none border border-slate-100">
                             <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{comment.content}</p>
-                          </div>
-                          <div className="flex items-center gap-3 text-[11px] text-slate-400 px-1">
-                            <button className="hover:text-slate-900 hover:underline">Editar</button>
-                            <span>•</span>
-                            <button className="hover:text-red-500 hover:underline">Excluir</button>
                           </div>
                         </div>
                       </div>

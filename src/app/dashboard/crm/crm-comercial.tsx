@@ -679,7 +679,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                   {/* Column Header */}
                   <div className="flex items-center justify-between p-3 group/header">
                     <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 text-slate-400 opacity-0 group-hover/header:opacity-100 cursor-grab active:cursor-grabbing transition-opacity" />
                       <div className={`w-3 h-3 rounded-full ${column.color || 'bg-slate-400'}`} />
                       {editingColumnId === column.id ? (
                         <Input
@@ -769,29 +768,12 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                   <CardContent className="p-3 pt-4">
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-start justify-between gap-2">
-                                        {editingLeadId === lead.id ? (
-                                          <div className="flex-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                            <Input
-                                              ref={editInputRef}
-                                              value={editingLeadName}
-                                              onChange={(e) => setEditingLeadName(e.target.value)}
-                                              onKeyDown={(e) => handleEditKeyDown(e, lead.id)}
-                                              onBlur={() => handleUpdateLeadName(lead.id)}
-                                              className="h-7 py-0 text-sm focus-visible:ring-1"
-                                            />
-                                          </div>
-                                        ) : (
-                                          <span 
-                                            className="font-medium text-[13px] text-slate-800 leading-snug flex-1 hover:text-primary transition-colors"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditingLeadId(lead.id);
-                                              setEditingLeadName(lead.name);
-                                            }}
-                                          >
-                                            {lead.name}
-                                          </span>
-                                        )}
+                                        {/* Lead name — click opens popup, not inline edit */}
+                                        <span 
+                                          className="font-medium text-[13px] text-slate-800 leading-snug flex-1 hover:text-primary transition-colors cursor-pointer"
+                                        >
+                                          {lead.name}
+                                        </span>
                                         
                                          <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                                            <DropdownMenu>
