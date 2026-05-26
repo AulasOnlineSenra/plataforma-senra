@@ -98,7 +98,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
         tags: lead.tags ? JSON.parse(lead.tags).join(', ') : '',
         description: lead.description || '',
         temperature: lead.temperature || 'frio',
-        dueDate: lead.dueDate ? format(new Date(lead.dueDate), 'yyyy-MM-dd') : '',
+        dueDate: lead.dueDate ? format(new Date(lead.dueDate), "yyyy-MM-dd'T'HH:mm") : '',
       });
       setAttachments(lead.attachments ? JSON.parse(lead.attachments) : []);
       setChecklist(lead.checklist ? JSON.parse(lead.checklist) : []);
@@ -315,7 +315,11 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                     }}
                   >
                     <Calendar className="h-4 w-4" /> 
-                    {formData.dueDate ? format(new Date(formData.dueDate + 'T12:00:00'), 'dd/MM/yyyy') : 'Datas'}
+                    {formData.dueDate 
+                      ? (isNaN(new Date(formData.dueDate).getTime()) 
+                          ? 'Data Inválida' 
+                          : format(new Date(formData.dueDate), 'dd/MM/yyyy HH:mm')) 
+                      : 'Datas'}
                   </Button>
 
                   <Button 

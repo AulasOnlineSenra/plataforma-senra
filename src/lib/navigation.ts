@@ -17,6 +17,7 @@ import {
   HeartHandshake,
   Newspaper,
   Sparkles,
+  BarChart,
 } from 'lucide-react';
 
 export const navItems: NavItem[] = [
@@ -42,4 +43,5 @@ export const adminNavItems: NavItem[] = [
   { href: '/dashboard/crm', icon: HeartHandshake, label: 'CRM', roles: ['admin'] },
   { href: '/dashboard/admin/ia', icon: Sparkles, label: 'IA', roles: ['admin'] },
   { href: '/dashboard/admin/feedback-analysis', icon: FileText, label: 'Análise de Feedback', roles: ['admin'] },
+  { href: '/dashboard/heatmap', icon: BarChart, label: 'Mapa de Calor', roles: ['admin'] },
 ];

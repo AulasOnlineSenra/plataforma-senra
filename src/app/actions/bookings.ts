@@ -7,6 +7,7 @@ import { triggerAiAutomation } from "@/lib/ai/automation-engine";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import crypto from "crypto";
+import { getSubjects } from "@/app/actions/users";
 
 type BookingInput = {
   subjectId: string;
@@ -159,6 +160,13 @@ export async function createBookings(
       }
     });
 
+    const subjectsRes = await getSubjects();
+    const subjectsList = subjectsRes.data || [];
+    const getSubjectName = (id: string) => {
+      const subj = subjectsList.find((s: any) => s.id === id);
+      return subj ? subj.name : id;
+    };
+
 // Notificação de novo Agendamento para o professor
     if (teachersById.size > 0) {
       try {
@@ -179,7 +187,7 @@ export async function createBookings(
                     userId: teacherId,
                     type: "class_scheduled",
                     title: "Nova Aula Agendada!",
-                    message: `O aluno ${student.name} agendou uma aula de ${booking.subjectId} para o dia ${formattedDate}.`,
+                    message: `O aluno ${student.name} agendou uma aula de ${getSubjectName(booking.subjectId)} para o dia ${formattedDate}.`,
                     read: false,
                   },
                 });
@@ -203,7 +211,7 @@ export async function createBookings(
           userId: studentId,
           type: "class_scheduled",
           title: "Aula Agendada com Sucesso!",
-          message: `Sua aula de ${bookings[0].subjectId} foi agendada para o dia ${studentFormattedDate}.`,
+          message: `Sua aula de ${getSubjectName(bookings[0].subjectId)} foi agendada para o dia ${studentFormattedDate}.`,
           read: false,
         },
       });
@@ -225,7 +233,7 @@ export async function createBookings(
                   id: crypto.randomUUID(),
                   senderId: studentId,
                   receiverId: teacherId,
-                  content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${booking.subjectId} para o dia ${format(booking.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
+                  content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${getSubjectName(booking.subjectId)} para o dia ${format(booking.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
                 }
               });
             } catch (e) {
