@@ -218,7 +218,6 @@ export default function EditBlogPostPage() {
                   <button className="ql-clean" />
                 </div>
                 <style dangerouslySetInnerHTML={{__html: `
-                  .ql-toolbar.ql-snow { display: none; }
                   .ql-container.ql-snow { border: none; font-size: 1.05rem; min-height: 400px; }
                   .ql-font-arial { font-family: Arial, sans-serif; }
                   .ql-font-courier { font-family: "Courier New", Courier, monospace; }

@@ -285,7 +285,6 @@ export default function NewBlogPostPage() {
 
           <div className="text-slate-800">
             <style dangerouslySetInnerHTML={{__html: `
-              .ql-toolbar.ql-snow { display: none; }
               .ql-container.ql-snow {
                 border: none;
                 font-size: 1.125rem;

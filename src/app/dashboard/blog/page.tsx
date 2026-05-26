@@ -8,7 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Newspaper } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPosts, deletePost, togglePublishPost } from '@/app/actions/blog';
 
@@ -129,45 +136,57 @@ export default function BlogAdminPage() {
                 <tbody>
                   {posts.map((post) => (
                     <tr key={post.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                      <td className="py-4">
-                        <p className="font-medium truncate max-w-[200px] sm:max-w-[300px]">{post.title}</p>
-                        <p className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-[300px] sm:hidden">
+                      <td className="py-4 max-w-[200px] sm:max-w-[300px]">
+                        <p
+                          className="font-medium truncate cursor-default"
+                          title={post.title}
+                        >
+                          {post.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate sm:hidden">
                           {post.author} · {formatDate(post.createdAt)}
                         </p>
                       </td>
                       <td className="py-4 hidden sm:table-cell text-muted-foreground">{post.author}</td>
                       <td className="py-4 hidden md:table-cell text-muted-foreground">{formatDate(post.createdAt)}</td>
                       <td className="py-4">
-                        <Badge variant={post.published ? 'default' : 'secondary'}
-                          className={post.published ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}>
+                        <Badge
+                          variant={post.published ? 'default' : 'secondary'}
+                          className={post.published ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}
+                        >
                           {post.published ? 'Publicado' : 'Rascunho'}
                         </Badge>
                       </td>
-                      <td className="py-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleTogglePublish(post.id)}
-                            title={post.published ? 'Despublicar' : 'Publicar'}
-                          >
-                            {post.published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                          <Button asChild variant="ghost" size="icon" title="Editar">
-                            <Link href={`/dashboard/blog/edit/${post.id}`}>
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteId(post.id)}
-                            title="Deletar"
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      <td className="py-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Abrir menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleTogglePublish(post.id)}>
+                              {post.published ? (
+                                <><EyeOff className="mr-2 h-4 w-4" />Despublicar</>
+                              ) : (
+                                <><Eye className="mr-2 h-4 w-4" />Publicar</>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/blog/edit/${post.id}`}>
+                                <Pencil className="mr-2 h-4 w-4" />Editar
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteId(post.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />Deletar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
