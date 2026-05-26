@@ -603,14 +603,14 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
 
       {/* Boards View */}
       {viewMode === 'boards' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {filteredBoards.map((board) => (
             <Card 
               key={board.id} 
               className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden"
               onClick={() => handleSelectBoard(board)}
             >
-              <div className={`h-24 ${board.coverColor || 'bg-slate-200'} relative`}>
+              <div className={`h-16 ${board.coverColor || 'bg-slate-200'} relative`}>
                 <div className="absolute top-3 right-3 flex items-center gap-1">
                   <button 
                     onClick={(e) => {
@@ -632,25 +632,25 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                   </button>
                 </div>
               </div>
-              <CardContent className="p-4">
-                <CardTitle className="text-base font-semibold mb-3">{board.name}</CardTitle>
-                <div className="flex items-center justify-between text-sm text-slate-500">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {board.leadCount}
-                    </span>
+                <CardContent className="p-3">
+                  <CardTitle className="text-sm font-semibold mb-2">{board.name}</CardTitle>
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {board.leadCount}
+                      </span>
+                    </div>
+                    <span>{formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true, locale: ptBR })}</span>
                   </div>
-                  <span>{formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true, locale: ptBR })}</span>
-                </div>
-              </CardContent>
+                </CardContent>
             </Card>
           ))}
           
           {/* New Board Card */}
           <Card onClick={handleCreateBoard} className="cursor-pointer hover:bg-slate-50 border-dashed border-2 border-slate-200 hover:border-slate-300 transition-all">
-            <CardContent className="p-4 h-full flex flex-col items-center justify-center min-h-[140px]">
-              <Plus className="h-8 w-8 text-slate-400 mb-2" />
+            <CardContent className="p-3 h-full flex flex-col items-center justify-center min-h-[100px]">
+              <Plus className="h-7 w-7 text-slate-400 mb-1" />
               <span className="text-sm text-slate-500">Criar novo quadro</span>
             </CardContent>
           </Card>
@@ -668,7 +668,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                 return (
                 <div 
                   key={column.id} 
-                  className={`w-[300px] flex-shrink-0 bg-slate-200/60 rounded-xl flex flex-col max-h-full transition-all duration-200 ${isDragging ? 'opacity-50 scale-95 ring-2 ring-primary' : ''}`}
+                  className={`w-[240px] flex-shrink-0 bg-slate-200/60 rounded-xl flex flex-col max-h-full transition-all duration-200 ${isDragging ? 'opacity-50 scale-95 ring-2 ring-primary' : ''}`}
                   draggable
                   onDragStart={(e) => handleColumnDragStart(e, column.id)}
                   onDragOver={handleColumnDragOver}
@@ -801,12 +801,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                                </Button>
                                              </DropdownMenuTrigger>
                                              <DropdownMenuContent align="end" className="w-40">
-                                               <DropdownMenuItem onClick={() => { 
-                                                 setEditingLeadId(lead.id);
-                                                 setEditingLeadName(lead.name);
-                                               }} className="text-primary">
-                                                 <Edit2 className="mr-2 h-4 w-4" /> ---
-                                               </DropdownMenuItem>
                                                <DropdownMenuItem onClick={() => { setSelectedLead(lead); setDrawerOpen(true); }}>
                                                  <Pencil className="mr-2 h-4 w-4" /> Detalhes
                                                </DropdownMenuItem>
@@ -904,7 +898,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
               )})}
                
                {/* Add New Column */}
-               <div className="w-[300px] flex-shrink-0">
+               <div className="w-[240px] flex-shrink-0">
                  {isAddingColumn ? (
                    <div className="flex items-center">
                      <input

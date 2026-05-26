@@ -8,10 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/app/actions/blog';
 import dynamic from 'next/dynamic';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => {
@@ -74,8 +81,8 @@ export default function NewBlogPostPage() {
     adjustTextareaHeight();
   }, [formData.content]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule') => {
+    if (e) e.preventDefault();
 
     if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.author.trim()) {
       toast({
@@ -86,16 +93,35 @@ export default function NewBlogPostPage() {
       return;
     }
 
+    if (publishMode === 'schedule' && !formData.createdAt) {
+      toast({
+        variant: 'destructive',
+        title: 'Data obrigatória',
+        description: 'Selecione uma data e hora para agendamento nas Configurações.',
+      });
+      return;
+    }
+
+    const publishedValue = publishMode === 'now' ? true : false;
+    const createdAtValue = publishMode === 'schedule' ? formData.createdAt : '';
+
     setIsSubmitting(true);
     const result = await createPost({
       ...formData,
+      published: publishedValue,
+      createdAt: createdAtValue,
       tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
     });
 
     if (result.success) {
+      const msg = publishMode === 'now'
+        ? 'Artigo publicado com sucesso!'
+        : publishMode === 'schedule'
+        ? 'Artigo agendado com sucesso!'
+        : 'Rascunho salvo com sucesso!';
       toast({
         title: 'Sucesso!',
-        description: 'Artigo criado com sucesso.',
+        description: msg,
         className: 'bg-emerald-600 text-white border-none',
       });
       router.push('/dashboard/blog');
@@ -215,18 +241,39 @@ export default function NewBlogPostPage() {
             </SheetContent>
           </Sheet>
 
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting}
-            className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 shadow-md transition-all hover:shadow-lg"
-          >
-            {isSubmitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Salvar
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={isSubmitting}
+                className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-5 shadow-md transition-all hover:shadow-lg gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Publicar
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'now')} className="gap-2 font-medium">
+                <Save className="h-4 w-4 text-emerald-600" />
+                Publicar agora
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'draft')} className="gap-2">
+                <Type className="h-4 w-4 text-slate-500" />
+                Salvar rascunho
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'schedule')} className="gap-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                Agendar publicação
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
