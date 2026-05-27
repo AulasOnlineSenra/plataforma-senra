@@ -21,7 +21,9 @@ import {
   ArrowUpRight, 
   Map,
   CalendarDays,
-import { Smartphone, Monitor } from 'lucide-react';
+  Smartphone, 
+  Monitor
+} from 'lucide-react';
 import { getHeatmapData } from '@/app/actions/analytics';
 import { Loader2 } from 'lucide-react';
 
