@@ -520,12 +520,6 @@ export const adminNavItems: NavItem[] = [
     roles: ['admin'],
   },
   {
-    href: '/dashboard/admin/feedback-analysis',
-    icon: FileText,
-    label: 'Análise de Feedback',
-    roles: ['admin'],
-  },
-  {
     href: '/dashboard/admin/marketing',
     icon: TrendingUp,
     label: 'Marketing',

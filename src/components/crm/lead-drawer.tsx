@@ -90,6 +90,18 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
 
   useEffect(() => {
     if (lead) {
+      let formattedDueDate = '';
+      if (lead.dueDate) {
+        const d = new Date(lead.dueDate);
+        if (!isNaN(d.getTime())) {
+          try {
+            formattedDueDate = format(d, "yyyy-MM-dd'T'HH:mm");
+          } catch (e) {
+            console.error('Data inválida no banco:', lead.dueDate);
+          }
+        }
+      }
+
       setFormData({
         name: lead.name || '',
         email: lead.email || '',
@@ -98,7 +110,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
         tags: lead.tags ? JSON.parse(lead.tags).join(', ') : '',
         description: lead.description || '',
         temperature: lead.temperature || 'frio',
-        dueDate: lead.dueDate ? format(new Date(lead.dueDate), "yyyy-MM-dd'T'HH:mm") : '',
+        dueDate: formattedDueDate,
       });
       setAttachments(lead.attachments ? JSON.parse(lead.attachments) : []);
       setChecklist(lead.checklist ? JSON.parse(lead.checklist) : []);
@@ -316,9 +328,12 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                   >
                     <Calendar className="h-4 w-4" /> 
                     {formData.dueDate 
-                      ? (isNaN(new Date(formData.dueDate).getTime()) 
-                          ? 'Data Inválida' 
-                          : format(new Date(formData.dueDate), 'dd/MM/yyyy HH:mm')) 
+                      ? (!isNaN(new Date(formData.dueDate).getTime()) 
+                          ? (() => {
+                              try { return format(new Date(formData.dueDate), 'dd/MM/yyyy HH:mm'); }
+                              catch (e) { return 'Data Inválida'; }
+                            })()
+                          : 'Data Inválida') 
                       : 'Datas'}
                   </Button>
 

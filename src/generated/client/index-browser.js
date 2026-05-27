@@ -135,6 +135,7 @@ exports.Prisma.AppSettingScalarFieldEnum = {
   openRouterApiKey: 'openRouterApiKey',
   minimaxApiKey: 'minimaxApiKey',
   grokApiKey: 'grokApiKey',
+  searchApiKey: 'searchApiKey',
   updatedAt: 'updatedAt'
 };
 
@@ -209,11 +210,23 @@ exports.Prisma.CrmLeadScalarFieldEnum = {
   series: 'series',
   tags: 'tags',
   temperature: 'temperature',
+  description: 'description',
+  dueDate: 'dueDate',
+  attachments: 'attachments',
+  checklist: 'checklist',
   lastContact: 'lastContact',
   order: 'order',
   columnId: 'columnId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CrmCommentScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  userId: 'userId',
+  leadId: 'leadId',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.LessonScalarFieldEnum = {
@@ -394,6 +407,15 @@ exports.Prisma.AiAgentScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PageVisitScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  userId: 'userId',
+  device: 'device',
+  timeSpent: 'timeSpent',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -429,6 +451,7 @@ exports.Prisma.ModelName = {
   CrmBoard: 'CrmBoard',
   CrmColumn: 'CrmColumn',
   CrmLead: 'CrmLead',
+  CrmComment: 'CrmComment',
   Lesson: 'Lesson',
   MarketingCost: 'MarketingCost',
   Notification: 'Notification',
@@ -440,7 +463,8 @@ exports.Prisma.ModelName = {
   Transaction: 'Transaction',
   User: 'User',
   QuizQuestion: 'QuizQuestion',
-  AiAgent: 'AiAgent'
+  AiAgent: 'AiAgent',
+  PageVisit: 'PageVisit'
 };
 
 /**

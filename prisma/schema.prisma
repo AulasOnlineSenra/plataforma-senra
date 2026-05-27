@@ -356,3 +356,16 @@ model AiAgent {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+
+model PageVisit {
+  id        String   @id @default(cuid())
+  url       String
+  userId    String?
+  device    String   @default("Desktop")
+  timeSpent Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([url])
+  @@index([createdAt])
+}

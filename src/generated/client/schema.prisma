@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/client"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -102,22 +103,38 @@ model CrmColumn {
 }
 
 model CrmLead {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
   phone       String?
   email       String?
   source      String?
   series      String?
-  tags        String?   @default("[]") // JSON array of strings
-  temperature String    @default("frio") // frio, morno, quente, muito-quente
+  tags        String?      @default("[]") // JSON array of strings
+  temperature String       @default("frio") // frio, morno, quente, muito-quente
+  description String?
+  dueDate     DateTime?
+  attachments String?      @default("[]") // JSON array of links/files
+  checklist   String?      @default("[]") // JSON array of { id, text, completed }
   lastContact DateTime?
-  order       Int       @default(0)
+  order       Int          @default(0)
   columnId    String
-  column      CrmColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  column      CrmColumn    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  comments    CrmComment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([columnId])
+}
+
+model CrmComment {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  leadId    String
+  lead      CrmLead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
 }
 
 model Lesson {
@@ -338,4 +355,16 @@ model AiAgent {
   status       String   @default("active")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model PageVisit {
+  id        String   @id @default(cuid())
+  url       String
+  userId    String?
+  device    String   @default("Desktop")
+  timeSpent Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([url])
+  @@index([createdAt])
 }
