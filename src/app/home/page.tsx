@@ -59,6 +59,8 @@ const navLinks = [
 ];
 
 
+type TeacherRating = { average: number; count: number };
+
 export default function HomePage() {
   const [leadEmail, setLeadEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +70,7 @@ export default function HomePage() {
   const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [teacherRatings, setTeacherRatings] = useState<Record<string, { average: number; count: number }>>({});
+  const [teacherRatings, setTeacherRatings] = useState<Record<string, TeacherRating>>({});
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
