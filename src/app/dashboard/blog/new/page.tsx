@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ export default function NewBlogPostPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const quillRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -57,11 +58,71 @@ export default function NewBlogPostPage() {
     createdAt: '',
   });
 
+  const imageHandler = useCallback(() => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files ? input.files[0] : null;
+      if (!file) return;
+
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+
+      const toastId = toast({
+        title: 'Fazendo upload da imagem...',
+        description: 'Por favor, aguarde enquanto salvamos sua imagem.',
+      });
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await res.json();
+
+        if (result.success && result.data?.url) {
+          quill.insertEmbed(range.index, 'image', result.data.url);
+          quill.setSelection(range.index + 1);
+          toast({
+            title: 'Sucesso!',
+            description: 'Imagem enviada com sucesso.',
+            className: 'bg-emerald-600 text-white border-none',
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Erro no Upload',
+            description: result.error || 'Não foi possível salvar a imagem.',
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        toast({
+          variant: 'destructive',
+          title: 'Erro inesperado',
+          description: 'Ocorreu um erro ao enviar a imagem.',
+        });
+      }
+    };
+  }, [toast]);
+
   const modules = useMemo(() => ({
     toolbar: {
       container: '#custom-toolbar',
+      handlers: {
+        image: imageHandler,
+      },
     },
-  }), []);
+  }), [imageHandler]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -345,6 +406,7 @@ export default function NewBlogPostPage() {
               .ql-font-verdana { font-family: Verdana, sans-serif; }
             `}} />
             <ReactQuill 
+              ref={quillRef}
               theme="snow"
               value={formData.content}
               onChange={(val) => handleChange('content', val)}
