@@ -94,9 +94,9 @@ interface LeadCard {
   order: number;
 }
 
-const getDueDateStatus = (dueDate: string | null) => {
+const getDueDateStatus = (dueDate: string | Date | null) => {
   if (!dueDate) return null;
-  const date = parseISO(dueDate);
+  const date = new Date(dueDate);
   if (isPast(date) && !isToday(date)) return 'atrasado';
   if (isToday(date) || (date <= addDays(new Date(), 2))) return 'vencendo';
   return 'no-prazo';
@@ -829,7 +829,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                       {lead.dueDate && (
                                         <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded ${getDueDateColor(getDueDateStatus(lead.dueDate))}`}>
                                           <Calendar className="h-3 w-3" />
-                                          {format(parseISO(lead.dueDate), 'dd/MM', { locale: ptBR })}
+                                          {format(new Date(lead.dueDate), 'dd/MM', { locale: ptBR })}
                                         </div>
                                       )}
                                     </div>

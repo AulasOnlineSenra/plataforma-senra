@@ -129,3 +129,72 @@ export async function getCrmAnalytics(boardId?: string): Promise<{ success: bool
     return { success: false, error: "Falha ao carregar analytics." };
   }
 }
+
+export async function getHeatmapData(periodDays: number) {
+  try {
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - periodDays);
+
+    const visits = await prisma.pageVisit.findMany({
+      where: {
+        createdAt: {
+          gte: fromDate,
+        },
+      },
+    });
+
+    // Aggregate data by URL
+    const urlStats: Record<string, { views: number; totalTime: number }> = {};
+    let mobileCount = 0;
+    let desktopCount = 0;
+
+    visits.forEach((v) => {
+      // url stats
+      if (!urlStats[v.url]) {
+        urlStats[v.url] = { views: 0, totalTime: 0 };
+      }
+      urlStats[v.url].views += 1;
+      urlStats[v.url].totalTime += v.timeSpent;
+
+      // device stats
+      if (v.device === 'Mobile') {
+        mobileCount += 1;
+      } else {
+        desktopCount += 1;
+      }
+    });
+
+    const pagesData = Object.keys(urlStats).map((url) => {
+      const stat = urlStats[url];
+      const avgTimeSeconds = Math.round(stat.totalTime / stat.views);
+      const minutes = Math.floor(avgTimeSeconds / 60);
+      const seconds = avgTimeSeconds % 60;
+      const timeFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      return {
+        url,
+        views: stat.views,
+        time: timeFormatted,
+        bounce: '0%', 
+      };
+    }).sort((a, b) => b.views - a.views).slice(0, 10);
+
+    const totalVisits = mobileCount + desktopCount;
+    const mobilePercent = totalVisits > 0 ? Math.round((mobileCount / totalVisits) * 100) : 0;
+    const desktopPercent = totalVisits > 0 ? Math.round((desktopCount / totalVisits) * 100) : 0;
+
+    const devicesData = [
+      { name: 'Mobile', value: mobilePercent, color: '#3b82f6' },
+      { name: 'Desktop', value: desktopPercent, color: '#10b981' },
+    ];
+
+    const monthlyData = [
+      { name: 'Atual', usuarios: totalVisits, pageviews: totalVisits }
+    ];
+
+    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits } };
+  } catch (error: any) {
+    console.error('Error fetching heatmap data:', error);
+    return { success: false, error: error.message || 'Falha ao carregar analytics' };
+  }
+}

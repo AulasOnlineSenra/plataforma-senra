@@ -21,35 +21,40 @@ import {
   ArrowUpRight, 
   Map,
   CalendarDays,
-  Smartphone,
-  Monitor
-} from 'lucide-react';
-
-const MOCK_MONTHLY_DATA = [
-  { name: 'Jan', usuarios: 400, pageviews: 2400 },
-  { name: 'Fev', usuarios: 600, pageviews: 3600 },
-  { name: 'Mar', usuarios: 550, pageviews: 3100 },
-  { name: 'Abr', usuarios: 800, pageviews: 4500 },
-  { name: 'Mai', usuarios: 1200, pageviews: 6800 },
-  { name: 'Jun', usuarios: 1600, pageviews: 8900 },
-];
-
-const MOCK_PAGES_DATA = [
-  { url: '/dashboard', views: 12450, time: '04:12', bounce: '24%' },
-  { url: '/dashboard/booking', views: 8230, time: '06:45', bounce: '12%' },
-  { url: '/dashboard/simulados', views: 6100, time: '14:20', bounce: '8%' },
-  { url: '/blog', views: 4500, time: '02:30', bounce: '45%' },
-  { url: '/dashboard/minhas-aulas', views: 3800, time: '03:15', bounce: '18%' },
-  { url: '/login', views: 2900, time: '01:05', bounce: '10%' },
-];
-
-const MOCK_DEVICES = [
-  { name: 'Mobile', value: 65, color: '#3b82f6', icon: Smartphone },
-  { name: 'Desktop', value: 35, color: '#10b981', icon: Monitor },
-];
+import { Smartphone, Monitor } from 'lucide-react';
+import { getHeatmapData } from '@/app/actions/analytics';
+import { Loader2 } from 'lucide-react';
 
 export default function HeatmapPage() {
   const [periodo, setPeriodo] = useState('30d');
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState<{
+    pages: any[];
+    devices: any[];
+    monthly: any[];
+    totalViews: number;
+  }>({
+    pages: [],
+    devices: [],
+    monthly: [],
+    totalViews: 0
+  });
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setLoading(true);
+      let days = 30;
+      if (periodo === '7d') days = 7;
+      else if (periodo === '12m') days = 365;
+      
+      const result = await getHeatmapData(days);
+      if (result.success && result.data) {
+        setAnalyticsData(result.data);
+      }
+      setLoading(false);
+    };
+    fetchAnalytics();
+  }, [periodo]);
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto pb-10">
@@ -98,16 +103,14 @@ export default function HeatmapPage() {
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Usuários Ativos</p>
-                <p className="text-4xl font-headline font-bold text-slate-900">1,600</p>
+                <p className="text-4xl font-headline font-bold text-slate-900">{analyticsData.totalViews}</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-2xl">
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowUpRight className="h-4 w-4 text-emerald-500 mr-1" />
-              <span className="text-emerald-600 font-bold">+24%</span>
-              <span className="text-slate-400 ml-2">vs último mês</span>
+              <span className="text-slate-400 ml-2">Monitoramento Ativo</span>
             </div>
           </CardContent>
         </Card>
@@ -117,16 +120,16 @@ export default function HeatmapPage() {
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Tempo Médio</p>
-                <p className="text-4xl font-headline font-bold text-slate-900">14m 20s</p>
+                <p className="text-4xl font-headline font-bold text-slate-900">
+                  {analyticsData.pages[0]?.time || '00:00'}
+                </p>
               </div>
               <div className="p-3 bg-amber-50 rounded-2xl">
                 <Clock className="h-6 w-6 text-amber-600" />
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowUpRight className="h-4 w-4 text-emerald-500 mr-1" />
-              <span className="text-emerald-600 font-bold">+12%</span>
-              <span className="text-slate-400 ml-2">vs último mês</span>
+              <span className="text-slate-400 ml-2">Página Mais Acessada</span>
             </div>
           </CardContent>
         </Card>
@@ -136,16 +139,14 @@ export default function HeatmapPage() {
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Pageviews</p>
-                <p className="text-4xl font-headline font-bold text-slate-900">8,900</p>
+                <p className="text-4xl font-headline font-bold text-slate-900">{analyticsData.totalViews}</p>
               </div>
               <div className="p-3 bg-emerald-50 rounded-2xl">
                 <MousePointerClick className="h-6 w-6 text-emerald-600" />
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowUpRight className="h-4 w-4 text-emerald-500 mr-1" />
-              <span className="text-emerald-600 font-bold">+8%</span>
-              <span className="text-slate-400 ml-2">vs último mês</span>
+              <span className="text-slate-400 ml-2">Total de Views</span>
             </div>
           </CardContent>
         </Card>
@@ -161,7 +162,7 @@ export default function HeatmapPage() {
           <CardContent className="p-6">
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={MOCK_MONTHLY_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={analyticsData.monthly} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
@@ -198,12 +199,12 @@ export default function HeatmapPage() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="flex flex-col gap-6 h-[300px] justify-center">
-              {MOCK_DEVICES.map((device) => (
+              {analyticsData.devices.map((device) => (
                 <div key={device.name} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="p-2 rounded-lg" style={{ backgroundColor: `${device.color}15`, color: device.color }}>
-                        <device.icon className="h-5 w-5" />
+                        {device.name === 'Mobile' ? <Smartphone className="h-5 w-5" /> : <Monitor className="h-5 w-5" />}
                       </div>
                       <span className="font-bold text-slate-700">{device.name}</span>
                     </div>
@@ -241,9 +242,22 @@ export default function HeatmapPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {MOCK_PAGES_DATA.map((page, index) => {
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-slate-500">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                    Carregando dados...
+                  </td>
+                </tr>
+              ) : analyticsData.pages.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-slate-500">
+                    Ainda não há dados coletados para este período.
+                  </td>
+                </tr>
+              ) : analyticsData.pages.map((page, index) => {
                 // Calc intensity for heatmap bar
-                const maxViews = MOCK_PAGES_DATA[0].views;
+                const maxViews = analyticsData.pages[0].views;
                 const percent = (page.views / maxViews) * 100;
                 
                 return (
