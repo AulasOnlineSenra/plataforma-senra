@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   CalendarCheck,
@@ -618,7 +618,10 @@ export default function DashboardPage() {
                             {(() => {
                               const lessonDate = new Date(lesson.date);
                               const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
-                              return format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
+                              const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+                              if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                              if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                              return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
                             })()}
                           </TableCell>
                           <TableCell className="text-center">
@@ -888,7 +891,10 @@ export default function DashboardPage() {
                             {(() => {
                               const lessonDate = new Date(lesson.date);
                               const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
-                              return format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
+                              const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+                              if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                              if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                              return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
                             })()}
                           </TableCell>
                           <TableCell className="text-center">

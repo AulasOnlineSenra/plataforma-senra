@@ -274,6 +274,10 @@ export async function getLessons() {
   try {
     const lessons = await prisma.lesson.findMany({
       orderBy: { date: "asc" },
+      include: {
+        teacher: { select: { id: true, name: true, avatarUrl: true } },
+        student: { select: { id: true, name: true, avatarUrl: true } },
+      },
     });
 
     return { success: true, data: lessons };
@@ -282,6 +286,7 @@ export async function getLessons() {
     return { success: false, error: "Erro ao buscar aulas." };
   }
 }
+
 
 export async function getLessonsForUser(userId: string, role: string, teacherIdToFilter?: string) {
   try {

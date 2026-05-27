@@ -238,7 +238,7 @@ export default function HeatmapContent() {
             Páginas Mais Acessadas
           </CardTitle>
         </CardHeader>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[400px] relative">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">

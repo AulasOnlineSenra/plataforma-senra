@@ -8,7 +8,7 @@ import { getMockUser } from '@/lib/data';
 import { format, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { XCircle, Pencil, BookOpen, Archive, Trash2, ArrowRightLeft } from 'lucide-react';
+import { XCircle, Pencil, BookOpen, Trash2, RotateCcw } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
@@ -16,10 +16,20 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // NOSSOS MOTORES DE BANCO DE DADOS
 import { getTeachers, getStudents } from '@/app/actions/users';
-import { getLessons } from '@/app/actions/bookings';
+import { getLessons, deleteLesson } from '@/app/actions/bookings';
 
 const subjectMap: Record<string, string> = {
   'default-subj-1': 'Matemática',
@@ -47,6 +57,9 @@ function SchedulePageComponent() {
   const [currentUser, setCurrentUser] = useState<any | null>(null); 
   const [isClient, setIsClient] = useState(false);
   const [userIdFilter, setUserIdFilter] = useState<string>('all');
+  const [lessonToDelete, setLessonToDelete] = useState<any | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingWithRefund, setIsDeletingWithRefund] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -131,17 +144,57 @@ function SchedulePageComponent() {
   const getTeacherById = (teacherId: string): any | undefined => teachers.find(t => t.id === teacherId);
 
   const formatScheduledDate = (start: Date, end: Date) => {
-    const timeFormat = `'às' HH:mm - ${format(end, 'HH:mm')}`;
-    if (isToday(start)) return `Hoje, ${format(start, timeFormat)}`;
-    if (isTomorrow(start)) return `Amanhã, ${format(start, timeFormat)}`;
-    return format(start, `EEEE, dd/MM/yyyy ${timeFormat}`, { locale: ptBR });
+    const time = `às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    if (isToday(start)) return `Hoje ${format(start, 'dd/MM/yyyy')} ${time}`;
+    if (isTomorrow(start)) return `Amanhã ${format(start, 'dd/MM/yyyy')} ${time}`;
+    return `${format(start, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
   };
 
   const formatHistoryDate = (start: Date, end: Date) => {
-    const timeFormat = `'às' HH:mm - ${format(end, 'HH:mm')}`;
-    if (isToday(start)) return `Hoje, ${timeFormat}`;
-    if (isYesterday(start)) return `Ontem, ${timeFormat}`;
-    return `${format(start, "EEEE, dd/MM " + timeFormat, { locale: ptBR })}`;
+    const time = `às ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    if (isToday(start)) return `Hoje ${format(start, 'dd/MM/yyyy')} ${time}`;
+    if (isYesterday(start)) return `Ontem ${format(start, 'dd/MM/yyyy')} ${time}`;
+    return `${format(start, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
+  };
+
+  const handleOpenDeleteDialog = (event: any) => {
+    setLessonToDelete(event);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteLesson = async (withRefund: boolean) => {
+    if (!lessonToDelete) return;
+    setIsDeletingWithRefund(true);
+    try {
+      if (withRefund && !lessonToDelete.isExperimental) {
+        // Restituir crédito ao aluno antes de excluir
+        const res = await fetch('/api/dashboard/refund-credit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId: lessonToDelete.studentId }),
+        });
+        if (!res.ok) {
+          throw new Error('Falha ao restituir crédito');
+        }
+      }
+      const result = await deleteLesson(lessonToDelete.id);
+      if (result.success) {
+        toast({
+          title: 'Sucesso!',
+          description: withRefund ? 'Aula excluída e crédito restituído ao aluno.' : 'Aula excluída do histórico.',
+          className: 'bg-emerald-600 text-white border-none',
+        });
+        setEvents(prev => prev.filter(e => e.id !== lessonToDelete.id));
+      } else {
+        throw new Error(result.error || 'Erro ao excluir');
+      }
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: err.message });
+    } finally {
+      setIsDeletingWithRefund(false);
+      setIsDeleteDialogOpen(false);
+      setLessonToDelete(null);
+    }
   };
 
   return (
@@ -189,13 +242,17 @@ function SchedulePageComponent() {
                       const student = getStudentById(event.studentId);
                       
                       const personToShow = (currentUser?.role === 'teacher') ? student : teacher;
+                      // Prefer avatarUrl from the event relation (which has it from getLessons query)
+                      const avatarUrl = (currentUser?.role === 'teacher')
+                        ? ((event.student as any)?.avatarUrl ?? personToShow?.avatarUrl)
+                        : ((event.teacher as any)?.avatarUrl ?? personToShow?.avatarUrl);
                       const fallback = personToShow ? personToShow.name.charAt(0) : '?';
                       
                       return (
                           <div key={event.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border p-4 bg-white shadow-sm hover:border-brand-yellow transition-colors">
                               <div className="flex items-center gap-4 flex-1">
                                   <Avatar className='h-14 w-14 border shadow-sm'>
-                                      <AvatarImage src={personToShow?.avatarUrl} alt={personToShow?.name} />
+                                      <AvatarImage src={avatarUrl ?? undefined} alt={personToShow?.name} />
                                       <AvatarFallback className="bg-amber-100 text-amber-700 font-bold text-lg">{fallback}</AvatarFallback>
                                   </Avatar>
                                   <div className="grid gap-1.5">
@@ -237,7 +294,8 @@ function SchedulePageComponent() {
                     {currentUser?.role !== 'teacher' && <TableHead>Professor(a)</TableHead>}
                     {currentUser?.role !== 'student' && <TableHead>Aluno(a)</TableHead>}
                     <TableHead>Disciplina</TableHead>
-                    <TableHead className="text-right">Data</TableHead>
+                    <TableHead>Data</TableHead>
+                    {currentUser?.role === 'admin' && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -247,10 +305,42 @@ function SchedulePageComponent() {
                         const teacher = getTeacherById(event.teacherId);
                         return (
                         <TableRow key={event.id}>
-                            {currentUser?.role !== 'teacher' && <TableCell className="font-semibold text-slate-800">{teacher?.name || 'N/A'}</TableCell>}
-                            {currentUser?.role !== 'student' && <TableCell className="font-semibold text-slate-800">{student?.name || 'N/A'}</TableCell>}
+                            {currentUser?.role !== 'teacher' && (
+                              <TableCell className="font-semibold text-slate-800">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={(event.teacher as any)?.avatarUrl ?? undefined} alt={teacher?.name} />
+                                    <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">{teacher?.name?.charAt(0) || 'P'}</AvatarFallback>
+                                  </Avatar>
+                                  {teacher?.name || 'N/A'}
+                                </div>
+                              </TableCell>
+                            )}
+                            {currentUser?.role !== 'student' && (
+                              <TableCell className="font-semibold text-slate-800">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={(event.student as any)?.avatarUrl ?? undefined} alt={student?.name} />
+                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">{student?.name?.charAt(0) || 'A'}</AvatarFallback>
+                                  </Avatar>
+                                  {student?.name || 'N/A'}
+                                </div>
+                              </TableCell>
+                            )}
                             <TableCell className="font-medium text-slate-600">{subjectMap[event.subject] || event.subject}</TableCell>
-                            <TableCell className="text-right text-slate-500 font-medium">{formatHistoryDate(event.start, event.end)}</TableCell>
+                            <TableCell className="text-slate-500 font-medium">{formatHistoryDate(event.start, event.end)}</TableCell>
+                            {currentUser?.role === 'admin' && (
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleOpenDeleteDialog(event)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            )}
                         </TableRow>
                         );
                     })
@@ -264,6 +354,38 @@ function SchedulePageComponent() {
         </Card>
 
       </div>
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Aula Realizada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja excluir esta aula do histórico? Você pode também restituir 1 crédito ao aluno.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={isDeletingWithRefund}>Cancelar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              disabled={isDeletingWithRefund}
+              onClick={() => handleDeleteLesson(true)}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Restituir crédito e excluir
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeletingWithRefund}
+              onClick={() => handleDeleteLesson(false)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir sem restituir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
