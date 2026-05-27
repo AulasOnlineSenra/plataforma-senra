@@ -202,8 +202,8 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
             <AvatarFallback className="bg-slate-700 text-brand-yellow">{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="truncate font-bold text-slate-100">{user.name}</p>
-            <p className="text-xs text-slate-400">{ROLE_LABELS[user.role as UserRole]}</p>
+            <p className="truncate font-bold text-[13px] text-slate-100">{user.name}</p>
+            <p className="text-[11px] text-slate-400">{ROLE_LABELS[user.role as UserRole]}</p>
           </div>
         </div>
       </Link>

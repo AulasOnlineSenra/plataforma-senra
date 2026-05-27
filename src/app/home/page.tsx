@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { SenraLogo } from '@/components/senra-logo';
 import HeroCarousel from '@/components/hero-carousel';
@@ -312,41 +312,39 @@ export default function HomePage() {
                   }
                   return null;
                 })();
-                
                 return (
-                <div 
-                  key={teacher.id}
-                  className="relative w-48 h-64 rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
-                  style={{
-                    backgroundImage: `url(${avatarUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                >
-                  <div 
-                    className="absolute inset-0 transition-transform duration-300 group-hover:scale-110"
-                    style={{
-                      backgroundImage: `url(${avatarUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  
-                  {/* Rating no canto superior direito */}
-                  <div className="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-current" />
-                    {rating.average.toFixed(1)}
+                  <div
+                    key={teacher.id}
+                    className="relative w-48 h-64 rounded-2xl overflow-hidden shadow-lg group cursor-pointer bg-slate-200"
+                  >
+                    {/* Imagem com next/image para carregamento confiável */}
+                    <Image
+                      src={avatarUrl}
+                      alt={teacher.name}
+                      fill
+                      sizes="192px"
+                      className="object-cover object-center transition-transform duration-300 group-hover:scale-110"
+                      unoptimized={avatarUrl.startsWith('http')}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&h=400&fit=crop';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Rating no canto superior direito */}
+                    <div className="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-current" />
+                      {rating.average.toFixed(1)}
+                    </div>
+
+                    {/* Nome e formação na parte inferior */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <p className="font-bold text-sm">{teacher.name}</p>
+                      {education && <p className="text-xs text-white/80">{education}</p>}
+                    </div>
                   </div>
-                  
-                  {/* Nome e formação na parte inferior */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <p className="font-bold text-sm">{teacher.name}</p>
-                    {education && <p className="text-xs text-white/80">{education}</p>}
-                  </div>
-                </div>
-              )})}
-            </div>
+                );
+              })}
           </div>
         </section>
 

@@ -100,23 +100,29 @@ export default function EditBlogPostPage() {
     }
 
     setIsSubmitting(true);
-    const id = params.id as string;
-    const result = await updatePost(id, {
-      ...formData,
-      tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
-    });
-
-    if (result.success) {
-      toast({
-        title: 'Sucesso!',
-        description: 'Artigo atualizado com sucesso.',
-        className: 'bg-emerald-600 text-white border-none',
+    try {
+      const id = params.id as string;
+      const result = await updatePost(id, {
+        ...formData,
+        tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
       });
-      router.push('/dashboard/blog');
-    } else {
-      toast({ variant: 'destructive', title: 'Erro', description: result.error });
+
+      if (result.success) {
+        toast({
+          title: 'Sucesso!',
+          description: 'Artigo atualizado com sucesso.',
+          className: 'bg-emerald-600 text-white border-none',
+        });
+        router.push('/dashboard/blog');
+      } else {
+        toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Falha ao salvar.' });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar artigo:', err);
+      toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Tente novamente.' });
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   if (isLoading) {
