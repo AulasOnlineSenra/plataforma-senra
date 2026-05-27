@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { format, startOfWeek, endOfWeek } from "date-fns";
+import { format, startOfWeek, endOfWeek, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon } from "lucide-react";
+import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon, RotateCcw } from "lucide-react";
 import { getLessonsForUser, updateLesson, cancelLesson, deleteLesson } from "@/app/actions/bookings";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -94,6 +94,7 @@ export default function MinhasAulasPage() {
     duration: "90",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefunding, setIsRefunding] = useState(false);
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(undefined);
   const [isClient, setIsClient] = useState(false);
   const [highlightCompleted, setHighlightCompleted] = useState(false);
@@ -315,29 +316,36 @@ export default function MinhasAulasPage() {
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (withRefund = false) => {
     if (!lessonToDelete) return;
 
-    setLoading(true);
-    const result = await deleteLesson(lessonToDelete.id);
-    setLoading(false);
-
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Registro de aula removido do histórico.",
-      });
-      setIsDeleteDialogOpen(false);
-      setLessonToDelete(null);
-      if (role && userId) {
-        loadLessons(userId, role);
+    setIsRefunding(true);
+    try {
+      if (withRefund) {
+        const res = await fetch('/api/dashboard/refund-credit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId: lessonToDelete.student?.id }),
+        });
+        if (!res.ok) throw new Error('Falha ao restituir crédito');
       }
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: result.error || "Não foi possível excluir o histórico.",
-      });
+
+      const result = await deleteLesson(lessonToDelete.id);
+      if (result.success) {
+        toast({
+          title: "Sucesso",
+          description: withRefund ? "Aula excluída e crédito restituído." : "Registro de aula removido do histórico.",
+        });
+        setIsDeleteDialogOpen(false);
+        setLessonToDelete(null);
+        if (role && userId) loadLessons(userId, role);
+      } else {
+        toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível excluir o histórico." });
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message });
+    } finally {
+      setIsRefunding(false);
     }
   };
 
@@ -430,13 +438,14 @@ export default function MinhasAulasPage() {
                     <div className="flex flex-wrap items-center gap-4">
                       <p className="font-semibold text-slate-900">{subjectMap[lesson.subject] || lesson.subject}</p>
                       <p className="text-sm text-slate-600">
-                        {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", {
-                          locale: ptBR,
-                        })}{" "}
-                        -{" "}
-                        {format(new Date(lesson.endDate), "HH:mm", {
-                          locale: ptBR,
-                        })}
+                        {(() => {
+                          const d = new Date(lesson.date);
+                          const end = new Date(lesson.endDate);
+                          const time = `às ${format(d, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+                          if (isToday(d)) return `Hoje ${format(d, 'dd/MM/yyyy')} ${time}`;
+                          if (isTomorrow(d)) return `Amanhã ${format(d, 'dd/MM/yyyy')} ${time}`;
+                          return `${format(d, "EEEE dd/MM/yyyy", { locale: ptBR })} ${time}`;
+                        })()}
                       </p>
                       <p className="text-sm text-slate-600">
                         {role === "teacher"
@@ -774,22 +783,38 @@ export default function MinhasAulasPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Registro do Histórico</AlertDialogTitle>
+            <AlertDialogTitle>Excluir Aula do Histórico</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover permanentemente este registro de aula cancelada do histórico? 
-              Esta ação não pode ser desfeita e o registro sumirá de todas as visões do sistema.
+              O que deseja fazer com este registro de aula?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setIsDeleteDialogOpen(false);
-              setLessonToDelete(null);
-            }}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              Confirmar Exclusão
-            </AlertDialogAction>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <AlertDialogCancel
+                disabled={isRefunding}
+                className="sm:flex-1"
+                onClick={() => { setIsDeleteDialogOpen(false); setLessonToDelete(null); }}
+              >
+                Cancelar
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                className="sm:flex-1"
+                disabled={isRefunding}
+                onClick={() => handleConfirmDelete(false)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Confirmar Exclusão
+              </Button>
+              <Button
+                className="sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={isRefunding}
+                onClick={() => handleConfirmDelete(true)}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {isRefunding ? 'Processando...' : 'Excluir e Restituir Crédito'}
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -359,30 +359,34 @@ function SchedulePageComponent() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Aula Realizada</AlertDialogTitle>
+            <AlertDialogTitle>Excluir Aula do Histórico</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja excluir esta aula do histórico? Você pode também restituir 1 crédito ao aluno.
+              O que deseja fazer com esta aula realizada?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
-            <AlertDialogCancel disabled={isDeletingWithRefund}>Cancelar</AlertDialogCancel>
-            <Button
-              variant="outline"
-              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-              disabled={isDeletingWithRefund}
-              onClick={() => handleDeleteLesson(true)}
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Restituir crédito e excluir
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={isDeletingWithRefund}
-              onClick={() => handleDeleteLesson(false)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir sem restituir
-            </Button>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <AlertDialogCancel disabled={isDeletingWithRefund} className="sm:flex-1">
+                Cancelar
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                className="sm:flex-1"
+                disabled={isDeletingWithRefund}
+                onClick={() => handleDeleteLesson(false)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Confirmar Exclusão
+              </Button>
+              <Button
+                className="sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={isDeletingWithRefund}
+                onClick={() => handleDeleteLesson(true)}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {isDeletingWithRefund ? 'Processando...' : 'Excluir e Restituir Crédito'}
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

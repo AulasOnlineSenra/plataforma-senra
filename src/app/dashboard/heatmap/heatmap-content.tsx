@@ -240,11 +240,11 @@ export default function HeatmapContent() {
         </CardHeader>
         <div className="overflow-auto max-h-[400px] relative">
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Página (URL)</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Visualizações</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Tempo Médio</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50">Página (URL)</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Visualizações</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Tempo Médio</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
