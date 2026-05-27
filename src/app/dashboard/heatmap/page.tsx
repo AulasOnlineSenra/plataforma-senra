@@ -37,8 +37,11 @@ export default function HeatmapPage() {
     totalViews: number;
   }>({
     pages: [],
-    devices: [],
-    monthly: [],
+    devices: [
+      { name: 'Mobile', value: 0, color: '#3b82f6' },
+      { name: 'Desktop', value: 100, color: '#10b981' }
+    ],
+    monthly: [{ name: 'Atual', usuarios: 0, pageviews: 0 }],
     totalViews: 0
   });
 
