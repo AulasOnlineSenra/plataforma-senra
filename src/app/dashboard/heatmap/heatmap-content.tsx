@@ -30,6 +30,7 @@ export default function HeatmapContent() {
     devices: any[];
     monthly: any[];
     totalViews: number;
+    uniqueUsers: number;
   }>({
     pages: [],
     devices: [
@@ -38,21 +39,26 @@ export default function HeatmapContent() {
     ],
     monthly: [{ name: 'Atual', usuarios: 0, pageviews: 0 }],
     totalViews: 0,
+    uniqueUsers: 0,
   });
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      setLoading(true);
-      let days = 30;
-      if (periodo === '7d') days = 7;
-      else if (periodo === '12m') days = 365;
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    let days = 30;
+    if (periodo === '7d') days = 7;
+    else if (periodo === '12m') days = 365;
 
-      const result = await getHeatmapData(days);
-      if (result.success && result.data) {
-        setAnalyticsData(result.data);
-      }
-      setLoading(false);
-    };
+    const result = await getHeatmapData(days);
+    if (result.success && result.data) {
+      setAnalyticsData({
+        ...result.data,
+        uniqueUsers: result.data.uniqueUsers || 0,
+      });
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchAnalytics();
   }, [periodo]);
 
@@ -76,20 +82,31 @@ export default function HeatmapContent() {
           </p>
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner w-max">
-          {['7d', '30d', '12m'].map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriodo(p)}
-              className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${
-                periodo === p
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '12 meses'}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => fetchAnalytics()}
+            disabled={loading}
+            className="px-3 py-1.5 flex items-center gap-2 text-sm font-bold bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+          >
+            <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : 'hidden'}`} />
+            Atualizar
+          </button>
+          
+          <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner w-max">
+            {['7d', '30d', '12m'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriodo(p)}
+                className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${
+                  periodo === p
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '12 meses'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -100,7 +117,7 @@ export default function HeatmapContent() {
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Usuários Ativos</p>
-                <p className="text-4xl font-bold text-slate-900">{loading ? '—' : analyticsData.totalViews}</p>
+                <p className="text-4xl font-bold text-slate-900">{loading ? '—' : analyticsData.uniqueUsers}</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-2xl">
                 <Users className="h-6 w-6 text-blue-600" />

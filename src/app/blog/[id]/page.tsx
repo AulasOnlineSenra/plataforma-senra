@@ -150,7 +150,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
 
   return (
-    <article className="prose prose-lg max-w-none">
+    <article className="prose prose-lg max-w-4xl mx-auto">
       <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>

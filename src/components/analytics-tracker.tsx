@@ -16,10 +16,17 @@ export function AnalyticsTracker() {
       
       let userId = null;
       try {
+        let anonId = localStorage.getItem('senra_anon_id');
+        if (!anonId) {
+          anonId = 'anon_' + Math.random().toString(36).substring(2) + Date.now();
+          localStorage.setItem('senra_anon_id', anonId);
+        }
+        userId = anonId;
+
         const stored = localStorage.getItem('currentUser');
         if (stored) {
           const user = JSON.parse(stored);
-          userId = user.id;
+          userId = user.id || anonId;
         }
       } catch (e) {}
 

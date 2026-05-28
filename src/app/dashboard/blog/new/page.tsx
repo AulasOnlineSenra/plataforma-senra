@@ -222,7 +222,7 @@ export default function NewBlogPostPage() {
                 Configurações
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl">
+            <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl overflow-y-auto">
               <SheetHeader className="mb-6">
                 <SheetTitle className="font-headline text-2xl">Configurações do Artigo</SheetTitle>
                 <SheetDescription>Ajuste os metadados e configurações de publicação.</SheetDescription>

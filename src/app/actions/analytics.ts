@@ -180,6 +180,8 @@ export async function getHeatmapData(periodDays: number) {
     }).sort((a, b) => b.views - a.views).slice(0, 10);
 
     const totalVisits = mobileCount + desktopCount;
+    const uniqueUsers = new Set(visits.map(v => v.userId).filter(Boolean)).size;
+
     const mobilePercent = totalVisits > 0 ? Math.round((mobileCount / totalVisits) * 100) : 0;
     const desktopPercent = totalVisits > 0 ? Math.round((desktopCount / totalVisits) * 100) : 0;
 
@@ -189,10 +191,10 @@ export async function getHeatmapData(periodDays: number) {
     ];
 
     const monthlyData = [
-      { name: 'Atual', usuarios: totalVisits, pageviews: totalVisits }
+      { name: 'Atual', usuarios: uniqueUsers, pageviews: totalVisits }
     ];
 
-    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits } };
+    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits, uniqueUsers: uniqueUsers } };
   } catch (error: any) {
     console.error('Error fetching heatmap data:', error);
     return { success: false, error: error.message || 'Falha ao carregar analytics' };
