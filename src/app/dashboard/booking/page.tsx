@@ -8,6 +8,8 @@ import {
   getDay,
   isBefore,
   startOfToday,
+  isToday,
+  isTomorrow,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SearchX, Star, Pencil, Trash2 } from "lucide-react";
@@ -1094,7 +1096,14 @@ function BookingPageComponent() {
                   <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 1fr 100px 100px 80px" }}>
                     <span className="text-sm font-bold text-slate-900 truncate" style={{ paddingRight: "6px" }}>{booking.subjectName}</span>
                     <span className="text-sm text-slate-700 truncate" style={{ paddingRight: "12px" }}>{booking.teacherName}</span>
-                    <span className="text-sm text-slate-600" style={{ paddingRight: "-8px" }}>{format(new Date(booking.date), "dd/MM/yyyy")}</span>
+                    <span className="text-sm text-slate-600" style={{ paddingRight: "-8px" }}>
+                      {(() => {
+                        const d = new Date(booking.date);
+                        if (isToday(d)) return `Hoje ${format(d, "dd/MM/yyyy")}`;
+                        if (isTomorrow(d)) return `Amanhã ${format(d, "dd/MM/yyyy")}`;
+                        return format(d, "eeee dd/MM/yyyy", { locale: ptBR });
+                      })()}
+                    </span>
                     <span className="text-sm text-slate-600" style={{ paddingRight: "0px" }}>{booking.start} - {booking.end}</span>
                     <div className="flex justify-end gap-0.5">
                       <button onClick={() => handleEditPreBooking(booking.id)} className="rounded-full p-1.5 text-slate-400 hover:bg-amber-100 hover:text-amber-600 transition" title="Editar">

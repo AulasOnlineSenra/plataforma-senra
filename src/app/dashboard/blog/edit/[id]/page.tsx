@@ -99,46 +99,61 @@ export default function EditBlogPostPage() {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
+    input.setAttribute('multiple', 'true');
     input.click();
 
     input.onchange = async () => {
-      const file = input.files ? input.files[0] : null;
-      if (!file) return;
+      const files = input.files;
+      if (!files || files.length === 0) return;
 
       const quill = quillRef.current?.getEditor();
       if (!quill) return;
 
       const range = quill.getSelection(true);
 
-      const toastId = toast({
-        title: 'Fazendo upload da imagem...',
-        description: 'Por favor, aguarde enquanto salvamos sua imagem.',
+      toast({
+        title: 'Fazendo upload...',
+        description: `Aguarde enquanto salvamos ${files.length} imagem(ns).`,
       });
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
+        const uploadedUrls: string[] = [];
+        
+        for (let i = 0; i < files.length; i++) {
+          const formData = new FormData();
+          formData.append('file', files[i]);
 
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
 
-        const result = await res.json();
+          const result = await res.json();
+          if (result.success && result.data?.url) {
+            uploadedUrls.push(result.data.url);
+          }
+        }
 
-        if (result.success && result.data?.url) {
-          quill.insertEmbed(range.index, 'image', result.data.url);
-          quill.setSelection(range.index + 1);
+        if (uploadedUrls.length > 0) {
+          if (uploadedUrls.length === 1) {
+            quill.insertEmbed(range.index, 'image', uploadedUrls[0]);
+            quill.setSelection(range.index + 1);
+          } else {
+            const marker = `\n[CARROSSEL_DE_IMAGENS:${uploadedUrls.join(',')}]\n`;
+            quill.insertText(range.index, marker);
+            quill.setSelection(range.index + marker.length);
+          }
+          
           toast({
             title: 'Sucesso!',
-            description: 'Imagem enviada com sucesso.',
+            description: uploadedUrls.length > 1 ? 'Carrossel inserido com sucesso.' : 'Imagem enviada com sucesso.',
             className: 'bg-emerald-600 text-white border-none',
           });
         } else {
           toast({
             variant: 'destructive',
             title: 'Erro no Upload',
-            description: result.error || 'Não foi possível salvar a imagem.',
+            description: 'Não foi possível salvar as imagens.',
           });
         }
       } catch (err) {

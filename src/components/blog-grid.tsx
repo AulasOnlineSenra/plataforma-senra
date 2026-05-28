@@ -199,7 +199,7 @@ function HeroPost({ post }: { post: Post }) {
       </div>
       
       <div className="relative mt-auto p-5 sm:p-8">
-        <div className="flex items-center gap-2 mb-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        <div className="flex items-center gap-2 mb-3 drop-shadow-[0_4px_4px_rgba(0,0,0,1)]">
           <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-[10px] font-bold text-black border border-white/20">
             {post.author.charAt(0)}
           </div>
@@ -207,7 +207,7 @@ function HeroPost({ post }: { post: Post }) {
           <span className="text-white/40 text-[10px]">• {timeLabel}</span>
         </div>
         
-        <h2 className="text-xl sm:text-3xl font-bold text-white font-headline leading-tight mb-3 group-hover:text-amber-400 transition-colors drop-shadow-[0_4px_6px_rgba(0,0,0,0.9)]">
+        <h2 className="text-xl sm:text-3xl font-bold text-white font-headline leading-tight mb-3 group-hover:text-amber-400 transition-colors drop-shadow-[0_4px_8px_rgba(0,0,0,1)] [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">
           {post.title}
         </h2>
         

@@ -146,11 +146,33 @@ function PostReactions({ post, isVertical = false }: { post: BlogPost; isVertica
   );
 }
 
+function parseContentForCarousel(content: string) {
+  const regex = /\[CARROSSEL_DE_IMAGENS:([^\]]+)\]/g;
+  return content.replace(regex, (match, urlsStr) => {
+    const urls = urlsStr.split(',');
+    
+    const imagesHtml = urls.map((url: string) => `
+      <div class="carousel-slide">
+        <img src="${url.trim()}" alt="Imagem do carrossel" loading="lazy" />
+      </div>
+    `).join('');
+
+    return `
+      <div class="blog-carousel-container">
+        <div class="blog-carousel">
+          ${imagesHtml}
+        </div>
+      </div>
+    `;
+  });
+}
+
 function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
+  const parsedContent = parseContentForCarousel(post.content);
 
   return (
-    <article className="prose prose-lg max-w-4xl mx-auto">
+    <article className="prose prose-lg max-w-[450px] mx-auto">
       <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>
@@ -172,7 +194,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
 
       <div 
         className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert ql-editor px-0"
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        dangerouslySetInnerHTML={{ __html: parsedContent }}
       />
 
       {tags.length > 0 && (
@@ -204,6 +226,44 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-editor p {
           margin-left: 0;
           margin-right: 0;
+        }
+        .blog-carousel-container {
+          position: relative;
+          width: 100%;
+          margin: 2rem 0;
+          overflow: hidden;
+          border-radius: 15px;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .blog-carousel {
+          display: flex;
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          gap: 16px;
+          padding-bottom: 8px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+        .blog-carousel::-webkit-scrollbar {
+          height: 6px;
+        }
+        .blog-carousel::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 10px;
+        }
+        .blog-carousel::-webkit-scrollbar-thumb {
+          background-color: #cbd5e1;
+          border-radius: 10px;
+        }
+        .carousel-slide {
+          flex: 0 0 100%;
+          scroll-snap-align: center;
+        }
+        .carousel-slide img {
+          margin: 0 !important;
+          width: 100%;
+          height: auto;
+          border-radius: 15px;
         }
       `}} />
 
