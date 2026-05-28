@@ -357,7 +357,7 @@ function SchedulePageComponent() {
 
       {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Aula do Histórico</AlertDialogTitle>
             <AlertDialogDescription>
