@@ -188,6 +188,25 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         </div>
       )}
 
+      <style dangerouslySetInnerHTML={{__html: `
+        .ql-editor {
+          padding-left: 0;
+          padding-right: 0;
+        }
+        .ql-editor img {
+          border-radius: 15px;
+          margin-top: 2rem;
+          margin-bottom: 2rem;
+          max-width: 100%;
+          height: auto;
+          display: block;
+        }
+        .ql-editor p {
+          margin-left: 0;
+          margin-right: 0;
+        }
+      `}} />
+
       <PostReactions post={post} />
       </article>
   );

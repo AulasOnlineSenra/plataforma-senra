@@ -58,6 +58,19 @@ export default function NewBlogPostPage() {
     createdAt: '',
   });
 
+  const [publishedPosts, setPublishedPosts] = useState<{id: string, title: string}[]>([]);
+  const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
+
+  useEffect(() => {
+    import('@/app/actions/blog').then(m => {
+      m.getPublishedPosts().then(res => {
+        if (res.success && res.data) {
+          setPublishedPosts(res.data);
+        }
+      });
+    });
+  }, []);
+
   const imageHandler = useCallback(() => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
@@ -292,6 +305,75 @@ export default function NewBlogPostPage() {
                     />
                   </div>
                 )}
+
+                {/* Related Links Injector */}
+                <div className="space-y-3 pt-4 border-t border-slate-200">
+                  <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
+                  <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
+                  
+                  <div className="max-h-40 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
+                    {publishedPosts.map(post => (
+                      <label key={post.id} className="flex items-start gap-2 cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                          checked={selectedLinks.includes(post.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
+                            else setSelectedLinks(prev => prev.filter(id => id !== post.id));
+                          }}
+                        />
+                        <span className="text-sm text-slate-700 group-hover:text-amber-600 transition-colors line-clamp-2">{post.title}</span>
+                      </label>
+                    ))}
+                    {publishedPosts.length === 0 && (
+                      <p className="text-sm text-slate-400 text-center py-2">Nenhum post publicado.</p>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
+                    disabled={selectedLinks.length === 0}
+                    onClick={() => {
+                      if (!formData.content) {
+                        toast({ title: 'Aviso', description: 'Escreva algum conteúdo primeiro.', variant: 'destructive' });
+                        return;
+                      }
+                      
+                      const selectedPostsData = publishedPosts.filter(p => selectedLinks.includes(p.id));
+                      const tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = formData.content;
+                      const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
+                      
+                      if (paragraphs.length < 2) {
+                        selectedPostsData.forEach(post => {
+                          const a = document.createElement('p');
+                          a.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                          tempDiv.appendChild(a);
+                        });
+                      } else {
+                        const interval = Math.max(1, Math.floor(paragraphs.length / (selectedPostsData.length + 1)));
+                        selectedPostsData.forEach((post, index) => {
+                          const targetIndex = Math.min((index + 1) * interval - 1, paragraphs.length - 1);
+                          const targetP = paragraphs[targetIndex];
+                          if (targetP) {
+                            const linkHtml = document.createElement('p');
+                            linkHtml.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                            targetP.parentNode?.insertBefore(linkHtml, targetP.nextSibling);
+                          }
+                        });
+                      }
+                      
+                      handleChange('content', tempDiv.innerHTML);
+                      setSelectedLinks([]);
+                      toast({ title: 'Sucesso', description: 'Links distribuídos no texto!', className: 'bg-emerald-600 text-white border-none' });
+                    }}
+                  >
+                    Distribuir Links no Texto
+                  </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
