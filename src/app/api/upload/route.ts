@@ -4,7 +4,7 @@ import path from "path";
 import { constants } from "fs";
 import { bucket } from "@/lib/firebase-admin";
 
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB (suporte a vídeos)
 
 export async function POST(request: NextRequest) {
   try {

@@ -147,32 +147,57 @@ function PostReactions({ post, isVertical = false }: { post: BlogPost; isVertica
 }
 
 function parseContentForCarousel(content: string) {
-  const regex = /\[CARROSSEL_DE_IMAGENS:([^\]]+)\]/g;
-  return content.replace(regex, (match, urlsStr) => {
-    const urls = urlsStr.split(',');
-    
-    const imagesHtml = urls.map((url: string) => `
-      <div class="carousel-slide">
-        <img src="${url.trim()}" alt="Imagem do carrossel" loading="lazy" />
-      </div>
-    `).join('');
+  // The marker may have been HTML-encoded by Quill storage
+  const decoded = content
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"');
 
-    return `
-      <div class="blog-carousel-container">
-        <div class="blog-carousel">
-          ${imagesHtml}
-        </div>
-      </div>
-    `;
+  const regex = /\[CARROSSEL_DE_IMAGENS:([^\]]+)\]/g;
+  return decoded.replace(regex, (_match, urlsStr) => {
+    const urls = (urlsStr as string).split(',').map((u: string) => u.trim()).filter(Boolean);
+
+    const indicators = urls.map((_: string, i: number) =>
+      `<button class="carousel-dot${i === 0 ? ' active' : ''}" data-index="${i}" aria-label="Imagem ${i + 1}"></button>`
+    ).join('');
+
+    const imagesHtml = urls.map((url: string, i: number) =>
+      `<div class="carousel-slide" data-index="${i}">
+        <img src="${url}" alt="Imagem ${i + 1} do carrossel" loading="lazy" />
+      </div>`
+    ).join('');
+
+    const id = `carousel-${Math.random().toString(36).substring(2, 8)}`;
+
+    return `<div class="blog-carousel-container" id="${id}">
+  <div class="blog-carousel-track">${imagesHtml}</div>
+  <button class="carousel-prev" onclick="(function(btn){var c=btn.closest('.blog-carousel-container');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var tot=t.querySelectorAll('.carousel-slide').length;var next=(cur-1+tot)%tot;t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-dot').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)" aria-label="Anterior">&lsaquo;</button>
+  <button class="carousel-next" onclick="(function(btn){var c=btn.closest('.blog-carousel-container');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var tot=t.querySelectorAll('.carousel-slide').length;var next=(cur+1)%tot;t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-dot').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)" aria-label="Próximo">&rsaquo;</button>
+  <div class="carousel-dots">${indicators}</div>
+</div>`;
+  });
+}
+
+function parseContentForVideo(content: string) {
+  const regex = /\[VIDEO:([^\]]+)\]/g;
+  return content.replace(regex, (_match, url) => {
+    return `<div class="blog-video-container">
+  <video controls preload="metadata" class="blog-video">
+    <source src="${url.trim()}" />
+    Seu navegador não suporta reproduo de vídeo.
+  </video>
+</div>`;
   });
 }
 
 function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
-  const parsedContent = parseContentForCarousel(post.content);
+  let parsedContent = parseContentForCarousel(post.content);
+  parsedContent = parseContentForVideo(parsedContent);
 
   return (
-    <article className="prose prose-lg max-w-[450px] mx-auto">
+    <article className="prose prose-lg max-w-none w-full">
       <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>
@@ -223,48 +248,93 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           height: auto;
           display: block;
         }
-        .ql-editor p {
-          margin-left: 0;
-          margin-right: 0;
+        .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
+          max-width: 450px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .blog-video-container {
+          width: 100%;
+          margin: 2rem auto;
+          border-radius: 15px;
+          overflow: hidden;
+          background: #000;
+        }
+        .blog-video {
+          width: 100%;
+          max-height: 480px;
+          display: block;
+          border-radius: 15px;
         }
         .blog-carousel-container {
           position: relative;
           width: 100%;
-          margin: 2rem 0;
-          overflow: hidden;
+          margin: 2rem auto;
           border-radius: 15px;
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+          overflow: hidden;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          background: #0f172a;
+          max-width: 100%;
         }
-        .blog-carousel {
+        .blog-carousel-track {
           display: flex;
-          overflow-x: auto;
-          scroll-snap-type: x mandatory;
-          gap: 16px;
-          padding-bottom: 8px;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
-        }
-        .blog-carousel::-webkit-scrollbar {
-          height: 6px;
-        }
-        .blog-carousel::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 10px;
-        }
-        .blog-carousel::-webkit-scrollbar-thumb {
-          background-color: #cbd5e1;
-          border-radius: 10px;
+          transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+          will-change: transform;
         }
         .carousel-slide {
           flex: 0 0 100%;
-          scroll-snap-align: center;
+          min-width: 100%;
         }
         .carousel-slide img {
           margin: 0 !important;
           width: 100%;
-          height: auto;
-          border-radius: 15px;
+          max-height: 520px;
+          object-fit: cover;
+          border-radius: 0;
+          display: block;
         }
+        .carousel-prev, .carousel-next {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(0,0,0,0.5);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          font-size: 24px;
+          line-height: 1;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          transition: background 0.2s;
+        }
+        .carousel-prev:hover, .carousel-next:hover { background: rgba(0,0,0,0.75); }
+        .carousel-prev { left: 10px; }
+        .carousel-next { right: 10px; }
+        .carousel-dots {
+          position: absolute;
+          bottom: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 6px;
+          z-index: 10;
+        }
+        .carousel-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.5);
+          border: none;
+          cursor: pointer;
+          transition: background 0.2s;
+          padding: 0;
+        }
+        .carousel-dot.active { background: white; }
       `}} />
 
       <PostReactions post={post} />

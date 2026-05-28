@@ -20,7 +20,7 @@ import {
 import {
   User, ShieldCheck, Mail, KeyRound, Save, CheckCircle2,
   GraduationCap, BookOpen, Clock, Plus, Trash2, CalendarDays, Upload,
-  ChevronDown, Wallet, AlertTriangle, Video, Star, Link, Unlink,
+  ChevronDown, Wallet, AlertTriangle, Video, Star, Link, Unlink, Copy,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -739,6 +739,17 @@ export default function ProfilePage() {
     setAvailabilitySlots((prev) => prev.filter((s) => s.tempId !== tempId));
   };
 
+  const duplicateAvailabilitySlot = (slot: AvailabilitySlot) => {
+    const daysOrder = [1, 2, 3, 4, 5, 6, 0];
+    const currentIndex = daysOrder.indexOf(slot.dayOfWeek);
+    const nextDay = daysOrder[(currentIndex + 1) % daysOrder.length];
+    setAvailabilitySlots((prev) => [
+      ...prev,
+      { tempId: Math.random().toString(36).substring(7), dayOfWeek: nextDay, startTime: slot.startTime, endTime: slot.endTime },
+    ]);
+    toast({ title: 'Horário duplicado', description: 'O horário foi copiado para o próximo dia.' });
+  };
+
   const roundToHalfHour = (time: string): string => {
     const [hours, minutes] = time.split(':').map(Number);
     let roundedMinutes = 0;
@@ -1272,7 +1283,7 @@ export default function ProfilePage() {
                           daySlots.map((slot, idx) => (
                             <div
                               key={slot.tempId}
-                              className={`grid grid-cols-[160px_1fr_1fr_auto_auto] gap-3 items-end ${idx > 0 ? 'mt-1' : ''}`}
+                              className={`grid grid-cols-[160px_1fr_1fr_auto_auto_auto] gap-3 items-end ${idx > 0 ? 'mt-1' : ''}`}
                             >
                               {idx === 0 ? (
                                 <span className="font-bold text-slate-700 text-center">{day.label}</span>
@@ -1305,8 +1316,20 @@ export default function ProfilePage() {
                               size="icon"
                               className="h-8 w-8 rounded-lg border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100"
                               onClick={() => handleSaveAndAddSlot(day.value)}
+                              title="Adicionar horário"
                             >
                               <Plus className="h-3 w-3" />
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg border-blue-200 text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+                              onClick={() => duplicateAvailabilitySlot(slot)}
+                              title="Copiar para o próximo dia"
+                            >
+                              <Copy className="h-3 w-3" />
                             </Button>
 
                             <Button

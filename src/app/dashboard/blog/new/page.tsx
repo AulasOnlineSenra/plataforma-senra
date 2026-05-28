@@ -143,14 +143,73 @@ export default function NewBlogPostPage() {
     };
   }, [toast]);
 
+  const videoHandler = useCallback(() => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'video/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files ? input.files[0] : null;
+      if (!file) return;
+
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+
+      toast({
+        title: 'Fazendo upload do vídeo...',
+        description: 'Por favor, aguarde. Vídeos podem demorar alguns segundos.',
+      });
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await res.json();
+
+        if (result.success && result.data?.url) {
+          const videoHtml = `\n[VIDEO:${result.data.url}]\n`;
+          quill.insertText(range.index, videoHtml);
+          quill.setSelection(range.index + videoHtml.length);
+          toast({
+            title: 'Vídeo adicionado!',
+            description: 'O vídeo será exibido corretamente na página do artigo.',
+            className: 'bg-emerald-600 text-white border-none',
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Erro no Upload',
+            description: result.error || 'Não foi possível salvar o vídeo.',
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        toast({
+          variant: 'destructive',
+          title: 'Erro inesperado',
+          description: 'Ocorreu um erro ao enviar o vídeo.',
+        });
+      }
+    };
+  }, [toast]);
+
   const modules = useMemo(() => ({
     toolbar: {
       container: '#custom-toolbar',
       handlers: {
         image: imageHandler,
+        video: videoHandler,
       },
     },
-  }), [imageHandler]);
+  }), [imageHandler, videoHandler]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

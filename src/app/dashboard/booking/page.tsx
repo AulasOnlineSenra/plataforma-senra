@@ -1020,7 +1020,6 @@ function BookingPageComponent() {
             </CardContent>
           </Card>
       </div>
-
       {preBookings.length > 0 && (
         <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
           <CardHeader>
@@ -1028,11 +1027,11 @@ function BookingPageComponent() {
           </CardHeader>
           <CardContent>
             <div className="rounded-2xl border border-slate-100 overflow-hidden">
-              <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "1fr 1fr 100px 100px 80px" }}>
-                <span style={{ paddingRight: "6px" }}>Disciplina</span>
-                <span style={{ paddingRight: "12px" }}>Professor</span>
-                <span style={{ paddingRight: "-20px" }}>Data</span>
-                <span style={{ paddingRight: "0px" }}>Horário</span>
+              <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "1fr 1fr 180px 120px 80px" }}>
+                <span>Disciplina</span>
+                <span>Professor</span>
+                <span>Data</span>
+                <span>Horário</span>
                 <span className="text-right">Ações</span>
               </div>
               {preBookings.map((booking, idx) => {
@@ -1040,8 +1039,8 @@ function BookingPageComponent() {
 
                 if (isEditing) {
                   return (
-                    <div key={booking.id} className={`grid items-center px-4 py-3 bg-amber-50 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 1fr 100px 100px 80px" }}>
-                      <div style={{ paddingRight: "6px" }}>
+                    <div key={booking.id} className={`grid items-center px-4 py-3 bg-amber-50 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 1fr 180px 120px 80px" }}>
+                      <div>
                         <Select value={editingSubject} onValueChange={(v) => { setEditingSubject(v); setEditingTeacher(""); setEditingTime(""); }}>
                           <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
                             <SelectValue placeholder="Disciplina" />
@@ -1053,7 +1052,7 @@ function BookingPageComponent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div style={{ paddingRight: "12px" }}>
+                      <div>
                         <Select value={editingTeacher} onValueChange={(v) => { setEditingTeacher(v); setEditingTime(""); }} disabled={!editingSubject}>
                           <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
                             <SelectValue placeholder="Professor" />
@@ -1065,10 +1064,10 @@ function BookingPageComponent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div style={{ paddingRight: "-8px" }}>
+                      <div>
                         <input type="date" value={editingDate} onChange={(e) => { setEditingDate(e.target.value); setEditingTime(""); }} className="h-9 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700" />
                       </div>
-                      <div style={{ paddingRight: "0px" }}>
+                      <div>
                         <Select value={editingTime} disabled={!editingTeacher || !editingDate}>
                           <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
                             <SelectValue placeholder="Horário" />
@@ -1093,10 +1092,10 @@ function BookingPageComponent() {
                 }
 
                 return (
-                  <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 1fr 100px 100px 80px" }}>
-                    <span className="text-sm font-bold text-slate-900 truncate" style={{ paddingRight: "6px" }}>{booking.subjectName}</span>
-                    <span className="text-sm text-slate-700 truncate" style={{ paddingRight: "12px" }}>{booking.teacherName}</span>
-                    <span className="text-sm text-slate-600" style={{ paddingRight: "-8px" }}>
+                  <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 1fr 180px 120px 80px" }}>
+                    <span className="text-sm font-bold text-slate-900 truncate pr-2">{booking.subjectName}</span>
+                    <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">
                       {(() => {
                         const d = new Date(booking.date);
                         if (isToday(d)) return `Hoje ${format(d, "dd/MM/yyyy")}`;
@@ -1104,7 +1103,7 @@ function BookingPageComponent() {
                         return format(d, "eeee dd/MM/yyyy", { locale: ptBR });
                       })()}
                     </span>
-                    <span className="text-sm text-slate-600" style={{ paddingRight: "0px" }}>{booking.start} - {booking.end}</span>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">{booking.start} - {booking.end}</span>
                     <div className="flex justify-end gap-0.5">
                       <button onClick={() => handleEditPreBooking(booking.id)} className="rounded-full p-1.5 text-slate-400 hover:bg-amber-100 hover:text-amber-600 transition" title="Editar">
                         <Pencil className="h-3.5 w-3.5" />
@@ -1130,7 +1129,6 @@ function BookingPageComponent() {
     </div>
   );
 }
-
 export default function BookingPage() {
   return (
     <Suspense
