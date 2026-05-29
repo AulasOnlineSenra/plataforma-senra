@@ -607,7 +607,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
           {filteredBoards.map((board) => (
             <Card 
               key={board.id} 
-              className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden"
+              className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden rounded-[10px]"
               onClick={() => handleSelectBoard(board)}
             >
               <div className={`h-16 ${board.coverColor || 'bg-slate-200'} relative`}>
@@ -648,7 +648,7 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
           ))}
           
           {/* New Board Card */}
-          <Card onClick={handleCreateBoard} className="cursor-pointer hover:bg-slate-50 border-dashed border-2 border-slate-200 hover:border-slate-300 transition-all">
+          <Card onClick={handleCreateBoard} className="cursor-pointer hover:bg-slate-50 border-dashed border-2 border-slate-200 hover:border-slate-300 transition-all rounded-[10px]">
             <CardContent className="p-3 h-full flex flex-col items-center justify-center min-h-[100px]">
               <Plus className="h-7 w-7 text-slate-400 mb-1" />
               <span className="text-sm text-slate-500">Criar novo quadro</span>
