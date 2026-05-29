@@ -1,12 +1,26 @@
 import { getPublishedPosts } from '@/app/actions/blog';
 import BlogSearchBar from '@/components/blog-search-bar';
 import BlogGrid from '@/components/blog-grid';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+
 export default async function BlogPage() {
   const result = await getPublishedPosts();
   const posts = result.success ? result.data : [];
 
   return (
     <div className="min-h-screen bg-[url('/imagem-fundo-blog.png')] bg-cover bg-fixed bg-center">
+      {/* Back to Home button */}
+      <div className="fixed top-6 left-6 z-50">
+        <Link
+          href="/"
+          className="flex items-center gap-2 bg-white/90 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white px-4 py-2 rounded-full shadow-md border border-slate-200 text-sm font-semibold transition-all"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar ao site
+        </Link>
+      </div>
+
       {/* Header minimalista */}
       <div className="hidden border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-6">

@@ -197,19 +197,22 @@ export default function EditBlogPostPage() {
         ? new Date(formData.createdAt).toISOString()
         : undefined;
 
-      // If a future date is set and published is false → it’s a scheduled post
-      // Keep published=false so it won’t appear publicly until the date arrives.
-      // getPublishedPosts filters: published=true AND createdAt<=now.
-      // For scheduled: we store published=true + future createdAt so the query
-      // auto-releases it at the right time.
+      let finalCreatedAt = createdAtISO;
       const scheduledDate = createdAtISO ? new Date(createdAtISO) : null;
+      
+      // If the user checked "Publicar Imediatamente" BUT the date is still in the future,
+      // we must reset the date to NOW so it publishes immediately.
+      if (formData.published && scheduledDate && scheduledDate > new Date()) {
+        finalCreatedAt = new Date().toISOString();
+      }
+
       const isScheduled = !formData.published && scheduledDate && scheduledDate > new Date();
       const publishedValue = isScheduled ? true : formData.published;
 
       const result = await updatePost(id, {
         ...formData,
         published: publishedValue,
-        ...(createdAtISO && { createdAt: createdAtISO }),
+        ...(finalCreatedAt && { createdAt: finalCreatedAt }),
         tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
       });
 
