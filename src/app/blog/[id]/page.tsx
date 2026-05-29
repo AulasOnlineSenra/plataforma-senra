@@ -250,15 +250,15 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         }
         .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
           max-width: 100%;
-          overflow-wrap: normal !important;
+          overflow-wrap: break-word !important;
           word-break: normal !important;
           hyphens: none !important;
-          white-space: normal !important;
+          white-space: pre-wrap !important;
         }
         .ql-editor strong, .ql-editor em, .ql-editor span {
-          overflow-wrap: normal !important;
+          overflow-wrap: break-word !important;
           word-break: normal !important;
-          white-space: normal !important;
+          white-space: pre-wrap !important;
         }
         .blog-video-container {
           width: 100%;
