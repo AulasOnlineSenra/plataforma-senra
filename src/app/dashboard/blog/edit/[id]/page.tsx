@@ -191,14 +191,25 @@ export default function EditBlogPostPage() {
     setIsSubmitting(true);
     try {
       const id = params.id as string;
-      // If a future date is set, automatically mark as published (scheduled)
-      const scheduledDate = formData.createdAt ? new Date(formData.createdAt) : null;
-      const isScheduled = scheduledDate && scheduledDate > new Date();
+      // Convert datetime-local (local time, no tz) to ISO string with timezone offset
+      // so the server stores the correct UTC time regardless of VPS timezone.
+      const createdAtISO = formData.createdAt
+        ? new Date(formData.createdAt).toISOString()
+        : undefined;
+
+      // If a future date is set and published is false → it’s a scheduled post
+      // Keep published=false so it won’t appear publicly until the date arrives.
+      // getPublishedPosts filters: published=true AND createdAt<=now.
+      // For scheduled: we store published=true + future createdAt so the query
+      // auto-releases it at the right time.
+      const scheduledDate = createdAtISO ? new Date(createdAtISO) : null;
+      const isScheduled = !formData.published && scheduledDate && scheduledDate > new Date();
       const publishedValue = isScheduled ? true : formData.published;
 
       const result = await updatePost(id, {
         ...formData,
         published: publishedValue,
+        ...(createdAtISO && { createdAt: createdAtISO }),
         tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
       });
 
@@ -339,13 +350,45 @@ export default function EditBlogPostPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">URL da Imagem</Label>
-              <Input
-                id="image"
-                placeholder="https://exemplo.com/imagem.jpg"
-                value={formData.image}
-                onChange={(e) => handleChange('image', e.target.value)}
-              />
+              <Label>Capa do Artigo</Label>
+              {formData.image ? (
+                <div className="relative rounded-lg overflow-hidden border bg-slate-50">
+                  <img src={formData.image} alt="Capa" className="w-full h-32 object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => handleChange('image', '')}
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow"
+                  >✕</button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-2 h-24 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      toast({ title: 'Fazendo upload...', description: 'Aguarde.' });
+                      try {
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                        const result = await res.json();
+                        if (result.success && result.data?.url) {
+                          handleChange('image', result.data.url);
+                          toast({ title: 'Capa enviada!', className: 'bg-emerald-600 text-white border-none' });
+                        } else {
+                          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar.' });
+                        }
+                      } catch {
+                        toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Tente novamente.' });
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-slate-400">Clique para upload da capa</span>
+                </label>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -375,9 +418,9 @@ export default function EditBlogPostPage() {
               {!formData.published && (
                 <div className="space-y-2 border border-slate-200 bg-slate-50 p-4 rounded-xl">
                   <Label htmlFor="createdAt" className="text-slate-700 font-bold flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" /> Data e Hora de Publicação
+                    <CalendarIcon className="h-4 w-4" /> Agendar Publicação
                   </Label>
-                  <p className="text-xs text-slate-500 mb-2">Defina para quando o artigo deve ser agendado.</p>
+                  <p className="text-xs text-slate-500 mb-2">Se preenchido, o artigo será publicado automaticamente nessa data e hora. Deixe vazio para salvar como rascunho.</p>
                   <Input
                     id="createdAt"
                     type="datetime-local"

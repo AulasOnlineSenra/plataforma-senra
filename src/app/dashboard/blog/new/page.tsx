@@ -246,7 +246,10 @@ export default function NewBlogPostPage() {
     }
 
     const publishedValue = publishMode === 'now' || publishMode === 'schedule' ? true : false;
-    const createdAtValue = publishMode === 'schedule' ? formData.createdAt : '';
+    // Convert datetime-local (no timezone) to ISO string so VPS receives correct UTC time
+    const createdAtValue = publishMode === 'schedule' && formData.createdAt
+      ? new Date(formData.createdAt).toISOString()
+      : '';
 
     setIsSubmitting(true);
     const result = await createPost({
@@ -373,16 +376,48 @@ export default function NewBlogPostPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="image" className="text-slate-700 font-bold flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" /> Capa (URL)
+                  <Label className="text-slate-700 font-bold flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" /> Capa do Artigo
                   </Label>
-                  <Input
-                    id="image"
-                    placeholder="https://exemplo.com/imagem.jpg"
-                    value={formData.image}
-                    onChange={(e) => handleChange('image', e.target.value)}
-                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
-                  />
+                  {formData.image ? (
+                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                      <img src={formData.image} alt="Capa" className="w-full h-36 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleChange('image', '')}
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-2 h-28 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          toast({ title: 'Fazendo upload...', description: 'Aguarde enquanto salvamos a capa.' });
+                          try {
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                            const result = await res.json();
+                            if (result.success && result.data?.url) {
+                              handleChange('image', result.data.url);
+                              toast({ title: 'Capa enviada!', className: 'bg-emerald-600 text-white border-none' });
+                            } else {
+                              toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar a imagem.' });
+                            }
+                          } catch {
+                            toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Tente novamente.' });
+                          }
+                        }}
+                      />
+                      <ImageIcon className="h-6 w-6 text-slate-400" />
+                      <span className="text-sm text-slate-500">Clique para fazer upload da capa</span>
+                    </label>
+                  )}
                 </div>
 
                 <div className="space-y-2">
