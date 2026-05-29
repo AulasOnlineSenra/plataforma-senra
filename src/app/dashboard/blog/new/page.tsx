@@ -60,6 +60,7 @@ export default function NewBlogPostPage() {
 
   const [publishedPosts, setPublishedPosts] = useState<{id: string, title: string}[]>([]);
   const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
+  const [insertedLinks, setInsertedLinks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     import('@/app/actions/blog').then(m => {
@@ -430,21 +431,30 @@ export default function NewBlogPostPage() {
                   <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
                   <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
                   
-                  <div className="max-h-40 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
-                    {publishedPosts.map(post => (
-                      <label key={post.id} className="flex items-start gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                          checked={selectedLinks.includes(post.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
-                            else setSelectedLinks(prev => prev.filter(id => id !== post.id));
-                          }}
-                        />
-                        <span className="text-sm text-slate-700 group-hover:text-amber-600 transition-colors line-clamp-2">{post.title}</span>
-                      </label>
-                    ))}
+                  <div className="max-h-52 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
+                    {publishedPosts.map(post => {
+                      const isInserted = insertedLinks.has(post.id);
+                      const isSelected = selectedLinks.includes(post.id);
+                      return (
+                        <label key={post.id} className={`flex items-start gap-2 cursor-pointer group rounded-lg px-2 py-1 transition-colors ${isInserted ? 'bg-emerald-50 border border-emerald-200' : isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                          <input 
+                            type="checkbox" 
+                            className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                            checked={isSelected || isInserted}
+                            disabled={isInserted}
+                            onChange={(e) => {
+                              if (isInserted) return;
+                              if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
+                              else setSelectedLinks(prev => prev.filter(id => id !== post.id));
+                            }}
+                          />
+                          <span className={`text-sm line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
+                            {post.title}
+                            {isInserted && <span className="ml-1 text-xs text-emerald-600">✓ adicionado</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
                     {publishedPosts.length === 0 && (
                       <p className="text-sm text-slate-400 text-center py-2">Nenhum post publicado.</p>
                     )}
@@ -486,6 +496,8 @@ export default function NewBlogPostPage() {
                       }
                       
                       handleChange('content', tempDiv.innerHTML);
+                      // Mark inserted links visually - keep checkboxes checked
+                      setInsertedLinks(prev => new Set([...prev, ...selectedLinks]));
                       setSelectedLinks([]);
                       toast({ title: 'Sucesso', description: 'Links distribuídos no texto!', className: 'bg-emerald-600 text-white border-none' });
                     }}

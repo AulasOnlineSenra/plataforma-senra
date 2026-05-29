@@ -253,11 +253,12 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           overflow-wrap: break-word;
           word-break: normal;
           hyphens: none;
-          white-space: pre-wrap;
+          white-space: normal;
         }
         .ql-editor strong, .ql-editor em, .ql-editor span {
           overflow-wrap: inherit;
           word-break: inherit;
+          white-space: inherit;
         }
         .blog-video-container {
           width: 100%;
