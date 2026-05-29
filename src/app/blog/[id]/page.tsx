@@ -191,10 +191,36 @@ function parseContentForVideo(content: string) {
   });
 }
 
+/**
+ * Wraps adjacent inline-element fragments that belong to the same word
+ * (no space between them) in a <span class="nowrap-word">, preventing the
+ * browser from breaking between e.g. `cursinho` and `<strong>s</strong>`.
+ */
+function mergeInlineWordParts(html: string): string {
+  // Match: any non-whitespace chars, immediately followed by an opening inline tag,
+  // more non-whitespace, then closing tag — all without a space between them.
+  // We wrap the entire contiguous group in a nowrap span.
+  return html
+    // Merge text immediately before opening inline tags (word starts before tag)
+    .replace(
+      /([^\s<>])(<(?:strong|em|b|i|u|s|del|ins|span|a|code)[^>]*>)([^\s<]*<\/(?:strong|em|b|i|u|s|del|ins|span|a|code)>)/g,
+      '<span class="nowrap-word">$1$2$3</span>'
+    )
+    // Merge text immediately after closing inline tags (word continues after tag)
+    .replace(
+      /(<\/(?:strong|em|b|i|u|s|del|ins|span|a|code)>)([^\s<>]+)/g,
+      (match, closeTag, text) => {
+        // Only wrap if the preceding char is not a space (i.e., mid-word)
+        return `${closeTag}<span class="nowrap-word">${text}</span>`;
+      }
+    );
+}
+
 function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
   let parsedContent = parseContentForCarousel(post.content);
   parsedContent = parseContentForVideo(parsedContent);
+  parsedContent = mergeInlineWordParts(parsedContent);
 
   return (
     <article className="prose prose-lg max-w-none w-full">
@@ -239,6 +265,12 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-editor {
           padding-left: 0;
           padding-right: 0;
+          -webkit-hyphens: none !important;
+          -ms-hyphens: none !important;
+          hyphens: none !important;
+          overflow-wrap: break-word !important;
+          word-break: normal !important;
+          white-space: pre-wrap !important;
         }
         .ql-editor img {
           border-radius: 15px;
@@ -251,19 +283,23 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
           max-width: 100%;
           overflow-wrap: break-word !important;
-          word-break: keep-all !important;
+          word-break: normal !important;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
           hyphens: none !important;
           white-space: pre-wrap !important;
         }
-        .ql-editor strong, .ql-editor em, .ql-editor span {
+        .ql-editor strong, .ql-editor em, .ql-editor span, .ql-editor b, .ql-editor i, .ql-editor u, .ql-editor a {
           overflow-wrap: break-word !important;
-          word-break: keep-all !important;
+          word-break: normal !important;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
           hyphens: none !important;
           white-space: pre-wrap !important;
+        }
+        .nowrap-word {
+          display: inline !important;
+          white-space: nowrap !important;
         }
         .blog-video-container {
           width: 100%;

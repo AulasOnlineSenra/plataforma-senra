@@ -191,8 +191,14 @@ export default function EditBlogPostPage() {
     setIsSubmitting(true);
     try {
       const id = params.id as string;
+      // If a future date is set, automatically mark as published (scheduled)
+      const scheduledDate = formData.createdAt ? new Date(formData.createdAt) : null;
+      const isScheduled = scheduledDate && scheduledDate > new Date();
+      const publishedValue = isScheduled ? true : formData.published;
+
       const result = await updatePost(id, {
         ...formData,
+        published: publishedValue,
         tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
       });
 
