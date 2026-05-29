@@ -127,7 +127,6 @@ export default function BlogAdminPage() {
                 <thead>
                   <tr className="border-b text-left">
                     <th className="pb-3 font-medium text-muted-foreground">Título</th>
-                    <th className="pb-3 font-medium text-muted-foreground hidden sm:table-cell">Autor</th>
                     <th className="pb-3 font-medium text-muted-foreground hidden md:table-cell">Data</th>
                     <th className="pb-3 font-medium text-muted-foreground">Status</th>
                     <th className="pb-3 font-medium text-muted-foreground text-right">Ações</th>
@@ -136,20 +135,21 @@ export default function BlogAdminPage() {
                 <tbody>
                   {posts.map((post) => (
                     <tr key={post.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                      <td className="py-4 max-w-[200px] sm:max-w-[300px]">
-                        <Link 
-                          href={`/dashboard/blog/edit/${post.id}`}
-                          className="font-medium truncate hover:text-brand-yellow transition-colors"
-                          title={post.title}
-                        >
-                          {post.title}
-                        </Link>
-                        <p className="text-xs text-muted-foreground truncate sm:hidden">
-                          {post.author} · {formatDate(post.createdAt)}
-                        </p>
+                      <td className="py-4 pr-[10px] max-w-[250px] sm:max-w-[400px]">
+                        <div className="flex flex-col">
+                          <Link 
+                            href={`/dashboard/blog/edit/${post.id}`}
+                            className="font-medium truncate hover:text-brand-yellow transition-colors block"
+                            title={post.title}
+                          >
+                            {post.title}
+                          </Link>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {post.author} <span className="sm:hidden">· {formatDate(post.createdAt)}</span>
+                          </p>
+                        </div>
                       </td>
-                      <td className="py-4 hidden sm:table-cell text-muted-foreground">{post.author}</td>
-                      <td className="py-4 hidden md:table-cell text-muted-foreground">{formatDate(post.createdAt)}</td>
+                      <td className="py-4 hidden md:table-cell text-muted-foreground pr-[10px]">{formatDate(post.createdAt)}</td>
                       <td className="py-4">
                         {(() => {
                           const isScheduled = post.published && new Date(post.createdAt) > new Date();

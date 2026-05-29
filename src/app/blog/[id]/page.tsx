@@ -296,10 +296,14 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif !important; }
         .ql-font-verdana { font-family: Verdana, sans-serif !important; }
         
-        /* Quill Sizes */
-        .ql-size-small { font-size: 0.875em !important; }
+        /* Quill Sizes & Headings */
+        .ql-size-small { font-size: 0.75em !important; }
         .ql-size-large { font-size: 1.5em !important; }
-        .ql-size-huge { font-size: 2.25em !important; }
+        .ql-size-huge { font-size: 2.5em !important; }
+        .ql-editor h1 { font-size: 2.2em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.2; }
+        .ql-editor h2 { font-size: 1.8em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.3; }
+        .ql-editor h3 { font-size: 1.4em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.4; }
+        .ql-editor h4 { font-size: 1.2em !important; font-weight: bold; margin-bottom: 0.5em; }
 
         .ql-editor img {
           border-radius: 15px;
