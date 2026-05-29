@@ -273,15 +273,60 @@ export default function NewBlogPostPage() {
     setIsSubmitting(false);
   };
 
+  // Save as draft when going back if there's content
+  const handleGoBack = async () => {
+    const hasContent = formData.title.trim() || formData.content.trim() || formData.excerpt.trim();
+    if (!hasContent) {
+      router.push('/dashboard/blog');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const draftTitle = formData.title.trim() || `Rascunho - ${new Date().toLocaleDateString('pt-BR')}`;
+    const draftAuthor = formData.author.trim() || 'Administrador';
+    const draftExcerpt = formData.excerpt.trim() || 'Rascunho não finalizado.';
+
+    const result = await createPost({
+      ...formData,
+      title: draftTitle,
+      author: draftAuthor,
+      excerpt: draftExcerpt,
+      published: false,
+      createdAt: '',
+      tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
+    });
+
+    setIsSubmitting(false);
+
+    if (result.success) {
+      toast({
+        title: 'Rascunho salvo!',
+        description: 'Seu artigo foi salvo como rascunho e pode ser editado depois.',
+        className: 'bg-emerald-600 text-white border-none',
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Aviso',
+        description: 'Não foi possível salvar o rascunho automaticamente.',
+      });
+    }
+    router.push('/dashboard/blog');
+  };
+
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col">
       {/* Top Navbar */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
         <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon" className="rounded-full hover:bg-slate-100">
-            <Link href="/dashboard/blog">
-              <ArrowLeft className="h-5 w-5 text-slate-600" />
-            </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full hover:bg-slate-100"
+            onClick={handleGoBack}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin text-slate-600" /> : <ArrowLeft className="h-5 w-5 text-slate-600" />}
           </Button>
           <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
             <span className="bg-slate-100 px-2 py-1 rounded-md text-slate-600">Rascunho</span>
