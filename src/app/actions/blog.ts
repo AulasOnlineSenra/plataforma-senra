@@ -17,9 +17,8 @@ export async function getBlogPosts() {
 
 export async function getPublishedPosts() {
   try {
-    // Add 1 day buffer to avoid timezone-related post exclusion
+    // Auto-publish scheduled posts when current date is reached
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() + 1);
     const posts = await prisma.blogPost.findMany({
       where: { 
         published: true,

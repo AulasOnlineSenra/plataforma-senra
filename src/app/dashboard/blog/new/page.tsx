@@ -245,7 +245,7 @@ export default function NewBlogPostPage() {
       return;
     }
 
-    const publishedValue = publishMode === 'now' ? true : false;
+    const publishedValue = publishMode === 'now' || publishMode === 'schedule' ? true : false;
     const createdAtValue = publishMode === 'schedule' ? formData.createdAt : '';
 
     setIsSubmitting(true);

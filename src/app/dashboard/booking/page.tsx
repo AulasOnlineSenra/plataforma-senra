@@ -1027,7 +1027,7 @@ function BookingPageComponent() {
           </CardHeader>
           <CardContent>
             <div className="rounded-2xl border border-slate-100 overflow-hidden">
-              <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "1fr 120px 100px 130px 70px" }}>
+              <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "0.7fr 1fr 140px 140px 70px" }}>
                 <span>Disciplina</span>
                 <span>Professor</span>
                 <span>Data</span>
@@ -1039,7 +1039,7 @@ function BookingPageComponent() {
 
                 if (isEditing) {
                   return (
-                    <div key={booking.id} className={`grid items-center px-4 py-3 bg-amber-50 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 120px 100px 130px 70px" }}>
+                    <div key={booking.id} className={`grid items-center px-4 py-3 bg-amber-50 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "0.7fr 1fr 140px 140px 70px" }}>
                       <div>
                         <Select value={editingSubject} onValueChange={(v) => { setEditingSubject(v); setEditingTeacher(""); setEditingTime(""); }}>
                           <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
@@ -1092,7 +1092,7 @@ function BookingPageComponent() {
                 }
 
                 return (
-                  <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "1fr 120px 100px 130px 70px" }}>
+                  <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "0.7fr 1fr 140px 140px 70px" }}>
                     <span className="text-sm font-bold text-slate-900 truncate pr-2">{booking.subjectName}</span>
                     <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
