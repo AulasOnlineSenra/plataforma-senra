@@ -17,10 +17,13 @@ export async function getBlogPosts() {
 
 export async function getPublishedPosts() {
   try {
+    // Add 1 day buffer to avoid timezone-related post exclusion
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() + 1);
     const posts = await prisma.blogPost.findMany({
       where: { 
         published: true,
-        createdAt: { lte: new Date() }
+        createdAt: { lte: cutoffDate }
       },
       orderBy: { createdAt: 'desc' },
     });

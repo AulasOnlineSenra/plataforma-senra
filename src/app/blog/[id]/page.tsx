@@ -249,9 +249,9 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           display: block;
         }
         .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
-          max-width: 450px;
-          margin-left: auto;
-          margin-right: auto;
+          max-width: 100%;
+          overflow-wrap: break-word;
+          word-break: break-word;
         }
         .blog-video-container {
           width: 100%;
@@ -469,7 +469,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-[calc(100vh-160px)] bg-background">
-      <div className="container mx-auto pl-[200px] pr-[350px] pt-[220px] pb-[15px]">
+      <div className="container mx-auto max-w-3xl px-6 sm:px-10 pt-[220px] pb-[15px]">
         <div className="mb-8 flex items-center gap-4">
           <Link href="/blog" className="text-sm text-muted-foreground hover:text-amber-500">
             ← Voltar para o Blog
