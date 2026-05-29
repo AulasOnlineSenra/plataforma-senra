@@ -251,7 +251,13 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
           max-width: 100%;
           overflow-wrap: break-word;
-          word-break: break-word;
+          word-break: normal;
+          hyphens: none;
+          white-space: normal;
+        }
+        .ql-editor strong, .ql-editor em, .ql-editor span {
+          overflow-wrap: break-word;
+          word-break: normal;
         }
         .blog-video-container {
           width: 100%;
@@ -468,8 +474,8 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-160px)] bg-background">
-      <div className="container mx-auto max-w-3xl px-6 sm:px-10 pt-[220px] pb-[15px]">
+    <div className="min-h-[calc(100vh-160px)] bg-background overflow-x-hidden">
+      <div className="mx-auto w-full max-w-2xl px-4 sm:px-8 pt-[220px] pb-[15px]">
         <div className="mb-8 flex items-center gap-4">
           <Link href="/blog" className="text-sm text-muted-foreground hover:text-amber-500">
             ← Voltar para o Blog
@@ -490,7 +496,7 @@ export default function BlogPostPage() {
                     <div className="mb-4 text-center">
                       <span className="text-xs uppercase tracking-widest text-muted-foreground">Continue explorando</span>
                     </div>
-                    <div className="max-h-[840px] w-[95vw] overflow-hidden -ml-[calc(120px+2.5vw)]">
+                    <div className="max-h-[840px] overflow-hidden -mx-4 sm:-mx-8">
                       <BlogGrid posts={gridPosts} />
                     </div>
                   </div>
