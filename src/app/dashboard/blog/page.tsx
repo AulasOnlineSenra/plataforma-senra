@@ -137,12 +137,13 @@ export default function BlogAdminPage() {
                   {posts.map((post) => (
                     <tr key={post.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                       <td className="py-4 max-w-[200px] sm:max-w-[300px]">
-                        <p
-                          className="font-medium truncate cursor-default"
+                        <Link 
+                          href={`/dashboard/blog/edit/${post.id}`}
+                          className="font-medium truncate hover:text-brand-yellow transition-colors"
                           title={post.title}
                         >
                           {post.title}
-                        </p>
+                        </Link>
                         <p className="text-xs text-muted-foreground truncate sm:hidden">
                           {post.author} · {formatDate(post.createdAt)}
                         </p>

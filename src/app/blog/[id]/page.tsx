@@ -272,6 +272,35 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           word-break: normal !important;
           white-space: pre-wrap !important;
         }
+        /* Quill Alignment */
+        .ql-align-center { text-align: center !important; }
+        .ql-align-right { text-align: right !important; }
+        .ql-align-justify { text-align: justify !important; }
+        
+        /* Quill Video */
+        .ql-video {
+          width: 100%;
+          height: 450px;
+          border: none;
+          border-radius: 12px;
+          margin: 2rem 0;
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        @media (max-width: 640px) { .ql-video { height: 250px; } }
+        
+        /* Quill Fonts */
+        .ql-font-arial { font-family: Arial, sans-serif !important; }
+        .ql-font-courier { font-family: "Courier New", Courier, monospace !important; }
+        .ql-font-garamond { font-family: Garamond, serif !important; }
+        .ql-font-tahoma { font-family: Tahoma, sans-serif !important; }
+        .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif !important; }
+        .ql-font-verdana { font-family: Verdana, sans-serif !important; }
+        
+        /* Quill Sizes */
+        .ql-size-small { font-size: 0.875em !important; }
+        .ql-size-large { font-size: 1.5em !important; }
+        .ql-size-huge { font-size: 2.25em !important; }
+
         .ql-editor img {
           border-radius: 15px;
           margin-top: 2rem;

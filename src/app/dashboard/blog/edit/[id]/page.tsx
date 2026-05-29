@@ -301,7 +301,7 @@ export default function EditBlogPostPage() {
             <div className="space-y-2">
               <Label htmlFor="content">Conteúdo *</Label>
               <div className="bg-white text-slate-800 rounded-md border border-slate-200">
-                <div id="custom-toolbar" className="w-full bg-slate-50 border-b border-slate-200 px-2 py-2 flex flex-wrap items-center gap-1">
+                <div id="custom-toolbar" className="w-full bg-slate-50 border-b border-slate-200 px-2 py-2 flex flex-wrap items-center gap-1 sticky top-0 z-10">
                   <select className="ql-font border-slate-200 rounded-md h-8 text-sm" defaultValue="">
                     <option value="">Padrão</option>
                     <option value="arial">Arial</option>
@@ -440,20 +440,29 @@ export default function EditBlogPostPage() {
                 <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
                 
                 <div className="max-h-40 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
-                  {publishedPosts.filter(p => p.id !== params.id).map(post => (
-                    <label key={post.id} className="flex items-start gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
-                        className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                        checked={selectedLinks.includes(post.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
-                          else setSelectedLinks(prev => prev.filter(id => id !== post.id));
-                        }}
-                      />
-                      <span className="text-sm text-slate-700 group-hover:text-amber-600 transition-colors line-clamp-2">{post.title}</span>
-                    </label>
-                  ))}
+                  {publishedPosts.filter(p => p.id !== params.id).map(post => {
+                    const isInserted = formData.content?.includes(post.id);
+                    const isSelected = selectedLinks.includes(post.id);
+                    return (
+                      <label key={post.id} className={`flex items-start gap-2 cursor-pointer group rounded-lg px-2 py-1 transition-colors ${isInserted ? 'bg-emerald-50 border border-emerald-200' : isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                        <input 
+                          type="checkbox" 
+                          className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                          checked={isSelected || isInserted}
+                          disabled={isInserted}
+                          onChange={(e) => {
+                            if (isInserted) return;
+                            if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
+                            else setSelectedLinks(prev => prev.filter(id => id !== post.id));
+                          }}
+                        />
+                        <span className={`text-sm line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
+                          {post.title}
+                          {isInserted && <span className="ml-1 text-xs text-emerald-600">✓ adicionado</span>}
+                        </span>
+                      </label>
+                    );
+                  })}
                   {publishedPosts.filter(p => p.id !== params.id).length === 0 && (
                     <p className="text-sm text-slate-400 text-center py-2">Nenhum post publicado.</p>
                   )}
