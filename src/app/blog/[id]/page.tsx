@@ -8,7 +8,6 @@ import { getBlogPostById, getPublishedPosts } from '@/app/actions/blog';
 import { toast } from 'sonner';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreHorizontal } from 'lucide-react';
 import BlogGrid from '@/components/blog-grid';
-import 'react-quill-new/dist/quill.snow.css';
 
 type BlogPost = {
   id: string;
@@ -244,12 +243,10 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         </div>
       )}
 
-      <div className="ql-container ql-snow">
-        <div 
-          className="ql-editor px-0 text-slate-800"
-          dangerouslySetInnerHTML={{ __html: parsedContent }}
-        />
-      </div>
+      <div 
+        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert ql-editor px-0"
+        dangerouslySetInnerHTML={{ __html: parsedContent }}
+      />
 
       {tags.length > 0 && (
         <div className="mt-8 flex flex-wrap gap-2">
@@ -265,15 +262,9 @@ function BlogPostContent({ post }: { post: BlogPost }) {
       )}
 
       <style dangerouslySetInnerHTML={{__html: `
-        .ql-container.ql-snow {
-          border: none;
-          font-size: 1.125rem;
-          font-family: inherit;
-        }
         .ql-editor {
           padding-left: 0;
           padding-right: 0;
-          line-height: 1.8;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
           hyphens: none !important;
@@ -281,14 +272,6 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           word-break: normal !important;
           white-space: pre-wrap !important;
         }
-        .ql-editor p { margin-bottom: 1.2rem; }
-        .ql-font-arial { font-family: Arial, sans-serif; }
-        .ql-font-courier { font-family: "Courier New", Courier, monospace; }
-        .ql-font-garamond { font-family: Garamond, serif; }
-        .ql-font-tahoma { font-family: Tahoma, sans-serif; }
-        .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
-        .ql-font-verdana { font-family: Verdana, sans-serif; }
-        
         .ql-editor img {
           border-radius: 15px;
           margin-top: 2rem;
