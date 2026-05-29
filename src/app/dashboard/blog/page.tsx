@@ -150,12 +150,17 @@ export default function BlogAdminPage() {
                       <td className="py-4 hidden sm:table-cell text-muted-foreground">{post.author}</td>
                       <td className="py-4 hidden md:table-cell text-muted-foreground">{formatDate(post.createdAt)}</td>
                       <td className="py-4">
-                        <Badge
-                          variant={post.published ? 'default' : 'secondary'}
-                          className={post.published ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}
-                        >
-                          {post.published ? 'Publicado' : 'Rascunho'}
-                        </Badge>
+                        {(() => {
+                          const isScheduled = post.published && new Date(post.createdAt) > new Date();
+                          return (
+                            <Badge
+                              variant={isScheduled ? 'outline' : post.published ? 'default' : 'secondary'}
+                              className={isScheduled ? 'bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200' : post.published ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}
+                            >
+                              {isScheduled ? 'Programado' : post.published ? 'Publicado' : 'Rascunho'}
+                            </Badge>
+                          );
+                        })()}
                       </td>
                       <td className="py-4 text-right">
                         <DropdownMenu>
