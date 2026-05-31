@@ -702,20 +702,9 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                           {column.name}
                         </span>
                       )}
-                      {!isCollapsed && (
-                        <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{column.leads.length}</Badge>
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 text-slate-400 hover:text-slate-700 opacity-0 group-hover/header:opacity-100 transition-opacity"
-                        onClick={() => toggleCollapseColumn(column.id)}
-                      >
-                        {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                      </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:bg-slate-300/50">
@@ -723,10 +712,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => toggleCollapseColumn(column.id)}>
-                            {isCollapsed ? 'Expandir' : 'Colapsar'} Lista
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteColumn(column.id)}>
                             <Trash2 className="mr-2 h-4 w-4" /> Excluir Lista
                           </DropdownMenuItem>
@@ -736,8 +721,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                   </div>
 
                   {/* Droppable Area for Leads */}
-                  {!isCollapsed && (
-                    <>
                     <Droppable droppableId={column.id}>
                       {(provided, snapshot) => (
                         <div 
@@ -765,8 +748,8 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                                 >
                                   {/* Color Indicator Bar */}
                                   <div className={cn("absolute top-0 left-0 right-0 h-1", getTemperatureColor(lead.temperature))} />
-                                  <CardContent className="p-3 pt-4">
-                                    <div className="flex flex-col gap-2">
+                                  <CardContent className="p-2 pt-3">
+                                    <div className="flex flex-col gap-1.5">
                                       <div className="flex items-start justify-between gap-2">
                                         {/* Lead name — click opens popup, not inline edit */}
                                         <span 
@@ -874,8 +857,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
                       </Button>
 )}
                     </div>
-                    </>
-                  )}
                 </div>
               )})}
                

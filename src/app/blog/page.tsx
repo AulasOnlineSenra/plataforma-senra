@@ -11,10 +11,10 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen bg-[url('/imagem-fundo-blog.png')] bg-cover bg-fixed bg-center">
       {/* Back to Home button */}
-      <div className="fixed top-6 left-6 z-50">
+      <div className="absolute top-6 left-6 z-50">
         <Link
           href="/"
-          className="flex items-center gap-2 bg-white/90 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white px-4 py-2 rounded-full shadow-md border border-slate-200 text-sm font-semibold transition-all"
+          className="flex items-center gap-2 text-white hover:text-white/80 px-4 py-2 rounded-full text-sm font-semibold transition-all drop-shadow-md"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar ao site
