@@ -90,6 +90,7 @@ type PreBooking = {
   date: Date;
   start: string;
   end: string;
+  isExperimental?: boolean;
 };
 
 const CLASS_DURATION_MINUTES = 90;
@@ -135,8 +136,12 @@ function BookingPageComponent() {
     ? subjectNameById.get(selectedSubjectId)
     : undefined;
 
-  useEffect(() => {
-    if (!currentUser?.id || preBookings.length === 0) return;
+    useEffect(() => {
+    if (!currentUser?.id) return;
+    if (preBookings.length === 0) {
+      safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);
+      return;
+    }
     safeLocalStorage.setItem(
       `preBookings-${currentUser.id}`,
       JSON.stringify(preBookings.map((b) => ({ ...b, date: b.date.toISOString() }))),
@@ -486,6 +491,10 @@ function BookingPageComponent() {
         return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
       };
 
+      const hasPreviousLesson = lessons.some(l => l.studentId === currentUser.id && l.teacherId === selectedTeacherId && ["PENDING", "CONFIRMED", "scheduled", "COMPLETED"].includes(l.status));
+      const hasPreBookingWithSameTeacher = preBookings.some(b => b.teacherId === selectedTeacherId) || newBookings.some(b => b.teacherId === selectedTeacherId);
+      const isExperimental = currentUser?.role === 'student' && !hasPreviousLesson && !hasPreBookingWithSameTeacher;
+
       newBookings.push({
         id: generateId(),
         subjectId: selectedSubjectId,
@@ -495,6 +504,7 @@ function BookingPageComponent() {
         date: selectedDate,
         start: time,
         end: format(end, "HH:mm"),
+        isExperimental,
       });
       addedTimes.push(time);
     }
@@ -592,9 +602,11 @@ function BookingPageComponent() {
 
     const scheduledLessonsCount = lessons.filter(l => l.studentId === currentUser.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length;
     const creditsAvailableForUse = Math.max(0, currentUser.credits - scheduledLessonsCount);
+    
+    const requiredCredits = preBookings.filter(b => !b.isExperimental).length;
 
-    if (creditsAvailableForUse < preBookings.length) {
-      toast({ variant: "destructive", title: "Créditos insuficientes", description: `Você precisa de ${preBookings.length} crédito(s), mas tem apenas ${creditsAvailableForUse} créditos disponíveis pra uso. Redirecionando para o checkout...` });
+    if (creditsAvailableForUse < requiredCredits) {
+      toast({ variant: "destructive", title: "Créditos insuficientes", description: `Você precisa de ${requiredCredits} crédito(s), mas tem apenas ${creditsAvailableForUse} créditos disponíveis pra uso. Redirecionando para o checkout...` });
       safeLocalStorage.setItem('checkoutBookings', JSON.stringify(preBookings.map((b) => ({
         subjectName: b.subjectName,
         teacherId: b.teacherId,
@@ -602,8 +614,9 @@ function BookingPageComponent() {
         date: b.date.toISOString(),
         start: b.start,
         end: b.end,
+        isExperimental: b.isExperimental,
       }))));
-      setTimeout(() => router.push(`/dashboard/checkout?needed=${preBookings.length}&current=${creditsAvailableForUse}`), 2000);
+      setTimeout(() => router.push(`/dashboard/checkout?needed=${requiredCredits}&current=${creditsAvailableForUse}`), 2000);
       return;
     }
 
@@ -614,7 +627,7 @@ function BookingPageComponent() {
       const [h, m] = b.start.split(":").map(Number);
       start.setHours(h, m, 0, 0);
       const end = addMinutes(start, CLASS_DURATION_MINUTES);
-      return { subjectId: b.subjectId, teacherId: b.teacherId, start, end, isExperimental: false };
+      return { subjectId: b.subjectId, teacherId: b.teacherId, start, end, isExperimental: b.isExperimental || false };
     });
 
     const result = await createBookings(currentUser.id, bookingsToCreate);
@@ -880,9 +893,20 @@ function BookingPageComponent() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-slate-900">
-                              {teacher.name}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-bold text-slate-900">
+                                {teacher.name}
+                              </p>
+                              {(() => {
+                                const hasPrev = lessons.some(l => l.studentId === currentUser?.id && l.teacherId === teacher.id && ['PENDING', 'CONFIRMED', 'scheduled', 'COMPLETED'].includes(l.status));
+                                const hasPreBook = preBookings.some(b => b.teacherId === teacher.id);
+                                return currentUser?.role === 'student' && !hasPrev && !hasPreBook;
+                              })() && (
+                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
+                                  Experimental Grátis
+                                </span>
+                              )}
+                            </div>
                             {teacherEducation.length > 0 && (
                               <div className="space-y-0.5">
                                 {teacherEducation.map((edu, idx) => (
@@ -984,9 +1008,20 @@ function BookingPageComponent() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-slate-900">
-                              {teacher.name}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-bold text-slate-900">
+                                {teacher.name}
+                              </p>
+                              {(() => {
+                                const hasPrev = lessons.some(l => l.studentId === currentUser?.id && l.teacherId === teacher.id && ['PENDING', 'CONFIRMED', 'scheduled', 'COMPLETED'].includes(l.status));
+                                const hasPreBook = preBookings.some(b => b.teacherId === teacher.id);
+                                return currentUser?.role === 'student' && !hasPrev && !hasPreBook;
+                              })() && (
+                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
+                                  Experimental Grátis
+                                </span>
+                              )}
+                            </div>
                             {teacherEducation.length > 0 && (
                               <div className="space-y-0.5">
                                 {teacherEducation.map((edu, idx) => (
@@ -1093,7 +1128,10 @@ function BookingPageComponent() {
 
                 return (
                   <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 220px 120px 70px" }}>
-                    <span className="text-sm font-bold text-slate-900 truncate pr-2">{booking.subjectName}</span>
+                    <div className="flex flex-col pr-2 overflow-hidden">
+                      <span className="text-sm font-bold text-slate-900 truncate">{booking.subjectName}</span>
+                      {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental Grátis</span>}
+                    </div>
                     <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
                       {(() => {
@@ -1118,7 +1156,7 @@ function BookingPageComponent() {
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Total: <span className="font-bold text-slate-900">{preBookings.length} aula(s)</span> • Créditos disponíveis pra uso: <span className="font-bold text-slate-900">{Math.max(0, (currentUser?.credits ?? 0) - lessons.filter(l => l.studentId === currentUser?.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length)}</span></p>
+              <p className="text-sm text-slate-500">Total: <span className="font-bold text-slate-900">{preBookings.length} aula(s) {preBookings.some(b => b.isExperimental) && <span className="text-emerald-600">({preBookings.filter(b => b.isExperimental).length} experimental grátis)</span>}</span> • Créditos disponíveis pra uso: <span className="font-bold text-slate-900">{Math.max(0, (currentUser?.credits ?? 0) - lessons.filter(l => l.studentId === currentUser?.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length)}</span></p>
             </div>
             <Button onClick={handleConfirmBookings} disabled={isConfirming} className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60">
               {isConfirming ? "Confirmando..." : `Confirmar Agendamentos (${preBookings.length})`}

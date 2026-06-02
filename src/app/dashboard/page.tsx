@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { format, isToday, isTomorrow } from "date-fns";
+import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   CalendarCheck,
@@ -346,6 +346,28 @@ export default function DashboardPage() {
       return d.getFullYear() === year && d.getMonth() + 1 === month;
     });
   }, [completed, creditHistoryMonth]);
+
+  const groupedCreditsHistory = useMemo(() => {
+    const sorted = [...filteredCreditsHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const groups: { weekLabel: string; lessons: LessonItem[] }[] = [];
+    
+    sorted.forEach(lesson => {
+      const d = new Date(lesson.date);
+      const start = startOfWeek(d, { weekStartsOn: 1 });
+      const end = endOfWeek(d, { weekStartsOn: 1 });
+      const label = `Semana de ${format(start, "dd/MM")} até ${format(end, "dd/MM/yyyy")}`;
+      
+      let group = groups.find(g => g.weekLabel === label);
+      if (!group) {
+        group = { weekLabel: label, lessons: [] };
+        groups.push(group);
+      }
+      group.lessons.push(lesson);
+    });
+    
+    return groups;
+  }, [filteredCreditsHistory]);
 
   const handleOpenEditDialog = (lesson: any) => {
     const lessonDate = new Date(lesson.date);
@@ -1255,46 +1277,53 @@ export default function DashboardPage() {
               </Select>
             </div>
             <ScrollArea className="h-[400px] rounded-xl border">
-              {filteredCreditsHistory.length === 0 ? (
+              {groupedCreditsHistory.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 text-slate-500">
                   <Coins className="h-12 w-12 mb-2 opacity-50" />
                   <p>Nenhuma aula consumiu créditos no período selecionado.</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50">
-                      <TableHead className="font-bold">Disciplina</TableHead>
-                      <TableHead className="font-bold">Professor</TableHead>
-                      <TableHead className="font-bold">Data</TableHead>
-                      <TableHead className="font-bold text-center">Créditos</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCreditsHistory
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((lesson) => {
-                        const lessonDate = new Date(lesson.date);
-                        const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
-                        return (
-                          <TableRow key={lesson.id}>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                                {subjectMap[lesson.subject] || lesson.subject}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{lesson.teacher?.name || "Professor"}</TableCell>
-                            <TableCell>
-                              {format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(endDate, "HH:mm")}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="font-bold text-red-600">-1</span>
-                            </TableCell>
+                <div className="p-4 space-y-6">
+                  {groupedCreditsHistory.map((group) => (
+                    <div key={group.weekLabel} className="space-y-2">
+                      <h3 className="font-semibold text-slate-800 bg-slate-100 px-3 py-2 rounded-lg">
+                        {group.weekLabel}
+                      </h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50">
+                            <TableHead className="font-bold">Disciplina</TableHead>
+                            <TableHead className="font-bold">Professor</TableHead>
+                            <TableHead className="font-bold">Data</TableHead>
+                            <TableHead className="font-bold text-center">Créditos</TableHead>
                           </TableRow>
-                        );
-                      })}
-                  </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {group.lessons.map((lesson) => {
+                            const lessonDate = new Date(lesson.date);
+                            const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                            return (
+                              <TableRow key={lesson.id}>
+                                <TableCell>
+                                  <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                                    {subjectMap[lesson.subject] || lesson.subject}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{lesson.teacher?.name || "Professor"}</TableCell>
+                                <TableCell>
+                                  {format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(endDate, "HH:mm")}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="font-bold text-red-600">-1</span>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ))}
+                </div>
               )}
             </ScrollArea>
           </div>

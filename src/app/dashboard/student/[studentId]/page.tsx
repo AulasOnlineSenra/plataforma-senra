@@ -508,6 +508,58 @@ function StudentDetailPageComponent() {
 </div>
                 </header>
 
+                {currentUser?.role === "admin" && (
+                <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden mb-6">
+                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5 pt-6 px-8">
+                        <CardTitle className="text-xl text-slate-800">Dados Cadastrais</CardTitle>
+                        <CardDescription className="text-slate-500">Informações de cadastro do usuário.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 px-8 space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">CPF</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{student.cpf ? student.cpf : 'Não informado'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Data de nascimento</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{formatBirthDate(student.birthDate)}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">CEP</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{student.cep ? student.cep : 'Não informado'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Estado</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{student.state ? student.state : 'Não informado'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Bairro</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{student.neighborhood ? student.neighborhood : 'Não informado'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 md:col-span-2 lg:col-span-2">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rua</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{student.street ? student.street : 'Não informado'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Número</p>
+                                <p className="mt-1 text-base font-semibold text-slate-800">{student.number ? student.number : 'Não informado'}</p>
+                            </div>
+                        </div>
+
+                        {student.role === 'teacher' && student.videoUrl && (
+                            <div className="flex justify-start mt-4">
+                                <Button asChild variant="outline" className="h-12 rounded-xl border-slate-200 font-bold text-slate-700 hover:bg-slate-50">
+                                    <a href={student.videoUrl} target="_blank" rel="noopener noreferrer">
+                                        <Video className="mr-2 h-5 w-5 text-blue-500" />
+                                        Ver vídeo de apresentação
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                )}
+
                 {/* Container de Aulas - Apenas para professor/admin */}
                 {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
                 <div className="ml-28 mr-10">
@@ -718,57 +770,7 @@ function StudentDetailPageComponent() {
                 </div>
                 )}
 
-                {currentUser?.role === "admin" && (
-                <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5 pt-6 px-8">
-                        <CardTitle className="text-xl text-slate-800">Dados Cadastrais</CardTitle>
-                        <CardDescription className="text-slate-500">Informações de cadastro do usuário.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6 px-8 space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">CPF</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{student.cpf ? student.cpf : 'Não informado'}</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Data de nascimento</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{formatBirthDate(student.birthDate)}</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">CEP</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{student.cep ? student.cep : 'Não informado'}</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Estado</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{student.state ? student.state : 'Não informado'}</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Bairro</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{student.neighborhood ? student.neighborhood : 'Não informado'}</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 md:col-span-2 lg:col-span-2">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rua</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{student.street ? student.street : 'Não informado'}</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Número</p>
-                                <p className="mt-1 text-base font-semibold text-slate-800">{student.number ? student.number : 'Não informado'}</p>
-                            </div>
-                        </div>
 
-                        {student.role === 'teacher' && student.videoUrl && (
-                            <div className="flex justify-start mt-4">
-                                <Button asChild variant="outline" className="h-12 rounded-xl border-slate-200 font-bold text-slate-700 hover:bg-slate-50">
-                                    <a href={student.videoUrl} target="_blank" rel="noopener noreferrer">
-                                        <Video className="mr-2 h-5 w-5 text-blue-500" />
-                                        Ver vídeo de apresentação
-                                    </a>
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                )}
 
                 {/* TABS DE AULAS E SIMULADOS - OCULTO */}
                 {/*
