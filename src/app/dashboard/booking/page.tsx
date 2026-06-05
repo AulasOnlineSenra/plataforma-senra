@@ -903,7 +903,7 @@ function BookingPageComponent() {
                                 return currentUser?.role === 'student' && !hasPrev && !hasPreBook;
                               })() && (
                                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                                  Experimental Grátis
+                                  Experimental
                                 </span>
                               )}
                             </div>
@@ -1018,7 +1018,7 @@ function BookingPageComponent() {
                                 return currentUser?.role === 'student' && !hasPrev && !hasPreBook;
                               })() && (
                                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                                  Experimental Grátis
+                                  Experimental
                                 </span>
                               )}
                             </div>
@@ -1128,11 +1128,11 @@ function BookingPageComponent() {
 
                 return (
                   <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 220px 120px 70px" }}>
-                    <div className="flex flex-col pr-2 overflow-hidden">
-                      <span className="text-sm font-bold text-slate-900 truncate">{booking.subjectName}</span>
-                      {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental Grátis</span>}
+                    <span className="text-sm font-bold text-slate-900 truncate pr-2">{booking.subjectName}</span>
+                    <div className="flex flex-col pr-3 overflow-hidden">
+                      <span className="text-sm text-slate-700 truncate">{booking.teacherName}</span>
+                      {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental</span>}
                     </div>
-                    <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
                       {(() => {
                         const d = new Date(booking.date);
@@ -1156,7 +1156,7 @@ function BookingPageComponent() {
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Total: <span className="font-bold text-slate-900">{preBookings.length} aula(s) {preBookings.some(b => b.isExperimental) && <span className="text-emerald-600">({preBookings.filter(b => b.isExperimental).length} experimental grátis)</span>}</span> • Créditos disponíveis pra uso: <span className="font-bold text-slate-900">{Math.max(0, (currentUser?.credits ?? 0) - lessons.filter(l => l.studentId === currentUser?.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length)}</span></p>
+              <p className="text-sm text-slate-500">Total: <span className="font-bold text-slate-900">{preBookings.length} aula(s) {preBookings.some(b => b.isExperimental) && <span className="text-emerald-600">({preBookings.filter(b => b.isExperimental).length} experimental)</span>}</span> • Créditos disponíveis pra uso: <span className="font-bold text-slate-900">{Math.max(0, (currentUser?.credits ?? 0) - lessons.filter(l => l.studentId === currentUser?.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length)}</span></p>
             </div>
             <Button onClick={handleConfirmBookings} disabled={isConfirming} className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60">
               {isConfirming ? "Confirmando..." : `Confirmar Agendamentos (${preBookings.length})`}
