@@ -897,15 +897,7 @@ function BookingPageComponent() {
                               <p className="truncate text-sm font-bold text-slate-900">
                                 {teacher.name}
                               </p>
-                              {(() => {
-                                const hasPrev = lessons.some(l => l.studentId === currentUser?.id && l.teacherId === teacher.id && ['PENDING', 'CONFIRMED', 'scheduled', 'COMPLETED'].includes(l.status));
-                                const hasPreBook = preBookings.some(b => b.teacherId === teacher.id);
-                                return currentUser?.role === 'student' && !hasPrev && !hasPreBook;
-                              })() && (
-                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                                  Experimental
-                                </span>
-                              )}
+                              {/* Removed Experimental tag from teacher name per request */}
                             </div>
                             {teacherEducation.length > 0 && (
                               <div className="space-y-0.5">
@@ -1012,15 +1004,7 @@ function BookingPageComponent() {
                               <p className="truncate text-sm font-bold text-slate-900">
                                 {teacher.name}
                               </p>
-                              {(() => {
-                                const hasPrev = lessons.some(l => l.studentId === currentUser?.id && l.teacherId === teacher.id && ['PENDING', 'CONFIRMED', 'scheduled', 'COMPLETED'].includes(l.status));
-                                const hasPreBook = preBookings.some(b => b.teacherId === teacher.id);
-                                return currentUser?.role === 'student' && !hasPrev && !hasPreBook;
-                              })() && (
-                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                                  Experimental
-                                </span>
-                              )}
+                              {/* Removed Experimental tag from teacher name per request */}
                             </div>
                             {teacherEducation.length > 0 && (
                               <div className="space-y-0.5">
@@ -1128,11 +1112,11 @@ function BookingPageComponent() {
 
                 return (
                   <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 220px 120px 70px" }}>
-                    <span className="text-sm font-bold text-slate-900 truncate pr-2">{booking.subjectName}</span>
-                    <div className="flex flex-col pr-3 overflow-hidden">
-                      <span className="text-sm text-slate-700 truncate">{booking.teacherName}</span>
+                    <div className="flex flex-col pr-2 overflow-hidden">
+                      <span className="text-sm font-bold text-slate-900 truncate">{booking.subjectName}</span>
                       {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental</span>}
                     </div>
+                    <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
                       {(() => {
                         const d = new Date(booking.date);
