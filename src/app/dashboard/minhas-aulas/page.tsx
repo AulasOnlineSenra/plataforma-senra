@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { format, startOfWeek, endOfWeek, isToday, isTomorrow } from "date-fns";
+import { format, startOfWeek, endOfWeek, addDays, eachDayOfInterval, isSameDay, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon, RotateCcw } from "lucide-react";
+import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon, RotateCcw, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { getLessonsForUser, updateLesson, cancelLesson, deleteLesson } from "@/app/actions/bookings";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -103,6 +103,8 @@ export default function MinhasAulasPage() {
   const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
   const [completedStudentFilter, setCompletedStudentFilter] = useState("all");
   const [cancelledStudentFilter, setCancelledStudentFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [gridWeekStart, setGridWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     setLoading(true);
@@ -227,6 +229,49 @@ export default function MinhasAulasPage() {
       .filter(l => new Date(l.date) >= now && ['PENDING', 'CONFIRMED', 'scheduled'].includes(l.status))
       .map(lesson => new Date(lesson.date));
   }, [sortedLessons]);
+
+  // Grid view helpers
+  const gridWeekDays = useMemo(() => {
+    return eachDayOfInterval({ start: gridWeekStart, end: addDays(gridWeekStart, 6) });
+  }, [gridWeekStart]);
+
+  const lessonsInGridWeek = useMemo(() => {
+    const weekEnd = addDays(gridWeekStart, 7);
+    return lessons.filter(l => {
+      const d = new Date(l.date);
+      return d >= gridWeekStart && d < weekEnd;
+    });
+  }, [lessons, gridWeekStart]);
+
+  // Build time slots from earliest to latest lesson in week (min 07:00 - 22:00)
+  const gridTimeSlots = useMemo(() => {
+    const slots: string[] = [];
+    let startHour = 7;
+    let endHour = 22;
+    if (lessonsInGridWeek.length > 0) {
+      const hours = lessonsInGridWeek.map(l => new Date(l.date).getHours());
+      startHour = Math.min(7, ...hours);
+      const endHours = lessonsInGridWeek.map(l => l.endDate ? new Date(l.endDate).getHours() : new Date(l.date).getHours() + 2);
+      endHour = Math.max(22, ...endHours);
+    }
+    for (let h = startHour; h <= endHour; h++) {
+      slots.push(`${String(h).padStart(2, '0')}:00`);
+    }
+    return slots;
+  }, [lessonsInGridWeek]);
+
+  const getLessonsForDayAndSlot = (day: Date, slotHour: number) => {
+    return lessonsInGridWeek.filter(l => {
+      const d = new Date(l.date);
+      return isSameDay(d, day) && d.getHours() === slotHour;
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === 'COMPLETED') return 'bg-green-100 border-green-400 text-green-800';
+    if (status === 'CANCELLED') return 'bg-red-100 border-red-400 text-red-700 opacity-60';
+    return 'bg-amber-100 border-[#f5b000] text-slate-900'; // scheduled
+  };
 
   const canEditOrCancel = (lesson: LessonItem) => {
     if (role === "admin") return true;
@@ -411,7 +456,183 @@ export default function MinhasAulasPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <Card className="rounded-3xl border border-slate-200 shadow-sm">
+      {/* Page header with view toggle */}
+      <div className="flex items-center justify-between">
+        <div />
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          <button
+            onClick={() => setViewMode('list')}
+            title="Visualização em lista"
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+              viewMode === 'list'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <List className="h-4 w-4" />
+            Lista
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('grid');
+              setGridWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+            }}
+            title="Visualização em grade"
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+              viewMode === 'grid'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Grade
+          </button>
+        </div>
+      </div>
+
+      {/* ===== GRID VIEW ===== */}
+      {viewMode === 'grid' && (
+        <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-200 bg-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="h-5 w-5 text-[#FFC107]" />
+                <div>
+                  <CardTitle className="text-slate-900">Agenda em Grade</CardTitle>
+                  <CardDescription>
+                    {format(gridWeekStart, "dd/MM")} – {format(addDays(gridWeekStart, 6), "dd/MM/yyyy")}
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setGridWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+                >
+                  Hoje
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 rounded-xl"
+                  onClick={() => setGridWeekStart(d => addDays(d, -7))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 rounded-xl"
+                  onClick={() => setGridWeekStart(d => addDays(d, 7))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px] border-collapse">
+                <thead>
+                  <tr>
+                    <th className="w-16 min-w-[56px] border-b border-r border-slate-100 bg-slate-50 py-3 text-xs font-semibold text-slate-400" />
+                    {gridWeekDays.map((day) => (
+                      <th
+                        key={day.toISOString()}
+                        className={`border-b border-r border-slate-100 py-3 text-center text-xs font-semibold uppercase tracking-wide last:border-r-0 ${
+                          isToday(day) ? 'bg-[#fff8e1] text-[#c47f00]' : 'bg-slate-50 text-slate-500'
+                        }`}
+                      >
+                        <div>{format(day, 'EEE', { locale: ptBR })}</div>
+                        <div
+                          className={`mx-auto mt-1 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold ${
+                            isToday(day)
+                              ? 'bg-[#f5b000] text-slate-900'
+                              : 'text-slate-700'
+                          }`}
+                        >
+                          {format(day, 'd')}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {gridTimeSlots.map((slot) => {
+                    const slotHour = parseInt(slot.split(':')[0]);
+                    return (
+                      <tr key={slot} className="group">
+                        <td className="border-b border-r border-slate-100 bg-slate-50 px-2 py-1 text-right text-[11px] font-medium text-slate-400 align-top">
+                          {slot}
+                        </td>
+                        {gridWeekDays.map((day) => {
+                          const cellLessons = getLessonsForDayAndSlot(day, slotHour);
+                          return (
+                            <td
+                              key={day.toISOString()}
+                              className={`relative border-b border-r border-slate-100 p-0.5 align-top last:border-r-0 min-h-[40px] h-10 ${
+                                isToday(day) ? 'bg-amber-50/30' : ''
+                              }`}
+                            >
+                              {cellLessons.map((lesson) => {
+                                const start = new Date(lesson.date);
+                                const end = lesson.endDate ? new Date(lesson.endDate) : addDays(start, 0);
+                                const personName =
+                                  role === 'student'
+                                    ? lesson.teacher?.name
+                                    : lesson.student?.name;
+                                return (
+                                  <div
+                                    key={lesson.id}
+                                    className={`mb-0.5 rounded-lg border-l-4 px-1.5 py-1 text-[11px] leading-tight cursor-default ${
+                                      getStatusColor(lesson.status)
+                                    }`}
+                                    title={`${subjectMap[lesson.subject] || lesson.subject} • ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')} • ${personName || ''}`}
+                                  >
+                                    <p className="font-semibold truncate">{subjectMap[lesson.subject] || lesson.subject}</p>
+                                    {lesson.isExperimental && (
+                                      <span className="text-[9px] font-bold text-emerald-600 uppercase">Experimental</span>
+                                    )}
+                                    {personName && (
+                                      <p className="truncate text-[10px] opacity-75">{personName}</p>
+                                    )}
+                                    <p className="opacity-60">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</p>
+                                  </div>
+                                );
+                              })}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {lessonsInGridWeek.length === 0 && (
+                <div className="flex flex-col items-center justify-center gap-2 py-16 text-slate-400">
+                  <LayoutGrid className="h-10 w-10 opacity-30" />
+                  <p className="font-medium">Nenhuma aula nesta semana.</p>
+                  <p className="text-sm">Use as setas para navegar para outra semana.</p>
+                </div>
+              )}
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-500">
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-[#f5b000] bg-amber-100" />Agendada</span>
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-green-400 bg-green-100" />Concluída</span>
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-red-400 bg-red-100" />Cancelada</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ===== LIST VIEW ===== */}
+      {viewMode === 'list' && (
+        <Card className="rounded-3xl border border-slate-200 shadow-sm">
         <CardHeader className="border-b border-slate-200 bg-white">
           <CardTitle className="flex items-center gap-2 text-slate-900">
             <CalendarCheck2 className="h-5 w-5 text-[#FFC107]" />
@@ -532,6 +753,7 @@ export default function MinhasAulasPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       <Card id="completed-history" className={`rounded-3xl border-2 shadow-sm transition-all duration-500 ${highlightCompleted ? 'border-[#f5b000] bg-amber-50' : 'border-slate-200'}`}>
         <CardHeader className="border-b border-slate-200 bg-white">
