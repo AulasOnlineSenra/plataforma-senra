@@ -1085,7 +1085,7 @@ function BookingPageComponent() {
                         </Select>
                       </div>
                       <div>
-                        {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase">Experimental</span>}
+                        {booking.isExperimental && <span className="text-[11px] font-bold text-emerald-600 w-fit px-1.5 py-0.5 rounded uppercase">Experimental</span>}
                       </div>
                       <div>
                         <input type="date" value={editingDate} onChange={(e) => { setEditingDate(e.target.value); setEditingTime(""); }} className="h-9 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700" />
@@ -1121,7 +1121,7 @@ function BookingPageComponent() {
                     </div>
                     <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
                     <div>
-                      {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental</span>}
+                      {booking.isExperimental && <span className="text-[11px] font-bold text-emerald-600 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental</span>}
                     </div>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
                       {(() => {

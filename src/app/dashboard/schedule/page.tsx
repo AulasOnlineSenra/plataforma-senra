@@ -262,7 +262,7 @@ function SchedulePageComponent() {
                                       </div>
                                       <div className="flex items-center gap-2 text-sm font-semibold flex-wrap">
                                           <span className="text-slate-600">{subjectMap[event.subject] || event.subject}</span>
-                                          {event.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span>}
+                                          {event.isExperimental && <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span>}
                                           <span className="text-slate-400">•</span>
                                           <span className="text-brand-yellow">{formatScheduledDate(event.start, event.end)}</span>
                                       </div>
@@ -331,7 +331,7 @@ function SchedulePageComponent() {
                             )}
                             <TableCell className="font-medium text-slate-600">{subjectMap[event.subject] || event.subject}</TableCell>
                             <TableCell>
-                              {event.isExperimental ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
+                              {event.isExperimental ? <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
                             </TableCell>
                             <TableCell className="text-slate-500 font-medium">{formatHistoryDate(event.start, event.end)}</TableCell>
                             {currentUser?.role === 'admin' && (

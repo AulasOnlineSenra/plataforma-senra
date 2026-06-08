@@ -382,7 +382,7 @@ export default function MinhasAulasPage() {
         )}
         <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
         <TableCell>
-          {lesson.isExperimental ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
+          {lesson.isExperimental ? <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
         </TableCell>
         <TableCell>
           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + (lesson.endDate ? ' - ' + format(new Date(lesson.endDate), "HH:mm") : '')}
@@ -441,7 +441,7 @@ export default function MinhasAulasPage() {
                   >
                     <div className="flex flex-wrap items-center gap-4">
                       <p className="font-semibold text-slate-900">{subjectMap[lesson.subject] || lesson.subject}</p>
-                      {lesson.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span>}
+                      {lesson.isExperimental && <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span>}
                       <p className="text-sm text-slate-600">
                         {(() => {
                           const d = new Date(lesson.date);
@@ -675,7 +675,7 @@ export default function MinhasAulasPage() {
                         </TableCell>
                         <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
                         <TableCell>
-                          {lesson.isExperimental ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
+                          {lesson.isExperimental ? <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
                         </TableCell>
                         <TableCell>
                           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}

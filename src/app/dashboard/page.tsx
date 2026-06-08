@@ -141,6 +141,7 @@ type LessonItem = {
   subject: string;
   status: string;
   date: string | Date;
+  isExperimental?: boolean;
   student?: { id: string; name: string } | null;
   teacher?: { id: string; name: string; videoUrl?: string | null } | null;
 };
@@ -879,6 +880,7 @@ export default function DashboardPage() {
                       <TableHead>
                         {user.role === "student" ? "Professor" : "Aluno"}
                       </TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Data</TableHead>
                       <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
@@ -908,6 +910,13 @@ export default function DashboardPage() {
                             {user.role === "student"
                               ? lesson.teacher?.name
                               : lesson.student?.name}
+                          </TableCell>
+                          <TableCell>
+                            {lesson.isExperimental && (
+                              <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">
+                                Experimental
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             {(() => {
