@@ -105,6 +105,10 @@ export default function MinhasAulasPage() {
   const [cancelledStudentFilter, setCancelledStudentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [gridWeekStart, setGridWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [openMenuLessonId, setOpenMenuLessonId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [openMenuLesson, setOpenMenuLesson] = useState<LessonItem | null>(null);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     setLoading(true);
@@ -172,6 +176,34 @@ export default function MinhasAulasPage() {
       }
     }
   }, [loading, lessons]);
+
+  // Current-time ticker — updates every 30 seconds
+  useEffect(() => {
+    const tick = () => setCurrentTime(new Date());
+    const timer = setInterval(tick, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Close grid menu on outside click
+  useEffect(() => {
+    if (!openMenuLessonId) return;
+    const close = () => setOpenMenuLessonId(null);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [openMenuLessonId]);
+
+  const handleMenuOpen = (e: React.MouseEvent, lesson: LessonItem) => {
+    e.stopPropagation();
+    if (openMenuLessonId === lesson.id) {
+      setOpenMenuLessonId(null);
+      setOpenMenuLesson(null);
+      return;
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 6, left: rect.right - 148 });
+    setOpenMenuLessonId(lesson.id);
+    setOpenMenuLesson(lesson);
+  };
 
   const sortedLessons = useMemo(
     () =>
@@ -639,10 +671,10 @@ export default function MinhasAulasPage() {
                               style={{
                                 top: `${topPx}px`,
                                 height: `${heightPx}px`,
-                                width: '65%',
+                                width: 'calc(100% - 4px)',
                                 left: '2px',
                               }}
-                              className={`absolute overflow-hidden rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm ${
+                              className={`absolute overflow-visible rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm ${
                                 getStatusColor(lesson.status)
                               }`}
                             >
@@ -658,49 +690,38 @@ export default function MinhasAulasPage() {
 
                                 {/* Three-dot menu for future scheduled lessons */}
                                 {isFutureScheduled && (
-                                  <div className="relative flex-shrink-0" style={{ zIndex: 10 }}>
-                                    <details className="group">
-                                      <summary
-                                        className="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded hover:bg-black/10"
-                                        onClick={e => e.stopPropagation()}
-                                      >
-                                        <MoreHorizontal className="h-3 w-3" />
-                                      </summary>
-                                      <div className="absolute right-0 top-5 z-50 min-w-[140px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
-                                        {videoUrl && (
-                                          <a
-                                            href={videoUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                                          >
-                                            <Video className="h-3 w-3" /> Entrar na Sala
-                                          </a>
-                                        )}
-                                        {canEditOrCancel(lesson) && (
-                                          <>
-                                            <button
-                                              className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                                              onClick={() => { handleOpenEditDialog(lesson); }}
-                                            >
-                                              <Pencil className="h-3 w-3" /> Editar
-                                            </button>
-                                            <button
-                                              className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
-                                              onClick={() => { handleOpenCancelDialog(lesson); }}
-                                            >
-                                              <XCircle className="h-3 w-3" /> Cancelar
-                                            </button>
-                                          </>
-                                        )}
-                                      </div>
-                                    </details>
+                                  <div className="relative flex-shrink-0">
+                                    <button
+                                      className="flex h-5 w-5 items-center justify-center rounded hover:bg-black/10"
+                                      onClick={(e) => handleMenuOpen(e, lesson)}
+                                    >
+                                      <MoreHorizontal className="h-3 w-3" />
+                                    </button>
                                   </div>
                                 )}
                               </div>
                             </div>
                           );
                         })}
+                        {/* Current time indicator — only in today's column */}
+                        {isToday(day) && (() => {
+                          const nowH = currentTime.getHours();
+                          const nowM = currentTime.getMinutes();
+                          const nowMinutes = (nowH - GRID_START_HOUR) * 60 + nowM;
+                          if (nowMinutes < 0 || nowMinutes > totalHours * 60) return null;
+                          const nowTop = (nowMinutes / 60) * HOUR_HEIGHT;
+                          return (
+                            <div
+                              className="pointer-events-none absolute left-0 right-0 z-30"
+                              style={{ top: `${nowTop}px` }}
+                            >
+                              <div className="relative flex items-center">
+                                <div className="absolute -left-1 h-2.5 w-2.5 rounded-full bg-[#f5b000] shadow-md" style={{ boxShadow: '0 0 6px #f5b000' }} />
+                                <div className="ml-1.5 h-[2px] w-full bg-[#f5b000] opacity-80" />
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}
@@ -1146,6 +1167,43 @@ export default function MinhasAulasPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ===== GLOBAL FIXED DROPDOWN MENU FOR GRID VIEW ===== */}
+      {openMenuLessonId && openMenuLesson && (
+        <div
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+          className="min-w-[160px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+          onClick={e => e.stopPropagation()}
+        >
+          {openMenuLesson.teacher?.videoUrl && (
+            <a
+              href={openMenuLesson.teacher.videoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              onClick={() => setOpenMenuLessonId(null)}
+            >
+              <Video className="h-4 w-4 text-slate-500" /> Entrar na Sala
+            </a>
+          )}
+          {canEditOrCancel(openMenuLesson) && (
+            <>
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                onClick={() => { setOpenMenuLessonId(null); handleOpenEditDialog(openMenuLesson); }}
+              >
+                <Pencil className="h-4 w-4 text-slate-500" /> Editar
+              </button>
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                onClick={() => { setOpenMenuLessonId(null); handleOpenCancelDialog(openMenuLesson); }}
+              >
+                <XCircle className="h-4 w-4" /> Cancelar
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
