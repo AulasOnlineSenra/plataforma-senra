@@ -72,6 +72,7 @@ type LessonItem = {
   meetingLink?: string | null;
   student?: { id: string; name: string; avatarUrl?: string | null } | null;
   teacher?: { id: string; name: string; avatarUrl?: string | null; videoUrl?: string | null } | null;
+  isExperimental?: boolean;
 };
 
 export default function MinhasAulasPage() {
@@ -381,6 +382,9 @@ export default function MinhasAulasPage() {
         )}
         <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
         <TableCell>
+          {lesson.isExperimental ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
+        </TableCell>
+        <TableCell>
           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + (lesson.endDate ? ' - ' + format(new Date(lesson.endDate), "HH:mm") : '')}
         </TableCell>
         {role === "admin" && (
@@ -437,6 +441,7 @@ export default function MinhasAulasPage() {
                   >
                     <div className="flex flex-wrap items-center gap-4">
                       <p className="font-semibold text-slate-900">{subjectMap[lesson.subject] || lesson.subject}</p>
+                      {lesson.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span>}
                       <p className="text-sm text-slate-600">
                         {(() => {
                           const d = new Date(lesson.date);
@@ -579,6 +584,7 @@ export default function MinhasAulasPage() {
                           {(role === "admin" || role === "teacher") && <TableHead>Aluno</TableHead>}
                           {(role === "admin" || role === "student") && <TableHead>Professor</TableHead>}
                           <TableHead>Matéria</TableHead>
+                          <TableHead>Tipo</TableHead>
                           <TableHead>Data/Hora</TableHead>
                           {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                         </TableRow>
@@ -641,6 +647,7 @@ export default function MinhasAulasPage() {
                       <TableHead>Aluno</TableHead>
                       <TableHead>Professor</TableHead>
                       <TableHead>Matéria</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Data/Hora</TableHead>
                       {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
@@ -667,6 +674,9 @@ export default function MinhasAulasPage() {
                           </div>
                         </TableCell>
                         <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
+                        <TableCell>
+                          {lesson.isExperimental ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
+                        </TableCell>
                         <TableCell>
                           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </TableCell>

@@ -1046,9 +1046,10 @@ function BookingPageComponent() {
           </CardHeader>
           <CardContent>
             <div className="rounded-2xl border border-slate-100 overflow-hidden">
-              <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "180px 1fr 220px 120px 70px" }}>
+              <div className="grid px-4 py-2.5 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide" style={{ gridTemplateColumns: "180px 1fr 120px 220px 120px 70px" }}>
                 <span>Disciplina</span>
                 <span>Professor</span>
+                <span>Tipo</span>
                 <span>Data</span>
                 <span>Horário</span>
                 <span className="text-right">Ações</span>
@@ -1058,7 +1059,7 @@ function BookingPageComponent() {
 
                 if (isEditing) {
                   return (
-                    <div key={booking.id} className={`grid items-center px-4 py-3 bg-amber-50 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 220px 120px 70px" }}>
+                    <div key={booking.id} className={`grid items-center px-4 py-3 bg-amber-50 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 120px 220px 120px 70px" }}>
                       <div>
                         <Select value={editingSubject} onValueChange={(v) => { setEditingSubject(v); setEditingTeacher(""); setEditingTime(""); }}>
                           <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
@@ -1082,6 +1083,9 @@ function BookingPageComponent() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div>
+                        {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase">Experimental</span>}
                       </div>
                       <div>
                         <input type="date" value={editingDate} onChange={(e) => { setEditingDate(e.target.value); setEditingTime(""); }} className="h-9 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700" />
@@ -1111,12 +1115,14 @@ function BookingPageComponent() {
                 }
 
                 return (
-                  <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 220px 120px 70px" }}>
+                  <div key={booking.id} className={`grid items-center px-4 py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`} style={{ gridTemplateColumns: "180px 1fr 120px 220px 120px 70px" }}>
                     <div className="flex flex-col pr-2 overflow-hidden">
                       <span className="text-sm font-bold text-slate-900 truncate">{booking.subjectName}</span>
-                      {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental</span>}
                     </div>
                     <span className="text-sm text-slate-700 truncate pr-3">{booking.teacherName}</span>
+                    <div>
+                      {booking.isExperimental && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded uppercase mt-0.5">Experimental</span>}
+                    </div>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
                       {(() => {
                         const d = new Date(booking.date);
