@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, startOfWeek, endOfWeek, addDays, eachDayOfInterval, isSameDay, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon, RotateCcw, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon, RotateCcw, LayoutGrid, List, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { getLessonsForUser, updateLesson, cancelLesson, deleteLesson } from "@/app/actions/bookings";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -260,6 +260,10 @@ export default function MinhasAulasPage() {
     return slots;
   }, [lessonsInGridWeek]);
 
+  const getLessonsForDay = (day: Date) => {
+    return lessonsInGridWeek.filter(l => isSameDay(new Date(l.date), day));
+  };
+
   const getLessonsForDayAndSlot = (day: Date, slotHour: number) => {
     return lessonsInGridWeek.filter(l => {
       const d = new Date(l.date);
@@ -491,144 +495,236 @@ export default function MinhasAulasPage() {
       </div>
 
       {/* ===== GRID VIEW ===== */}
-      {viewMode === 'grid' && (
-        <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-slate-200 bg-white">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <LayoutGrid className="h-5 w-5 text-[#FFC107]" />
-                <div>
-                  <CardTitle className="text-slate-900">Agenda em Grade</CardTitle>
-                  <CardDescription>
-                    {format(gridWeekStart, "dd/MM")} – {format(addDays(gridWeekStart, 6), "dd/MM/yyyy")}
-                  </CardDescription>
+      {viewMode === 'grid' && (() => {
+        const HOUR_HEIGHT = 64; // px per hour
+        const GRID_START_HOUR = gridTimeSlots.length > 0 ? parseInt(gridTimeSlots[0].split(':')[0]) : 7;
+        const GRID_END_HOUR = gridTimeSlots.length > 0 ? parseInt(gridTimeSlots[gridTimeSlots.length - 1].split(':')[0]) + 1 : 22;
+        const totalHours = GRID_END_HOUR - GRID_START_HOUR;
+        const now = new Date();
+
+        return (
+          <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-slate-200 bg-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="h-5 w-5 text-[#FFC107]" />
+                  <div>
+                    <CardTitle className="text-slate-900">Agenda em Grade</CardTitle>
+                    <CardDescription>
+                      {format(gridWeekStart, "dd/MM")} – {format(addDays(gridWeekStart, 6), "dd/MM/yyyy")}
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setGridWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+                  >
+                    Hoje
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-xl"
+                    onClick={() => setGridWeekStart(d => addDays(d, -7))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-xl"
+                    onClick={() => setGridWeekStart(d => addDays(d, 7))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={() => setGridWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-                >
-                  Hoje
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl"
-                  onClick={() => setGridWeekStart(d => addDays(d, -7))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl"
-                  onClick={() => setGridWeekStart(d => addDays(d, 7))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] border-collapse">
-                <thead>
-                  <tr>
-                    <th className="w-16 min-w-[56px] border-b border-r border-slate-100 bg-slate-50 py-3 text-xs font-semibold text-slate-400" />
-                    {gridWeekDays.map((day) => (
-                      <th
-                        key={day.toISOString()}
-                        className={`border-b border-r border-slate-100 py-3 text-center text-xs font-semibold uppercase tracking-wide last:border-r-0 ${
-                          isToday(day) ? 'bg-[#fff8e1] text-[#c47f00]' : 'bg-slate-50 text-slate-500'
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-auto max-h-[620px]">
+                {/* ----- STICKY HEADER: day names ----- */}
+                <div className="sticky top-0 z-20 flex border-b border-slate-200 bg-white shadow-sm">
+                  {/* Corner spacer aligned with the time label column */}
+                  <div className="w-14 flex-shrink-0 border-r border-slate-100 bg-slate-50" />
+                  {gridWeekDays.map((day) => (
+                    <div
+                      key={day.toISOString()}
+                      className={`flex flex-1 flex-col items-center justify-center border-r border-slate-100 py-2.5 last:border-r-0 ${
+                        isToday(day) ? 'bg-[#fffbeb]' : 'bg-white'
+                      }`}
+                    >
+                      <span className={`text-[10px] font-semibold uppercase tracking-widest ${
+                        isToday(day) ? 'text-[#c47f00]' : 'text-slate-400'
+                      }`}>
+                        {format(day, 'EEE', { locale: ptBR })}
+                      </span>
+                      <span
+                        className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${
+                          isToday(day) ? 'bg-[#f5b000] text-slate-900' : 'text-slate-700'
                         }`}
                       >
-                        <div>{format(day, 'EEE', { locale: ptBR })}</div>
-                        <div
-                          className={`mx-auto mt-1 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold ${
-                            isToday(day)
-                              ? 'bg-[#f5b000] text-slate-900'
-                              : 'text-slate-700'
-                          }`}
-                        >
-                          {format(day, 'd')}
-                        </div>
-                      </th>
+                        {format(day, 'd')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ----- GRID BODY: time labels + day columns ----- */}
+                <div className="flex">
+                  {/* Time labels */}
+                  <div className="w-14 flex-shrink-0 border-r border-slate-100 bg-slate-50">
+                    {Array.from({ length: totalHours }, (_, i) => GRID_START_HOUR + i).map(h => (
+                      <div
+                        key={h}
+                        style={{ height: `${HOUR_HEIGHT}px` }}
+                        className="flex items-start justify-end border-b border-slate-100 pr-2 pt-1 text-[11px] font-medium text-slate-400"
+                      >
+                        {`${String(h).padStart(2, '0')}:00`}
+                      </div>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {gridTimeSlots.map((slot) => {
-                    const slotHour = parseInt(slot.split(':')[0]);
+                  </div>
+
+                  {/* Day columns */}
+                  {gridWeekDays.map((day) => {
+                    const dayLessons = getLessonsForDay(day);
                     return (
-                      <tr key={slot} className="group">
-                        <td className="border-b border-r border-slate-100 bg-slate-50 px-2 py-1 text-right text-[11px] font-medium text-slate-400 align-top">
-                          {slot}
-                        </td>
-                        {gridWeekDays.map((day) => {
-                          const cellLessons = getLessonsForDayAndSlot(day, slotHour);
+                      <div
+                        key={day.toISOString()}
+                        className={`relative flex-1 border-r border-slate-100 last:border-r-0 ${
+                          isToday(day) ? 'bg-amber-50/20' : ''
+                        }`}
+                        style={{ height: `${totalHours * HOUR_HEIGHT}px` }}
+                      >
+                        {/* Hour separator lines */}
+                        {Array.from({ length: totalHours }, (_, i) => (
+                          <div
+                            key={i}
+                            className="absolute left-0 right-0 border-b border-slate-100"
+                            style={{ top: `${(i + 1) * HOUR_HEIGHT}px` }}
+                          />
+                        ))}
+                        {/* Half-hour dashed lines */}
+                        {Array.from({ length: totalHours }, (_, i) => (
+                          <div
+                            key={`half-${i}`}
+                            className="absolute left-0 right-0 border-b border-dashed border-slate-100"
+                            style={{ top: `${i * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }}
+                          />
+                        ))}
+
+                        {/* Lesson blocks */}
+                        {dayLessons.map((lesson) => {
+                          const start = new Date(lesson.date);
+                          const end = lesson.endDate
+                            ? new Date(lesson.endDate)
+                            : new Date(start.getTime() + 90 * 60000);
+                          const startMinutes = (start.getHours() - GRID_START_HOUR) * 60 + start.getMinutes();
+                          const durationMinutes = (end.getTime() - start.getTime()) / 60000;
+                          const topPx = (startMinutes / 60) * HOUR_HEIGHT;
+                          const heightPx = Math.max(24, (durationMinutes / 60) * HOUR_HEIGHT);
+
+                          const personName = role === 'student'
+                            ? lesson.teacher?.name
+                            : lesson.student?.name;
+                          const videoUrl = lesson.teacher?.videoUrl;
+                          const isFutureScheduled = new Date(lesson.date) >= now &&
+                            ['PENDING', 'CONFIRMED', 'scheduled'].includes(lesson.status);
+
                           return (
-                            <td
-                              key={day.toISOString()}
-                              className={`relative border-b border-r border-slate-100 p-0.5 align-top last:border-r-0 min-h-[40px] h-10 ${
-                                isToday(day) ? 'bg-amber-50/30' : ''
+                            <div
+                              key={lesson.id}
+                              style={{
+                                top: `${topPx}px`,
+                                height: `${heightPx}px`,
+                                width: '65%',
+                                left: '2px',
+                              }}
+                              className={`absolute overflow-hidden rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm ${
+                                getStatusColor(lesson.status)
                               }`}
                             >
-                              {cellLessons.map((lesson) => {
-                                const start = new Date(lesson.date);
-                                const end = lesson.endDate ? new Date(lesson.endDate) : addDays(start, 0);
-                                const personName =
-                                  role === 'student'
-                                    ? lesson.teacher?.name
-                                    : lesson.student?.name;
-                                return (
-                                  <div
-                                    key={lesson.id}
-                                    className={`mb-0.5 rounded-lg border-l-4 px-1.5 py-1 text-[11px] leading-tight cursor-default ${
-                                      getStatusColor(lesson.status)
-                                    }`}
-                                    title={`${subjectMap[lesson.subject] || lesson.subject} • ${format(start, 'HH:mm')} - ${format(end, 'HH:mm')} • ${personName || ''}`}
-                                  >
-                                    <p className="font-semibold truncate">{subjectMap[lesson.subject] || lesson.subject}</p>
-                                    {lesson.isExperimental && (
-                                      <span className="text-[9px] font-bold text-emerald-600 uppercase">Experimental</span>
-                                    )}
-                                    {personName && (
-                                      <p className="truncate text-[10px] opacity-75">{personName}</p>
-                                    )}
-                                    <p className="opacity-60">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</p>
+                              <div className="flex items-start justify-between gap-0.5">
+                                <div className="min-w-0 flex-1 overflow-hidden">
+                                  <p className="truncate font-semibold">{subjectMap[lesson.subject] || lesson.subject}</p>
+                                  {lesson.isExperimental && (
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">Experimental</span>
+                                  )}
+                                  {personName && <p className="truncate text-[10px] opacity-70">{personName}</p>}
+                                  <p className="opacity-60">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</p>
+                                </div>
+
+                                {/* Three-dot menu for future scheduled lessons */}
+                                {isFutureScheduled && (
+                                  <div className="relative flex-shrink-0" style={{ zIndex: 10 }}>
+                                    <details className="group">
+                                      <summary
+                                        className="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded hover:bg-black/10"
+                                        onClick={e => e.stopPropagation()}
+                                      >
+                                        <MoreHorizontal className="h-3 w-3" />
+                                      </summary>
+                                      <div className="absolute right-0 top-5 z-50 min-w-[140px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                                        {videoUrl && (
+                                          <a
+                                            href={videoUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                                          >
+                                            <Video className="h-3 w-3" /> Entrar na Sala
+                                          </a>
+                                        )}
+                                        {canEditOrCancel(lesson) && (
+                                          <>
+                                            <button
+                                              className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                                              onClick={() => { handleOpenEditDialog(lesson); }}
+                                            >
+                                              <Pencil className="h-3 w-3" /> Editar
+                                            </button>
+                                            <button
+                                              className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                                              onClick={() => { handleOpenCancelDialog(lesson); }}
+                                            >
+                                              <XCircle className="h-3 w-3" /> Cancelar
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </details>
                                   </div>
-                                );
-                              })}
-                            </td>
+                                )}
+                              </div>
+                            </div>
                           );
                         })}
-                      </tr>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-
-              {lessonsInGridWeek.length === 0 && (
-                <div className="flex flex-col items-center justify-center gap-2 py-16 text-slate-400">
-                  <LayoutGrid className="h-10 w-10 opacity-30" />
-                  <p className="font-medium">Nenhuma aula nesta semana.</p>
-                  <p className="text-sm">Use as setas para navegar para outra semana.</p>
                 </div>
-              )}
 
-              {/* Legend */}
-              <div className="flex items-center gap-4 border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-500">
-                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-[#f5b000] bg-amber-100" />Agendada</span>
-                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-green-400 bg-green-100" />Concluída</span>
-                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-red-400 bg-red-100" />Cancelada</span>
+                {lessonsInGridWeek.length === 0 && (
+                  <div className="flex flex-col items-center justify-center gap-2 py-16 text-slate-400">
+                    <LayoutGrid className="h-10 w-10 opacity-30" />
+                    <p className="font-medium">Nenhuma aula nesta semana.</p>
+                    <p className="text-sm">Use as setas para navegar para outra semana.</p>
+                  </div>
+                )}
+
+                {/* Legend */}
+                <div className="sticky bottom-0 flex items-center gap-4 border-t border-slate-100 bg-slate-50/90 px-4 py-2 text-[11px] text-slate-500 backdrop-blur-sm">
+                  <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-[#f5b000] bg-amber-100" />Agendada</span>
+                  <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-green-400 bg-green-100" />Concluída</span>
+                  <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-l-4 border-red-400 bg-red-100" />Cancelada</span>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ===== LIST VIEW ===== */}
       {viewMode === 'list' && (
