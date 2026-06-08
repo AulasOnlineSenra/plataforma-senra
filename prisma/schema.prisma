@@ -149,6 +149,7 @@ model Lesson {
   meetingLink                 String?
   price                      Float?
   isExperimental              Boolean  @default(false)
+  cancelReason                String?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
   materials                   String?  // JSON array of material URLs

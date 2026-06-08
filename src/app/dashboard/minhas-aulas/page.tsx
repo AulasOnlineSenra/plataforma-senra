@@ -70,6 +70,7 @@ type LessonItem = {
   date: string | Date;
   endDate: string | Date;
   meetingLink?: string | null;
+  cancelReason?: string | null;
   student?: { id: string; name: string; avatarUrl?: string | null } | null;
   teacher?: { id: string; name: string; avatarUrl?: string | null; videoUrl?: string | null } | null;
   isExperimental?: boolean;
@@ -109,6 +110,7 @@ export default function MinhasAulasPage() {
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [openMenuLesson, setOpenMenuLesson] = useState<LessonItem | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [cancelReason, setCancelReason] = useState<string>('');
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     setLoading(true);
@@ -376,8 +378,12 @@ export default function MinhasAulasPage() {
 
   const handleConfirmCancel = async () => {
     if (!lessonToCancel) return;
+    if (!cancelReason.trim()) {
+      toast({ variant: 'destructive', title: 'Motivo obrigatório', description: 'Por favor, informe o motivo do cancelamento.' });
+      return;
+    }
 
-    const result = await cancelLesson(lessonToCancel.id);
+    const result = await cancelLesson(lessonToCancel.id, cancelReason.trim());
 
     if (result.success) {
       toast({
@@ -386,6 +392,7 @@ export default function MinhasAulasPage() {
       });
       setIsCancelDialogOpen(false);
       setLessonToCancel(null);
+      setCancelReason('');
       if (role && userId) {
         loadLessons(userId, role);
       }
@@ -661,6 +668,7 @@ export default function MinhasAulasPage() {
                           const personName = role === 'student'
                             ? lesson.teacher?.name
                             : lesson.student?.name;
+                          const teacherName = role === 'admin' ? lesson.teacher?.name : null;
                           const videoUrl = lesson.teacher?.videoUrl;
                           const isFutureScheduled = new Date(lesson.date) >= now &&
                             ['PENDING', 'CONFIRMED', 'scheduled'].includes(lesson.status);
@@ -685,6 +693,7 @@ export default function MinhasAulasPage() {
                                     <span className="text-[9px] font-bold text-emerald-600 uppercase">Experimental</span>
                                   )}
                                   {personName && <p className="truncate text-[10px] opacity-70">{personName}</p>}
+                                  {teacherName && <p className="truncate text-[10px] opacity-60 italic">{teacherName}</p>}
                                   <p className="opacity-60">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</p>
                                 </div>
 
@@ -988,6 +997,7 @@ export default function MinhasAulasPage() {
                       <TableHead>Matéria</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Data/Hora</TableHead>
+                      <TableHead>Motivo do Cancelamento</TableHead>
                       {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -1018,6 +1028,13 @@ export default function MinhasAulasPage() {
                         </TableCell>
                         <TableCell>
                           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          {lesson.cancelReason ? (
+                            <span className="text-xs text-slate-600 italic">"{lesson.cancelReason}"</span>
+                          ) : (
+                            <span className="text-xs text-slate-400">-</span>
+                          )}
                         </TableCell>
                         {role === "admin" && (
                           <TableCell className="text-right">
@@ -1106,7 +1123,7 @@ export default function MinhasAulasPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={(open) => { setIsCancelDialogOpen(open); if (!open) setCancelReason(''); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar Aula</AlertDialogTitle>
@@ -1117,12 +1134,31 @@ export default function MinhasAulasPage() {
                 const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
                 return format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
               })()}?
-              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="px-1 pb-2">
+            <Label htmlFor="cancelReason" className="text-sm font-medium text-slate-700">
+              Motivo do cancelamento <span className="text-red-500">*</span>
+            </Label>
+            <textarea
+              id="cancelReason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Descreva o motivo do cancelamento..."
+              rows={3}
+              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-300 resize-none"
+            />
+            {!cancelReason.trim() && (
+              <p className="mt-1 text-xs text-red-500">O motivo é obrigatório para cancelar a aula.</p>
+            )}
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Não, manter</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancel} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={!cancelReason.trim()}
+            >
               Sim, cancelar aula
             </AlertDialogAction>
           </AlertDialogFooter>

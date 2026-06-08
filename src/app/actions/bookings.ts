@@ -313,6 +313,7 @@ export async function getLessonsForUser(userId: string, role: string, teacherIdT
         date: true,
         endDate: true,
         isExperimental: true,
+        cancelReason: true,
         teacherId: true,
         student: { select: { id: true, name: true, email: true, avatarUrl: true } },
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true, videoUrl: true } },
@@ -444,7 +445,7 @@ export async function updateLesson(lessonId: string, data: LessonUpdateData) {
   }
 }
 
-export async function cancelLesson(lessonId: string) {
+export async function cancelLesson(lessonId: string, cancelReason?: string) {
   try {
     const existingLesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
@@ -464,7 +465,7 @@ export async function cancelLesson(lessonId: string) {
 
     const updatedLesson = await prisma.lesson.update({
       where: { id: lessonId },
-      data: { status: "CANCELLED" },
+      data: { status: "CANCELLED", cancelReason: cancelReason || null },
     });
 
     const cancelledStartDate = existingLesson.date;
