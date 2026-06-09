@@ -94,6 +94,7 @@ function TeacherCard({
 }) {
   const isAdmin = currentUser?.role === "admin";
   const isPending = teacher.status === "pending";
+  const isInactive = teacher.status === "inactive";
   const [rating, setRating] = useState<{ average: number; count: number }>({ average: 5.0, count: 0 });
 
   useEffect(() => {
@@ -186,9 +187,9 @@ function TeacherCard({
     <Card
       style={{ width: 'calc(100% - 24px)' }}
       className={`group relative flex flex-col overflow-hidden rounded-3xl border shadow-sm transition-all cursor-pointer ${
-        isPending
-          ? "border-blue-400 bg-blue-50/80 hover:border-[#f5b000] hover:shadow-[0_0_16px_2px_#f5b000]"
-          : teacher.status === "pending"
+        isInactive
+          ? "border-slate-200 bg-slate-100 opacity-80 grayscale-[20%] hover:opacity-100 hover:grayscale-0 hover:border-slate-400"
+          : isPending
             ? "border-amber-300 bg-amber-50/60 hover:border-[#f5b000] hover:shadow-[0_0_16px_2px_#f5b000]"
             : "border-slate-200 bg-white hover:border-[#f5b000] hover:shadow-[0_0_16px_2px_#f5b000]"
       }`}
@@ -206,20 +207,27 @@ function TeacherCard({
       {/* Detalhe de cor no topo do card */}
       <div
         className={`h-16 w-full border-b absolute top-0 left-0 z-0 transition-colors ${
-          isPending
-            ? "bg-blue-100 border-blue-200"
-            : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
+          isInactive
+            ? "bg-slate-200 border-slate-300"
+            : isPending
+              ? "bg-blue-100 border-blue-200"
+              : "bg-slate-50 border-slate-100 group-hover:bg-amber-50/50"
         }`}
       ></div>
 
       {/* Status no canto superior esquerdo */}
-      <div className="absolute top-2 left-3 z-10">
+      <div className="absolute top-2 left-3 z-10 flex gap-1">
+        {isInactive && (
+          <Badge className="border-none bg-slate-200 font-bold text-slate-600 px-3 py-1 rounded-full shadow-none">
+            Inativo
+          </Badge>
+        )}
         {isPending && (
           <Badge className="border-none bg-blue-100 font-bold text-blue-700 px-3 py-1 rounded-full shadow-none animate-pulse">
             Pendente
           </Badge>
         )}
-        {!isPending && (
+        {!isPending && !isInactive && (
           <Badge className="border-none bg-emerald-50 font-bold text-emerald-600 px-3 py-1 rounded-full shadow-none">
             Ativo
           </Badge>
@@ -259,8 +267,8 @@ function TeacherCard({
                 <DropdownMenuItem onClick={() => onEdit(teacher)}>
                   <Edit className="mr-2 h-4 w-4" /> Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onToggleVisibility(teacher.id, teacher.status === 'hidden')}>
-                  {teacher.status === 'hidden' ? (
+                <DropdownMenuItem onClick={() => onToggleVisibility(teacher.id, teacher.status === 'inactive')}>
+                  {teacher.status === 'inactive' ? (
                     <>
                       <Eye className="mr-2 h-4 w-4" /> Exibir
                     </>
@@ -534,13 +542,13 @@ export default function TeachersPage() {
     }
   };
 
-  const handleToggleVisibility = async (id: string, isCurrentlyHidden: boolean) => {
-    const newStatus = isCurrentlyHidden ? 'active' : 'hidden';
+  const handleToggleVisibility = async (id: string, isCurrentlyInactive: boolean) => {
+    const newStatus = isCurrentlyInactive ? 'active' : 'inactive';
     const result = await updateTeacher(id, { status: newStatus });
     if (result.success) {
       toast({
-        title: newStatus === 'hidden' ? "Professor ocultado" : "Professor exibido",
-        description: newStatus === 'hidden' 
+        title: newStatus === 'inactive' ? "Professor ocultado" : "Professor exibido",
+        description: newStatus === 'inactive' 
           ? "O professor não aparecerá mais para os alunos."
           : "O professor voltará a aparecer para os alunos.",
         className: "bg-emerald-600 text-white border-none",
@@ -834,10 +842,10 @@ export default function TeachersPage() {
             {(() => {
               const filteredTeachers = teacherList.filter(teacher => {
                 const matchesStatus = statusFilter === "all" || 
-                  (statusFilter === "pending" ? teacher.status === "pending" : teacher.status === "active" || teacher.status === "hidden");
+                  (statusFilter === "pending" ? teacher.status === "pending" : teacher.status === "active" || teacher.status === "inactive");
                 
-                // Excluir blacklisted da lista principal
-                if (teacher.status === 'blacklisted') return false;
+                // Excluir blacklisted e deleted da lista principal
+                if (teacher.status === 'blacklisted' || teacher.status === 'deleted') return false;
                 let teacherSubjects: string[] = [];
 
                 if (teacher.subjects) {
@@ -861,9 +869,13 @@ export default function TeachersPage() {
                 return matchesStatus && matchesSubject;
               });
 
-              // Ordenar: ativos primeiro, depois pendentes (quando filtro "all")
+              // Ordenar: ativos primeiro, depois pendentes, e por fim inativos
               const sortedTeachers = statusFilter === "all"
                 ? [...filteredTeachers].sort((a, b) => {
+                    const aIsInactive = a.status === "inactive";
+                    const bIsInactive = b.status === "inactive";
+                    if (aIsInactive !== bIsInactive) return aIsInactive ? 1 : -1;
+
                     // Professores ativos primeiro
                     const aIsActive = a.status !== "pending";
                     const bIsActive = b.status !== "pending";
