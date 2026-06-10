@@ -378,12 +378,8 @@ export default function MinhasAulasPage() {
 
   const handleConfirmCancel = async () => {
     if (!lessonToCancel) return;
-    if (!cancelReason.trim()) {
-      toast({ variant: 'destructive', title: 'Motivo obrigatório', description: 'Por favor, informe o motivo do cancelamento.' });
-      return;
-    }
 
-    const result = await cancelLesson(lessonToCancel.id, cancelReason.trim());
+    const result = await cancelLesson(lessonToCancel.id, cancelReason.trim() || undefined);
 
     if (result.success) {
       toast({
