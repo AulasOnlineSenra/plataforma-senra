@@ -470,14 +470,7 @@ export default function TeachersPage() {
   };
 
   const openEditModal = (teacher: any) => {
-    setFormData({
-      id: teacher.id,
-      name: teacher.name,
-      email: teacher.email,
-      password: "",
-      subject: teacher.subject || "",
-    });
-    setIsEditOpen(true);
+    router.push(`/dashboard/profile?userId=${teacher.id}`);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {

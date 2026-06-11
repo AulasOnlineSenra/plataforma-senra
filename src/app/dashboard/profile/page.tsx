@@ -324,14 +324,25 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const loadUser = async () => {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
+      const loggedUserId = localStorage.getItem('userId');
+      if (!loggedUserId) {
         router.push('/login');
         return;
       }
 
+      let targetUserId = loggedUserId;
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryUserId = urlParams.get('userId');
+
+      if (queryUserId) {
+        const loggedUserRes = await getUserById(loggedUserId);
+        if (loggedUserRes.success && loggedUserRes.data && (loggedUserRes.data.role === 'admin' || loggedUserRes.data.role === 'manager')) {
+          targetUserId = queryUserId;
+        }
+      }
+
       const [userResult, subjectsResult] = await Promise.all([
-        getUserById(userId),
+        getUserById(targetUserId),
         getSubjects(),
       ]);
 
@@ -507,8 +518,10 @@ export default function ProfilePage() {
       toast({ title: 'Perfil atualizado', description: 'As informacoes foram salvas com sucesso.' });
       setCurrentUser(updated);
       setAvatarUrl(updated.avatarUrl || '');
-      localStorage.setItem('currentUser', JSON.stringify(updated));
-      window.dispatchEvent(new Event('storage'));
+      if (localStorage.getItem('userId') === updated.id) {
+        localStorage.setItem('currentUser', JSON.stringify(updated));
+        window.dispatchEvent(new Event('storage'));
+      }
     } else {
       toast({ variant: 'destructive', title: 'Erro ao atualizar', description: result.error || 'Não foi possivel atualizar o perfil.' });
     }
@@ -617,8 +630,10 @@ export default function ProfilePage() {
       toast({ title: 'Perfil atualizado', description: 'As informacoes foram salvas com sucesso.' });
       setCurrentUser(updated);
       setAvatarUrl(updated.avatarUrl || '');
-      localStorage.setItem('currentUser', JSON.stringify(updated));
-      window.dispatchEvent(new Event('storage'));
+      if (localStorage.getItem('userId') === updated.id) {
+        localStorage.setItem('currentUser', JSON.stringify(updated));
+        window.dispatchEvent(new Event('storage'));
+      }
     } catch (error: any) {
       console.error("Erro critico ao salvar perfil:", error);
       toast({ variant: 'destructive', title: 'Erro Fatal', description: 'Ocorreu um erro na conexão. Tente novamente ou reduza o tamanho da imagem.' });
