@@ -3049,8 +3049,18 @@ export namespace Prisma {
 
   export type AggregateAppSetting = {
     _count: AppSettingCountAggregateOutputType | null
+    _avg: AppSettingAvgAggregateOutputType | null
+    _sum: AppSettingSumAggregateOutputType | null
     _min: AppSettingMinAggregateOutputType | null
     _max: AppSettingMaxAggregateOutputType | null
+  }
+
+  export type AppSettingAvgAggregateOutputType = {
+    backupRetention: number | null
+  }
+
+  export type AppSettingSumAggregateOutputType = {
+    backupRetention: number | null
   }
 
   export type AppSettingMinAggregateOutputType = {
@@ -3068,6 +3078,11 @@ export namespace Prisma {
     minimaxApiKey: string | null
     grokApiKey: string | null
     searchApiKey: string | null
+    backupAuto: boolean | null
+    backupFrequency: string | null
+    backupRetention: number | null
+    backupEmail: string | null
+    backupDrive: string | null
     updatedAt: Date | null
   }
 
@@ -3086,6 +3101,11 @@ export namespace Prisma {
     minimaxApiKey: string | null
     grokApiKey: string | null
     searchApiKey: string | null
+    backupAuto: boolean | null
+    backupFrequency: string | null
+    backupRetention: number | null
+    backupEmail: string | null
+    backupDrive: string | null
     updatedAt: Date | null
   }
 
@@ -3104,10 +3124,23 @@ export namespace Prisma {
     minimaxApiKey: number
     grokApiKey: number
     searchApiKey: number
+    backupAuto: number
+    backupFrequency: number
+    backupRetention: number
+    backupEmail: number
+    backupDrive: number
     updatedAt: number
     _all: number
   }
 
+
+  export type AppSettingAvgAggregateInputType = {
+    backupRetention?: true
+  }
+
+  export type AppSettingSumAggregateInputType = {
+    backupRetention?: true
+  }
 
   export type AppSettingMinAggregateInputType = {
     id?: true
@@ -3124,6 +3157,11 @@ export namespace Prisma {
     minimaxApiKey?: true
     grokApiKey?: true
     searchApiKey?: true
+    backupAuto?: true
+    backupFrequency?: true
+    backupRetention?: true
+    backupEmail?: true
+    backupDrive?: true
     updatedAt?: true
   }
 
@@ -3142,6 +3180,11 @@ export namespace Prisma {
     minimaxApiKey?: true
     grokApiKey?: true
     searchApiKey?: true
+    backupAuto?: true
+    backupFrequency?: true
+    backupRetention?: true
+    backupEmail?: true
+    backupDrive?: true
     updatedAt?: true
   }
 
@@ -3160,6 +3203,11 @@ export namespace Prisma {
     minimaxApiKey?: true
     grokApiKey?: true
     searchApiKey?: true
+    backupAuto?: true
+    backupFrequency?: true
+    backupRetention?: true
+    backupEmail?: true
+    backupDrive?: true
     updatedAt?: true
     _all?: true
   }
@@ -3202,6 +3250,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: AppSettingAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: AppSettingSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: AppSettingMinAggregateInputType
@@ -3232,6 +3292,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: AppSettingCountAggregateInputType | true
+    _avg?: AppSettingAvgAggregateInputType
+    _sum?: AppSettingSumAggregateInputType
     _min?: AppSettingMinAggregateInputType
     _max?: AppSettingMaxAggregateInputType
   }
@@ -3251,8 +3313,15 @@ export namespace Prisma {
     minimaxApiKey: string | null
     grokApiKey: string | null
     searchApiKey: string | null
+    backupAuto: boolean
+    backupFrequency: string
+    backupRetention: number
+    backupEmail: string | null
+    backupDrive: string | null
     updatedAt: Date
     _count: AppSettingCountAggregateOutputType | null
+    _avg: AppSettingAvgAggregateOutputType | null
+    _sum: AppSettingSumAggregateOutputType | null
     _min: AppSettingMinAggregateOutputType | null
     _max: AppSettingMaxAggregateOutputType | null
   }
@@ -3286,6 +3355,11 @@ export namespace Prisma {
     minimaxApiKey?: boolean
     grokApiKey?: boolean
     searchApiKey?: boolean
+    backupAuto?: boolean
+    backupFrequency?: boolean
+    backupRetention?: boolean
+    backupEmail?: boolean
+    backupDrive?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["appSetting"]>
 
@@ -3304,6 +3378,11 @@ export namespace Prisma {
     minimaxApiKey?: boolean
     grokApiKey?: boolean
     searchApiKey?: boolean
+    backupAuto?: boolean
+    backupFrequency?: boolean
+    backupRetention?: boolean
+    backupEmail?: boolean
+    backupDrive?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["appSetting"]>
 
@@ -3322,6 +3401,11 @@ export namespace Prisma {
     minimaxApiKey?: boolean
     grokApiKey?: boolean
     searchApiKey?: boolean
+    backupAuto?: boolean
+    backupFrequency?: boolean
+    backupRetention?: boolean
+    backupEmail?: boolean
+    backupDrive?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["appSetting"]>
 
@@ -3340,10 +3424,15 @@ export namespace Prisma {
     minimaxApiKey?: boolean
     grokApiKey?: boolean
     searchApiKey?: boolean
+    backupAuto?: boolean
+    backupFrequency?: boolean
+    backupRetention?: boolean
+    backupEmail?: boolean
+    backupDrive?: boolean
     updatedAt?: boolean
   }
 
-  export type AppSettingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "whatsapp" | "classValue" | "referralBonus" | "availabilityType" | "pixKey" | "pixKeyType" | "geminiApiKey" | "openaiApiKey" | "anthropicApiKey" | "openRouterApiKey" | "minimaxApiKey" | "grokApiKey" | "searchApiKey" | "updatedAt", ExtArgs["result"]["appSetting"]>
+  export type AppSettingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "whatsapp" | "classValue" | "referralBonus" | "availabilityType" | "pixKey" | "pixKeyType" | "geminiApiKey" | "openaiApiKey" | "anthropicApiKey" | "openRouterApiKey" | "minimaxApiKey" | "grokApiKey" | "searchApiKey" | "backupAuto" | "backupFrequency" | "backupRetention" | "backupEmail" | "backupDrive" | "updatedAt", ExtArgs["result"]["appSetting"]>
 
   export type $AppSettingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "AppSetting"
@@ -3363,6 +3452,11 @@ export namespace Prisma {
       minimaxApiKey: string | null
       grokApiKey: string | null
       searchApiKey: string | null
+      backupAuto: boolean
+      backupFrequency: string
+      backupRetention: number
+      backupEmail: string | null
+      backupDrive: string | null
       updatedAt: Date
     }, ExtArgs["result"]["appSetting"]>
     composites: {}
@@ -3801,6 +3895,11 @@ export namespace Prisma {
     readonly minimaxApiKey: FieldRef<"AppSetting", 'String'>
     readonly grokApiKey: FieldRef<"AppSetting", 'String'>
     readonly searchApiKey: FieldRef<"AppSetting", 'String'>
+    readonly backupAuto: FieldRef<"AppSetting", 'Boolean'>
+    readonly backupFrequency: FieldRef<"AppSetting", 'String'>
+    readonly backupRetention: FieldRef<"AppSetting", 'Int'>
+    readonly backupEmail: FieldRef<"AppSetting", 'String'>
+    readonly backupDrive: FieldRef<"AppSetting", 'String'>
     readonly updatedAt: FieldRef<"AppSetting", 'DateTime'>
   }
     
@@ -13100,6 +13199,7 @@ export namespace Prisma {
     meetingLink: string | null
     price: number | null
     isExperimental: boolean | null
+    cancelReason: string | null
     createdAt: Date | null
     updatedAt: Date | null
     materials: string | null
@@ -13117,6 +13217,7 @@ export namespace Prisma {
     meetingLink: string | null
     price: number | null
     isExperimental: boolean | null
+    cancelReason: string | null
     createdAt: Date | null
     updatedAt: Date | null
     materials: string | null
@@ -13134,6 +13235,7 @@ export namespace Prisma {
     meetingLink: number
     price: number
     isExperimental: number
+    cancelReason: number
     createdAt: number
     updatedAt: number
     materials: number
@@ -13161,6 +13263,7 @@ export namespace Prisma {
     meetingLink?: true
     price?: true
     isExperimental?: true
+    cancelReason?: true
     createdAt?: true
     updatedAt?: true
     materials?: true
@@ -13178,6 +13281,7 @@ export namespace Prisma {
     meetingLink?: true
     price?: true
     isExperimental?: true
+    cancelReason?: true
     createdAt?: true
     updatedAt?: true
     materials?: true
@@ -13195,6 +13299,7 @@ export namespace Prisma {
     meetingLink?: true
     price?: true
     isExperimental?: true
+    cancelReason?: true
     createdAt?: true
     updatedAt?: true
     materials?: true
@@ -13299,6 +13404,7 @@ export namespace Prisma {
     meetingLink: string | null
     price: number | null
     isExperimental: boolean
+    cancelReason: string | null
     createdAt: Date
     updatedAt: Date
     materials: string | null
@@ -13335,6 +13441,7 @@ export namespace Prisma {
     meetingLink?: boolean
     price?: boolean
     isExperimental?: boolean
+    cancelReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     materials?: boolean
@@ -13356,6 +13463,7 @@ export namespace Prisma {
     meetingLink?: boolean
     price?: boolean
     isExperimental?: boolean
+    cancelReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     materials?: boolean
@@ -13375,6 +13483,7 @@ export namespace Prisma {
     meetingLink?: boolean
     price?: boolean
     isExperimental?: boolean
+    cancelReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     materials?: boolean
@@ -13394,12 +13503,13 @@ export namespace Prisma {
     meetingLink?: boolean
     price?: boolean
     isExperimental?: boolean
+    cancelReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     materials?: boolean
   }
 
-  export type LessonOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "studentId" | "teacherId" | "subject" | "customTitle" | "date" | "endDate" | "status" | "meetingLink" | "price" | "isExperimental" | "createdAt" | "updatedAt" | "materials", ExtArgs["result"]["lesson"]>
+  export type LessonOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "studentId" | "teacherId" | "subject" | "customTitle" | "date" | "endDate" | "status" | "meetingLink" | "price" | "isExperimental" | "cancelReason" | "createdAt" | "updatedAt" | "materials", ExtArgs["result"]["lesson"]>
   export type LessonInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     teacher?: boolean | UserDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
@@ -13434,6 +13544,7 @@ export namespace Prisma {
       meetingLink: string | null
       price: number | null
       isExperimental: boolean
+      cancelReason: string | null
       createdAt: Date
       updatedAt: Date
       materials: string | null
@@ -13874,6 +13985,7 @@ export namespace Prisma {
     readonly meetingLink: FieldRef<"Lesson", 'String'>
     readonly price: FieldRef<"Lesson", 'Float'>
     readonly isExperimental: FieldRef<"Lesson", 'Boolean'>
+    readonly cancelReason: FieldRef<"Lesson", 'String'>
     readonly createdAt: FieldRef<"Lesson", 'DateTime'>
     readonly updatedAt: FieldRef<"Lesson", 'DateTime'>
     readonly materials: FieldRef<"Lesson", 'String'>
@@ -28380,6 +28492,11 @@ export namespace Prisma {
     minimaxApiKey: 'minimaxApiKey',
     grokApiKey: 'grokApiKey',
     searchApiKey: 'searchApiKey',
+    backupAuto: 'backupAuto',
+    backupFrequency: 'backupFrequency',
+    backupRetention: 'backupRetention',
+    backupEmail: 'backupEmail',
+    backupDrive: 'backupDrive',
     updatedAt: 'updatedAt'
   };
 
@@ -28512,6 +28629,7 @@ export namespace Prisma {
     meetingLink: 'meetingLink',
     price: 'price',
     isExperimental: 'isExperimental',
+    cancelReason: 'cancelReason',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     materials: 'materials'
@@ -28786,16 +28904,9 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'DateTime'
+   * Reference to a field of type 'Boolean'
    */
-  export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
-
-  /**
-   * Reference to a field of type 'DateTime[]'
-   */
-  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -28814,9 +28925,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Boolean'
+   * Reference to a field of type 'DateTime'
    */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+  export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+  /**
+   * Reference to a field of type 'DateTime[]'
+   */
+  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
     
 
 
@@ -28869,6 +28987,11 @@ export namespace Prisma {
     minimaxApiKey?: StringNullableFilter<"AppSetting"> | string | null
     grokApiKey?: StringNullableFilter<"AppSetting"> | string | null
     searchApiKey?: StringNullableFilter<"AppSetting"> | string | null
+    backupAuto?: BoolFilter<"AppSetting"> | boolean
+    backupFrequency?: StringFilter<"AppSetting"> | string
+    backupRetention?: IntFilter<"AppSetting"> | number
+    backupEmail?: StringNullableFilter<"AppSetting"> | string | null
+    backupDrive?: StringNullableFilter<"AppSetting"> | string | null
     updatedAt?: DateTimeFilter<"AppSetting"> | Date | string
   }
 
@@ -28887,6 +29010,11 @@ export namespace Prisma {
     minimaxApiKey?: SortOrderInput | SortOrder
     grokApiKey?: SortOrderInput | SortOrder
     searchApiKey?: SortOrderInput | SortOrder
+    backupAuto?: SortOrder
+    backupFrequency?: SortOrder
+    backupRetention?: SortOrder
+    backupEmail?: SortOrderInput | SortOrder
+    backupDrive?: SortOrderInput | SortOrder
     updatedAt?: SortOrder
   }
 
@@ -28908,6 +29036,11 @@ export namespace Prisma {
     minimaxApiKey?: StringNullableFilter<"AppSetting"> | string | null
     grokApiKey?: StringNullableFilter<"AppSetting"> | string | null
     searchApiKey?: StringNullableFilter<"AppSetting"> | string | null
+    backupAuto?: BoolFilter<"AppSetting"> | boolean
+    backupFrequency?: StringFilter<"AppSetting"> | string
+    backupRetention?: IntFilter<"AppSetting"> | number
+    backupEmail?: StringNullableFilter<"AppSetting"> | string | null
+    backupDrive?: StringNullableFilter<"AppSetting"> | string | null
     updatedAt?: DateTimeFilter<"AppSetting"> | Date | string
   }, "id">
 
@@ -28926,10 +29059,17 @@ export namespace Prisma {
     minimaxApiKey?: SortOrderInput | SortOrder
     grokApiKey?: SortOrderInput | SortOrder
     searchApiKey?: SortOrderInput | SortOrder
+    backupAuto?: SortOrder
+    backupFrequency?: SortOrder
+    backupRetention?: SortOrder
+    backupEmail?: SortOrderInput | SortOrder
+    backupDrive?: SortOrderInput | SortOrder
     updatedAt?: SortOrder
     _count?: AppSettingCountOrderByAggregateInput
+    _avg?: AppSettingAvgOrderByAggregateInput
     _max?: AppSettingMaxOrderByAggregateInput
     _min?: AppSettingMinOrderByAggregateInput
+    _sum?: AppSettingSumOrderByAggregateInput
   }
 
   export type AppSettingScalarWhereWithAggregatesInput = {
@@ -28950,6 +29090,11 @@ export namespace Prisma {
     minimaxApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
     grokApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
     searchApiKey?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
+    backupAuto?: BoolWithAggregatesFilter<"AppSetting"> | boolean
+    backupFrequency?: StringWithAggregatesFilter<"AppSetting"> | string
+    backupRetention?: IntWithAggregatesFilter<"AppSetting"> | number
+    backupEmail?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
+    backupDrive?: StringNullableWithAggregatesFilter<"AppSetting"> | string | null
     updatedAt?: DateTimeWithAggregatesFilter<"AppSetting"> | Date | string
   }
 
@@ -29549,6 +29694,7 @@ export namespace Prisma {
     meetingLink?: StringNullableFilter<"Lesson"> | string | null
     price?: FloatNullableFilter<"Lesson"> | number | null
     isExperimental?: BoolFilter<"Lesson"> | boolean
+    cancelReason?: StringNullableFilter<"Lesson"> | string | null
     createdAt?: DateTimeFilter<"Lesson"> | Date | string
     updatedAt?: DateTimeFilter<"Lesson"> | Date | string
     materials?: StringNullableFilter<"Lesson"> | string | null
@@ -29569,6 +29715,7 @@ export namespace Prisma {
     meetingLink?: SortOrderInput | SortOrder
     price?: SortOrderInput | SortOrder
     isExperimental?: SortOrder
+    cancelReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     materials?: SortOrderInput | SortOrder
@@ -29592,6 +29739,7 @@ export namespace Prisma {
     meetingLink?: StringNullableFilter<"Lesson"> | string | null
     price?: FloatNullableFilter<"Lesson"> | number | null
     isExperimental?: BoolFilter<"Lesson"> | boolean
+    cancelReason?: StringNullableFilter<"Lesson"> | string | null
     createdAt?: DateTimeFilter<"Lesson"> | Date | string
     updatedAt?: DateTimeFilter<"Lesson"> | Date | string
     materials?: StringNullableFilter<"Lesson"> | string | null
@@ -29612,6 +29760,7 @@ export namespace Prisma {
     meetingLink?: SortOrderInput | SortOrder
     price?: SortOrderInput | SortOrder
     isExperimental?: SortOrder
+    cancelReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     materials?: SortOrderInput | SortOrder
@@ -29637,6 +29786,7 @@ export namespace Prisma {
     meetingLink?: StringNullableWithAggregatesFilter<"Lesson"> | string | null
     price?: FloatNullableWithAggregatesFilter<"Lesson"> | number | null
     isExperimental?: BoolWithAggregatesFilter<"Lesson"> | boolean
+    cancelReason?: StringNullableWithAggregatesFilter<"Lesson"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Lesson"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Lesson"> | Date | string
     materials?: StringNullableWithAggregatesFilter<"Lesson"> | string | null
@@ -30740,6 +30890,11 @@ export namespace Prisma {
     minimaxApiKey?: string | null
     grokApiKey?: string | null
     searchApiKey?: string | null
+    backupAuto?: boolean
+    backupFrequency?: string
+    backupRetention?: number
+    backupEmail?: string | null
+    backupDrive?: string | null
     updatedAt?: Date | string
   }
 
@@ -30758,6 +30913,11 @@ export namespace Prisma {
     minimaxApiKey?: string | null
     grokApiKey?: string | null
     searchApiKey?: string | null
+    backupAuto?: boolean
+    backupFrequency?: string
+    backupRetention?: number
+    backupEmail?: string | null
+    backupDrive?: string | null
     updatedAt?: Date | string
   }
 
@@ -30776,6 +30936,11 @@ export namespace Prisma {
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    backupAuto?: BoolFieldUpdateOperationsInput | boolean
+    backupFrequency?: StringFieldUpdateOperationsInput | string
+    backupRetention?: IntFieldUpdateOperationsInput | number
+    backupEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    backupDrive?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -30794,6 +30959,11 @@ export namespace Prisma {
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    backupAuto?: BoolFieldUpdateOperationsInput | boolean
+    backupFrequency?: StringFieldUpdateOperationsInput | string
+    backupRetention?: IntFieldUpdateOperationsInput | number
+    backupEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    backupDrive?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -30812,6 +30982,11 @@ export namespace Prisma {
     minimaxApiKey?: string | null
     grokApiKey?: string | null
     searchApiKey?: string | null
+    backupAuto?: boolean
+    backupFrequency?: string
+    backupRetention?: number
+    backupEmail?: string | null
+    backupDrive?: string | null
     updatedAt?: Date | string
   }
 
@@ -30830,6 +31005,11 @@ export namespace Prisma {
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    backupAuto?: BoolFieldUpdateOperationsInput | boolean
+    backupFrequency?: StringFieldUpdateOperationsInput | string
+    backupRetention?: IntFieldUpdateOperationsInput | number
+    backupEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    backupDrive?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -30848,6 +31028,11 @@ export namespace Prisma {
     minimaxApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     grokApiKey?: NullableStringFieldUpdateOperationsInput | string | null
     searchApiKey?: NullableStringFieldUpdateOperationsInput | string | null
+    backupAuto?: BoolFieldUpdateOperationsInput | boolean
+    backupFrequency?: StringFieldUpdateOperationsInput | string
+    backupRetention?: IntFieldUpdateOperationsInput | number
+    backupEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    backupDrive?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -31497,6 +31682,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -31517,6 +31703,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -31533,6 +31720,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31553,6 +31741,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31571,6 +31760,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -31586,6 +31776,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31603,6 +31794,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32874,6 +33066,22 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -32905,7 +33113,16 @@ export namespace Prisma {
     minimaxApiKey?: SortOrder
     grokApiKey?: SortOrder
     searchApiKey?: SortOrder
+    backupAuto?: SortOrder
+    backupFrequency?: SortOrder
+    backupRetention?: SortOrder
+    backupEmail?: SortOrder
+    backupDrive?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type AppSettingAvgOrderByAggregateInput = {
+    backupRetention?: SortOrder
   }
 
   export type AppSettingMaxOrderByAggregateInput = {
@@ -32923,6 +33140,11 @@ export namespace Prisma {
     minimaxApiKey?: SortOrder
     grokApiKey?: SortOrder
     searchApiKey?: SortOrder
+    backupAuto?: SortOrder
+    backupFrequency?: SortOrder
+    backupRetention?: SortOrder
+    backupEmail?: SortOrder
+    backupDrive?: SortOrder
     updatedAt?: SortOrder
   }
 
@@ -32941,7 +33163,16 @@ export namespace Prisma {
     minimaxApiKey?: SortOrder
     grokApiKey?: SortOrder
     searchApiKey?: SortOrder
+    backupAuto?: SortOrder
+    backupFrequency?: SortOrder
+    backupRetention?: SortOrder
+    backupEmail?: SortOrder
+    backupDrive?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type AppSettingSumOrderByAggregateInput = {
+    backupRetention?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -32980,6 +33211,30 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -32992,17 +33247,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type IntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
   }
 
   export type UserScalarRelationFilter = {
@@ -33040,27 +33284,6 @@ export namespace Prisma {
 
   export type AvailabilitySumOrderByAggregateInput = {
     dayOfWeek?: SortOrder
-  }
-
-  export type IntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
-  }
-
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type BlogPostCountOrderByAggregateInput = {
@@ -33121,14 +33344,6 @@ export namespace Prisma {
     likes?: SortOrder
     dislikes?: SortOrder
     commentsCount?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type DateTimeNullableFilter<$PrismaModel = never> = {
@@ -33448,6 +33663,7 @@ export namespace Prisma {
     meetingLink?: SortOrder
     price?: SortOrder
     isExperimental?: SortOrder
+    cancelReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     materials?: SortOrder
@@ -33469,6 +33685,7 @@ export namespace Prisma {
     meetingLink?: SortOrder
     price?: SortOrder
     isExperimental?: SortOrder
+    cancelReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     materials?: SortOrder
@@ -33486,6 +33703,7 @@ export namespace Prisma {
     meetingLink?: SortOrder
     price?: SortOrder
     isExperimental?: SortOrder
+    cancelReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     materials?: SortOrder
@@ -34302,14 +34520,8 @@ export namespace Prisma {
     set?: string | null
   }
 
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
-  }
-
-  export type UserCreateNestedOneWithoutAvailabilityInput = {
-    create?: XOR<UserCreateWithoutAvailabilityInput, UserUncheckedCreateWithoutAvailabilityInput>
-    connectOrCreate?: UserCreateOrConnectWithoutAvailabilityInput
-    connect?: UserWhereUniqueInput
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
   }
 
   export type IntFieldUpdateOperationsInput = {
@@ -34320,16 +34532,22 @@ export namespace Prisma {
     divide?: number
   }
 
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
+  export type UserCreateNestedOneWithoutAvailabilityInput = {
+    create?: XOR<UserCreateWithoutAvailabilityInput, UserUncheckedCreateWithoutAvailabilityInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAvailabilityInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type UserUpdateOneRequiredWithoutAvailabilityNestedInput = {
     create?: XOR<UserCreateWithoutAvailabilityInput, UserUncheckedCreateWithoutAvailabilityInput>
     connectOrCreate?: UserCreateOrConnectWithoutAvailabilityInput
     upsert?: UserUpsertWithoutAvailabilityInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAvailabilityInput, UserUpdateWithoutAvailabilityInput>, UserUncheckedUpdateWithoutAvailabilityInput>
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type UserCreateNestedOneWithoutChatMessage_ChatMessage_receiverIdToUserInput = {
@@ -35386,6 +35604,22 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedIntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -35412,17 +35646,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedStringFilter<$PrismaModel>
     _max?: NestedStringFilter<$PrismaModel>
-  }
-
-  export type NestedIntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
   }
 
   export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -35453,18 +35676,12 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -35494,17 +35711,18 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
@@ -37431,6 +37649,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -37450,6 +37669,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -37699,6 +37919,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -37718,6 +37939,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39171,6 +39393,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -39189,6 +39412,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -39215,6 +39439,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -39233,6 +39458,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -39851,6 +40077,7 @@ export namespace Prisma {
     meetingLink?: StringNullableFilter<"Lesson"> | string | null
     price?: FloatNullableFilter<"Lesson"> | number | null
     isExperimental?: BoolFilter<"Lesson"> | boolean
+    cancelReason?: StringNullableFilter<"Lesson"> | string | null
     createdAt?: DateTimeFilter<"Lesson"> | Date | string
     updatedAt?: DateTimeFilter<"Lesson"> | Date | string
     materials?: StringNullableFilter<"Lesson"> | string | null
@@ -40462,6 +40689,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -40478,6 +40706,7 @@ export namespace Prisma {
     meetingLink?: string | null
     price?: number | null
     isExperimental?: boolean
+    cancelReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     materials?: string | null
@@ -40715,6 +40944,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40733,6 +40963,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40750,6 +40981,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40765,6 +40997,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40783,6 +41016,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40800,6 +41034,7 @@ export namespace Prisma {
     meetingLink?: NullableStringFieldUpdateOperationsInput | string | null
     price?: NullableFloatFieldUpdateOperationsInput | number | null
     isExperimental?: BoolFieldUpdateOperationsInput | boolean
+    cancelReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     materials?: NullableStringFieldUpdateOperationsInput | string | null

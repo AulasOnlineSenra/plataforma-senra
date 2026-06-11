@@ -24,6 +24,11 @@ model AppSetting {
   minimaxApiKey    String?
   grokApiKey       String?
   searchApiKey     String?
+  backupAuto       Boolean  @default(false)
+  backupFrequency  String   @default("weekly")
+  backupRetention  Int      @default(5)
+  backupEmail      String?
+  backupDrive      String?
   updatedAt        DateTime @updatedAt
 }
 

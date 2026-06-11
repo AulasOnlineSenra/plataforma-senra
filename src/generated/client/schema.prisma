@@ -24,6 +24,11 @@ model AppSetting {
   minimaxApiKey    String?
   grokApiKey       String?
   searchApiKey     String?
+  backupAuto       Boolean  @default(false)
+  backupFrequency  String   @default("weekly")
+  backupRetention  Int      @default(5)
+  backupEmail      String?
+  backupDrive      String?
   updatedAt        DateTime @updatedAt
 }
 
@@ -149,6 +154,7 @@ model Lesson {
   meetingLink    String?
   price          Float?
   isExperimental Boolean  @default(false)
+  cancelReason   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   materials      String? // JSON array of material URLs

@@ -136,6 +136,11 @@ exports.Prisma.AppSettingScalarFieldEnum = {
   minimaxApiKey: 'minimaxApiKey',
   grokApiKey: 'grokApiKey',
   searchApiKey: 'searchApiKey',
+  backupAuto: 'backupAuto',
+  backupFrequency: 'backupFrequency',
+  backupRetention: 'backupRetention',
+  backupEmail: 'backupEmail',
+  backupDrive: 'backupDrive',
   updatedAt: 'updatedAt'
 };
 
@@ -241,6 +246,7 @@ exports.Prisma.LessonScalarFieldEnum = {
   meetingLink: 'meetingLink',
   price: 'price',
   isExperimental: 'isExperimental',
+  cancelReason: 'cancelReason',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   materials: 'materials'
