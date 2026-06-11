@@ -251,7 +251,7 @@ function TeacherDetailPageComponent() {
           <span className="font-medium text-foreground">{teacher.name}</span>
         </div>
         
-        {teacher.phone && (
+        {isAdmin && teacher.phone && (
           <Button 
             onClick={() => {
               const cleanPhone = teacher.phone?.replace(/\D/g, '');
