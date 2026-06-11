@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot, Database, DownloadCloud } from 'lucide-react';
+import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot, Database, DownloadCloud, UploadCloud, History, Clock, Trash, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,23 @@ export default function SettingsPage() {
   const [minimaxApiKey, setMinimaxApiKey] = useState('');
   const [grokApiKey, setGrokApiKey] = useState('');
 
+  // Backup Settings
+  const [backupAuto, setBackupAuto] = useState(false);
+  const [backupFrequency, setBackupFrequency] = useState('weekly');
+  const [backupRetention, setBackupRetention] = useState('5');
+  const [backupEmail, setBackupEmail] = useState('');
+  const [backupDrive, setBackupDrive] = useState('');
+
+  // Backup Files
+  const [backupFiles, setBackupFiles] = useState<any[]>([]);
+  const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+  
+  // Restore State
+  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
+  const [restorePassword, setRestorePassword] = useState('');
+  const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
@@ -82,9 +99,34 @@ export default function SettingsPage() {
       setOpenRouterApiKey((result.data as any).openRouterApiKey || '');
       setMinimaxApiKey((result.data as any).minimaxApiKey || '');
       setGrokApiKey((result.data as any).grokApiKey || '');
+
+      setBackupAuto((result.data as any).backupAuto || false);
+      setBackupFrequency((result.data as any).backupFrequency || 'weekly');
+      setBackupRetention(String((result.data as any).backupRetention || 5));
+      setBackupEmail((result.data as any).backupEmail || '');
+      setBackupDrive((result.data as any).backupDrive || '');
     };
 
     loadSettings();
+    
+    // Fetch backups
+    const fetchBackups = async () => {
+      try {
+        setIsLoadingBackups(true);
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+        const res = await fetch(`/api/backups/list?userId=${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setBackupFiles(data.backups || []);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoadingBackups(false);
+      }
+    };
+    fetchBackups();
 
     return () => {
       isMounted = false;
@@ -145,6 +187,11 @@ export default function SettingsPage() {
       openRouterApiKey: openRouterApiKey.trim(),
       minimaxApiKey: minimaxApiKey.trim(),
       grokApiKey: grokApiKey.trim(),
+      backupAuto,
+      backupFrequency,
+      backupRetention: parseInt(backupRetention) || 5,
+      backupEmail: backupEmail.trim(),
+      backupDrive: backupDrive.trim(),
     });
     console.log('[handleSave] Resultado:', result);
     setIsLoading(false);
@@ -475,54 +522,252 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      <Card className="rounded-3xl border-slate-200 shadow-sm">
+      <Card className="rounded-3xl border-slate-200 shadow-sm md:col-span-2">
         <CardHeader className="border-b border-slate-100 pb-6">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-teal-100 p-3 text-teal-600">
               <Database className="h-6 w-6" />
             </div>
             <div>
-              <CardTitle className="text-xl text-slate-900">Backup de Segurança</CardTitle>
-              <CardDescription>Faça o download de todos os dados do sistema</CardDescription>
+              <CardTitle className="text-xl text-slate-900">Backup & Segurança de Dados</CardTitle>
+              <CardDescription>Gerencie backups manuais, automáticos e restauração do sistema.</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <p className="font-medium text-slate-700">Backup Manual (Completo)</p>
-            <p className="text-sm text-slate-500 max-w-lg mt-1">
-              Gera um arquivo seguro contendo todas as informações vitais do banco de dados (alunos, professores, aulas, créditos e configurações operacionais). Guarde este arquivo em um local seguro para eventual restauração.
-            </p>
+        <CardContent className="pt-6 space-y-8">
+          
+          {/* Backup Manual */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+            <div>
+              <p className="font-medium text-slate-900 flex items-center gap-2">
+                <DownloadCloud className="w-5 h-5 text-teal-600" />
+                Backup Manual (Sob Demanda)
+              </p>
+              <p className="text-sm text-slate-500 max-w-lg mt-1">
+                Gera e baixa um arquivo criptografado (.sql.gz) contendo o banco de dados completo no exato momento do clique.
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={async () => {
+                try {
+                  toast({ title: 'Gerando backup...', description: 'Aguarde, isso pode demorar um pouco.' });
+                  const userId = localStorage.getItem('userId');
+                  const res = await fetch(`/api/backups/generate?userId=${userId}`, { method: 'POST' });
+                  if (!res.ok) throw new Error('Erro ao gerar');
+                  const data = await res.json();
+                  
+                  if (data.success && data.filename) {
+                     // Iniciar download
+                     const downloadRes = await fetch(`/api/backups/download?userId=${userId}&file=${data.filename}`);
+                     const blob = await downloadRes.blob();
+                     const url = window.URL.createObjectURL(blob);
+                     const a = document.createElement('a');
+                     a.href = url;
+                     a.download = data.filename;
+                     document.body.appendChild(a);
+                     a.click();
+                     a.remove();
+                     window.URL.revokeObjectURL(url);
+                     toast({ title: 'Sucesso', description: 'Download iniciado.', className: 'border-none bg-green-600 text-white' });
+                     fetchBackups();
+                  }
+                } catch(e) {
+                  toast({ title: 'Erro', description: 'Falha ao baixar backup.', variant: 'destructive' });
+                }
+              }}
+              className="shrink-0 bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              Gerar Backup Agora
+            </Button>
           </div>
-          <Button
-            type="button"
-            onClick={async () => {
-              try {
-                toast({ title: 'Gerando backup...', description: 'Isso pode levar alguns segundos.' });
-                const userId = localStorage.getItem('userId');
-                const res = await fetch(`/api/backup?userId=${userId}`);
-                if (!res.ok) throw new Error('Erro ao gerar backup');
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `backup-senra-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-                toast({ title: 'Sucesso', description: 'Backup baixado com sucesso.', className: 'border-none bg-green-600 text-white' });
-              } catch(e) {
-                toast({ title: 'Erro', description: 'Não foi possível baixar o backup.', variant: 'destructive' });
-              }
-            }}
-            className="shrink-0 bg-teal-600 hover:bg-teal-700 text-white"
-          >
-            <DownloadCloud className="w-4 h-4 mr-2" />
-            Baixar Backup Completo
-          </Button>
+
+          {/* Backup Automático (Cron) */}
+          <div className="grid md:grid-cols-2 gap-6 p-4 rounded-xl border border-slate-200 bg-white">
+            <div className="space-y-4">
+              <div>
+                <p className="font-medium text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  Backup Automático Programado
+                </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Ative rotinas de backup que rodam de madrugada para não pesar o servidor.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch 
+                   checked={backupAuto} 
+                   onCheckedChange={setBackupAuto} 
+                   className="data-[state=checked]:bg-teal-600"
+                />
+                <Label className="font-medium">Ativar Backups Automáticos</Label>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                 <Label>Frequência</Label>
+                 <Select disabled={!backupAuto} value={backupFrequency} onValueChange={setBackupFrequency}>
+                    <SelectTrigger className="border-slate-200 focus:ring-brand-yellow">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Diário</SelectItem>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+              <div className="space-y-2">
+                 <Label>Retenção (Manter últimos X arquivos)</Label>
+                 <Input 
+                   type="number" 
+                   disabled={!backupAuto}
+                   value={backupRetention}
+                   onChange={(e) => setBackupRetention(e.target.value)}
+                   className="border-slate-200 focus:ring-brand-yellow" 
+                   min="1" max="30"
+                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Histórico */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-slate-900 flex items-center gap-2">
+              <History className="w-5 h-5 text-slate-600" />
+              Histórico de Backups (Servidor)
+            </h3>
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+               {isLoadingBackups ? (
+                 <p className="p-4 text-center text-slate-500">Carregando...</p>
+               ) : backupFiles.length === 0 ? (
+                 <p className="p-4 text-center text-slate-500">Nenhum backup encontrado no servidor.</p>
+               ) : (
+                 <table className="w-full text-sm text-left">
+                   <thead className="bg-slate-50 text-slate-600 border-b">
+                     <tr>
+                       <th className="px-4 py-3 font-medium">Nome do Arquivo</th>
+                       <th className="px-4 py-3 font-medium">Data</th>
+                       <th className="px-4 py-3 font-medium">Tamanho</th>
+                       <th className="px-4 py-3 font-medium text-right">Ações</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100">
+                     {backupFiles.map((file, i) => (
+                       <tr key={i} className="hover:bg-slate-50/50">
+                         <td className="px-4 py-3 font-medium text-slate-700">{file.filename}</td>
+                         <td className="px-4 py-3 text-slate-500">{new Date(file.date).toLocaleString('pt-BR')}</td>
+                         <td className="px-4 py-3 text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</td>
+                         <td className="px-4 py-3 text-right">
+                           <Button variant="ghost" size="sm" onClick={() => {
+                              const userId = localStorage.getItem('userId');
+                              window.open(`/api/backups/download?userId=${userId}&file=${file.filename}`, '_blank');
+                           }}>
+                              <Download className="w-4 h-4 text-teal-600" />
+                           </Button>
+                           <Button variant="ghost" size="sm" onClick={async () => {
+                              if(confirm('Excluir este backup?')) {
+                                const userId = localStorage.getItem('userId');
+                                await fetch(`/api/backups/list?userId=${userId}&file=${file.filename}`, { method: 'DELETE' });
+                                fetchBackups();
+                              }
+                           }}>
+                              <Trash className="w-4 h-4 text-red-500" />
+                           </Button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               )}
+            </div>
+          </div>
+
+          {/* Importação */}
+          <div className="pt-6 border-t border-slate-100">
+             <Button 
+               variant="outline" 
+               className="border-red-200 text-red-600 hover:bg-red-50"
+               onClick={() => setIsRestoreDialogOpen(true)}
+             >
+               <UploadCloud className="w-4 h-4 mr-2" />
+               Restaurar Backup do Computador
+             </Button>
+          </div>
+
         </CardContent>
       </Card>
+
+      {/* Restore Dialog */}
+      <Dialog open={isRestoreDialogOpen} onOpenChange={setIsRestoreDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+               <UploadCloud className="w-5 h-5" /> Restaurar Sistema
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+             <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800">
+               <strong>Atenção:</strong> Esta ação reescreverá completamente o banco de dados. Qualquer cadastro, aula ou edição feita após o momento deste backup será permanentemente perdida.
+             </div>
+             
+             <div className="space-y-2">
+               <Label>Arquivo de Backup (.sql.gz)</Label>
+               <Input 
+                 type="file" 
+                 accept=".gz,.sql" 
+                 onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+               />
+             </div>
+
+             <div className="space-y-2">
+               <Label>Senha do Administrador</Label>
+               <Input 
+                 type="password" 
+                 placeholder="Digite sua senha para confirmar"
+                 value={restorePassword}
+                 onChange={(e) => setRestorePassword(e.target.value)}
+               />
+             </div>
+          </div>
+          <DialogFooter>
+             <Button variant="ghost" onClick={() => setIsRestoreDialogOpen(false)}>Cancelar</Button>
+             <Button 
+               disabled={!restoreFile || !restorePassword || isRestoring}
+               className="bg-red-600 hover:bg-red-700 text-white"
+               onClick={async () => {
+                 try {
+                   setIsRestoring(true);
+                   const userId = localStorage.getItem('userId');
+                   const formData = new FormData();
+                   formData.append('file', restoreFile as Blob);
+                   formData.append('password', restorePassword);
+
+                   const res = await fetch(`/api/backups/restore?userId=${userId}`, {
+                     method: 'POST',
+                     body: formData
+                   });
+                   const data = await res.json();
+                   if (data.success) {
+                     toast({ title: 'Sucesso', description: 'Sistema restaurado com sucesso!', className: 'bg-green-600 text-white' });
+                     setIsRestoreDialogOpen(false);
+                     setTimeout(() => window.location.reload(), 2000);
+                   } else {
+                     toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+                   }
+                 } catch(e) {
+                   toast({ title: 'Erro', description: 'Falha grave na restauração.', variant: 'destructive' });
+                 } finally {
+                   setIsRestoring(false);
+                 }
+               }}
+             >
+               {isRestoring ? 'Restaurando...' : 'Confirmar Restauração'}
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardHeader className="border-b border-slate-100 pb-6">

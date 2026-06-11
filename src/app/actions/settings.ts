@@ -16,6 +16,11 @@ type SettingsInput = {
   minimaxApiKey?: string;
   grokApiKey?: string;
   searchApiKey?: string;
+  backupAuto?: boolean;
+  backupFrequency?: string;
+  backupRetention?: number;
+  backupEmail?: string;
+  backupDrive?: string;
 };
 
 export async function getSettings() {
@@ -65,6 +70,11 @@ export async function updateSettings(data: SettingsInput) {
         minimaxApiKey: data.minimaxApiKey?.trim() || null,
         grokApiKey: data.grokApiKey?.trim() || null,
         searchApiKey: data.searchApiKey?.trim() || null,
+        backupAuto: data.backupAuto ?? false,
+        backupFrequency: data.backupFrequency || 'weekly',
+        backupRetention: data.backupRetention || 5,
+        backupEmail: data.backupEmail?.trim() || null,
+        backupDrive: data.backupDrive?.trim() || null,
         updatedAt: now,
       },
       update: {
@@ -80,6 +90,11 @@ export async function updateSettings(data: SettingsInput) {
         minimaxApiKey: data.minimaxApiKey?.trim() || null,
         grokApiKey: data.grokApiKey?.trim() || null,
         searchApiKey: data.searchApiKey?.trim() || null,
+        backupAuto: data.backupAuto ?? false,
+        backupFrequency: data.backupFrequency || 'weekly',
+        backupRetention: data.backupRetention || 5,
+        backupEmail: data.backupEmail?.trim() || null,
+        backupDrive: data.backupDrive?.trim() || null,
         updatedAt: now,
       },
     });
