@@ -499,7 +499,8 @@ export default function SettingsPage() {
             onClick={async () => {
               try {
                 toast({ title: 'Gerando backup...', description: 'Isso pode levar alguns segundos.' });
-                const res = await fetch('/api/backup');
+                const userId = localStorage.getItem('userId');
+                const res = await fetch(`/api/backup?userId=${userId}`);
                 if (!res.ok) throw new Error('Erro ao gerar backup');
                 const blob = await res.blob();
                 const url = window.URL.createObjectURL(blob);
