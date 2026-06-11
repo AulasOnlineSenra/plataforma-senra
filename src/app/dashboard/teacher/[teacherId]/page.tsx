@@ -31,6 +31,7 @@ type TeacherData = {
   subjects?: string | null;
   education?: string | null;
   bio?: string | null;
+  phone?: string | null;
 };
 
 type RatingData = {
@@ -243,10 +244,24 @@ function TeacherDetailPageComponent() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/dashboard/teachers" className="hover:underline">Professores</Link>
-        <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-foreground">{teacher.name}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link href="/dashboard/teachers" className="hover:underline">Professores</Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="font-medium text-foreground">{teacher.name}</span>
+        </div>
+        
+        {teacher.phone && (
+          <Button 
+            onClick={() => {
+              const cleanPhone = teacher.phone?.replace(/\D/g, '');
+              window.open(`https://wa.me/55${cleanPhone}`, '_blank');
+            }}
+            className="bg-[#25D366] hover:bg-[#128C7E] text-white font-bold h-9 flex items-center shadow-md hover:shadow-lg transition-all rounded-xl"
+          >
+            Falar no WhatsApp
+          </Button>
+        )}
       </div>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
