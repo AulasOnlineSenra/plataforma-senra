@@ -107,8 +107,9 @@ function CheckoutContent() {
         return;
       }
 
-      const storedUserId = safeLocalStorage.getItem('userId');
-      console.log('[Checkout] storedUserId:', storedUserId);
+      const studentIdParam = searchParams.get('studentId');
+      const storedUserId = studentIdParam || safeLocalStorage.getItem('userId');
+      console.log('[Checkout] storedUserId/studentIdParam:', storedUserId);
       const storedBookings = safeLocalStorage.getItem('checkoutBookings');
 
       if (storedBookings) {

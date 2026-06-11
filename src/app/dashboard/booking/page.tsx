@@ -109,6 +109,8 @@ function BookingPageComponent() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [currentUser, setCurrentUser] = useState<Student | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedAdminStudentId, setSelectedAdminStudentId] = useState<string>("");
   const [teacherRatings, setTeacherRatings] = useState<Map<string, TeacherRating>>(new Map());
   const [teacherAvailability, setTeacherAvailability] = useState<Map<string, AvailabilitySlot[]>>(new Map());
 
@@ -243,15 +245,30 @@ function BookingPageComponent() {
       setTeacherRatings(ratingsMap);
 
       const loggedUserId = localStorage.getItem("userId");
+      const loggedRole = localStorage.getItem("role");
+      if (loggedRole === "admin") {
+        setIsAdmin(true);
+      }
+
       if (loggedUserId) {
         const userResult = await getUserById(loggedUserId);
         if (userResult.success && userResult.data) {
-          const targetStudent =
-            studentIdParam && loadedStudents.length > 0
-              ? loadedStudents.find((student) => student.id === studentIdParam)
-              : userResult.data;
-
-          setCurrentUser((targetStudent || userResult.data) as Student);
+          if (loggedRole === "admin") {
+            if (studentIdParam && loadedStudents.length > 0) {
+              const targetStudent = loadedStudents.find((student) => student.id === studentIdParam);
+              if (targetStudent) {
+                setCurrentUser(targetStudent as Student);
+                setSelectedAdminStudentId(targetStudent.id);
+              }
+            }
+          } else {
+            const targetStudent =
+              studentIdParam && loadedStudents.length > 0
+                ? loadedStudents.find((student) => student.id === studentIdParam)
+                : userResult.data;
+  
+            setCurrentUser((targetStudent || userResult.data) as Student);
+          }
         }
       }
 
@@ -616,7 +633,7 @@ function BookingPageComponent() {
         end: b.end,
         isExperimental: b.isExperimental,
       }))));
-      setTimeout(() => router.push(`/dashboard/checkout?needed=${requiredCredits}&current=${creditsAvailableForUse}`), 2000);
+      setTimeout(() => router.push(`/dashboard/checkout?needed=${requiredCredits}&current=${creditsAvailableForUse}&studentId=${currentUser.id}`), 2000);
       return;
     }
 
@@ -655,7 +672,9 @@ function BookingPageComponent() {
     router.push("/dashboard/booking");
   };
 
-  const pageTitle = studentName
+  const pageTitle = isAdmin && currentUser
+    ? `Agendamento de Aulas (para ${currentUser.name})`
+    : studentName
     ? `Agendamento de Aulas - ${studentName}`
     : "Agendamento de Aulas";
 
@@ -675,6 +694,38 @@ function BookingPageComponent() {
               <CardTitle className="text-slate-900">Novo agendamento</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              {isAdmin && (
+                <div className="space-y-2 mb-4">
+                  <Label className="text-sm font-semibold text-slate-700">Aluno Selecionado (Apenas Administrador)</Label>
+                  <Select
+                    value={selectedAdminStudentId}
+                    onValueChange={(value) => {
+                      setSelectedAdminStudentId(value);
+                      const target = students.find((s) => s.id === value);
+                      if (target) {
+                        setCurrentUser(target);
+                        setPreBookings([]);
+                        setSelectedSubjectId("");
+                        setSelectedTeacherId("");
+                        setSelectedDate(undefined);
+                        setSelectedTimes([]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0">
+                      <SelectValue placeholder="Selecione um aluno para agendar" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-200">
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.name} ({student.credits} créditos)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label
