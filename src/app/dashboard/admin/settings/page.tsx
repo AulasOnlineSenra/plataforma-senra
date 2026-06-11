@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot } from 'lucide-react';
+import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot, Database, DownloadCloud } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -474,6 +474,54 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-3xl border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 pb-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-teal-100 p-3 text-teal-600">
+              <Database className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle className="text-xl text-slate-900">Backup de Segurança</CardTitle>
+              <CardDescription>Faça o download de todos os dados do sistema</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <p className="font-medium text-slate-700">Backup Manual (Completo)</p>
+            <p className="text-sm text-slate-500 max-w-lg mt-1">
+              Gera um arquivo seguro contendo todas as informações vitais do banco de dados (alunos, professores, aulas, créditos e configurações operacionais). Guarde este arquivo em um local seguro para eventual restauração.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={async () => {
+              try {
+                toast({ title: 'Gerando backup...', description: 'Isso pode levar alguns segundos.' });
+                const res = await fetch('/api/backup');
+                if (!res.ok) throw new Error('Erro ao gerar backup');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-senra-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                toast({ title: 'Sucesso', description: 'Backup baixado com sucesso.', className: 'border-none bg-green-600 text-white' });
+              } catch(e) {
+                toast({ title: 'Erro', description: 'Não foi possível baixar o backup.', variant: 'destructive' });
+              }
+            }}
+            className="shrink-0 bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            <DownloadCloud className="w-4 h-4 mr-2" />
+            Baixar Backup Completo
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardHeader className="border-b border-slate-100 pb-6">
