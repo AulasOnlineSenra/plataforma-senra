@@ -245,15 +245,18 @@ function BookingPageComponent() {
       setTeacherRatings(ratingsMap);
 
       const loggedUserId = localStorage.getItem("userId");
-      const loggedRole = localStorage.getItem("role");
-      if (loggedRole === "admin") {
-        setIsAdmin(true);
-      }
-
+      
       if (loggedUserId) {
         const userResult = await getUserById(loggedUserId);
         if (userResult.success && userResult.data) {
-          if (loggedRole === "admin") {
+          const userRole = userResult.data.role;
+          const userIsAdmin = userRole === "admin" || userRole === "manager";
+          
+          if (userIsAdmin) {
+            setIsAdmin(true);
+          }
+
+          if (userIsAdmin) {
             if (studentIdParam && loadedStudents.length > 0) {
               const targetStudent = loadedStudents.find((student) => student.id === studentIdParam);
               if (targetStudent) {
