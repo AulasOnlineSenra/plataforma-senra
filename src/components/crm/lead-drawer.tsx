@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
+  DragDropContext, 
+  Droppable, 
+  Draggable, 
+  DropResult 
+} from '@hello-pangea/dnd';
+import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
@@ -29,6 +35,7 @@ import {
   Tag, 
   Loader2, 
   X, 
+  GripVertical, 
   Copy, 
   Bookmark, 
   Paperclip, 
@@ -90,6 +97,45 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
   const [isAddingChecklist, setIsAddingChecklist] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [showDateInput, setShowDateInput] = useState(false);
+  const [editingChecklistItemId, setEditingChecklistItemId] = useState<string | null>(null);
+  const [editingChecklistText, setEditingChecklistText] = useState('');
+  const checklistEditInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingChecklistItemId && checklistEditInputRef.current) {
+      checklistEditInputRef.current.focus();
+    }
+  }, [editingChecklistItemId]);
+
+  const onChecklistDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const items = Array.from(checklist);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    setChecklist(items);
+    handleSave({ checklist: JSON.stringify(items) });
+  };
+
+  const updateChecklistItemText = (id: string) => {
+    if (!editingChecklistText.trim()) {
+      setEditingChecklistItemId(null);
+      return;
+    }
+    const updated = checklist.map(item => 
+      item.id === id ? { ...item, text: editingChecklistText } : item
+    );
+    setChecklist(updated);
+    handleSave({ checklist: JSON.stringify(updated) });
+    setEditingChecklistItemId(null);
+  };
+
+  const handleChecklistEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, id: string) => {
+    if (e.key === 'Enter') {
+      updateChecklistItemText(id);
+    } else if (e.key === 'Escape') {
+      setEditingChecklistItemId(null);
+    }
+  };
   const [templates, setTemplates] = useState<any[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
 
