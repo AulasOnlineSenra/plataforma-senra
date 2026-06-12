@@ -688,8 +688,16 @@ export default function MinhasAulasPage() {
                                   {lesson.isExperimental && (
                                     <span className="text-[9px] font-bold text-emerald-600 uppercase">Experimental</span>
                                   )}
-                                  {personName && <p className="truncate text-[10px] opacity-70">{personName}</p>}
-                                  {teacherName && <p className="truncate text-[10px] opacity-60 italic">{teacherName}</p>}
+                                  {personName && (
+                                    <p className={`truncate text-[10px] ${role === 'student' ? 'text-blue-700 font-medium opacity-100' : 'opacity-70'}`}>
+                                      {personName}
+                                    </p>
+                                  )}
+                                  {teacherName && (
+                                    <p className="truncate text-[10px] text-blue-700 font-medium opacity-100 italic">
+                                      {teacherName}
+                                    </p>
+                                  )}
                                   <p className="opacity-60">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</p>
                                 </div>
 
