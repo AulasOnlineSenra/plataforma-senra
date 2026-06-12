@@ -264,10 +264,10 @@ function TeacherCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onClick={() => onEdit(teacher)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(teacher); }}>
                   <Edit className="mr-2 h-4 w-4" /> Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onToggleVisibility(teacher.id, teacher.status === 'inactive')}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleVisibility(teacher.id, teacher.status === 'inactive'); }}>
                   {teacher.status === 'inactive' ? (
                     <>
                       <Eye className="mr-2 h-4 w-4" /> Exibir
