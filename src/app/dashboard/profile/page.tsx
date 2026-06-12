@@ -402,7 +402,7 @@ export default function ProfilePage() {
             setPixKey(storedPixKey);
           }
           
-          const availResult = await getTeacherAvailability(userId);
+          const availResult = await getTeacherAvailability(targetUserId);
           if (availResult.success && availResult.data) {
             setAvailabilitySlots(
               availResult.data.map((slot) => ({
@@ -414,7 +414,7 @@ export default function ProfilePage() {
             );
           }
 
-          const ratingResult = await getTeacherAverageRating(userId);
+          const ratingResult = await getTeacherAverageRating(targetUserId);
           if (ratingResult.success && ratingResult.data) {
             setTeacherRating(ratingResult.data);
           }
