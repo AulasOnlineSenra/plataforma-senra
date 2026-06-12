@@ -285,3 +285,39 @@ export async function getCrmComments(leadId: string) {
     return { success: false, error: "Falha ao carregar comentários." };
   }
 }
+
+// --- Checklist Templates ---
+
+export async function getCrmChecklistTemplates() {
+  try {
+    const templates = await prisma.crmChecklistTemplate.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    return { success: true, data: templates };
+  } catch (error) {
+    console.error("Erro ao buscar templates de checklist:", error);
+    return { success: false, error: "Falha ao carregar templates." };
+  }
+}
+
+export async function createCrmChecklistTemplate(data: { name: string; items: string }) {
+  try {
+    const template = await prisma.crmChecklistTemplate.create({
+      data,
+    });
+    return { success: true, data: template };
+  } catch (error) {
+    console.error("Erro ao criar template de checklist:", error);
+    return { success: false, error: "Falha ao criar template." };
+  }
+}
+
+export async function deleteCrmChecklistTemplate(id: string) {
+  try {
+    await prisma.crmChecklistTemplate.delete({ where: { id } });
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao deletar template de checklist:", error);
+    return { success: false, error: "Falha ao deletar template." };
+  }
+}
