@@ -470,7 +470,7 @@ export default function TeachersPage() {
   };
 
   const openEditModal = (teacher: any) => {
-    router.push(`/dashboard/profile?userId=${teacher.id}`);
+    window.location.href = `/dashboard/profile?userId=${teacher.id}`;
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {

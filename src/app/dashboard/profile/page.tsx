@@ -331,7 +331,8 @@ export default function ProfilePage() {
       }
 
       let targetUserId = loggedUserId;
-      const urlParams = new URLSearchParams(window.location.search);
+      const searchStr = typeof window !== "undefined" ? window.location.search : "";
+      const urlParams = new URLSearchParams(searchStr);
       const queryUserId = urlParams.get('userId');
 
       if (queryUserId) {
