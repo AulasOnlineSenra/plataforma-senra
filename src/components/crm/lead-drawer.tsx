@@ -615,26 +615,64 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                   
                   {checklist.length > 0 && <Progress value={progress} className="h-2" />}
                   
-                  <div className="space-y-2">
-                    {checklist.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 group">
-                        <Checkbox 
-                          checked={item.completed} 
-                          onCheckedChange={() => toggleChecklistItem(item.id)}
-                        />
-                        <span className={cn("text-sm transition-all", item.completed ? "text-slate-400 line-through" : "text-slate-700")}>
-                          {item.text}
-                        </span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity ml-auto" onClick={() => {
-                          const updated = checklist.filter(i => i.id !== item.id);
-                          setChecklist(updated);
-                          handleSave({ checklist: JSON.stringify(updated) });
-                        }}>
-                          <X className="h-4 w-4 text-slate-400" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  <DragDropContext onDragEnd={onChecklistDragEnd}>
+                    <Droppable droppableId="checklist">
+                      {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                          {checklist.map((item, index) => (
+                            <Draggable key={item.id} draggableId={item.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={cn("flex items-start gap-3 group p-1.5 rounded-lg -ml-1.5 transition-colors", snapshot.isDragging ? "bg-slate-50 shadow-sm" : "hover:bg-slate-50")}
+                                >
+                                  <div {...provided.dragHandleProps} className="mt-0.5 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity active:cursor-grabbing">
+                                    <GripVertical className="h-4 w-4 text-slate-300 hover:text-slate-500" />
+                                  </div>
+                                  <Checkbox 
+                                    className="mt-0.5"
+                                    checked={item.completed} 
+                                    onCheckedChange={() => toggleChecklistItem(item.id)}
+                                  />
+                                  <div className="flex-1 min-w-0 flex items-start">
+                                    {editingChecklistItemId === item.id ? (
+                                      <Input
+                                        ref={checklistEditInputRef}
+                                        value={editingChecklistText}
+                                        onChange={(e) => setEditingChecklistText(e.target.value)}
+                                        onKeyDown={(e) => handleChecklistEditKeyDown(e, item.id)}
+                                        onBlur={() => updateChecklistItemText(item.id)}
+                                        className="h-7 py-0 px-2 -ml-2 text-sm focus-visible:ring-1 bg-white"
+                                      />
+                                    ) : (
+                                      <span 
+                                        className={cn("text-sm transition-all cursor-text py-0.5", item.completed ? "text-slate-400 line-through" : "text-slate-700")}
+                                        onClick={() => {
+                                          setEditingChecklistItemId(item.id);
+                                          setEditingChecklistText(item.text);
+                                        }}
+                                      >
+                                        {item.text}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto" onClick={() => {
+                                    const updated = checklist.filter(i => i.id !== item.id);
+                                    setChecklist(updated);
+                                    handleSave({ checklist: JSON.stringify(updated) });
+                                  }}>
+                                    <X className="h-4 w-4 text-slate-400" />
+                                  </Button>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
 
                   {isAddingChecklist ? (
                     <div className="flex flex-col gap-2 pt-2">
