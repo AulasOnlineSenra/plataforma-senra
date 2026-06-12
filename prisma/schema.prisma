@@ -375,3 +375,10 @@ model PageVisit {
   @@index([url])
   @@index([createdAt])
 }
+
+model CrmChecklistTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  items     String   @default("[]") // JSON array of texts
+  createdAt DateTime @default(now())
+}
