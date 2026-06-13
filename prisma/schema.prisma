@@ -382,3 +382,18 @@ model CrmChecklistTemplate {
   items     String   @default("[]") // JSON array of texts
   createdAt DateTime @default(now())
 }
+
+model ScheduleStructure {
+  id        String   @id @default(cuid())
+  userId    String
+  dayOfWeek Int      // 0 = Sunday, 1 = Monday, etc.
+  startTime String   // e.g., "07:00"
+  endTime   String   // e.g., "08:30"
+  subject   String
+  teacherId String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
