@@ -6,7 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Plus, Trash2, CalendarRange, TrendingUp, BookOpen, Clock } from "lucide-react";
 import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock } from "@/app/actions/schedule-structure";
 import { getLessonsForUser } from "@/app/actions/bookings";
-import { getTeachers } from "@/app/actions/users";
+import { getTeachers, getSubjects } from "@/app/actions/users";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +40,7 @@ export default function CronogramaPage() {
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Dialog State
@@ -65,15 +66,17 @@ export default function CronogramaPage() {
   const loadData = async (uid: string, role: string) => {
     setLoading(true);
     try {
-      const [structRes, lessonsRes, teachersRes] = await Promise.all([
+      const [structRes, lessonsRes, teachersRes, subjectsRes] = await Promise.all([
         getScheduleStructure(uid),
         getLessonsForUser(uid, role),
-        getTeachers()
+        getTeachers(),
+        getSubjects()
       ]);
 
       if (structRes.success) setBlocks(structRes.data as any[]);
       if (lessonsRes.success) setLessons(lessonsRes.data as any[]);
       if (teachersRes.success) setTeachers(teachersRes.data as any[]);
+      if (subjectsRes.success) setSubjects(subjectsRes.data as any[]);
     } catch (e) {
       console.error(e);
     }
@@ -248,7 +251,7 @@ export default function CronogramaPage() {
                         className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group ${block.color || 'bg-emerald-500'}`}
                         style={{ top: `${topPx}px`, height: `${heightPx}px` }}
                       >
-                        <p className="font-bold text-xs">{block.subject}</p>
+                        <p className="font-bold text-xs">{subjects.find(s => s.id === block.subject)?.name || block.subject}</p>
                         {teacher && <p className="text-[10px] opacity-90 truncate">({teacher.name})</p>}
                         <p className="text-[10px] opacity-75 mt-0.5">{block.startTime} - {block.endTime}</p>
                         <Button 
@@ -287,7 +290,18 @@ export default function CronogramaPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Matéria / Atividade</label>
-              <Input placeholder="Ex: Matemática, Redação..." value={newBlock.subject} onChange={(e) => setNewBlock({...newBlock, subject: e.target.value})} />
+              <Select value={newBlock.subject} onValueChange={(val) => setNewBlock({...newBlock, subject: val})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a matéria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                  <SelectItem value="REDAÇÃO">REDAÇÃO</SelectItem>
+                  <SelectItem value="Estudo Livre">Estudo Livre</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Professor (Opcional)</label>
