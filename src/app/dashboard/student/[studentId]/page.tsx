@@ -84,7 +84,7 @@ function StudentDetailPageComponent() {
     const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
     const [editedTitleText, setEditedTitleText] = useState('');
     const [uploadingLessonId, setUploadingLessonId] = useState<string | null>(null);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
@@ -113,82 +113,75 @@ function StudentDetailPageComponent() {
         }
     };
 
-    // Handle file selection
+    // Handle file selection (multiple)
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // Max 5MB
-            if (file.size > 5 * 1024 * 1024) {
-                toast({
-                    title: 'Arquivo muito grande',
-                    description: 'O arquivo deve ter no máximo 5MB.',
-                    className: 'bg-red-600 text-white border-none'
-                });
-                return;
-            }
-            setSelectedFile(file);
+        const files = Array.from(e.target.files || []);
+        const oversized = files.filter(f => f.size > 5 * 1024 * 1024);
+        if (oversized.length > 0) {
+            toast({
+                title: 'Arquivo(s) muito grande(s)',
+                description: `${oversized.map(f => f.name).join(', ')} excedem 5MB e foram ignorados.`,
+                className: 'bg-red-600 text-white border-none'
+            });
         }
+        const valid = files.filter(f => f.size <= 5 * 1024 * 1024);
+        if (valid.length > 0) setSelectedFiles(prev => [...prev, ...valid]);
     };
 
-    // Upload file to lesson
+    // Upload files to lesson
     const handleUploadFile = async () => {
-        if (!selectedFile || !selectedClassForMaterial) return;
+        if (selectedFiles.length === 0 || !selectedClassForMaterial) return;
         
         setUploadingFile(true);
         
         try {
-            // Read file as base64
-            const reader = new FileReader();
-            const fileData = await new Promise<string>((resolve, reject) => {
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(selectedFile!);
-            });
-            
-            // Get current materials
-            const currentMaterials = parseMaterials(selectedClassForMaterial.materials);
-            
-            // Add new material
-            const newMaterial = {
-                id: Date.now().toString(),
-                name: selectedFile.name,
-                type: selectedFile.type,
-                url: fileData,
-                uploadedAt: new Date().toISOString()
-            };
-            
-            const updatedMaterials = [...currentMaterials, newMaterial];
+            // Get current materials once
+            let currentMaterials = parseMaterials(selectedClassForMaterial.materials);
 
-            // Find the lesson in the lessons array
-            const lessonToUpdate = lessons.find(l => l.id === selectedClassForMaterial.id);
-            
-            // Update lesson in database
+            // Read and append all files
+            for (const file of selectedFiles) {
+                const reader = new FileReader();
+                const fileData = await new Promise<string>((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                currentMaterials = [...currentMaterials, {
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    name: file.name,
+                    type: file.type,
+                    url: fileData,
+                    uploadedAt: new Date().toISOString()
+                }];
+            }
+
+            // Save all at once
             const result = await updateLesson(selectedClassForMaterial.id, {
-                materials: JSON.stringify(updatedMaterials)
+                materials: JSON.stringify(currentMaterials)
             });
             
             if (result.success) {
-                // Update local state
                 setLessons(lessons.map(l => 
                     l.id === selectedClassForMaterial.id 
-                        ? { ...l, materials: JSON.stringify(updatedMaterials) }
+                        ? { ...l, materials: JSON.stringify(currentMaterials) }
                         : l
                 ));
                 
                 toast({
-                    title: 'Arquivo Enviado!',
-                    description: `${selectedFile.name} foi adicionado à aula.`,
+                    title: `${selectedFiles.length > 1 ? `${selectedFiles.length} arquivos enviados!` : 'Arquivo Enviado!'}`,
+                    description: selectedFiles.map(f => f.name).join(', '),
                     className: 'bg-emerald-600 text-white border-none'
                 });
             }
             
-            setSelectedFile(null);
+            setSelectedFiles([]);
             setIsFileUploadDialogOpen(false);
         } catch (error) {
             console.error('Error uploading file:', error);
             toast({
                 title: 'Erro ao enviar arquivo',
-                description: 'Tente novamente com um arquivo menor.',
+                description: 'Tente novamente com arquivos menores.',
                 className: 'bg-red-600 text-white border-none'
             });
         } finally {
@@ -950,7 +943,7 @@ function StudentDetailPageComponent() {
 {/* MODAL ANEXAR ARQUIVO */}
              <Dialog open={isFileUploadDialogOpen} onOpenChange={(open) => {
                  setIsFileUploadDialogOpen(open);
-                 if (!open) setSelectedFile(null);
+                 if (!open) setSelectedFiles([]);
              }}>
                  <DialogContent className="sm:max-w-md rounded-3xl border-slate-100 shadow-2xl p-8">
                      <DialogHeader>
@@ -959,28 +952,33 @@ function StudentDetailPageComponent() {
                      </DialogHeader>
                      <div className="grid gap-5 py-4">
                          <div className="grid gap-3">
-                             <Label htmlFor="file-upload" className="font-bold text-slate-700">Selecione o arquivo</Label>
+                             <Label htmlFor="file-upload" className="font-bold text-slate-700">Selecione os arquivos</Label>
                              <div className="flex items-center gap-3">
                                  <Input 
                                     id="file-upload" 
-                                    type="file" 
+                                    type="file"
+                                    multiple
                                     onChange={handleFileSelect}
                                     className="flex-1 cursor-pointer h-12 rounded-xl border-slate-200 file:bg-slate-100 file:text-slate-700 file:border-0 file:rounded-lg file:px-4 file:py-1 hover:file:bg-slate-200"
                                  />
                              </div>
-                             {selectedFile && (
-                                 <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                     <File className="h-5 w-5 text-amber-600" />
-                                     <span className="text-sm font-medium text-amber-700 flex-1">{selectedFile.name}</span>
-                                     <button 
-                                        onClick={() => setSelectedFile(null)}
-                                        className="text-amber-600 hover:text-amber-800"
-                                     >
-                                         <X className="h-4 w-4" />
-                                     </button>
+                             {selectedFiles.length > 0 && (
+                                 <div className="flex flex-col gap-2">
+                                     {selectedFiles.map((file, idx) => (
+                                         <div key={idx} className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                                             <File className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                                             <span className="text-sm font-medium text-amber-700 flex-1 truncate">{file.name}</span>
+                                             <button 
+                                                onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                                                className="text-amber-600 hover:text-amber-800 flex-shrink-0"
+                                             >
+                                                 <X className="h-4 w-4" />
+                                             </button>
+                                         </div>
+                                     ))}
                                  </div>
                              )}
-                             <p className="text-xs font-medium text-slate-400">Suporta PDFs, planilhas e imagens. Tamanho máx: 5MB.</p>
+                             <p className="text-xs font-medium text-slate-400">Suporta PDFs, planilhas e imagens. Tamanho máx por arquivo: 5MB.</p>
                          </div>
                      </div>
                      <DialogFooter className="mt-4 gap-3 sm:gap-0">
@@ -990,9 +988,9 @@ function StudentDetailPageComponent() {
                           <Button 
                             className="h-11 rounded-xl bg-brand-yellow px-6 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90" 
                             onClick={handleUploadFile}
-                            disabled={!selectedFile || uploadingFile}
+                            disabled={selectedFiles.length === 0 || uploadingFile}
                           >
-                              {uploadingFile ? 'Enviando...' : 'Fazer Upload'}
+                              {uploadingFile ? 'Enviando...' : (selectedFiles.length > 1 ? `Fazer Upload (${selectedFiles.length})` : 'Fazer Upload')}
                           </Button>
                      </DialogFooter>
                  </DialogContent>
