@@ -21,7 +21,7 @@ import {
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock, Video, GraduationCap, UserCircle, File, X } from 'lucide-react';
+import { Plus, XCircle, ChevronRight, CalendarCheck, BookOpen, BookCopy, Edit, UploadCloud, Calendar as CalendarIcon, Check, Clock, Video, GraduationCap, UserCircle, File, X, FileText, FileSpreadsheet, Image as ImageIcon, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -58,6 +58,40 @@ function formatBirthDate(value?: string | Date | null): string {
     if (Number.isNaN(parsed.getTime())) return 'Não informado';
     return format(parsed, 'dd/MM/yyyy', { locale: ptBR });
 }
+
+const getFileFormatInfo = (filename: string, type: string) => {
+    const name = (filename || '').toLowerCase();
+    
+    if (name.endsWith('.pdf') || (type && type === 'application/pdf')) {
+        return { icon: FileText, bg: 'bg-red-50', text: 'text-red-700', hover: 'hover:bg-red-100' };
+    }
+    if (name.match(/\.(jpg|jpeg|png|gif|webp)$/) || (type && type.startsWith('image/'))) {
+        return { icon: ImageIcon, bg: 'bg-indigo-50', text: 'text-indigo-700', hover: 'hover:bg-indigo-100' };
+    }
+    if (name.match(/\.(mp4|mov|avi|mkv)$/) || (type && type.startsWith('video/'))) {
+        return { icon: Film, bg: 'bg-orange-50', text: 'text-orange-700', hover: 'hover:bg-orange-100' };
+    }
+    if (name.match(/\.(xlsx|xls|csv)$/) || (type && (type.includes('spreadsheet') || type.includes('excel') || type.includes('csv')))) {
+        return { icon: FileSpreadsheet, bg: 'bg-emerald-50', text: 'text-emerald-700', hover: 'hover:bg-emerald-100' };
+    }
+    if (name.match(/\.(doc|docx|txt)$/) || (type && (type.includes('word') || type.includes('text')))) {
+        return { icon: FileText, bg: 'bg-blue-50', text: 'text-blue-700', hover: 'hover:bg-blue-100' };
+    }
+    
+    return { icon: File, bg: 'bg-slate-100', text: 'text-slate-700', hover: 'hover:bg-slate-200' };
+};
+
+const cleanFileName = (filename: string) => {
+    if (!filename) return 'Arquivo';
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex > 0) {
+        let name = filename.substring(0, lastDotIndex);
+        // Replace underscores and dashes with spaces for better readability
+        name = name.replace(/[-_]/g, ' ');
+        return name;
+    }
+    return filename;
+};
 
 function StudentDetailPageComponent() {
     const params = useParams();
@@ -690,7 +724,10 @@ function StudentDetailPageComponent() {
                                                     </div>
                                                     {lesson.materials && parseMaterials(lesson.materials).length > 0 && (
                                                         <div className="mt-2 flex flex-wrap gap-2">
-                                                            {parseMaterials(lesson.materials).map((material: any) => (
+                                                            {parseMaterials(lesson.materials).map((material: any) => {
+                                                                const formatInfo = getFileFormatInfo(material.name, material.type);
+                                                                const Icon = formatInfo.icon;
+                                                                return (
                                                                 <div key={material.id} className="flex items-center gap-1">
                                                                     <button 
                                                                         onClick={() => {
@@ -708,21 +745,23 @@ function StudentDetailPageComponent() {
                                                                                 window.open(material.url, '_blank');
                                                                             }
                                                                         }}
-                                                                        className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 cursor-pointer"
+                                                                        className={`flex items-center gap-1.5 px-2.5 py-1 ${formatInfo.bg} ${formatInfo.text} rounded-lg text-xs font-semibold ${formatInfo.hover} cursor-pointer transition-colors shadow-sm`}
+                                                                        title={material.name}
                                                                     >
-                                                                        <File className="h-3 w-3" />
-                                                                        {material.name}
+                                                                        <Icon className="h-3.5 w-3.5" />
+                                                                        <span className="truncate max-w-[200px]">{cleanFileName(material.name)}</span>
                                                                     </button>
                                                                     {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
                                                                         <button
                                                                             onClick={() => handleDeleteMaterial(lesson.id, material.id)}
-                                                                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                                                            title="Remover material"
                                                                         >
                                                                             <X className="h-3 w-3" />
                                                                         </button>
                                                                     )}
                                                                 </div>
-                                                            ))}
+                                                            )})}
                                                         </div>
                                                     )}
                                                 </TableCell>
