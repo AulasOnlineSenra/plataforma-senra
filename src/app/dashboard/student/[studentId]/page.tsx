@@ -310,7 +310,10 @@ function StudentDetailPageComponent() {
             .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
             
         if (selectedSubject && selectedSubject !== 'all') {
-            list = list.filter((l: any) => l.subject === selectedSubject || subjectMap[l.subject] === subjectMap[selectedSubject] || (subjectMap[l.subject] === selectedSubject));
+            list = list.filter((l: any) => {
+                const lessonSubjectName = subjectMap[l.subject] || l.subject;
+                return lessonSubjectName === selectedSubject;
+            });
         }
         return list;
     }, [filteredLessons, selectedSubject]);
