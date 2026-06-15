@@ -1314,16 +1314,27 @@ export default function DashboardPage() {
                             return (
                               <TableRow key={lesson.id}>
                                 <TableCell>
-                                  <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                                    {subjectMap[lesson.subject] || lesson.subject}
-                                  </Badge>
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                                      {subjectMap[lesson.subject] || lesson.subject}
+                                    </Badge>
+                                    {lesson.isExperimental && (
+                                      <Badge className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5">
+                                        Experimental
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell>{lesson.teacher?.name || "Professor"}</TableCell>
                                 <TableCell>
                                   {format(lessonDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - {format(endDate, "HH:mm")}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <span className="font-bold text-red-600">-1</span>
+                                  {lesson.isExperimental ? (
+                                    <span className="font-bold text-slate-400">0</span>
+                                  ) : (
+                                    <span className="font-bold text-red-600">-1</span>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             );
@@ -1339,7 +1350,7 @@ export default function DashboardPage() {
           <DialogFooter>
             <div className="flex items-center justify-between w-full pr-4">
               <p className="text-sm text-slate-500">
-                Total consumido: <span className="font-bold text-red-600">{filteredCreditsHistory.length} crédito(s)</span>
+                Total consumido: <span className="font-bold text-red-600">{filteredCreditsHistory.filter(l => !l.isExperimental).length} crédito(s)</span>
               </p>
               <Button variant="outline" onClick={() => setIsCreditHistoryOpen(false)}>
                 Fechar
