@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Plus, Trash2, CalendarRange, TrendingUp, BookOpen, Clock } from "lucide-react";
-import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock } from "@/app/actions/schedule-structure";
+import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock, updateScheduleBlock } from "@/app/actions/schedule-structure";
 import { getLessonsForUser } from "@/app/actions/bookings";
 import { getTeachers, getSubjects } from "@/app/actions/users";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -119,6 +119,48 @@ export default function CronogramaPage() {
     }
   };
 
+  const handleDrop = async (e: React.DragEvent, dayIndex: number, startHour: number, isHalfHour: boolean) => {
+    e.preventDefault();
+    const blockId = e.dataTransfer.getData("blockId");
+    if (!blockId) return;
+
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    // Calculate original duration in minutes
+    const [sh, sm] = block.startTime.split(':').map(Number);
+    const [eh, em] = block.endTime.split(':').map(Number);
+    const durationMin = (eh * 60 + em) - (sh * 60 + sm);
+
+    // Calculate new start time
+    const newStartStr = `${String(startHour).padStart(2, '0')}:${isHalfHour ? '30' : '00'}`;
+    const startMin = startHour * 60 + (isHalfHour ? 30 : 0);
+    const endMin = startMin + durationMin;
+    const newEndStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+
+    // Optimistic update
+    const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, dayOfWeek: dayIndex, startTime: newStartStr, endTime: newEndStr } : b);
+    setBlocks(updatedBlocks);
+
+    const res = await updateScheduleBlock(blockId, { dayOfWeek: dayIndex, startTime: newStartStr, endTime: newEndStr });
+    if (!res.success) {
+      toast({ variant: "destructive", title: "Erro ao mover bloco", description: res.error });
+      setBlocks(blocks); // Revert
+    }
+  };
+
+  const filteredTeachers = teachers.filter(t => {
+    if (!newBlock.subject || newBlock.subject === "REDAÇÃO" || newBlock.subject === "Estudo Livre") return true;
+    
+    const selectedSubject = subjects.find(s => s.id === newBlock.subject);
+    const subjectName = selectedSubject?.name || newBlock.subject;
+
+    return t.subject === newBlock.subject || 
+           t.subject === subjectName ||
+           (t.subjects && t.subjects.includes(newBlock.subject)) ||
+           (t.subjects && t.subjects.includes(subjectName));
+  });
+
   // KPI Calculations
   const calculateKPIs = () => {
     let plannedMinutes = 0;
@@ -229,6 +271,8 @@ export default function CronogramaPage() {
                     <div 
                       key={idx} 
                       onClick={() => handleCellClick(dayIdx, Math.floor(idx / 2) + GRID_START_HOUR, idx % 2 !== 0)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handleDrop(e, dayIdx, Math.floor(idx / 2) + GRID_START_HOUR, idx % 2 !== 0)}
                       className={`absolute left-0 right-0 cursor-pointer hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'border-b border-slate-100 border-dashed' : 'border-b border-slate-200'}`}
                       style={{ top: `${idx * HALF_HOUR_HEIGHT}px`, height: `${HALF_HOUR_HEIGHT}px` }}
                     />
@@ -248,7 +292,9 @@ export default function CronogramaPage() {
                     return (
                       <div
                         key={block.id}
-                        className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group ${block.color || 'bg-emerald-500'}`}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData("blockId", block.id)}
+                        className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group cursor-move ${block.color || 'bg-emerald-500'}`}
                         style={{ top: `${topPx}px`, height: `${heightPx}px` }}
                       >
                         <p className="font-bold text-xs">{subjects.find(s => s.id === block.subject)?.name || block.subject}</p>
@@ -311,7 +357,7 @@ export default function CronogramaPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhum</SelectItem>
-                  {teachers.map((t) => (
+                  {filteredTeachers.map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                   ))}
                 </SelectContent>

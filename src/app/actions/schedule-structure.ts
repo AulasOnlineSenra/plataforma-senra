@@ -48,3 +48,17 @@ export async function deleteScheduleBlock(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function updateScheduleBlock(id: string, data: { dayOfWeek: number, startTime: string, endTime: string }) {
+  try {
+    const block = await prisma.scheduleStructure.update({
+      where: { id },
+      data,
+    });
+    revalidatePath("/dashboard/cronograma");
+    return { success: true, data: block };
+  } catch (error: any) {
+    console.error("Error updating schedule block:", error);
+    return { success: false, error: error.message };
+  }
+}
