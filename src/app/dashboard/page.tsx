@@ -913,9 +913,9 @@ export default function DashboardPage() {
                           </TableCell>
                           <TableCell>
                             {lesson.isExperimental && (
-                              <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">
+                              <Badge className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5">
                                 Experimental
-                              </span>
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
