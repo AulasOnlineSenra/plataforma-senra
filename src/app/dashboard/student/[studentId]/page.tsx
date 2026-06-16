@@ -121,6 +121,7 @@ function StudentDetailPageComponent() {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [selectedSubject, setSelectedSubject] = useState<string>('all');
+    const [lessonForMaterialView, setLessonForMaterialView] = useState<any | null>(null);
 
     const subjectMap: Record<string, string> = {
         'default-subj-1': 'Matemática',
@@ -723,45 +724,20 @@ function StudentDetailPageComponent() {
                                                         <span className="text-muted-foreground text-xs">{formatDateTimeLesson(lesson)}</span>
                                                     </div>
                                                     {lesson.materials && parseMaterials(lesson.materials).length > 0 && (
-                                                        <div className="mt-2 flex flex-wrap gap-2">
-                                                            {parseMaterials(lesson.materials).map((material: any) => {
-                                                                const formatInfo = getFileFormatInfo(material.name, material.type);
-                                                                const Icon = formatInfo.icon;
-                                                                return (
-                                                                <div key={material.id} className="flex items-center gap-1">
-                                                                    <button 
-                                                                        onClick={() => {
-                                                                            if (material.url.startsWith('data:')) {
-                                                                                const byteCharacters = atob(material.url.split(',')[1]);
-                                                                                const byteNumbers = new Array(byteCharacters.length);
-                                                                                for (let i = 0; i < byteCharacters.length; i++) {
-                                                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                                                                }
-                                                                                const byteArray = new Uint8Array(byteNumbers);
-                                                                                const blob = new Blob([byteArray], { type: material.type });
-                                                                                const url = URL.createObjectURL(blob);
-                                                                                window.open(url, '_blank');
-                                                                            } else {
-                                                                                window.open(material.url, '_blank');
-                                                                            }
-                                                                        }}
-                                                                        className={`flex items-center gap-1.5 px-2.5 py-1 ${formatInfo.bg} ${formatInfo.text} rounded-lg text-xs font-semibold ${formatInfo.hover} cursor-pointer transition-colors shadow-sm`}
-                                                                        title={material.name}
-                                                                    >
-                                                                        <Icon className="h-3.5 w-3.5" />
-                                                                        <span className="truncate max-w-[200px]">{cleanFileName(material.name)}</span>
-                                                                    </button>
-                                                                    {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
-                                                                        <button
-                                                                            onClick={() => handleDeleteMaterial(lesson.id, material.id)}
-                                                                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                                                                            title="Remover material"
-                                                                        >
-                                                                            <X className="h-3 w-3" />
-                                                                        </button>
-                                                                    )}
+                                                        <div className="mt-2 flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => setLessonForMaterialView(lesson)}
+                                                                className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors"
+                                                            >
+                                                                <div className="flex -space-x-1">
+                                                                    {Array.from(new Set(parseMaterials(lesson.materials).map((m: any) => getFileFormatInfo(m.name, m.type).icon))).map((Icon: any, idx) => (
+                                                                        <div key={idx} className="bg-white p-0.5 rounded-full shadow-sm ring-1 ring-slate-100">
+                                                                            <Icon className="h-3.5 w-3.5 text-slate-500" />
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
-                                                            )})}
+                                                                <span>{parseMaterials(lesson.materials).length} Materiais</span>
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </TableCell>
@@ -978,6 +954,99 @@ function StudentDetailPageComponent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+{/* MODAL VIEW MATERIALS */}
+             <Dialog open={!!lessonForMaterialView} onOpenChange={(open) => {
+                 if (!open) setLessonForMaterialView(null);
+             }}>
+                 <DialogContent className="sm:max-w-2xl rounded-3xl border-slate-100 shadow-2xl p-8 max-h-[85vh] flex flex-col">
+                     <DialogHeader>
+                         <DialogTitle className="text-2xl font-bold text-slate-900">
+                            Materiais: {lessonForMaterialView ? (
+                                lessonForMaterialView.customTitle 
+                                ? `${subjectMap[lessonForMaterialView.subject] || lessonForMaterialView.subject} - ${lessonForMaterialView.customTitle}` 
+                                : (subjectMap[lessonForMaterialView.subject] || lessonForMaterialView.subject)
+                            ) : ''}
+                         </DialogTitle>
+                         <DialogDescription className="text-slate-500 mt-1">Arquivos disponibilizados nesta aula.</DialogDescription>
+                     </DialogHeader>
+                     
+                     <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-2">
+                        {lessonForMaterialView && parseMaterials(lessonForMaterialView.materials).map((material: any) => {
+                            const formatInfo = getFileFormatInfo(material.name, material.type);
+                            const Icon = formatInfo.icon;
+                            return (
+                                <div key={material.id} className={`flex items-center justify-between p-4 rounded-2xl border border-${formatInfo.colorName}-100 bg-${formatInfo.colorName}-50 shadow-sm hover:shadow-md transition-shadow group`}>
+                                    <div className="flex items-center gap-4 overflow-hidden flex-1">
+                                        <div className={`p-3 rounded-xl bg-white shadow-sm flex-shrink-0 text-${formatInfo.colorName}-600`}>
+                                            <Icon className="h-6 w-6" />
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className={`font-bold text-${formatInfo.colorName}-900 truncate`}>{cleanFileName(material.name)}</span>
+                                            <span className={`text-xs font-medium text-${formatInfo.colorName}-600/70 mt-0.5 uppercase tracking-wider`}>
+                                                {material.name.split('.').pop() || 'Arquivo'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                                        <button 
+                                            onClick={() => {
+                                                if (material.url.startsWith('data:')) {
+                                                    const byteCharacters = atob(material.url.split(',')[1]);
+                                                    const byteNumbers = new Array(byteCharacters.length);
+                                                    for (let i = 0; i < byteCharacters.length; i++) {
+                                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                    }
+                                                    const byteArray = new Uint8Array(byteNumbers);
+                                                    const blob = new Blob([byteArray], { type: material.type });
+                                                    const url = URL.createObjectURL(blob);
+                                                    window.open(url, '_blank');
+                                                } else {
+                                                    window.open(material.url, '_blank');
+                                                }
+                                            }}
+                                            className={`px-4 py-2 bg-white border border-${formatInfo.colorName}-200 text-${formatInfo.colorName}-700 rounded-xl text-sm font-bold hover:bg-${formatInfo.colorName}-100 transition-colors shadow-sm`}
+                                        >
+                                            Abrir
+                                        </button>
+                                        
+                                        {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
+                                            <button
+                                                onClick={() => {
+                                                    handleDeleteMaterial(lessonForMaterialView.id, material.id);
+                                                    // Update local state for modal immediately to prevent UI jump
+                                                    setLessonForMaterialView((prev: any) => {
+                                                        if (!prev) return null;
+                                                        const current = parseMaterials(prev.materials);
+                                                        const updated = current.filter((m: any) => m.id !== material.id);
+                                                        return { ...prev, materials: JSON.stringify(updated) };
+                                                    });
+                                                }}
+                                                className={`p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors border border-transparent hover:border-red-600 opacity-0 group-hover:opacity-100 focus:opacity-100`}
+                                                title="Remover material"
+                                            >
+                                                <X className="h-5 w-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {lessonForMaterialView && parseMaterials(lessonForMaterialView.materials).length === 0 && (
+                            <div className="text-center py-12 text-slate-400 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                Nenhum material disponível para esta aula.
+                            </div>
+                        )}
+                     </div>
+                     
+                     <DialogFooter className="mt-4 pt-4 border-t border-slate-100">
+                         <DialogClose asChild>
+                             <Button variant="ghost" className="rounded-xl font-bold text-slate-500 hover:text-slate-700 h-11 w-full sm:w-auto">Fechar</Button>
+                         </DialogClose>
+                     </DialogFooter>
+                 </DialogContent>
+             </Dialog>
 
 {/* MODAL ANEXAR ARQUIVO */}
              <Dialog open={isFileUploadDialogOpen} onOpenChange={(open) => {
