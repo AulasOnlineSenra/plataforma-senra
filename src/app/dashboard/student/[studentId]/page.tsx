@@ -959,7 +959,7 @@ function StudentDetailPageComponent() {
              <Dialog open={!!lessonForMaterialView} onOpenChange={(open) => {
                  if (!open) setLessonForMaterialView(null);
              }}>
-                 <DialogContent className="sm:max-w-2xl rounded-3xl border-slate-100 shadow-2xl p-8 max-h-[85vh] flex flex-col">
+                 <DialogContent className="sm:max-w-4xl rounded-[15px] border-slate-100 shadow-2xl p-8 max-h-[85vh] flex flex-col">
                      <DialogHeader>
                          <DialogTitle className="text-2xl font-bold text-slate-900">
                             Materiais: {lessonForMaterialView ? (
