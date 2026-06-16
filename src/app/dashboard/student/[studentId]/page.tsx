@@ -976,13 +976,31 @@ function StudentDetailPageComponent() {
                             const formatInfo = getFileFormatInfo(material.name, material.type);
                             const Icon = formatInfo.icon;
                             return (
-                                <div key={material.id} className={`flex items-center justify-between p-4 rounded-2xl border border-${formatInfo.colorName}-100 bg-${formatInfo.colorName}-50 shadow-sm hover:shadow-md transition-shadow group`}>
+                                <div 
+                                    key={material.id} 
+                                    onClick={() => {
+                                        if (material.url.startsWith('data:')) {
+                                            const byteCharacters = atob(material.url.split(',')[1]);
+                                            const byteNumbers = new Array(byteCharacters.length);
+                                            for (let i = 0; i < byteCharacters.length; i++) {
+                                                byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                            }
+                                            const byteArray = new Uint8Array(byteNumbers);
+                                            const blob = new Blob([byteArray], { type: material.type });
+                                            const url = URL.createObjectURL(blob);
+                                            window.open(url, '_blank');
+                                        } else {
+                                            window.open(material.url, '_blank');
+                                        }
+                                    }}
+                                    className={`flex items-center justify-between p-4 rounded-2xl border border-${formatInfo.colorName}-100 bg-${formatInfo.colorName}-50 shadow-sm cursor-pointer transition-all duration-300 hover:border-[#f5b000] hover:shadow-[0_4px_12px_rgba(245,176,0,0.3)] group`}
+                                >
                                     <div className="flex items-center gap-4 overflow-hidden flex-1">
-                                        <div className={`p-3 rounded-xl bg-white shadow-sm flex-shrink-0 text-${formatInfo.colorName}-600`}>
+                                        <div className={`p-3 rounded-xl bg-white shadow-sm flex-shrink-0 text-${formatInfo.colorName}-600 group-hover:text-[#f5b000] transition-colors`}>
                                             <Icon className="h-6 w-6" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className={`font-bold text-${formatInfo.colorName}-900 truncate`}>{cleanFileName(material.name)}</span>
+                                            <span className={`font-bold text-${formatInfo.colorName}-900 truncate group-hover:text-[#f5b000] transition-colors`}>{cleanFileName(material.name)}</span>
                                             <span className={`text-xs font-medium text-${formatInfo.colorName}-600/70 mt-0.5 uppercase tracking-wider`}>
                                                 {material.name.split('.').pop() || 'Arquivo'}
                                             </span>
@@ -990,30 +1008,10 @@ function StudentDetailPageComponent() {
                                     </div>
                                     
                                     <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                                        <button 
-                                            onClick={() => {
-                                                if (material.url.startsWith('data:')) {
-                                                    const byteCharacters = atob(material.url.split(',')[1]);
-                                                    const byteNumbers = new Array(byteCharacters.length);
-                                                    for (let i = 0; i < byteCharacters.length; i++) {
-                                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                                    }
-                                                    const byteArray = new Uint8Array(byteNumbers);
-                                                    const blob = new Blob([byteArray], { type: material.type });
-                                                    const url = URL.createObjectURL(blob);
-                                                    window.open(url, '_blank');
-                                                } else {
-                                                    window.open(material.url, '_blank');
-                                                }
-                                            }}
-                                            className={`px-4 py-2 bg-white border border-${formatInfo.colorName}-200 text-${formatInfo.colorName}-700 rounded-xl text-sm font-bold hover:bg-${formatInfo.colorName}-100 transition-colors shadow-sm`}
-                                        >
-                                            Abrir
-                                        </button>
-                                        
                                         {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
                                             <button
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Previne abrir o arquivo ao clicar em excluir
                                                     handleDeleteMaterial(lessonForMaterialView.id, material.id);
                                                     // Update local state for modal immediately to prevent UI jump
                                                     setLessonForMaterialView((prev: any) => {
