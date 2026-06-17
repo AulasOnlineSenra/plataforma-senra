@@ -161,6 +161,11 @@ model Lesson {
   teacher                     User     @relation("Lesson_teacherIdToUser", fields: [teacherId], references: [id])
   student                     User     @relation("Lesson_studentIdToUser", fields: [studentId], references: [id])
   Rating                      Rating[]
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([date])
+  @@index([status])
 }
 
 model MarketingCost {
