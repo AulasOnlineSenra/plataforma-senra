@@ -151,8 +151,8 @@ export default function HomeCorpo() {
         {/* Imagem como funciona */}
         <div className="flex justify-center mb-12 -mt-[39px]">
           <img 
-            src="/como-funciona1+.png" 
-            alt="Como funciona" 
+            src="/resolvemos1.png" 
+            alt="Resolvemos" 
             className="max-w-full h-auto rounded-2xl"
           />
         </div>
