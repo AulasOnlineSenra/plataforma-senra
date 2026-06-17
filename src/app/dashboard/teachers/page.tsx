@@ -698,7 +698,8 @@ export default function TeachersPage() {
                         <BarChart
                           data={(() => {
                             const fg = teacherList.filter(t => {
-                              const ms = graphStatusFilter === "all" || (graphStatusFilter === "pending" ? t.status === "pending" : t.status !== "pending");
+                              if (t.status === 'blacklisted' || t.status === 'deleted') return false;
+                              const ms = graphStatusFilter === "all" ? true : (graphStatusFilter === "pending" ? t.status === "pending" : t.status === "active");
                               let ts: string[] = [];
                               if (t.subjects) { if (Array.isArray(t.subjects)) ts = t.subjects; else { try { ts = JSON.parse(t.subjects); } catch {} } }
                               if (t.subject && !ts.includes(t.subject)) ts.push(t.subject);
@@ -737,7 +738,7 @@ export default function TeachersPage() {
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                           <SelectItem value="all" className="cursor-pointer text-xs">Todos os Meses</SelectItem>
-                          {Array.from(new Set(teacherList.map(t => format(new Date(t.createdAt), 'yyyy-MM')))).sort().reverse().map(m => {
+                          {Array.from(new Set(teacherList.filter(t => t.status !== 'blacklisted' && t.status !== 'deleted').map(t => format(new Date(t.createdAt), 'yyyy-MM')))).sort().reverse().map(m => {
                             const [y, mo] = m.split('-');
                             return (<SelectItem key={m} value={m} className="cursor-pointer text-xs">{format(new Date(parseInt(y), parseInt(mo) - 1, 1), 'MMMM yyyy', { locale: ptBR })}</SelectItem>);
                           })}
@@ -748,7 +749,8 @@ export default function TeachersPage() {
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={(() => {
-                            const sorted = [...teacherList].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                            const validTeachers = teacherList.filter(t => t.status !== 'blacklisted' && t.status !== 'deleted');
+                            const sorted = [...validTeachers].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                             if (growthMonthFilter === "all") {
                               const gd: Record<string, number> = {}; let n = 0;
                               sorted.forEach(t => { const k = format(new Date(t.createdAt), 'MMM/yy', { locale: ptBR }); n++; gd[k] = n; });
