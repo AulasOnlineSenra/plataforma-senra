@@ -308,7 +308,7 @@ function TeacherCard({
               {teacher.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute -bottom-1 -right-1 flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shadow border" style={{ backgroundColor: '#0f172a' }}>
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shadow border w-max" style={{ backgroundColor: '#0f172a' }}>
             {Array(5).fill(0).map((_, i) => (
               <Star
                 key={i}
@@ -619,15 +619,10 @@ export default function TeachersPage() {
                             if (t.subject && !ts.includes(t.subject)) ts.push(t.subject);
                             return ms && (graphSubjectFilter === "all" || ts.includes(graphSubjectFilter) || t.subject === graphSubjectFilter);
                           });
-                          const activeCount = fg.filter(t => t.status !== 'pending').length;
+                          const activeCount = fg.filter(t => t.status === 'active').length;
                           const pendingCount = fg.filter(t => t.status === 'pending').length;
-                          const allS = new Set<string>();
-                          fg.forEach(t => {
-                            if (t.subjects) { if (Array.isArray(t.subjects)) t.subjects.forEach((s: string) => allS.add(s)); else { try { JSON.parse(t.subjects).forEach((s: string) => allS.add(s)); } catch {} } }
-                            if (t.subject) allS.add(t.subject);
-                          });
-                          const subjectCount = allS.size;
-                          const maxVal = Math.max(activeCount, pendingCount, subjectCount) || 1;
+                          const inactiveCount = fg.filter(t => t.status === 'inactive').length;
+                          const maxVal = Math.max(activeCount, pendingCount, inactiveCount) || 1;
                           const BH = 210;
                           const bar = (val: number, color: string, shadow: string) => (
                             <div className="flex items-end" style={{ height: BH }}>
@@ -647,10 +642,10 @@ export default function TeachersPage() {
                                 <span className="text-lg font-bold text-blue-600 mt-3">{pendingCount}</span>
                                 <span className="text-xs font-medium text-slate-500">Pendentes</span>
                               </div>
-                              <div className="flex flex-col items-center cursor-pointer group" onClick={() => setGraphSubjectFilter('all')}>
-                                {bar(subjectCount, '#8b5cf6', '0 4px 12px rgba(139,92,246,0.2)')}
-                                <span className="text-lg font-bold text-violet-600 mt-3">{subjectCount}</span>
-                                <span className="text-xs font-medium text-slate-500">Disciplinas</span>
+                              <div className="flex flex-col items-center cursor-pointer group">
+                                {bar(inactiveCount, '#94a3b8', '0 4px 12px rgba(148,163,184,0.2)')}
+                                <span className="text-lg font-bold text-slate-500 mt-3">{inactiveCount}</span>
+                                <span className="text-xs font-medium text-slate-500">Inativos</span>
                               </div>
                             </>
                           );
@@ -667,11 +662,16 @@ export default function TeachersPage() {
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={[{ name: 'Ativos', value: teacherList.filter(t => t.status !== 'pending').length }, { name: 'Pendentes', value: teacherList.filter(t => t.status === 'pending').length }]}
+                                data={[
+                                  { name: 'Ativos', value: teacherList.filter(t => t.status === 'active').length },
+                                  { name: 'Pendentes', value: teacherList.filter(t => t.status === 'pending').length },
+                                  { name: 'Inativos', value: teacherList.filter(t => t.status === 'inactive').length }
+                                ]}
                                 cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value"
                               >
                                 <Cell fill="#10b981" />
                                 <Cell fill="#3b82f6" />
+                                <Cell fill="#94a3b8" />
                               </Pie>
                               <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }} />
                             </PieChart>
@@ -680,6 +680,7 @@ export default function TeachersPage() {
                         <div className="flex flex-col gap-4 ml-6">
                           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-sm font-semibold text-slate-700">Ativos</span></div>
                           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500" /><span className="text-sm font-semibold text-slate-700">Pendentes</span></div>
+                          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-slate-400" /><span className="text-sm font-semibold text-slate-700">Inativos</span></div>
                         </div>
                       </div>
                     </Card>
