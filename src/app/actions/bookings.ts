@@ -576,3 +576,42 @@ export async function fixCompletedLessonsCredits() {
     return { success: false, error: "Erro ao corrigir créditos" };
   }
 }
+
+
+export async function getLessonsForSchedule(userId: string, role: string, startDateStr: string, endDateStr: string) {
+  try {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    const where: any =
+      role === "admin"
+        ? { date: { gte: startDate, lte: endDate } }
+        : role === "teacher"
+          ? { teacherId: userId, date: { gte: startDate, lte: endDate } }
+          : { studentId: userId, date: { gte: startDate, lte: endDate } };
+
+    const lessons = await prisma.lesson.findMany({
+      where,
+      orderBy: { date: "asc" },
+      select: {
+        id: true,
+        studentId: true,
+        subject: true,
+        customTitle: true,
+        materials: true,
+        status: true,
+        date: true,
+        endDate: true,
+        isExperimental: true,
+        cancelReason: true,
+        teacherId: true,
+        student: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        teacher: { select: { id: true, name: true, email: true, avatarUrl: true, videoUrl: true } },
+      },
+    });
+
+    return { success: true, data: lessons };
+  } catch (error) {
+    console.error("Error fetching lessons for schedule:", error);
+    return { success: false, error: "Failed to fetch lessons" };
+  }
+}

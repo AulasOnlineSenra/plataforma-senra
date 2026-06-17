@@ -6,72 +6,59 @@ export async function getDashboardStats() {
   try {
     const now = new Date();
 
-    // Busca os totais de Usuários
-    const totalStudents = await prisma.user.count({
-      where: { role: 'student', status: 'active' }
-    });
-
-    const totalTeachers = await prisma.user.count({
-      where: { role: 'teacher', status: 'active' }
-    });
-
-    // Busca os totais de Aulas
-    const scheduledLessons = await prisma.lesson.count({
-      where: { 
-        status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
-        date: { gte: now }
-      }
-    });
-
-    const completedLessons = await prisma.lesson.count({
-      where: { 
-        status: 'COMPLETED'
-      }
-    });
-
-    const cancelledLessons = await prisma.lesson.count({
-      where: { status: { in: ['CANCELLED', 'cancelled'] } }
-    });
-
-    // Busca as próximas 5 aulas agendadas (trazendo o nome do aluno e do professor junto)
-    const upcomingLessons = await prisma.lesson.findMany({
-      where: { 
-        status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
-        date: { gte: new Date() } // Apenas aulas de hoje para frente
-      },
-      orderBy: { date: 'asc' },
-      take: 5,
-      include: {
-        student: { select: { id: true, name: true } },
-        teacher: { select: { id: true, name: true, videoUrl: true } }
-      }
-    });
-
-    // Calcula a Receita Total (Soma do preço de todas as aulas completadas)
-    const revenue = await prisma.lesson.aggregate({
-      _sum: { price: true },
-      where: { status: { in: ['CONFIRMED', 'completed'] } }
-    });
-
-    // Calcula pagamentos pendentes
-    const pendingPayments = await prisma.transaction.count({
-      where: { status: 'PENDENTE' }
-    });
-
-    const pendingPaymentsAmount = await prisma.transaction.aggregate({
-      _sum: { amountPaid: true },
-      where: { status: 'PENDENTE' }
-    });
-
-    // Busca transações pendentes - versão simplificada
-    const pendingTransactionsList = await prisma.transaction.findMany({
-      where: { status: 'PENDENTE' },
-      orderBy: { createdAt: 'asc' },
-      take: 10,
-      include: {
-        student: { select: { id: true, name: true, avatarUrl: true } }
-      }
-    });
+    // Executa todas as consultas ao banco de dados em paralelo usando Promise.all
+    const [
+      totalStudents,
+      totalTeachers,
+      scheduledLessons,
+      completedLessons,
+      cancelledLessons,
+      upcomingLessons,
+      revenue,
+      pendingPayments,
+      pendingPaymentsAmount,
+      pendingTransactionsList
+    ] = await Promise.all([
+      prisma.user.count({ where: { role: 'student', status: 'active' } }),
+      prisma.user.count({ where: { role: 'teacher', status: 'active' } }),
+      prisma.lesson.count({
+        where: { 
+          status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
+          date: { gte: now }
+        }
+      }),
+      prisma.lesson.count({ where: { status: 'COMPLETED' } }),
+      prisma.lesson.count({ where: { status: { in: ['CANCELLED', 'cancelled'] } } }),
+      prisma.lesson.findMany({
+        where: { 
+          status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
+          date: { gte: new Date() } // Apenas aulas de hoje para frente
+        },
+        orderBy: { date: 'asc' },
+        take: 5,
+        include: {
+          student: { select: { id: true, name: true } },
+          teacher: { select: { id: true, name: true, videoUrl: true } }
+        }
+      }),
+      prisma.lesson.aggregate({
+        _sum: { price: true },
+        where: { status: { in: ['CONFIRMED', 'completed'] } }
+      }),
+      prisma.transaction.count({ where: { status: 'PENDENTE' } }),
+      prisma.transaction.aggregate({
+        _sum: { amountPaid: true },
+        where: { status: 'PENDENTE' }
+      }),
+      prisma.transaction.findMany({
+        where: { status: 'PENDENTE' },
+        orderBy: { createdAt: 'asc' },
+        take: 10,
+        include: {
+          student: { select: { id: true, name: true, avatarUrl: true } }
+        }
+      })
+    ]);
     
     console.log('[Dashboard] Transações PENDENTE encontradas:', pendingTransactionsList.length);
     console.log('[Dashboard] IDs das transações:', pendingTransactionsList.map(t => t.id));

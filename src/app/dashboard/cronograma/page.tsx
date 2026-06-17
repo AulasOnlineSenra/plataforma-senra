@@ -5,7 +5,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameDay }
 import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Plus, Trash2, CalendarRange, TrendingUp, BookOpen, Clock } from "lucide-react";
 import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock, updateScheduleBlock } from "@/app/actions/schedule-structure";
-import { getLessonsForUser } from "@/app/actions/bookings";
+import { getLessonsForSchedule } from "@/app/actions/bookings";
 import { getTeachers, getSubjects } from "@/app/actions/users";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,9 +66,13 @@ export default function CronogramaPage() {
   const loadData = async (uid: string, role: string) => {
     setLoading(true);
     try {
+      const now = new Date();
+      const start = startOfWeek(now, { weekStartsOn: 0 });
+      const end = endOfWeek(now, { weekStartsOn: 0 });
+
       const [structRes, lessonsRes, teachersRes, subjectsRes] = await Promise.all([
         getScheduleStructure(uid),
-        getLessonsForUser(uid, role),
+        getLessonsForSchedule(uid, role, start.toISOString(), end.toISOString()),
         getTeachers(),
         getSubjects()
       ]);
