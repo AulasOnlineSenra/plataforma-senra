@@ -297,7 +297,7 @@ function TeacherCard({
 
         <div className="relative">
           <Avatar
-            className="mb-1 h-20 w-20 border-4 transition-transform group-hover:scale-105 bg-white border-[#f5b000] shadow-[0_0_20px_rgba(245,176,0,0.8)]"
+            className="mb-1 h-20 w-20 border-2 transition-transform group-hover:scale-105 bg-white border-[#f5b000] shadow-[0_0_12px_rgba(245,176,0,0.5)]"
           >
             <AvatarImage
               src={teacher.avatarUrl}
