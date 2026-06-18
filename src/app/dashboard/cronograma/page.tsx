@@ -47,6 +47,7 @@ export default function CronogramaPage() {
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [newBlock, setNewBlock] = useState<{ dayOfWeek: number; startTime: string; endTime: string; subject: string; teacherId: string; color: string }>({
     dayOfWeek: 1,
     startTime: "07:00",
@@ -104,7 +105,21 @@ export default function CronogramaPage() {
     const endM = isHalfHour ? '00' : '30';
     const endStr = `${String(endH).padStart(2, '0')}:${endM}`;
 
-    setNewBlock({ ...newBlock, dayOfWeek: dayIndex, startTime: startStr, endTime: endStr });
+    setEditingBlockId(null);
+    setNewBlock({ ...newBlock, dayOfWeek: dayIndex, startTime: startStr, endTime: endStr, subject: "", teacherId: "none" });
+    setIsDialogOpen(true);
+  };
+
+  const handleEditBlock = (block: ScheduleBlock) => {
+    setNewBlock({
+      dayOfWeek: block.dayOfWeek,
+      startTime: block.startTime,
+      endTime: block.endTime,
+      subject: block.subject,
+      teacherId: block.teacherId || "none",
+      color: block.color || "bg-emerald-500",
+    });
+    setEditingBlockId(block.id);
     setIsDialogOpen(true);
   };
 
@@ -115,13 +130,26 @@ export default function CronogramaPage() {
       userId,
       teacherId: newBlock.teacherId === "none" ? undefined : newBlock.teacherId,
     };
-    const res = await createScheduleBlock(dataToSave as any);
-    if (res.success) {
-      setBlocks([...blocks, res.data as any]);
-      setIsDialogOpen(false);
-      toast({ title: "Bloco adicionado com sucesso" });
+    
+    if (editingBlockId) {
+      const res = await updateScheduleBlock(editingBlockId, dataToSave as any);
+      if (res.success) {
+        setBlocks(blocks.map(b => b.id === editingBlockId ? { ...b, ...dataToSave } : b));
+        setIsDialogOpen(false);
+        setEditingBlockId(null);
+        toast({ title: "Bloco atualizado com sucesso" });
+      } else {
+        toast({ variant: "destructive", title: "Erro ao atualizar", description: res.error });
+      }
     } else {
-      toast({ variant: "destructive", title: "Erro ao salvar", description: res.error });
+      const res = await createScheduleBlock(dataToSave as any);
+      if (res.success) {
+        setBlocks([...blocks, res.data as any]);
+        setIsDialogOpen(false);
+        toast({ title: "Bloco adicionado com sucesso" });
+      } else {
+        toast({ variant: "destructive", title: "Erro ao salvar", description: res.error });
+      }
     }
   };
 
@@ -213,13 +241,13 @@ export default function CronogramaPage() {
             Planeje sua semana ideal e acompanhe a execução real das suas aulas.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col items-end gap-[5px]">
           {userRole === "admin" && allStudents.length > 0 && (
              <Select value={userId || ""} onValueChange={(val) => {
                 setUserId(val);
                 loadData(val, "student");
              }}>
-               <SelectTrigger className="w-full sm:w-[250px] bg-white border-slate-200">
+               <SelectTrigger className="w-[250px] bg-white border-slate-200">
                  <SelectValue placeholder="Selecione um aluno" />
                </SelectTrigger>
                <SelectContent>
@@ -231,7 +259,7 @@ export default function CronogramaPage() {
                </SelectContent>
              </Select>
           )}
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 text-white w-full sm:w-auto hover:bg-slate-800">
+          <Button onClick={() => { setEditingBlockId(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white w-[250px] hover:bg-slate-800">
             <Plus className="mr-2 h-4 w-4" /> Adicionar Bloco
           </Button>
         </div>
@@ -327,8 +355,9 @@ export default function CronogramaPage() {
                       <div
                         key={block.id}
                         draggable
+                        onClick={(e) => { e.stopPropagation(); handleEditBlock(block); }}
                         onDragStart={(e) => e.dataTransfer.setData("blockId", block.id)}
-                        className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group cursor-move ${block.color || 'bg-emerald-500'}`}
+                        className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group cursor-pointer ${block.color || 'bg-emerald-500'}`}
                         style={{ top: `${topPx}px`, height: `${heightPx}px` }}
                       >
                         <p className="font-bold text-xs">{subjects.find(s => s.id === block.subject)?.name || block.subject}</p>
