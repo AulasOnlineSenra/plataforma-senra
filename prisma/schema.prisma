@@ -166,6 +166,9 @@ model Lesson {
   @@index([teacherId])
   @@index([date])
   @@index([status])
+  @@index([studentId, date])
+  @@index([teacherId, date])
+  @@index([studentId, status])
 }
 
 model MarketingCost {
@@ -219,6 +222,8 @@ model Rating {
   @@unique([studentId, teacherId, givenBy])
   @@index([studentId])
   @@index([teacherId])
+  @@index([createdAt])
+  @@index([studentId, createdAt])
 }
 
 model ScheduledMessage {
@@ -286,6 +291,8 @@ model Transaction {
 
   @@index([status])
   @@index([studentId])
+  @@index([createdAt])
+  @@index([studentId, createdAt])
 }
 
 model User {

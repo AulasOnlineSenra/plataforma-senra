@@ -220,12 +220,29 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       const userId = localStorage.getItem("userId");
+      const cachedRole = localStorage.getItem("userRole") || "student";
+      
       if (!userId) {
         window.location.href = "/login";
         return;
       }
 
-      const [userResult] = await Promise.all([getUserById(userId)]);
+      const [
+        userResult,
+        lessonsResult,
+        statsResult,
+        pendingResult,
+        unratedResult,
+        ratingResult
+      ] = await Promise.all([
+        getUserById(userId),
+        getLessonsForUser(userId, cachedRole),
+        cachedRole === "admin" ? getDashboardStats() : Promise.resolve({ success: true, data: null }),
+        cachedRole === "admin" ? getAllPendingTransactions() : getStudentPendingTransactions(userId),
+        cachedRole !== "admin" ? getUnratedPeopleForUser(userId, cachedRole) : Promise.resolve({ success: true, data: [] }),
+        cachedRole !== "admin" ? getUserAverageReceivedRating(userId, cachedRole) : Promise.resolve({ success: true, data: { average: 5.0, count: 0 } })
+      ]);
+
       if (!userResult.success || !userResult.data) {
         window.location.href = "/login";
         return;
@@ -236,52 +253,24 @@ export default function DashboardPage() {
       localStorage.setItem("currentUser", JSON.stringify(dbUser));
       localStorage.setItem("userRole", dbUser.role);
 
-      const [lessonsResult, statsResult] = await Promise.all([
-        getLessonsForUser(dbUser.id, dbUser.role),
-        dbUser.role === "admin"
-          ? getDashboardStats()
-          : Promise.resolve({ success: true, data: null }),
-      ]);
-
       if (lessonsResult.success && lessonsResult.data) {
         setLessons(lessonsResult.data as LessonItem[]);
-      }
-
-      if (dbUser.role === "student") {
-        const updatedUserResult = await getUserById(dbUser.id);
-        if (updatedUserResult.success && updatedUserResult.data) {
-          setUser(updatedUserResult.data as DashboardUser);
-        }
       }
 
       if (dbUser.role === "admin" && statsResult.success && statsResult.data) {
         setAdminStats(statsResult.data as AdminStats);
       }
 
-      if (dbUser.role === "student") {
-        const pendingResult = await getStudentPendingTransactions(dbUser.id);
-        if (pendingResult.success && pendingResult.data) {
-          setStudentPendingTransactions(pendingResult.data as StudentPendingTransaction[]);
-        }
-      }
-
-      if (dbUser.role === "admin") {
-        const allPendingResult = await getAllPendingTransactions();
-        if (allPendingResult.success && allPendingResult.data) {
-          setStudentPendingTransactions(allPendingResult.data as StudentPendingTransaction[]);
-        }
+      if (pendingResult.success && pendingResult.data) {
+        setStudentPendingTransactions(pendingResult.data as StudentPendingTransaction[]);
       }
 
       if (dbUser.role !== "admin") {
-        const [unratedResult, ratingResult] = await Promise.all([
-          getUnratedPeopleForUser(dbUser.id, dbUser.role),
-          getUserAverageReceivedRating(dbUser.id, dbUser.role),
-        ]);
         if (unratedResult.success && unratedResult.data) {
           setUnratedPeople(unratedResult.data as UnratedPerson[]);
         }
         if (ratingResult.success && ratingResult.data) {
-          setUserRating(ratingResult.data);
+          setUserRating(ratingResult.data as { average: number; count: number });
         }
       }
 
