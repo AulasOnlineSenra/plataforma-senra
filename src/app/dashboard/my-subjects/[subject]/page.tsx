@@ -69,7 +69,9 @@ export default function NotebookPage() {
   const params = useParams();
   const router = useRouter();
   const rawSubjectId = decodeURIComponent(params.subject as string);
-  const subjectName = subjectMap[rawSubjectId] || rawSubjectId;
+  // rawSubjectId is now always the resolved display name (e.g. "Matemática")
+  const subjectName = rawSubjectId;
+  const resolveSubjectName = (raw: string) => subjectMap[raw] || raw;
 
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,10 +102,12 @@ export default function NotebookPage() {
   const completedLessons = useMemo(() => {
     return lessons
       .filter((lesson) =>
-        lesson.status === 'COMPLETED' && lesson.subject === rawSubjectId
+        // Normalize lesson.subject to display name before comparing
+        // so both "default-subj-1" and "Matemática" match correctly
+        lesson.status === 'COMPLETED' && resolveSubjectName(lesson.subject) === subjectName
       )
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [lessons, rawSubjectId]);
+  }, [lessons, subjectName]);
 
   const formatDateTime = (lesson: LessonData) => {
     const startDate = new Date(lesson.date);
