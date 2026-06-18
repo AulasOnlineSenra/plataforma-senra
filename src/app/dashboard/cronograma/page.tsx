@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameDay } from "date-fns";
+import { useRouter } from "next/navigation";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameDay, nextDay, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Plus, Trash2, CalendarRange, TrendingUp, BookOpen, Clock } from "lucide-react";
-import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock, updateScheduleBlock } from "@/app/actions/schedule-structure";
+import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock, updateScheduleBlock, checkScheduleAvailability } from "@/app/actions/schedule-structure";
 import { getLessonsForSchedule } from "@/app/actions/bookings";
 import { getTeachers, getSubjects, getStudents } from "@/app/actions/users";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,6 +36,7 @@ const DAYS_OF_WEEK = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta
 const defaultColors = ["bg-emerald-500", "bg-blue-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-slate-700"];
 
 export default function CronogramaPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -47,6 +49,8 @@ export default function CronogramaPage() {
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+  const [isValidatingAvailability, setIsValidatingAvailability] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [newBlock, setNewBlock] = useState<{ dayOfWeek: number; startTime: string; endTime: string; subject: string; teacherId: string; color: string }>({
     dayOfWeek: 1,
@@ -98,6 +102,32 @@ export default function CronogramaPage() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    const validate = async () => {
+      if (newBlock.teacherId && newBlock.teacherId !== "none" && newBlock.startTime && newBlock.endTime) {
+        setIsValidatingAvailability(true);
+        const res = await checkScheduleAvailability(
+          newBlock.teacherId,
+          newBlock.dayOfWeek,
+          newBlock.startTime,
+          newBlock.endTime,
+          editingBlockId || undefined
+        );
+        if (!res.available) {
+          setAvailabilityError(res.error || "Indisponível");
+        } else {
+          setAvailabilityError(null);
+        }
+        setIsValidatingAvailability(false);
+      } else {
+        setAvailabilityError(null);
+      }
+    };
+    if (isDialogOpen) {
+      validate();
+    }
+  }, [newBlock.teacherId, newBlock.dayOfWeek, newBlock.startTime, newBlock.endTime, isDialogOpen, editingBlockId]);
 
   const handleCellClick = (dayIndex: number, hour: number, isHalfHour: boolean) => {
     const startStr = `${String(hour).padStart(2, '0')}:${isHalfHour ? '30' : '00'}`;
@@ -151,6 +181,52 @@ export default function CronogramaPage() {
         toast({ variant: "destructive", title: "Erro ao salvar", description: res.error });
       }
     }
+  };
+
+  const handleAdicionarAoResumo = () => {
+    if (blocks.length === 0) {
+      toast({ title: "Cronograma vazio", description: "Adicione blocos antes de prosseguir.", variant: "destructive" });
+      return;
+    }
+
+    const blocksWithoutTeacher = blocks.filter(b => !b.teacherId || b.teacherId === "none");
+    if (blocksWithoutTeacher.length > 0) {
+      const confirm = window.confirm(`Atenção: Você tem ${blocksWithoutTeacher.length} disciplina(s) sem professor definido no cronograma. Deseja prosseguir apenas com as aulas que possuem professor ou quer voltar para preencher? (Ok para Prosseguir, Cancelar para Voltar)`);
+      if (!confirm) return;
+    }
+
+    const validBlocks = blocks.filter(b => b.teacherId && b.teacherId !== "none");
+    if (validBlocks.length === 0) {
+      toast({ title: "Sem professores", description: "Nenhuma aula com professor definido.", variant: "destructive" });
+      return;
+    }
+
+    const preBookings = validBlocks.map(b => {
+      const teacher = teachers.find(t => t.id === b.teacherId);
+      const subject = subjects.find(s => s.id === b.subject);
+      
+      const now = new Date();
+      let targetDate = now.getDay() === b.dayOfWeek ? now : nextDay(now, b.dayOfWeek as any);
+      const [h, m] = b.startTime.split(':').map(Number);
+      targetDate.setHours(h, m, 0, 0);
+      
+      if (isBefore(targetDate, now)) {
+        targetDate = addDays(targetDate, 7);
+      }
+
+      return {
+        subjectName: subject?.name || b.subject,
+        teacherId: b.teacherId,
+        teacherName: teacher?.name || "",
+        date: targetDate.toISOString(),
+        start: b.startTime,
+        end: b.endTime,
+        isExperimental: false
+      };
+    });
+
+    localStorage.setItem('checkoutBookings', JSON.stringify(preBookings));
+    router.push(`/dashboard/checkout?needed=${preBookings.length}&current=0`);
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -259,7 +335,10 @@ export default function CronogramaPage() {
                </SelectContent>
              </Select>
           )}
-          <Button onClick={() => { setEditingBlockId(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white w-[250px] hover:bg-slate-800">
+          <Button onClick={handleAdicionarAoResumo} className="bg-emerald-600 text-white w-full sm:w-[250px] hover:bg-emerald-700">
+            <BookOpen className="mr-2 h-4 w-4" /> Adicionar ao Resumo
+          </Button>
+          <Button onClick={() => { setEditingBlockId(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white w-full sm:w-[250px] hover:bg-slate-800">
             <Plus className="mr-2 h-4 w-4" /> Adicionar Bloco
           </Button>
         </div>
@@ -438,10 +517,21 @@ export default function CronogramaPage() {
                 ))}
               </div>
             </div>
+            {availabilityError && (
+              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm font-medium">{availabilityError}</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveBlock} className="bg-brand-yellow text-slate-900 hover:bg-amber-400">Salvar Bloco</Button>
+            <Button 
+              onClick={handleSaveBlock} 
+              className="bg-brand-yellow text-slate-900 hover:bg-amber-400"
+              disabled={!!availabilityError || isValidatingAvailability}
+            >
+              {isValidatingAvailability ? "Verificando..." : "Salvar Bloco"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

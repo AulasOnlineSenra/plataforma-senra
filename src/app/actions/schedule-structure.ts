@@ -62,3 +62,57 @@ export async function updateScheduleBlock(id: string, data: { dayOfWeek: number,
     return { success: false, error: error.message };
   }
 }
+
+
+export async function checkScheduleAvailability(
+  teacherId: string,
+  dayOfWeek: number,
+  startTime: string,
+  endTime: string,
+  excludeBlockId?: string
+) {
+  try {
+    const timeToMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const reqStart = timeToMin(startTime);
+    const reqEnd = timeToMin(endTime);
+
+    // 1. Check teacher's configured availability
+    const availabilities = await prisma.availability.findMany({
+      where: { teacherId, dayOfWeek }
+    });
+
+    const isAvailable = availabilities.some(a => {
+      const aStart = timeToMin(a.startTime);
+      const aEnd = timeToMin(a.endTime);
+      return aStart <= reqStart && aEnd >= reqEnd;
+    });
+
+    if (!isAvailable) {
+      return { available: false, error: "Professor não atende neste horário." };
+    }
+
+    // 2. Check for conflicts with other students' schedule blocks
+    const existingBlocks = await prisma.scheduleStructure.findMany({
+      where: {
+        teacherId,
+        dayOfWeek,
+        id: excludeBlockId ? { not: excludeBlockId } : undefined
+      }
+    });
+
+    const hasConflict = existingBlocks.some(b => {
+      const bStart = timeToMin(b.startTime);
+      const bEnd = timeToMin(b.endTime);
+      return bStart < reqEnd && bEnd > reqStart; // Overlap condition
+    });
+
+    if (hasConflict) {
+      return { available: false, error: "Professor já possui aula marcada com outro aluno neste horário." };
+    }
+
+    return { available: true };
+  } catch (error: any) {
+    console.error("Error checking availability:", error);
+    return { available: false, error: "Erro ao verificar disponibilidade." };
+  }
+}
