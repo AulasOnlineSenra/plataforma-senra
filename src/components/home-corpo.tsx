@@ -153,7 +153,7 @@ export default function HomeCorpo() {
           <img 
             src="/resolvemos1.png" 
             alt="Resolvemos" 
-            className="max-w-full h-auto rounded-2xl"
+            className="max-w-[90%] md:max-w-[80%] lg:max-w-5xl h-auto rounded-2xl shadow-xl shadow-amber-500/10"
           />
         </div>
       </div>
