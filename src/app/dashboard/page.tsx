@@ -1037,8 +1037,8 @@ export default function DashboardPage() {
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
                   {unratedPeople.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {unratedPeople.map((person) => (
+                    <div className="max-w-2xl">
+                      {unratedPeople.slice(0, 1).map((person) => (
                         <div
                           key={person.id}
                           className="flex flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-sm"
