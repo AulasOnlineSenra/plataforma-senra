@@ -17,6 +17,7 @@ import { BookOpen, Users, FolderOpen, ClipboardList, GraduationCap } from 'lucid
 import { getLessonsForUser } from '@/app/actions/bookings';
 import { getMockUser } from '@/lib/data';
 import { User, Teacher } from '@/lib/types';
+import { getCachedLessons, setCachedLessons } from '@/lib/lessons-cache';
 
 const subjectMap: Record<string, string> = {
   'default-subj-1': 'Matemática',
@@ -78,9 +79,18 @@ export default function MySubjectsPage() {
   }, []);
 
   const loadDbLessons = async (userId: string) => {
+    // 1. Try cache first for instant load
+    const cached = getCachedLessons(userId);
+    if (cached) {
+      setDbLessons(cached);
+      setLoading(false); // UI renders instantly
+    }
+
+    // 2. Fetch fresh data in the background (or foreground if no cache)
     const response = await getLessonsForUser(userId, 'student');
     if (response.success && response.data) {
       setDbLessons(response.data);
+      setCachedLessons(userId, response.data);
     }
     setLoading(false);
   };

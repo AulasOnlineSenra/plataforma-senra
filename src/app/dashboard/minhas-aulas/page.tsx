@@ -5,6 +5,7 @@ import { format, startOfWeek, endOfWeek, addDays, eachDayOfInterval, isSameDay, 
 import { ptBR } from "date-fns/locale";
 import { CalendarCheck2, ExternalLink, Video, History, XCircle, Edit, Pencil, Trash2, Search, User as UserIcon, RotateCcw, LayoutGrid, List, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { getLessonsForUser, updateLesson, cancelLesson, deleteLesson } from "@/app/actions/bookings";
+import { getCachedLessons, setCachedLessons } from "@/lib/lessons-cache";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
@@ -113,11 +114,21 @@ export default function MinhasAulasPage() {
   const [cancelReason, setCancelReason] = useState<string>('');
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
-    setLoading(true);
+    // 1. Load from cache first for instant feedback
+    const cached = getCachedLessons(currentUserId);
+    if (cached) {
+      setLessons(cached as LessonItem[]);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    // 2. Load fresh data from API
     const response = await getLessonsForUser(currentUserId, currentRole);
     if (response.success && response.data) {
       setLessons(response.data as LessonItem[]);
-    } else {
+      setCachedLessons(currentUserId, response.data);
+    } else if (!cached) {
       toast({
         variant: "destructive",
         title: "Erro",

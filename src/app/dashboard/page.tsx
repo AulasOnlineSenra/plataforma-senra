@@ -83,7 +83,8 @@ const subjectMap: Record<string, string> = {
 };
 import { getUserById } from "@/app/actions/users";
 import { getLessonsForUser, updateLesson, cancelLesson } from "@/app/actions/bookings";
-import { getDashboardStats } from "@/app/actions/dashboard";
+import { AdminStats, getDashboardStats } from "@/app/actions/dashboard";
+import { getCachedLessons, setCachedLessons } from "@/lib/lessons-cache";
 import { getUnratedPeopleForUser, submitRating, getUserAverageReceivedRating } from "@/app/actions/ratings";
 import { approveTransaction, rejectTransaction, getStudentPendingTransactions, getAllPendingTransactions, getStudentTransactions } from "@/app/actions/finance";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -227,6 +228,13 @@ export default function DashboardPage() {
         return;
       }
 
+      // 1. Try cache first for instant load of lessons
+      const cachedLessons = getCachedLessons(userId);
+      if (cachedLessons) {
+        setLessons(cachedLessons as LessonItem[]);
+      }
+
+      // 2. Fetch fresh data in the background
       const [
         userResult,
         lessonsResult,
@@ -255,6 +263,7 @@ export default function DashboardPage() {
 
       if (lessonsResult.success && lessonsResult.data) {
         setLessons(lessonsResult.data as LessonItem[]);
+        setCachedLessons(userId, lessonsResult.data);
       }
 
       if (dbUser.role === "admin" && statsResult.success && statsResult.data) {

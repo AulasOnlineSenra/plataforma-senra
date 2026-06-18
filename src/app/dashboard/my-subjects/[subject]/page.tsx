@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, GraduationCap, File } from 'lucide-react';
 import { getLessonsForUser } from '@/app/actions/bookings';
+import { getCachedLessons, setCachedLessons } from '@/lib/lessons-cache';
 
 const subjectMap: Record<string, string> = {
   'default-subj-1': 'Matemática',
@@ -77,9 +78,16 @@ export default function NotebookPage() {
   const [loading, setLoading] = useState(true);
 
   const loadLessons = async (userId: string) => {
+    const cached = getCachedLessons(userId);
+    if (cached) {
+      setLessons(cached as LessonData[]);
+      setLoading(false);
+    }
+
     const result = await getLessonsForUser(userId, 'student');
     if (result.success && result.data) {
       setLessons(result.data as LessonData[]);
+      setCachedLessons(userId, result.data);
     }
     setLoading(false);
   };
