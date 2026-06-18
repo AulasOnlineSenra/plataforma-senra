@@ -92,27 +92,33 @@ export default function MySubjectsPage() {
       (event.status === 'COMPLETED')
     );
     
+    // Normalize subject key: always resolve to the display name first,
+    // so "default-subj-1" and "Matemática" both become "Matemática" before grouping.
+    const resolveSubjectName = (raw: string): string => subjectMap[raw] || raw;
+
     const subjectStats: Record<string, { classCount: number, teachersMap: Map<string, any>, lessons: any[] }> = {};
     
     completedClasses.forEach((event: any) => {
-      const subjectName = event.subject;
-      if (!subjectName) return;
+      const rawSubject = event.subject;
+      if (!rawSubject) return;
+
+      // Use the resolved name as the grouping key to avoid duplicates
+      const groupKey = resolveSubjectName(rawSubject);
       
-      if (!subjectStats[subjectName]) {
-        subjectStats[subjectName] = { classCount: 0, teachersMap: new Map(), lessons: [] };
+      if (!subjectStats[groupKey]) {
+        subjectStats[groupKey] = { classCount: 0, teachersMap: new Map(), lessons: [] };
       }
-      subjectStats[subjectName].classCount++;
+      subjectStats[groupKey].classCount++;
       if (event.teacher) {
-        subjectStats[subjectName].teachersMap.set(event.teacher.id, event.teacher);
+        subjectStats[groupKey].teachersMap.set(event.teacher.id, event.teacher);
       }
-      subjectStats[subjectName].lessons.push(event);
+      subjectStats[groupKey].lessons.push(event);
     });
 
-    return Object.entries(subjectStats).map(([subjectKey, stats]) => {
-      const translatedName = subjectMap[subjectKey] || subjectKey;
+    return Object.entries(subjectStats).map(([subjectName, stats]) => {
       return {
-        id: subjectKey,
-        name: translatedName,
+        id: subjectName,
+        name: subjectName,
         classCount: stats.classCount,
         teachers: Array.from(stats.teachersMap.values()),
         lessons: stats.lessons.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
