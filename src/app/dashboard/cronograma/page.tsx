@@ -6,7 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Plus, Trash2, CalendarRange, TrendingUp, BookOpen, Clock } from "lucide-react";
 import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock, updateScheduleBlock } from "@/app/actions/schedule-structure";
 import { getLessonsForSchedule } from "@/app/actions/bookings";
-import { getTeachers, getSubjects } from "@/app/actions/users";
+import { getTeachers, getSubjects, getStudents } from "@/app/actions/users";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,6 +37,8 @@ const defaultColors = ["bg-emerald-500", "bg-blue-500", "bg-purple-500", "bg-amb
 export default function CronogramaPage() {
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [allStudents, setAllStudents] = useState<{ id: string; name: string }[]>([]);
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
@@ -59,7 +61,16 @@ export default function CronogramaPage() {
     const role = localStorage.getItem("userRole");
     if (id) {
       setUserId(id);
+      setUserRole(role);
       loadData(id, role || "student");
+      
+      if (role === "admin") {
+        getStudents().then((res) => {
+          if (res.success && res.data) {
+            setAllStudents(res.data as any[]);
+          }
+        });
+      }
     }
   }, []);
 
@@ -202,9 +213,28 @@ export default function CronogramaPage() {
             Planeje sua semana ideal e acompanhe a execução real das suas aulas.
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 text-white hover:bg-slate-800">
-          <Plus className="mr-2 h-4 w-4" /> Adicionar Bloco
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          {userRole === "admin" && allStudents.length > 0 && (
+             <Select value={userId || ""} onValueChange={(val) => {
+                setUserId(val);
+                loadData(val, "student");
+             }}>
+               <SelectTrigger className="w-full sm:w-[250px] bg-white border-slate-200">
+                 <SelectValue placeholder="Selecione um aluno" />
+               </SelectTrigger>
+               <SelectContent>
+                 {allStudents.map((student) => (
+                   <SelectItem key={student.id} value={student.id}>
+                     {student.name}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+          )}
+          <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 text-white w-full sm:w-auto hover:bg-slate-800">
+            <Plus className="mr-2 h-4 w-4" /> Adicionar Bloco
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
