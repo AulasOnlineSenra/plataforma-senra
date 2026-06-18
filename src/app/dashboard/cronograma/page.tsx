@@ -338,9 +338,6 @@ export default function CronogramaPage() {
           <Button onClick={handleAdicionarAoResumo} className="bg-emerald-600 text-white w-full sm:w-[250px] hover:bg-emerald-700">
             <BookOpen className="mr-2 h-4 w-4" /> Adicionar ao Resumo
           </Button>
-          <Button onClick={() => { setEditingBlockId(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white w-full sm:w-[250px] hover:bg-slate-800">
-            <Plus className="mr-2 h-4 w-4" /> Adicionar Bloco
-          </Button>
         </div>
       </div>
 
@@ -383,13 +380,13 @@ export default function CronogramaPage() {
       </div>
 
       <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px] bg-white">
+        <div className="overflow-auto max-h-[70vh]">
+          <div className="min-w-[800px] bg-white relative">
             {/* Header */}
-            <div className="flex border-b border-slate-200 bg-slate-50">
-              <div className="w-16 flex-shrink-0 border-r border-slate-200"></div>
+            <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-20 shadow-sm">
+              <div className="w-16 flex-shrink-0 border-r border-slate-200 bg-slate-50"></div>
               {[1, 2, 3, 4, 5, 6, 0].map(dayIdx => (
-                <div key={dayIdx} className="flex-1 py-3 text-center border-r border-slate-200 font-semibold text-slate-700 text-sm">
+                <div key={dayIdx} className="flex-1 py-3 text-center border-r border-slate-200 font-semibold text-slate-700 text-sm bg-slate-50">
                   {DAYS_OF_WEEK[dayIdx]}
                 </div>
               ))}
