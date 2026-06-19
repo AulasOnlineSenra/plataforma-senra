@@ -619,7 +619,15 @@ export default function BancoQuestoesPage() {
           {selectedQuestions.length > 0 && (
             <Button
               className="rounded-xl bg-brand-yellow text-slate-900 font-bold h-12 w-full md:w-auto hover:bg-amber-400"
-                {/* PAINEL DE FILTROS HORIZONTAIS NO TOPO */}
+              onClick={() => setShowCompileModal(true)}
+            >
+              Compilar Simulado ({selectedQuestions.length})
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* PAINEL DE FILTROS HORIZONTAIS NO TOPO */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-5">
         {/* LINHA 1: ABAS DE ORIGEM */}
         <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-100">
