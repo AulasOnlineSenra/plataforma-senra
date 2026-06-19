@@ -60,23 +60,132 @@ type UnifiedQuestion = {
   correctAlternative: string;
   alternatives: AlternativeInput[];
   creatorName?: string;
+  secondaryTag: string; // ex: "Química", "Espanhol"
 };
 
 type StudentItem = { id: string; name: string };
 
-const SUBJECTS = [
-  "Matemática",
-  "Física",
-  "Química",
-  "Português",
-  "Redação",
-  "Biologia",
-  "História",
-  "Geografia",
-  "Inglês",
+// 4 Áreas de Conhecimento Oficiais do ENEM
+const ENEM_AREAS = [
+  "Matemática e suas Tecnologias",
+  "Ciências da Natureza e suas Tecnologias",
+  "Ciências Humanas e suas Tecnologias",
+  "Linguagens, Códigos e suas Tecnologias",
 ];
 
+// Sub-disciplinas mapeadas
+const SUB_DISCIPLINES: Record<string, string[]> = {
+  "Matemática e suas Tecnologias": ["Matemática Geral", "Geometria", "Estatística / Probabilidade"],
+  "Ciências da Natureza e suas Tecnologias": ["Química", "Física", "Biologia", "Natureza Geral"],
+  "Ciências Humanas e suas Tecnologias": ["História", "Geografia", "Filosofia / Sociologia", "Humanas Geral"],
+  "Linguagens, Códigos e suas Tecnologias": ["Português", "Espanhol", "Inglês", "Literatura / Artes"],
+};
+
+const ALL_SUB_DISCIPLINES = Array.from(
+  new Set(Object.values(SUB_DISCIPLINES).flat())
+);
+
 const YEARS = Array.from({ length: 16 }, (_, i) => 2024 - i); // 2024 a 2009
+
+// Heurística de classificação inteligente das questões do ENEM
+function classifyQuestion(q: any): { disciplineLabel: string; secondaryTag: string } {
+  const context = (q.context || "").toLowerCase();
+  const subject = (q.subject || "").toLowerCase();
+  const discipline = (q.discipline || "").toLowerCase();
+
+  let disciplineLabel = "Linguagens, Códigos e suas Tecnologias";
+  let secondaryTag = "Geral";
+
+  // 1. Classificação da Área Principal
+  if (discipline.includes("matematica")) {
+    disciplineLabel = "Matemática e suas Tecnologias";
+  } else if (discipline.includes("natureza")) {
+    disciplineLabel = "Ciências da Natureza e suas Tecnologias";
+  } else if (discipline.includes("humanas")) {
+    disciplineLabel = "Ciências Humanas e suas Tecnologias";
+  } else {
+    disciplineLabel = "Linguagens, Códigos e suas Tecnologias";
+  }
+
+  // 2. Heurísticas de sub-disciplinas (Química, Física, Biologia, História, etc.)
+  if (disciplineLabel === "Ciências da Natureza e suas Tecnologias") {
+    const chemistryTerms = [
+      "reação", "reacao", "química", "quimica", "átomo", "atomo", "molécula", "molecula", "ácido", "acido", "base",
+      "solução", "solucao", "ligação", "ligacao", "carbono", "isómero", "isomero", "pH", "elétron", "eletron",
+      "tabela periódica", "massa molar", "oxidação", "oxidacao", "redução", "reducao", "hidróxido", "hidroxido",
+      "concentração", "concentracao", "destilação", "destilacao"
+    ];
+    const physicsTerms = [
+      "física", "fisica", "velocidade", "aceleração", "aceleracao", "força", "forca", "energia", "trabalho", "potência", "potencia",
+      "calor", "temperatura", "pressão", "pressao", "onda", "frequência", "frequencia", "luz", "refração", "refracao",
+      "óptica", "optica", "espelho", "lente", "circuito", "corrente", "tensão", "tensao", "resistor", "campo magnético",
+      "gravitação", "gravitacao"
+    ];
+    const biologyTerms = [
+      "biologia", "célula", "celula", "DNA", "RNA", "gene", "genética", "genetica", "proteína", "proteina",
+      "vírus", "virus", "bactéria", "bacteria", "doença", "doenca", "ecologia", "ecossistema", "espécie", "especie",
+      "evolução", "evolucao", "seleção natural", "selecao natural", "planta", "animal", "fisiologia", "fotossíntese"
+    ];
+
+    if (chemistryTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Química";
+    } else if (physicsTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Física";
+    } else if (biologyTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Biologia";
+    } else {
+      secondaryTag = "Natureza Geral";
+    }
+  } else if (disciplineLabel === "Ciências Humanas e suas Tecnologias") {
+    const historyTerms = [
+      "século", "seculo", "história", "historia", "revolução", "revolucao", "guerra", "império", "imperio", "rei",
+      "governo", "presidente", "ditadura", "constituição", "constituicao", "escravidão", "escravidao", "antiguidade"
+    ];
+    const geographyTerms = [
+      "geografia", "mapa", "clima", "relevo", "solo", "vegetação", "vegetacao", "população", "populacao", "migração",
+      "urbanização", "urbanizacao", "desmatamento", "poluição", "globalização", "fronteira", "país"
+    ];
+    const philosophyTerms = [
+      "filosofia", "sociologia", "pensador", "filósofo", "filosofo", "ética", "etica", "moral", "razão", "razao",
+      "cultura", "sociedade", "social", "democracia", "política", "estado", "poder"
+    ];
+
+    if (historyTerms.some((term) => context.includes(term))) {
+      secondaryTag = "História";
+    } else if (geographyTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Geografia";
+    } else if (philosophyTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Filosofia / Sociologia";
+    } else {
+      secondaryTag = "Humanas Geral";
+    }
+  } else if (disciplineLabel === "Linguagens, Códigos e suas Tecnologias") {
+    if (subject === "espanhol" || subject === "espanõl" || subject === "spanish" || context.includes("espanhol") || context.includes("españa")) {
+      secondaryTag = "Espanhol";
+    } else if (subject === "inglês" || subject === "ingles" || subject === "english" || context.includes("inglês") || context.includes("english")) {
+      secondaryTag = "Inglês";
+    } else {
+      const literatureTerms = ["poema", "poesia", "verso", "autor", "autora", "literatura", "romance", "conto", "arte", "pintura", "artista"];
+      if (literatureTerms.some((term) => context.includes(term))) {
+        secondaryTag = "Literatura / Artes";
+      } else {
+        secondaryTag = "Português";
+      }
+    }
+  } else if (disciplineLabel === "Matemática e suas Tecnologias") {
+    const geometryTerms = ["geometria", "área", "area", "volume", "triângulo", "retângulo", "esfera", "cone", "cilindro"];
+    const statsTerms = ["média", "media", "mediana", "moda", "gráfico", "grafico", "tabela", "probabilidade", "estatística"];
+    if (geometryTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Geometria";
+    } else if (statsTerms.some((term) => context.includes(term))) {
+      secondaryTag = "Estatística / Probabilidade";
+    } else {
+      secondaryTag = "Matemática Geral";
+    }
+  }
+
+  return { disciplineLabel, secondaryTag };
+}
 
 export default function BancoQuestoesPage() {
   const router = useRouter();
@@ -91,8 +200,15 @@ export default function BancoQuestoesPage() {
   const [sourceTab, setSourceTab] = useState<"enem" | "local">("enem");
   const [selectedYears, setSelectedYears] = useState<string[]>(["2023"]);
   const [isYearsOpen, setIsYearsOpen] = useState(false);
-  const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
-  const [isDisciplinesOpen, setIsDisciplinesOpen] = useState(false);
+
+  // Filtro de Áreas Principais (ex: Ciências da Natureza...)
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [isAreasOpen, setIsAreasOpen] = useState(false);
+
+  // Filtro de Sub-disciplinas (ex: Química, Física, Espanhol...)
+  const [selectedSubDisciplines, setSelectedSubDisciplines] = useState<string[]>([]);
+  const [isSubDisciplinesOpen, setIsSubDisciplinesOpen] = useState(false);
+
   const [filterDifficulty, setFilterDifficulty] = useState<string>("all");
 
   // Questões retornadas
@@ -108,8 +224,8 @@ export default function BancoQuestoesPage() {
 
   // Formulário: Criar Questão Autoral
   const [newTitle, setNewTitle] = useState("");
-  const [newDiscipline, setNewDiscipline] = useState("Matemática");
-  const [newSubject, setNewSubject] = useState("");
+  const [newDiscipline, setNewDiscipline] = useState(ENEM_AREAS[0]);
+  const [newSubject, setNewSubject] = useState(""); // Campo Assunto (sub-matéria)
   const [newDifficulty, setNewDifficulty] = useState("Médio");
   const [newContext, setNewContext] = useState("");
   const [newCorrectAlternative, setNewCorrectAlternative] = useState("A");
@@ -129,6 +245,18 @@ export default function BancoQuestoesPage() {
   const [simuladoMaxAttempts, setSimuladoMaxAttempts] = useState(1);
   const [simuladoTimeLimit, setSimuladoTimeLimit] = useState(60);
   const [isCompiling, setIsCompiling] = useState(false);
+
+  // Opções dinâmicas de sub-disciplinas baseadas nas áreas selecionadas
+  const availableSubDisciplines = useMemo(() => {
+    if (selectedAreas.length === 0) return ALL_SUB_DISCIPLINES;
+    const subs: string[] = [];
+    selectedAreas.forEach((area) => {
+      if (SUB_DISCIPLINES[area]) {
+        subs.push(...SUB_DISCIPLINES[area]);
+      }
+    });
+    return Array.from(new Set(subs));
+  }, [selectedAreas]);
 
   // Carrega configurações do usuário e lista de alunos
   const loadUserAndStudents = async () => {
@@ -171,7 +299,7 @@ export default function BancoQuestoesPage() {
     loadUserAndStudents();
   }, []);
 
-  // Busca de questões dinamicamente baseado nos filtros selecionados
+  // Busca de questões dinamicamente baseado nos anos ou no acervo
   const fetchQuestions = async () => {
     if (sourceTab === "enem" && selectedYears.length === 0) {
       setQuestions([]);
@@ -189,22 +317,26 @@ export default function BancoQuestoesPage() {
         let combined: UnifiedQuestion[] = [];
         results.forEach((result) => {
           if (result.success && result.data) {
-            const apiQuestions = (result.data.questions || []).map((q: any) => ({
-              id: `enem-${q.year}-${q.index}`,
-              source: "enem" as const,
-              title: `Questão ${q.index} - ENEM ${q.year}`,
-              discipline: q.discipline || "Geral",
-              subject: q.language || "Geral",
-              difficulty: "Médio",
-              context: q.context || "",
-              files: q.files || [],
-              correctAlternative: q.correctAlternative || "",
-              alternatives: (q.alternatives || []).map((alt: any) => ({
-                letter: alt.letter,
-                text: alt.text,
-                file: alt.file,
-              })),
-            }));
+            const apiQuestions = (result.data.questions || []).map((q: any) => {
+              const classification = classifyQuestion(q);
+              return {
+                id: `enem-${q.year}-${q.index}`,
+                source: "enem" as const,
+                title: `Questão ${q.index} - ENEM ${q.year}`,
+                discipline: classification.disciplineLabel,
+                subject: q.language || "Geral",
+                difficulty: "Médio",
+                context: q.context || "",
+                files: q.files || [],
+                correctAlternative: q.correctAlternative || "",
+                alternatives: (q.alternatives || []).map((alt: any) => ({
+                  letter: alt.letter,
+                  text: alt.text,
+                  file: alt.file,
+                })),
+                secondaryTag: classification.secondaryTag,
+              };
+            });
             combined = [...combined, ...apiQuestions];
           }
         });
@@ -226,6 +358,7 @@ export default function BancoQuestoesPage() {
             correctAlternative: q.correctAlternative,
             alternatives: q.alternatives as AlternativeInput[],
             creatorName: q.creator?.name || "Professor",
+            secondaryTag: q.subject || "Geral",
           }));
           setQuestions(localQuestions);
         } else {
@@ -249,37 +382,31 @@ export default function BancoQuestoesPage() {
     }
   }, [currentUserId, sourceTab, selectedYears]);
 
-  // Filtro client-side de disciplinas e dificuldades
+  // Filtro client-side de Áreas e Sub-disciplinas
   const filteredQuestions = useMemo(() => {
     return questions.filter((q) => {
-      // 1. Filtragem por Disciplinas
-      if (selectedDisciplines.length > 0) {
-        if (q.source === "enem") {
-          // Normaliza disciplina do ENEM para bater com a nossa lista
-          const mappedEnemDiscipline = (q.discipline || "").toLowerCase();
-          const matches = selectedDisciplines.some((disc) => {
-            const d = disc.toLowerCase();
-            if (d === "matemática") return mappedEnemDiscipline.includes("matematica");
-            if (d === "português" || d === "inglês" || d === "redação") return mappedEnemDiscipline.includes("linguagens");
-            if (d === "história" || d === "geografia") return mappedEnemDiscipline.includes("humanas");
-            if (d === "física" || d === "química" || d === "biologia") return mappedEnemDiscipline.includes("natureza");
-            return false;
-          });
-          if (!matches) return false;
-        } else {
-          // Para local, compara a disciplina exata
-          if (!selectedDisciplines.includes(q.discipline)) return false;
+      // 1. Filtragem por Área Principal (ENEM_AREAS)
+      if (selectedAreas.length > 0) {
+        if (!selectedAreas.includes(q.discipline)) {
+          return false;
         }
       }
 
-      // 2. Filtragem por Dificuldade (apenas se tab for local e selecionado algo diferente de 'all')
+      // 2. Filtragem por Sub-disciplina (Química, Física, Espanhol, etc.)
+      if (selectedSubDisciplines.length > 0) {
+        if (!selectedSubDisciplines.includes(q.secondaryTag)) {
+          return false;
+        }
+      }
+
+      // 3. Filtragem por Dificuldade (apenas se for Acervo Interno)
       if (sourceTab === "local" && filterDifficulty !== "all") {
         if (q.difficulty !== filterDifficulty) return false;
       }
 
       return true;
     });
-  }, [questions, selectedDisciplines, filterDifficulty, sourceTab]);
+  }, [questions, selectedAreas, selectedSubDisciplines, filterDifficulty, sourceTab]);
 
   // Adicionar/Remover do Carrinho
   const toggleSelectQuestion = (q: UnifiedQuestion) => {
@@ -321,7 +448,7 @@ export default function BancoQuestoesPage() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Preencha o assunto e o enunciado da questão.",
+        description: "Preencha a sub-disciplina (Assunto) e o enunciado da questão.",
       });
       return;
     }
@@ -342,7 +469,7 @@ export default function BancoQuestoesPage() {
     const result = await createQuestion({
       title: newTitle.trim() || undefined,
       discipline: newDiscipline,
-      subject: newSubject.trim(),
+      subject: newSubject.trim(), // ex: Química, História
       difficulty: newDifficulty,
       context: newContext.trim(),
       correctAlternative: newCorrectAlternative,
@@ -579,40 +706,105 @@ export default function BancoQuestoesPage() {
               </div>
             )}
 
-            {/* Filtro Multi-Select de Disciplinas (Visível para ambos) */}
+            {/* Filtro Multi-Select de Áreas Oficiais do ENEM */}
             <div className="relative">
               <Button
                 variant="outline"
                 className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
-                onClick={() => setIsDisciplinesOpen(!isDisciplinesOpen)}
+                onClick={() => setIsAreasOpen(!isAreasOpen)}
               >
                 <span>
-                  {selectedDisciplines.length === 0
-                    ? "Todas Disciplinas"
-                    : selectedDisciplines.length === 1
-                    ? selectedDisciplines[0]
-                    : `${selectedDisciplines.length} Disciplinas`}
+                  {selectedAreas.length === 0
+                    ? "Todas Áreas ENEM"
+                    : selectedAreas.length === 1
+                    ? selectedAreas[0].split(" ")[0] // Mostra só a primeira palavra (ex: "Matemática", "Ciências")
+                    : `${selectedAreas.length} Áreas`}
                 </span>
-                <ChevronRight className={cn("h-4 w-4 transition-transform", isDisciplinesOpen && "rotate-90")} />
+                <ChevronRight className={cn("h-4 w-4 transition-transform", isAreasOpen && "rotate-90")} />
               </Button>
-              {isDisciplinesOpen && (
+              {isAreasOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsDisciplinesOpen(false)} />
+                  <div className="fixed inset-0 z-40" onClick={() => setIsAreasOpen(false)} />
                   <div className="absolute right-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
                     <div className="flex justify-between items-center px-1">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Disciplinas</p>
-                      {selectedDisciplines.length > 0 && (
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Áreas ENEM</p>
+                      {selectedAreas.length > 0 && (
                         <button
                           className="text-xs font-bold text-red-500 hover:text-red-700"
-                          onClick={() => setSelectedDisciplines([])}
+                          onClick={() => {
+                            setSelectedAreas([]);
+                            setSelectedSubDisciplines([]);
+                          }}
                         >
                           Limpar
                         </button>
                       )}
                     </div>
                     <div className="space-y-1">
-                      {SUBJECTS.map((s) => {
-                        const isChecked = selectedDisciplines.includes(s);
+                      {ENEM_AREAS.map((a) => {
+                        const isChecked = selectedAreas.includes(a);
+                        return (
+                          <label key={a} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                let updated: string[];
+                                if (isChecked) {
+                                  updated = selectedAreas.filter((item) => item !== a);
+                                } else {
+                                  updated = [...selectedAreas, a];
+                                }
+                                setSelectedAreas(updated);
+                                // Reseta sub-disciplinas que não pertencem mais às áreas selecionadas
+                                setSelectedSubDisciplines([]);
+                              }}
+                              className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                            />
+                            <span className="text-xs leading-tight">{a}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Filtro Multi-Select de Sub-disciplinas (ex: Química, Física, etc.) */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
+                onClick={() => setIsSubDisciplinesOpen(!isSubDisciplinesOpen)}
+              >
+                <span>
+                  {selectedSubDisciplines.length === 0
+                    ? "Sub-matérias"
+                    : selectedSubDisciplines.length === 1
+                    ? selectedSubDisciplines[0]
+                    : `${selectedSubDisciplines.length} Matérias`}
+                </span>
+                <ChevronRight className={cn("h-4 w-4 transition-transform", isSubDisciplinesOpen && "rotate-90")} />
+              </Button>
+              {isSubDisciplinesOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsSubDisciplinesOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-60 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sub-matérias</p>
+                      {selectedSubDisciplines.length > 0 && (
+                        <button
+                          className="text-xs font-bold text-red-500 hover:text-red-700"
+                          onClick={() => setSelectedSubDisciplines([])}
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {availableSubDisciplines.map((s) => {
+                        const isChecked = selectedSubDisciplines.includes(s);
                         return (
                           <label key={s} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
                             <input
@@ -620,9 +812,9 @@ export default function BancoQuestoesPage() {
                               checked={isChecked}
                               onChange={() => {
                                 if (isChecked) {
-                                  setSelectedDisciplines(selectedDisciplines.filter((item) => item !== s));
+                                  setSelectedSubDisciplines(selectedSubDisciplines.filter((item) => item !== s));
                                 } else {
-                                  setSelectedDisciplines([...selectedDisciplines, s]);
+                                  setSelectedSubDisciplines([...selectedSubDisciplines, s]);
                                 }
                               }}
                               className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
@@ -681,27 +873,33 @@ export default function BancoQuestoesPage() {
                   isSelected && "border-brand-yellow border-2"
                 )}
               >
-                {/* Meta-badges da questão */}
+                {/* Meta-badges da questão exatamente como na imagem solicitada */}
                 <CardHeader className="bg-slate-50/50 border-b pb-4 flex flex-row flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-slate-800 text-white font-bold">
-                      {q.discipline}
+                    {/* Badge 1 (Filtro Primário - Área do ENEM) */}
+                    <Badge className="bg-slate-900 text-white font-bold rounded-full px-3 py-1 text-xs">
+                      {q.discipline === "Matemática e suas Tecnologias" ? "matemática" :
+                       q.discipline === "Ciências da Natureza e suas Tecnologias" ? "ciências da natureza" :
+                       q.discipline === "Ciências Humanas e suas Tecnologias" ? "ciências humanas" : "linguagens"}
                     </Badge>
-                    <Badge variant="outline" className="border-slate-300 text-slate-600 bg-white font-semibold">
-                      {q.subject}
+                    {/* Badge 2 (Filtro Secundário - Sub-matéria / idioma) */}
+                    <Badge variant="outline" className="border-slate-300 text-slate-700 bg-white font-semibold rounded-full px-3 py-1 text-xs">
+                      {q.secondaryTag.toLowerCase()}
                     </Badge>
+                    {/* Badge 3 (Dificuldade) */}
                     <Badge
+                      variant="outline"
                       className={cn(
-                        "font-bold",
-                        q.difficulty === "Fácil" && "bg-green-50 text-green-700 border-green-200",
-                        q.difficulty === "Médio" && "bg-amber-50 text-amber-700 border-amber-200",
-                        q.difficulty === "Difícil" && "bg-red-50 text-red-700 border-red-200"
+                        "font-bold rounded-full px-3 py-1 text-xs border",
+                        q.difficulty === "Fácil" && "border-green-300 text-green-700 bg-green-50/20",
+                        q.difficulty === "Médio" && "border-amber-300 text-amber-700 bg-amber-50/20",
+                        q.difficulty === "Difícil" && "border-red-300 text-red-700 bg-red-50/20"
                       )}
                     >
                       {q.difficulty}
                     </Badge>
                     {q.source === "local" && (
-                      <Badge className="bg-purple-50 text-purple-700 border border-purple-200 font-semibold">
+                      <Badge className="bg-purple-50 text-purple-700 border border-purple-200 font-semibold rounded-full px-3 py-1 text-xs">
                         Criada por {q.creatorName}
                       </Badge>
                     )}
@@ -721,8 +919,8 @@ export default function BancoQuestoesPage() {
                     <Button
                       variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "rounded-xl font-bold h-9 px-4",
-                        isSelected ? "bg-brand-yellow text-slate-900 hover:bg-amber-400 border-none" : "border-slate-300"
+                        "rounded-full font-bold h-9 px-6 text-sm border transition-colors shadow-sm",
+                        isSelected ? "bg-slate-900 text-white hover:bg-slate-800 border-none" : "border-slate-300 hover:bg-slate-50"
                       )}
                       onClick={() => toggleSelectQuestion(q)}
                     >
@@ -849,13 +1047,13 @@ export default function BancoQuestoesPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="font-bold text-slate-700">Matéria</Label>
+                  <Label className="font-bold text-slate-700">Área do Conhecimento (ENEM)</Label>
                   <Select value={newDiscipline} onValueChange={setNewDiscipline}>
                     <SelectTrigger className="h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {SUBJECTS.map((s) => (
+                      {ENEM_AREAS.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
                         </SelectItem>
@@ -865,9 +1063,9 @@ export default function BancoQuestoesPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="font-bold text-slate-700">Assunto Específico</Label>
+                  <Label className="font-bold text-slate-700">Sub-matéria / Assunto específico</Label>
                   <Input
-                    placeholder="Ex: Trigonometria, Revolução Francesa"
+                    placeholder="Ex: Química, Física, História, Geometria"
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
                   />
