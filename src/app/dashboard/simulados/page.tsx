@@ -531,6 +531,7 @@ export default function SimuladosPage() {
             Crie provas com múltiplas questões, envie aos alunos e acompanhe o
             desempenho.
           </p>
+        </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Button
             variant="outline"
