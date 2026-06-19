@@ -14,6 +14,18 @@ export async function getStudents() {
         role: "student",
         status: { not: "deleted" },
       },
+      select: { 
+        id: true, 
+        name: true, 
+        email: true, 
+        cpf: true, 
+        state: true, 
+        avatarUrl: true, 
+        credits: true, 
+        status: true, 
+        createdAt: true, 
+        phone: true 
+      },
       orderBy: { createdAt: "desc" },
     });
     return { success: true, data: students };
@@ -48,6 +60,7 @@ export async function getMyStudents(teacherId: string) {
         role: "student",
         status: { not: "deleted" },
       },
+      select: { id: true, name: true, email: true, avatarUrl: true, phone: true },
       orderBy: { name: "asc" },
     });
 
@@ -62,6 +75,7 @@ export async function getActiveUsers() {
   try {
     const users = await prisma.user.findMany({
       where: { status: "active" },
+      select: { id: true, name: true, email: true, avatarUrl: true, role: true },
       orderBy: { name: "asc" },
     });
     return { success: true, data: users };
@@ -165,10 +179,18 @@ export async function getTeachers(showAll = false) {
 
     const teachers = await prisma.user.findMany({
       where: whereCondition,
-      orderBy: { name: "asc" },
-      include: {
-        Availability: true,
+      select: { 
+        id: true, 
+        name: true, 
+        email: true, 
+        avatarUrl: true, 
+        status: true, 
+        subject: true, 
+        isValidated: true, 
+        videoUrl: true,
+        Availability: true 
       },
+      orderBy: { name: "asc" },
     });
     return { success: true, data: teachers };
   } catch (error) {
