@@ -175,18 +175,24 @@ function StudentDetailPageComponent() {
 
             // Read and append all files
             for (const file of selectedFiles) {
-                const reader = new FileReader();
-                const fileData = await new Promise<string>((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
                 });
+                
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Erro no upload.');
+                }
 
                 currentMaterials = [...currentMaterials, {
-                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    id: ${Date.now()}-,
                     name: file.name,
                     type: file.type,
-                    url: fileData,
+                    url: result.data.url,
                     uploadedAt: new Date().toISOString()
                 }];
             }
