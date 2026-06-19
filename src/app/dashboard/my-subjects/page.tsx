@@ -150,7 +150,33 @@ export default function MySubjectsPage() {
           Disciplinas com aulas concluídas — organize seus estudos por matéria.
         </p>
         <div className="grid gap-6">
-          {myNotebooks.length > 0 ? (
+          {loading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="flex flex-col border-slate-200 shadow-sm opacity-50 animate-pulse">
+                  <CardHeader className="bg-slate-50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-slate-200"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-5 bg-slate-200 rounded w-2/3"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 pt-4 space-y-4">
+                    <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                    <div className="flex -space-x-2">
+                      <div className="h-8 w-8 rounded-full bg-slate-200 border-2 border-white"></div>
+                      <div className="h-8 w-8 rounded-full bg-slate-200 border-2 border-white"></div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t">
+                      <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : myNotebooks.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {myNotebooks.map((notebook) => (
                 <Link 
