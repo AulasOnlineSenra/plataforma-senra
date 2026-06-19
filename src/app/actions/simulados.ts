@@ -234,3 +234,111 @@ export async function submitSimuladoAttempt(params: {
     return { success: false, error: 'Falha ao enviar tentativa.' };
   }
 }
+
+export type DatabaseQuestionInput = {
+  title?: string;
+  discipline: string;
+  subject: string;
+  difficulty: string;
+  context: string;
+  files?: string[];
+  correctAlternative: string;
+  alternatives: { letter: string; text: string; file?: string }[];
+  creatorId: string;
+};
+
+export async function createQuestion(input: DatabaseQuestionInput) {
+  try {
+    if (!input.discipline || !input.subject || !input.context || !input.correctAlternative) {
+      return { success: false, error: 'Campos obrigatórios ausentes.' };
+    }
+
+    const question = await prisma.question.create({
+      data: {
+        title: input.title || null,
+        discipline: input.discipline,
+        subject: input.subject,
+        difficulty: input.difficulty || 'Médio',
+        context: input.context,
+        files: JSON.stringify(input.files || []),
+        correctAlternative: input.correctAlternative,
+        alternatives: input.alternatives,
+        creatorId: input.creatorId,
+      },
+    });
+
+    return { success: true, data: question };
+  } catch (error) {
+    console.error('Erro ao criar questão:', error);
+    return { success: false, error: 'Falha ao criar questão.' };
+  }
+}
+
+export async function listDatabaseQuestions(filters: {
+  discipline?: string;
+  subject?: string;
+  difficulty?: string;
+}) {
+  try {
+    const where: any = {};
+    if (filters.discipline && filters.discipline !== 'all') {
+      where.discipline = filters.discipline;
+    }
+    if (filters.subject) {
+      where.subject = { contains: filters.subject, mode: 'insensitive' };
+    }
+    if (filters.difficulty && filters.difficulty !== 'all') {
+      where.difficulty = filters.difficulty;
+    }
+
+    const questions = await prisma.question.findMany({
+      where,
+      include: {
+        creator: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const parsed = questions.map((q) => ({
+      ...q,
+      files: (() => {
+        try {
+          return JSON.parse(q.files);
+        } catch {
+          return [];
+        }
+      })(),
+    }));
+
+    return { success: true, data: parsed };
+  } catch (error) {
+    console.error('Erro ao buscar questões:', error);
+    return { success: false, error: 'Falha ao buscar questões.' };
+  }
+}
+
+export async function deleteQuestion(questionId: string) {
+  try {
+    await prisma.question.delete({ where: { id: questionId } });
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao deletar questão:', error);
+    return { success: false, error: 'Falha ao deletar questão.' };
+  }
+}
+
+export async function fetchEnemQuestions(year: number, limit = 15, offset = 0) {
+  try {
+    const res = await fetch(`https://api.enem.dev/v1/exams/${year}/questions?limit=${limit}&offset=${offset}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) {
+      throw new Error(`Status da resposta inválido: ${res.status}`);
+    }
+    const data = await res.json();
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Erro ao buscar questões do ENEM:', error);
+    return { success: false, error: error.message || 'Falha ao buscar questões do ENEM.' };
+  }
+}

@@ -345,6 +345,7 @@ model User {
   Simulado_Simulado_studentIdToUser                  Simulado[]         @relation("Simulado_studentIdToUser")
   Simulado_Simulado_creatorIdToUser                  Simulado[]         @relation("Simulado_creatorIdToUser")
   Transaction                                        Transaction[]
+  questionsCreated                                   Question[]         @relation("Question_creatorIdToUser")
   User                                               User?              @relation("UserToUser", fields: [referredById], references: [id])
   other_User                                         User[]             @relation("UserToUser")
 }
@@ -408,4 +409,23 @@ model ScheduleStructure {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model Question {
+  id                  String   @id @default(cuid())
+  title               String?
+  discipline          String   // e.g., "matematica", "linguagens", "humanas", "natureza"
+  subject             String   // e.g., "Funções", "Termodinâmica"
+  difficulty          String   @default("Médio") // Fácil, Médio, Difícil
+  context             String   // Texto de apoio/enunciado
+  files               String   @default("[]") // JSON string list of supporting image URLs
+  correctAlternative  String   // Letra da alternativa correta (A, B, C, D, E)
+  alternatives        Json     // List of alternatives [{ letter, text, file }]
+  creatorId           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  creator             User     @relation("Question_creatorIdToUser", fields: [creatorId], references: [id])
+
+  @@index([creatorId])
+  @@index([discipline])
 }

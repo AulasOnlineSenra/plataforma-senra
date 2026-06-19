@@ -45,6 +45,7 @@ import {
   AlertCircle,
   X,
   ListPlus,
+  BookOpen,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -530,26 +531,34 @@ export default function SimuladosPage() {
             Crie provas com múltiplas questões, envie aos alunos e acompanhe o
             desempenho.
           </p>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <Button
+            variant="outline"
+            className="rounded-xl border-slate-300 font-bold h-12 px-6 hover:bg-slate-100 w-full sm:w-auto"
+            onClick={() => router.push("/dashboard/simulados/banco-questoes")}
+          >
+            <BookOpen className="mr-2 h-5 w-5 text-brand-yellow" /> Banco de Questões
+          </Button>
+          <Button
+            className={cn(
+              "rounded-xl font-bold h-12 px-6 shadow-md w-full sm:w-auto transition-colors",
+              isCreating
+                ? "bg-red-50 text-red-600 border-red-200 border hover:bg-red-100 shadow-none"
+                : "bg-slate-900 text-white hover:bg-slate-800",
+            )}
+            onClick={() => setIsCreating((v) => !v)}
+          >
+            {isCreating ? (
+              <>
+                <X className="mr-2 h-5 w-5" /> Cancelar Criação
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-5 w-5" /> Novo Simulado
+              </>
+            )}
+          </Button>
         </div>
-        <Button
-          className={cn(
-            "rounded-xl font-bold h-12 px-6 shadow-md w-full md:w-auto transition-colors",
-            isCreating
-              ? "bg-red-50 text-red-600 border-red-200 border hover:bg-red-100 shadow-none"
-              : "bg-slate-900 text-white hover:bg-slate-800",
-          )}
-          onClick={() => setIsCreating((v) => !v)}
-        >
-          {isCreating ? (
-            <>
-              <X className="mr-2 h-5 w-5" /> Cancelar Criação
-            </>
-          ) : (
-            <>
-              <Plus className="mr-2 h-5 w-5" /> Novo Simulado
-            </>
-          )}
-        </Button>
       </div>
 
       {isCreating && (
