@@ -22,11 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Search,
   Plus,
   Trash2,
   BookOpen,
-  Filter,
   CheckCircle2,
   AlertCircle,
   X,
@@ -91,10 +89,11 @@ export default function BancoQuestoesPage() {
 
   // Filtros Horizontais
   const [sourceTab, setSourceTab] = useState<"enem" | "local">("enem");
-  const [filterDiscipline, setFilterDiscipline] = useState<string>("all");
+  const [selectedYears, setSelectedYears] = useState<string[]>(["2023"]);
+  const [isYearsOpen, setIsYearsOpen] = useState(false);
+  const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
+  const [isDisciplinesOpen, setIsDisciplinesOpen] = useState(false);
   const [filterDifficulty, setFilterDifficulty] = useState<string>("all");
-  const [filterYear, setFilterYear] = useState<string>("2023");
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Questões retornadas
   const [questions, setQuestions] = useState<UnifiedQuestion[]>([]);
@@ -174,39 +173,45 @@ export default function BancoQuestoesPage() {
 
   // Busca de questões dinamicamente baseado nos filtros selecionados
   const fetchQuestions = async () => {
+    if (sourceTab === "enem" && selectedYears.length === 0) {
+      setQuestions([]);
+      return;
+    }
     setIsSearching(true);
     try {
       if (sourceTab === "enem") {
         // Busca via API do ENEM
-        const year = parseInt(filterYear);
-        const result = await fetchEnemQuestions(year, 40, 0);
-        if (result.success && result.data) {
-          const apiQuestions = (result.data.questions || []).map((q: any) => ({
-            id: `enem-${q.year}-${q.index}`,
-            source: "enem" as const,
-            title: `Questão ${q.index} - ENEM ${q.year}`,
-            discipline: q.discipline || "Geral",
-            subject: q.language || "Geral",
-            difficulty: "Médio",
-            context: q.context || "",
-            files: q.files || [],
-            correctAlternative: q.correctAlternative || "",
-            alternatives: (q.alternatives || []).map((alt: any) => ({
-              letter: alt.letter,
-              text: alt.text,
-              file: alt.file,
-            })),
-          }));
-          setQuestions(apiQuestions);
-        } else {
-          setQuestions([]);
-        }
+        const promises = selectedYears.map((yearStr) => {
+          const year = parseInt(yearStr);
+          return fetchEnemQuestions(year, 45, 0);
+        });
+        const results = await Promise.all(promises);
+        let combined: UnifiedQuestion[] = [];
+        results.forEach((result) => {
+          if (result.success && result.data) {
+            const apiQuestions = (result.data.questions || []).map((q: any) => ({
+              id: `enem-${q.year}-${q.index}`,
+              source: "enem" as const,
+              title: `Questão ${q.index} - ENEM ${q.year}`,
+              discipline: q.discipline || "Geral",
+              subject: q.language || "Geral",
+              difficulty: "Médio",
+              context: q.context || "",
+              files: q.files || [],
+              correctAlternative: q.correctAlternative || "",
+              alternatives: (q.alternatives || []).map((alt: any) => ({
+                letter: alt.letter,
+                text: alt.text,
+                file: alt.file,
+              })),
+            }));
+            combined = [...combined, ...apiQuestions];
+          }
+        });
+        setQuestions(combined);
       } else {
         // Busca do Banco Local
-        const result = await listDatabaseQuestions({
-          discipline: filterDiscipline === "all" ? undefined : filterDiscipline,
-          difficulty: filterDifficulty === "all" ? undefined : filterDifficulty,
-        });
+        const result = await listDatabaseQuestions({});
 
         if (result.success && result.data) {
           const localQuestions = (result.data as any[]).map((q) => ({
@@ -242,20 +247,39 @@ export default function BancoQuestoesPage() {
     if (currentUserId && currentRole !== "student") {
       fetchQuestions();
     }
-  }, [currentUserId, sourceTab, filterDiscipline, filterDifficulty, filterYear]);
+  }, [currentUserId, sourceTab, selectedYears]);
 
-  // Filtro client-side de texto
+  // Filtro client-side de disciplinas e dificuldades
   const filteredQuestions = useMemo(() => {
-    if (!searchQuery.trim()) return questions;
-    const query = searchQuery.toLowerCase();
-    return questions.filter(
-      (q) =>
-        (q.title && q.title.toLowerCase().includes(query)) ||
-        q.context.toLowerCase().includes(query) ||
-        q.subject.toLowerCase().includes(query) ||
-        q.discipline.toLowerCase().includes(query)
-    );
-  }, [questions, searchQuery]);
+    return questions.filter((q) => {
+      // 1. Filtragem por Disciplinas
+      if (selectedDisciplines.length > 0) {
+        if (q.source === "enem") {
+          // Normaliza disciplina do ENEM para bater com a nossa lista
+          const mappedEnemDiscipline = (q.discipline || "").toLowerCase();
+          const matches = selectedDisciplines.some((disc) => {
+            const d = disc.toLowerCase();
+            if (d === "matemática") return mappedEnemDiscipline.includes("matematica");
+            if (d === "português" || d === "inglês" || d === "redação") return mappedEnemDiscipline.includes("linguagens");
+            if (d === "história" || d === "geografia") return mappedEnemDiscipline.includes("humanas");
+            if (d === "física" || d === "química" || d === "biologia") return mappedEnemDiscipline.includes("natureza");
+            return false;
+          });
+          if (!matches) return false;
+        } else {
+          // Para local, compara a disciplina exata
+          if (!selectedDisciplines.includes(q.discipline)) return false;
+        }
+      }
+
+      // 2. Filtragem por Dificuldade (apenas se tab for local e selecionado algo diferente de 'all')
+      if (sourceTab === "local" && filterDifficulty !== "all") {
+        if (q.difficulty !== filterDifficulty) return false;
+      }
+
+      return true;
+    });
+  }, [questions, selectedDisciplines, filterDifficulty, sourceTab]);
 
   // Adicionar/Remover do Carrinho
   const toggleSelectQuestion = (q: UnifiedQuestion) => {
@@ -342,7 +366,7 @@ export default function BancoQuestoesPage() {
         { letter: "E", text: "" },
       ]);
       setShowCreateModal(false);
-      setSourceTab("local"); // Muda para local para ver a nova questão
+      setSourceTab("local");
       fetchQuestions();
     } else {
       toast({
@@ -367,7 +391,6 @@ export default function BancoQuestoesPage() {
 
     setIsCompiling(true);
 
-    // Mapear questões selecionadas para o formato padrão do Simulado no BD
     const mappedQuestions = selectedQuestions.map((sq, index) => ({
       id: sq.id,
       title: sq.title || `Questão ${index + 1}`,
@@ -437,7 +460,7 @@ export default function BancoQuestoesPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 max-w-7xl mx-auto w-full pb-20">
+    <div className="flex flex-1 flex-col gap-20 max-w-5xl mx-auto w-full px-12 md:px-20 pb-20">
       {/* HEADER */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -451,7 +474,7 @@ export default function BancoQuestoesPage() {
           </Button>
           <div>
             <h1 className="font-headline text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
-              <BookOpen className="h-8 w-8 text-brand-yellow" /> Banco de Questões Híbrido
+              <BookOpen className="h-8 w-8 text-brand-yellow" /> Banco de Questões
             </h1>
             <p className="text-sm md:text-base text-slate-500 mt-1 font-medium">
               Misture questões oficiais do ENEM com questões criadas por professores.
@@ -505,60 +528,129 @@ export default function BancoQuestoesPage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex items-center gap-3 w-full lg:w-auto">
-            {sourceTab === "enem" ? (
-              <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold w-full sm:w-32">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map((y) => (
-                    <SelectItem key={y} value={String(y)} className="font-medium">
-                      ENEM {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <>
-                <Select value={filterDiscipline} onValueChange={setFilterDiscipline}>
-                  <SelectTrigger className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold w-full sm:w-44">
-                    <SelectValue placeholder="Disciplina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas Disciplinas</SelectItem>
-                    {SUBJECTS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
-                  <SelectTrigger className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold w-full sm:w-40">
-                    <SelectValue placeholder="Dificuldade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="Fácil">Fácil</SelectItem>
-                    <SelectItem value="Médio">Médio</SelectItem>
-                    <SelectItem value="Difícil">Difícil</SelectItem>
-                  </SelectContent>
-                </Select>
-              </>
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+            {/* Filtro Multi-Select de Anos (Apenas para ENEM) */}
+            {sourceTab === "enem" && (
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[140px]"
+                  onClick={() => setIsYearsOpen(!isYearsOpen)}
+                >
+                  <span>
+                    {selectedYears.length === 0
+                      ? "Selecionar Anos"
+                      : selectedYears.length === 1
+                      ? `ENEM ${selectedYears[0]}`
+                      : `${selectedYears.length} Anos`}
+                  </span>
+                  <ChevronRight className={cn("h-4 w-4 transition-transform", isYearsOpen && "rotate-90")} />
+                </Button>
+                {isYearsOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsYearsOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-56 max-h-60 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
+                      <p className="text-xs font-bold text-slate-400 px-1 uppercase tracking-wider">Selecionar Anos</p>
+                      <div className="space-y-1">
+                        {YEARS.map((y) => {
+                          const isChecked = selectedYears.includes(String(y));
+                          return (
+                            <label key={y} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedYears(selectedYears.filter((item) => item !== String(y)));
+                                  } else {
+                                    setSelectedYears([...selectedYears, String(y)]);
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                              />
+                              <span>ENEM {y}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
-            {/* Input de busca */}
-            <div className="relative w-full sm:w-64 col-span-2 sm:col-span-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                className="rounded-xl h-11 pl-9 border-slate-300 bg-slate-50 font-medium"
-                placeholder="Pesquisar enunciados..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            {/* Filtro Multi-Select de Disciplinas (Visível para ambos) */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
+                onClick={() => setIsDisciplinesOpen(!isDisciplinesOpen)}
+              >
+                <span>
+                  {selectedDisciplines.length === 0
+                    ? "Todas Disciplinas"
+                    : selectedDisciplines.length === 1
+                    ? selectedDisciplines[0]
+                    : `${selectedDisciplines.length} Disciplinas`}
+                </span>
+                <ChevronRight className={cn("h-4 w-4 transition-transform", isDisciplinesOpen && "rotate-90")} />
+              </Button>
+              {isDisciplinesOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsDisciplinesOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Disciplinas</p>
+                      {selectedDisciplines.length > 0 && (
+                        <button
+                          className="text-xs font-bold text-red-500 hover:text-red-700"
+                          onClick={() => setSelectedDisciplines([])}
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {SUBJECTS.map((s) => {
+                        const isChecked = selectedDisciplines.includes(s);
+                        return (
+                          <label key={s} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedDisciplines(selectedDisciplines.filter((item) => item !== s));
+                                } else {
+                                  setSelectedDisciplines([...selectedDisciplines, s]);
+                                }
+                              }}
+                              className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                            />
+                            <span>{s}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
+
+            {/* Filtro de Dificuldade (Apenas para Local) */}
+            {sourceTab === "local" && (
+              <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
+                <SelectTrigger className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold w-40">
+                  <SelectValue placeholder="Dificuldade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas Dificuldades</SelectItem>
+                  <SelectItem value="Fácil">Fácil</SelectItem>
+                  <SelectItem value="Médio">Médio</SelectItem>
+                  <SelectItem value="Difícil">Difícil</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </div>
@@ -567,14 +659,14 @@ export default function BancoQuestoesPage() {
       {isSearching ? (
         <div className="flex h-[40vh] items-center justify-center flex-col gap-3 text-slate-400">
           <Loader2 className="h-10 w-10 animate-spin text-brand-yellow" />
-          <span className="font-semibold text-base">Buscando questões no banco...</span>
+          <span className="font-semibold text-base">Buscando questões...</span>
         </div>
       ) : filteredQuestions.length === 0 ? (
         <div className="bg-slate-50 border-2 border-dashed rounded-3xl p-16 text-center max-w-2xl mx-auto w-full">
           <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-3" />
           <h3 className="font-bold text-lg text-slate-700">Nenhuma questão encontrada</h3>
           <p className="text-slate-400 text-sm mt-1">
-            Tente ajustar os filtros horizontais ou mude o acervo no topo.
+            Tente ajustar os filtros horizontais no topo.
           </p>
         </div>
       ) : (
