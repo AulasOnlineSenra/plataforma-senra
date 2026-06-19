@@ -192,7 +192,19 @@ function StatCard({
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [user, setUser] = useState<DashboardUser | null>(null);
+  const [user, setUser] = useState<DashboardUser | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("currentUser");
+      return saved ? JSON.parse(saved) : null;
+    }
+    return null;
+  });
+  const [role, setRole] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("userRole") || "student";
+    }
+    return "student";
+  });
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [unratedPeople, setUnratedPeople] = useState<UnratedPerson[]>([]);
@@ -222,16 +234,31 @@ export default function DashboardPage() {
     const load = async () => {
       const userId = localStorage.getItem("userId");
       const cachedRole = localStorage.getItem("userRole") || "student";
+      setRole(cachedRole);
       
       if (!userId) {
         window.location.href = "/login";
         return;
       }
 
-      // 1. Try cache first for instant load of lessons
+      // 1. Try cache first for instant load of lessons and stats
       const cachedLessons = getCachedLessons(userId);
       if (cachedLessons) {
         setLessons(cachedLessons as LessonItem[]);
+      }
+
+      try {
+        const cachedStatsRaw = localStorage.getItem(`senra_dashboard_stats_${userId}`);
+        if (cachedStatsRaw) {
+          const cachedStats = JSON.parse(cachedStatsRaw);
+          if (cachedStats.adminStats) setAdminStats(cachedStats.adminStats);
+          if (cachedStats.studentPendingTransactions) setStudentPendingTransactions(cachedStats.studentPendingTransactions);
+          if (cachedStats.unratedPeople) setUnratedPeople(cachedStats.unratedPeople);
+          if (cachedStats.userRating) setUserRating(cachedStats.userRating);
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.error("Erro ao ler cache do dashboard", e);
       }
 
       // 2. Fetch fresh data in the background
@@ -258,29 +285,55 @@ export default function DashboardPage() {
 
       const dbUser = userResult.data as DashboardUser;
       setUser(dbUser);
+      setRole(dbUser.role);
       localStorage.setItem("currentUser", JSON.stringify(dbUser));
       localStorage.setItem("userRole", dbUser.role);
 
+      let freshLessons = lessons;
       if (lessonsResult.success && lessonsResult.data) {
-        setLessons(lessonsResult.data as LessonItem[]);
+        freshLessons = lessonsResult.data as LessonItem[];
+        setLessons(freshLessons);
         setCachedLessons(userId, lessonsResult.data);
       }
 
+      let freshAdminStats = adminStats;
       if (dbUser.role === "admin" && statsResult.success && statsResult.data) {
-        setAdminStats(statsResult.data as AdminStats);
+        freshAdminStats = statsResult.data as AdminStats;
+        setAdminStats(freshAdminStats);
       }
 
+      let freshPending = studentPendingTransactions;
       if (pendingResult.success && pendingResult.data) {
-        setStudentPendingTransactions(pendingResult.data as StudentPendingTransaction[]);
+        freshPending = pendingResult.data as StudentPendingTransaction[];
+        setStudentPendingTransactions(freshPending);
       }
 
+      let freshUnrated = unratedPeople;
+      let freshRating = userRating;
       if (dbUser.role !== "admin") {
         if (unratedResult.success && unratedResult.data) {
-          setUnratedPeople(unratedResult.data as UnratedPerson[]);
+          freshUnrated = unratedResult.data as UnratedPerson[];
+          setUnratedPeople(freshUnrated);
         }
         if (ratingResult.success && ratingResult.data) {
-          setUserRating(ratingResult.data as { average: number; count: number });
+          freshRating = ratingResult.data as { average: number; count: number };
+          setUserRating(freshRating);
         }
+      }
+
+      // Save everything to stats cache
+      try {
+        localStorage.setItem(
+          `senra_dashboard_stats_${userId}`,
+          JSON.stringify({
+            adminStats: freshAdminStats,
+            studentPendingTransactions: freshPending,
+            unratedPeople: freshUnrated,
+            userRating: freshRating,
+          })
+        );
+      } catch (e) {
+        console.error("Erro ao salvar cache do dashboard", e);
       }
 
       setIsLoading(false);
@@ -513,8 +566,63 @@ export default function DashboardPage() {
 
   if (isLoading || !user) {
     return (
-      <div className="flex h-[40vh] items-center justify-center text-slate-500">
-        Carregando dashboard...
+      <div className="flex flex-1 flex-col gap-6 bg-slate-50 animate-pulse">
+        {/* Header Skeleton */}
+        <div>
+          <div className="h-9 bg-slate-200 rounded-2xl w-1/3 mb-2"></div>
+          <div className="h-4 bg-slate-200 rounded-xl w-1/4"></div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        {role === "admin" ? (
+          <div className="grid grid-cols-5 gap-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i} className="rounded-3xl border-slate-200 shadow-sm opacity-60">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                  <div className="h-5 w-5 rounded-full bg-slate-200"></div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="h-8 bg-slate-200 rounded w-1/2"></div>
+                  <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className={`rounded-3xl border-slate-200 shadow-sm opacity-60 ${i === 1 && role === "student" ? 'bg-slate-900' : ''}`}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div className={`h-4 rounded w-2/3 ${i === 1 && role === "student" ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+                  <div className={`h-5 w-5 rounded-full ${i === 1 && role === "student" ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className={`h-8 rounded w-1/2 ${i === 1 && role === "student" ? 'bg-amber-400/20' : 'bg-slate-200'}`}></div>
+                  <div className={`h-4 rounded w-1/3 ${i === 1 && role === "student" ? 'bg-amber-400/30' : 'bg-slate-200'}`}></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Main Table Card Skeleton */}
+        <Card className="rounded-3xl border-slate-200 shadow-sm opacity-60">
+          <CardHeader className="border-b bg-slate-50">
+            <div className="h-5 bg-slate-200 rounded w-1/4 mb-2"></div>
+            <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex justify-between items-center py-2 border-b last:border-0 border-slate-100">
+                <div className="h-4 bg-slate-200 rounded w-1/5"></div>
+                <div className="h-4 bg-slate-200 rounded w-1/5"></div>
+                <div className="h-4 bg-slate-200 rounded w-1/6"></div>
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     );
   }
