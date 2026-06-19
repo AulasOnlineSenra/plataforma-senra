@@ -619,149 +619,74 @@ export default function BancoQuestoesPage() {
           {selectedQuestions.length > 0 && (
             <Button
               className="rounded-xl bg-brand-yellow text-slate-900 font-bold h-12 w-full md:w-auto hover:bg-amber-400"
-              onClick={() => setShowCompileModal(true)}
-            >
-              Compilar Simulado ({selectedQuestions.length})
-            </Button>
-          )}
+                {/* PAINEL DE FILTROS HORIZONTAIS NO TOPO */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-5">
+        {/* LINHA 1: ABAS DE ORIGEM */}
+        <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-100">
+          <Button
+            variant={sourceTab === "enem" ? "default" : "outline"}
+            className={cn(
+              "rounded-xl font-bold h-11 px-6 transition-all",
+              sourceTab === "enem" ? "bg-slate-900 text-white shadow-sm" : "border-slate-300 text-slate-700 hover:bg-slate-50"
+            )}
+            onClick={() => setSourceTab("enem")}
+          >
+            Questões ENEM (Oficiais)
+          </Button>
+          <Button
+            variant={sourceTab === "local" ? "default" : "outline"}
+            className={cn(
+              "rounded-xl font-bold h-11 px-6 transition-all",
+              sourceTab === "local" ? "bg-slate-900 text-white shadow-sm" : "border-slate-300 text-slate-700 hover:bg-slate-50"
+            )}
+            onClick={() => setSourceTab("local")}
+          >
+            Acerto Plataforma
+          </Button>
         </div>
-      </div>
 
-      {/* PAINEL DE FILTROS HORIZONTAIS NO TOPO */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-        {/* FILTROS PRINCIPAIS */}
-        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-            {/* Abas de Origem */}
-            <Button
-              variant={sourceTab === "enem" ? "default" : "outline"}
-              className={cn(
-                "rounded-xl font-bold h-11 px-4",
-                sourceTab === "enem" ? "bg-slate-900 text-white" : "border-slate-300 text-slate-700"
-              )}
-              onClick={() => setSourceTab("enem")}
-            >
-              Questões do ENEM (Oficiais)
-            </Button>
-            <Button
-              variant={sourceTab === "local" ? "default" : "outline"}
-              className={cn(
-                "rounded-xl font-bold h-11 px-4",
-                sourceTab === "local" ? "bg-slate-900 text-white" : "border-slate-300 text-slate-700"
-              )}
-              onClick={() => setSourceTab("local")}
-            >
-              Acervo Interno (Plataforma)
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-            {/* Filtro Multi-Select de Anos (Apenas para ENEM) */}
-            {sourceTab === "enem" && (
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[140px]"
-                  onClick={() => setIsYearsOpen(!isYearsOpen)}
-                >
-                  <span>
-                    {selectedYears.length === 0
-                      ? "Selecionar Anos"
-                      : selectedYears.length === 1
-                      ? `ENEM ${selectedYears[0]}`
-                      : `${selectedYears.length} Anos`}
-                  </span>
-                  <ChevronRight className={cn("h-4 w-4 transition-transform", isYearsOpen && "rotate-90")} />
-                </Button>
-                {isYearsOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsYearsOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-56 max-h-60 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
-                      <p className="text-xs font-bold text-slate-400 px-1 uppercase tracking-wider">Selecionar Anos</p>
-                      <div className="space-y-1">
-                        {YEARS.map((y) => {
-                          const isChecked = selectedYears.includes(String(y));
-                          return (
-                            <label key={y} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedYears(selectedYears.filter((item) => item !== String(y)));
-                                  } else {
-                                    setSelectedYears([...selectedYears, String(y)]);
-                                  }
-                                }}
-                                className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                              />
-                              <span>ENEM {y}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Filtro Multi-Select de Áreas Oficiais do ENEM */}
+        {/* LINHA 2: SELETORES DE FILTROS */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Filtro Multi-Select de Anos (Apenas para ENEM) */}
+          {sourceTab === "enem" && (
             <div className="relative">
               <Button
                 variant="outline"
-                className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
-                onClick={() => setIsAreasOpen(!isAreasOpen)}
+                className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[140px]"
+                onClick={() => setIsYearsOpen(!isYearsOpen)}
               >
                 <span>
-                  {selectedAreas.length === 0
-                    ? "Todas Áreas ENEM"
-                    : selectedAreas.length === 1
-                    ? selectedAreas[0].split(" ")[0] // Mostra só a primeira palavra (ex: "Matemática", "Ciências")
-                    : `${selectedAreas.length} Áreas`}
+                  {selectedYears.length === 0
+                    ? "Ano"
+                    : selectedYears.length === 1
+                    ? `Ano: ${selectedYears[0]}`
+                    : `Ano (${selectedYears.length})`}
                 </span>
-                <ChevronRight className={cn("h-4 w-4 transition-transform", isAreasOpen && "rotate-90")} />
+                <ChevronRight className={cn("h-4 w-4 transition-transform", isYearsOpen && "rotate-90")} />
               </Button>
-              {isAreasOpen && (
+              {isYearsOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsAreasOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
-                    <div className="flex justify-between items-center px-1">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Áreas ENEM</p>
-                      {selectedAreas.length > 0 && (
-                        <button
-                          className="text-xs font-bold text-red-500 hover:text-red-700"
-                          onClick={() => {
-                            setSelectedAreas([]);
-                            setSelectedSubDisciplines([]);
-                          }}
-                        >
-                          Limpar
-                        </button>
-                      )}
-                    </div>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsYearsOpen(false)} />
+                  <div className="absolute left-0 mt-2 w-56 max-h-60 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
+                    <p className="text-xs font-bold text-slate-400 px-1 uppercase tracking-wider">Selecionar Ano</p>
                     <div className="space-y-1">
-                      {ENEM_AREAS.map((a) => {
-                        const isChecked = selectedAreas.includes(a);
+                      {YEARS.map((y) => {
+                        const isChecked = selectedYears.includes(String(y));
                         return (
-                          <label key={a} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
+                          <label key={y} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
                             <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => {
-                                let updated: string[];
                                 if (isChecked) {
-                                  updated = selectedAreas.filter((item) => item !== a);
+                                  setSelectedYears(selectedYears.filter((item) => item !== String(y)));
                                 } else {
-                                  updated = [...selectedAreas, a];
+                                  setSelectedYears([...selectedYears, String(y)]);
                                 }
-                                setSelectedAreas(updated);
-                                // Reseta sub-disciplinas que não pertencem mais às áreas selecionadas
-                                setSelectedSubDisciplines([]);
                               }}
                               className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                             />
-                            <span className="text-xs leading-tight">{a}</span>
+                            <span>ENEM {y}</span>
                           </label>
                         );
                       })}
@@ -770,80 +695,145 @@ export default function BancoQuestoesPage() {
                 </>
               )}
             </div>
+          )}
 
-            {/* Filtro Multi-Select de Sub-disciplinas (ex: Química, Física, etc.) */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
-                onClick={() => setIsSubDisciplinesOpen(!isSubDisciplinesOpen)}
-              >
-                <span>
-                  {selectedSubDisciplines.length === 0
-                    ? "Sub-matérias"
-                    : selectedSubDisciplines.length === 1
-                    ? selectedSubDisciplines[0]
-                    : `${selectedSubDisciplines.length} Matérias`}
-                </span>
-                <ChevronRight className={cn("h-4 w-4 transition-transform", isSubDisciplinesOpen && "rotate-90")} />
-              </Button>
-              {isSubDisciplinesOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsSubDisciplinesOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-60 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
-                    <div className="flex justify-between items-center px-1">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sub-matérias</p>
-                      {selectedSubDisciplines.length > 0 && (
-                        <button
-                          className="text-xs font-bold text-red-500 hover:text-red-700"
-                          onClick={() => setSelectedSubDisciplines([])}
-                        >
-                          Limpar
-                        </button>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {availableSubDisciplines.map((s) => {
-                        const isChecked = selectedSubDisciplines.includes(s);
-                        return (
-                          <label key={s} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                if (isChecked) {
+          {/* Filtro Multi-Select de Áreas Oficiais do ENEM */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
+              onClick={() => setIsAreasOpen(!isAreasOpen)}
+            >
+              <span>
+                {selectedAreas.length === 0
+                  ? "Áreas Enem"
+                  : selectedAreas.length === 1
+                  ? `Área: ${selectedAreas[0].split(" ")[0]}`
+                  : `Áreas Enem (${selectedAreas.length})`}
+              </span>
+              <ChevronRight className={cn("h-4 w-4 transition-transform", isAreasOpen && "rotate-90")} />
+            </Button>
+            {isAreasOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsAreasOpen(false)} />
+                <div className="absolute left-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Áreas Enem</p>
+                    {selectedAreas.length > 0 && (
+                      <button
+                        className="text-xs font-bold text-red-500 hover:text-red-700"
+                        onClick={() => {
+                          setSelectedAreas([]);
+                          setSelectedSubDisciplines([]);
+                        }}
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {ENEM_AREAS.map((a) => {
+                      const isChecked = selectedAreas.includes(a);
+                      return (
+                        <label key={a} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              let updated: string[];
+                              if (isChecked) {
+                                updated = selectedAreas.filter((item) => item !== a);
+                              } else {
+                                updated = [...selectedAreas, a];
+                              }
+                              setSelectedAreas(updated);
+                              // Reseta sub-disciplinas que não pertencem mais às áreas selecionadas
+                              setSelectedSubDisciplines([]);
+                            }}
+                            className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                          />
+                          <span className="text-xs leading-tight">{a}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Filtro Multi-Select de Sub-disciplinas (ex: Química, Física, etc.) */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold px-4 flex items-center justify-between gap-2 min-w-[180px]"
+              onClick={() => setIsSubDisciplinesOpen(!isSubDisciplinesOpen)}
+            >
+              <span>
+                {selectedSubDisciplines.length === 0
+                  ? "Matérias"
+                  : selectedSubDisciplines.length === 1
+                  ? `Matéria: ${selectedSubDisciplines[0]}`
+                  : `Matérias (${selectedSubDisciplines.length})`}
+              </span>
+              <ChevronRight className={cn("h-4 w-4 transition-transform", isSubDisciplinesOpen && "rotate-90")} />
+            </Button>
+            {isSubDisciplinesOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsSubDisciplinesOpen(false)} />
+                <div className="absolute left-0 mt-2 w-60 max-h-80 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-3 z-50 space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matérias</p>
+                    {selectedSubDisciplines.length > 0 && (
+                      <button
+                        className="text-xs font-bold text-red-500 hover:text-red-700"
+                        onClick={() => setSelectedSubDisciplines([])}
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {availableSubDisciplines.map((s) => {
+                      const isChecked = selectedSubDisciplines.includes(s);
+                      return (
+                        <label key={s} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
                                   setSelectedSubDisciplines(selectedSubDisciplines.filter((item) => item !== s));
-                                } else {
+                              } else {
                                   setSelectedSubDisciplines([...selectedSubDisciplines, s]);
-                                }
-                              }}
-                              className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                            />
-                            <span>{s}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                              }
+                            }}
+                            className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                          />
+                          <span>{s}</span>
+                        </label>
+                      );
+                    })}
                   </div>
-                </>
-              )}
-            </div>
-
-            {/* Filtro de Dificuldade (Apenas para Local) */}
-            {sourceTab === "local" && (
-              <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
-                <SelectTrigger className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold w-40">
-                  <SelectValue placeholder="Dificuldade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas Dificuldades</SelectItem>
-                  <SelectItem value="Fácil">Fácil</SelectItem>
-                  <SelectItem value="Médio">Médio</SelectItem>
-                  <SelectItem value="Difícil">Difícil</SelectItem>
-                </SelectContent>
-              </Select>
+                </div>
+              </>
             )}
           </div>
+
+          {/* Filtro de Dificuldade (Apenas para Local) */}
+          {sourceTab === "local" && (
+            <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
+              <SelectTrigger className="rounded-xl h-11 border-slate-300 bg-slate-50 font-semibold w-40">
+                <SelectValue placeholder="Dificuldade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Dificuldades</SelectItem>
+                <SelectItem value="Fácil">Fácil</SelectItem>
+                <SelectItem value="Médio">Médio</SelectItem>
+                <SelectItem value="Difícil">Difícil</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
