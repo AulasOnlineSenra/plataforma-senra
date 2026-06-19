@@ -189,7 +189,7 @@ function StudentDetailPageComponent() {
                 }
 
                 currentMaterials = [...currentMaterials, {
-                    id: ${Date.now()}-,
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
                     name: file.name,
                     type: file.type,
                     url: result.data.url,
