@@ -1,28 +1,246 @@
-      if (file) {
-        setIsUploading(true);
+'use client';
+
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  Card, CardContent,
+} from '@/components/ui/card';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { safeLocalStorage } from '@/lib/safe-storage';
+import {
+  Receipt, CreditCard, Copy, Check, ArrowLeft, MessageCircle,
+  User, Mail, Calendar, Clock, Hash, Fingerprint, MapPin,
+  Upload, X, XCircle, RotateCcw, Coins,
+} from 'lucide-react';
+import Image from 'next/image';
+import { getPlans } from '@/app/actions/plans';
+import { getSettings } from '@/app/actions/settings';
+import { createPendingTransaction, getTransactionById, requestTransactionReview } from '@/app/actions/finance';
+import { sendPaymentChatToAdmins } from '@/app/actions/chat';
+import { getUserById } from '@/app/actions/users';
+import { registerUser } from '@/app/actions/auth';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { CheckoutAuthModal } from '@/components/checkout-auth-modal';
+
+type Plan = {
+  id: string;
+  name: string;
+  lessonsCount: number;
+  price: number;
+  durationMins: number;
+  isPopular: boolean;
+};
+
+type CheckoutBooking = {
+  subjectName: string;
+  teacherId?: string;
+  teacherName: string;
+  date: string;
+  start: string;
+  end: string;
+};
+
+type StudentInfo = {
+  id: string;
+  name: string;
+  email: string;
+  credits: number;
+  cpf: string | null;
+  state: string | null;
+};
+
+function CheckoutContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const txId = searchParams.get('tx');
+  const neededTotal = parseInt(searchParams.get('needed') || '0', 10);
+  const currentCredits = parseInt(searchParams.get('current') || '0', 10);
+  const missingCredits = Math.max(0, neededTotal - currentCredits);
+
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pixKey, setPixKey] = useState('');
+  const [pixKeyType, setPixKeyType] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [student, setStudent] = useState<StudentInfo | null>(null);
+  const [bookings, setBookings] = useState<CheckoutBooking[]>([]);
+  const [isPixDialogOpen, setIsPixDialogOpen] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [isProofDialogOpen, setIsProofDialogOpen] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+
+  // Transaction view mode
+  const [viewTx, setViewTx] = useState<any>(null);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [reviewProofFile, setReviewProofFile] = useState<File | null>(null);
+  const [reviewProofPreview, setReviewProofPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      console.log('[Checkout] loadData iniciado');
+      setIsLoading(true);
+
+      // If viewing existing transaction
+      if (txId) {
+        console.log('[Checkout] txId encontrado, buscando transação...');
+        const txResult = await getTransactionById(txId);
+        if (txResult.success && txResult.data) {
+          setViewTx(txResult.data);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      const studentIdParam = searchParams.get('studentId');
+      const storedUserId = studentIdParam || safeLocalStorage.getItem('userId');
+      console.log('[Checkout] storedUserId/studentIdParam:', storedUserId);
+      const storedBookings = safeLocalStorage.getItem('checkoutBookings');
+
+      if (storedBookings) {
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-            
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error);
-            
-            setPaymentProof(result.data.url);
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Erro',
-                description: 'Não foi possível fazer o upload do comprovante.'
-            });
-        } finally {
-            setIsUploading(false);
+          setBookings(JSON.parse(storedBookings));
+        } catch { /* ignore */ }
+      }
+
+      const [plansResult, settingsResult] = await Promise.all([getPlans(), getSettings()]);
+
+      if (plansResult.success && plansResult.data) {
+        setPlans(plansResult.data);
+      }
+
+      if (settingsResult.success && settingsResult.data) {
+        setPixKey((settingsResult.data as any).pixKey || '27394788000114');
+        setPixKeyType((settingsResult.data as any).pixKeyType || 'cnpj');
+        setWhatsappNumber((settingsResult.data.whatsapp || '').replace(/\D/g, ''));
+      }
+
+      if (storedUserId) {
+        const userResult = await getUserById(storedUserId);
+        if (userResult.success && userResult.data) {
+          setStudent({
+            id: userResult.data.id,
+            name: userResult.data.name,
+            email: userResult.data.email,
+            credits: userResult.data.credits,
+            cpf: userResult.data.cpf || null,
+            state: userResult.data.state || null,
+          });
         }
       }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && !student) {
+      setIsAuthModalOpen(true);
+    }
+  }, [isLoading, student]);
+
+  const handleAuthSuccess = () => {
+    window.location.reload();
+  };
+
+  const tiers = useMemo(() => {
+    return [...plans]
+      .sort((a, b) => a.lessonsCount - b.lessonsCount)
+      .map((plan, index) => ({
+        ...plan,
+        pricePerClass: plan.price / plan.lessonsCount,
+        tierIndex: index,
+      }));
+  }, [plans]);
+
+  const getPriceTier = (numClasses: number) => {
+    if (tiers.length === 0) return undefined;
+    let bestTier = tiers[0];
+    for (const tier of tiers) {
+      if (numClasses >= tier.lessonsCount) bestTier = tier;
+      else break;
+    }
+    return bestTier;
+  };
+
+  const priceCalc = useMemo(() => {
+    if (missingCredits <= 0 || tiers.length === 0) {
+      return { total: 0, pricePerClass: 0, credits: 0, tierName: '' };
+    }
+    const tier = getPriceTier(missingCredits);
+    const pricePerClass = tier?.pricePerClass ?? tiers[0]?.pricePerClass ?? 0;
+    return {
+      total: missingCredits * pricePerClass,
+      pricePerClass,
+      credits: missingCredits,
+      tierName: tier?.name ?? '',
+    };
+  }, [missingCredits, tiers]);
+
+  const handleWhatsAppClick = () => {
+    const text = `Olá! Gostaria de pagar *${missingCredits} crédito(s)* no valor de R$ ${priceCalc.total.toFixed(2).replace('.', ',')} (R$ ${priceCalc.pricePerClass.toFixed(2).replace('.', ',')}/aula) para finalizar meus agendamentos na plataforma. Como faço para realizar o pagamento?`;
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleOpenPix = () => {
+    setIsPixDialogOpen(true);
+  };
+
+  const handleCopyPixKey = () => {
+    navigator.clipboard.writeText(pixKey);
+    toast({ title: 'Chave Pix Copiada!', description: 'Cole no seu app de banco para pagar.' });
+  };
+
+  const handleConfirmPayment = () => {
+    setIsPixDialogOpen(false);
+    setIsProofDialogOpen(true);
+  };
+
+  const handleProofSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Arquivo muito grande', description: 'O comprovante deve ter no máximo 5MB.' });
+      return;
+    }
+    setProofFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setProofPreview(typeof reader.result === 'string' ? reader.result : null);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmitProof = async () => {
+    console.log('[Checkout] handleSubmitProof iniciado');
+    console.log('[Checkout] student:', student);
+    console.log('[Checkout] missingCredits:', missingCredits);
+    console.log('[Checkout] priceCalc.total:', priceCalc.total);
+    console.log('[Checkout] bookings:', bookings);
+    
+    if (!student) {
+      console.error('[Checkout] student é null');
+      return;
+    }
+
+    if (!student.id || missingCredits <= 0 || priceCalc.total <= 0) {
+      console.error('[Checkout] Dados inválidos:', { studentId: student.id, missingCredits, total: priceCalc.total });
       return;
     }
 
