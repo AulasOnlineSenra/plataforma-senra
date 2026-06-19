@@ -308,13 +308,16 @@ export default function BancoQuestoesPage() {
     setIsSearching(true);
     try {
       if (sourceTab === "enem") {
-        // Busca via API do ENEM
-        const promises = selectedYears.map((yearStr) => {
+        // Busca via API do ENEM em blocos paralelos para obter as 180 questões do exame
+        const yearPromises = selectedYears.flatMap((yearStr) => {
           const year = parseInt(yearStr);
-          return fetchEnemQuestions(year, 45, 0);
+          const offsets = [0, 45, 90, 135];
+          return offsets.map((offset) => fetchEnemQuestions(year, 45, offset));
         });
-        const results = await Promise.all(promises);
+        const results = await Promise.all(yearPromises);
         let combined: UnifiedQuestion[] = [];
+        const seenIds = new Set<string>();
+
         results.forEach((result) => {
           if (result.success && result.data) {
             const apiQuestions = (result.data.questions || []).map((q: any) => {
@@ -337,9 +340,23 @@ export default function BancoQuestoesPage() {
                 secondaryTag: classification.secondaryTag,
               };
             });
-            combined = [...combined, ...apiQuestions];
+
+            apiQuestions.forEach((q: UnifiedQuestion) => {
+              if (!seenIds.has(q.id)) {
+                seenIds.add(q.id);
+                combined.push(q);
+              }
+            });
           }
         });
+
+        // Ordena pelo número da questão
+        combined.sort((a, b) => {
+          const indexA = parseInt(a.title?.match(/\d+/)?.[0] || "0");
+          const indexB = parseInt(b.title?.match(/\d+/)?.[0] || "0");
+          return indexA - indexB;
+        });
+
         setQuestions(combined);
       } else {
         // Busca do Banco Local
