@@ -75,6 +75,18 @@ import {
 } from "@/app/actions/users";
 import { getTeacherAverageRating } from "@/app/actions/ratings";
 
+// Helper para formatar datas de forma segura, evitando RangeError com valores inválidos
+function safeFormat(dateValue: any, formatStr: string, options?: any): string {
+  try {
+    if (!dateValue) return '-';
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return '-';
+    return format(d, formatStr, options);
+  } catch {
+    return '-';
+  }
+}
+
 function TeacherCard({
   teacher,
   currentUser,
@@ -738,9 +750,9 @@ export default function TeachersPage() {
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                           <SelectItem value="all" className="cursor-pointer text-xs">Todos os Meses</SelectItem>
-                          {Array.from(new Set(teacherList.filter(t => t.status !== 'blacklisted' && t.status !== 'deleted').map(t => format(new Date(t.createdAt), 'yyyy-MM')))).sort().reverse().map(m => {
+                          {Array.from(new Set(teacherList.filter(t => t.status !== 'blacklisted' && t.status !== 'deleted' && t.createdAt && !isNaN(new Date(t.createdAt).getTime())).map(t => safeFormat(t.createdAt, 'yyyy-MM')))).filter(Boolean).sort().reverse().map(m => {
                             const [y, mo] = m.split('-');
-                            return (<SelectItem key={m} value={m} className="cursor-pointer text-xs">{format(new Date(parseInt(y), parseInt(mo) - 1, 1), 'MMMM yyyy', { locale: ptBR })}</SelectItem>);
+                            return (<SelectItem key={m} value={m} className="cursor-pointer text-xs">{safeFormat(new Date(parseInt(y), parseInt(mo) - 1, 1), 'MMMM yyyy', { locale: ptBR })}</SelectItem>);
                           })}
                         </SelectContent>
                       </Select>
@@ -749,17 +761,17 @@ export default function TeachersPage() {
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={(() => {
-                            const validTeachers = teacherList.filter(t => t.status !== 'blacklisted' && t.status !== 'deleted');
+                            const validTeachers = teacherList.filter(t => t.status !== 'blacklisted' && t.status !== 'deleted' && t.createdAt && !isNaN(new Date(t.createdAt).getTime()));
                             const sorted = [...validTeachers].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                             if (growthMonthFilter === "all") {
                               const gd: Record<string, number> = {}; let n = 0;
-                              sorted.forEach(t => { const k = format(new Date(t.createdAt), 'MMM/yy', { locale: ptBR }); n++; gd[k] = n; });
+                              sorted.forEach(t => { const k = safeFormat(t.createdAt, 'MMM/yy', { locale: ptBR }); n++; gd[k] = n; });
                               return Object.entries(gd).map(([name, total]) => ({ name, total }));
                             } else {
-                              const baseline = sorted.filter(t => format(new Date(t.createdAt), 'yyyy-MM') < growthMonthFilter).length;
-                              const month = sorted.filter(t => format(new Date(t.createdAt), 'yyyy-MM') === growthMonthFilter);
+                              const baseline = sorted.filter(t => safeFormat(t.createdAt, 'yyyy-MM') < growthMonthFilter).length;
+                              const month = sorted.filter(t => safeFormat(t.createdAt, 'yyyy-MM') === growthMonthFilter);
                               const gd: Record<string, number> = {}; let n = baseline;
-                              month.forEach(t => { const k = format(new Date(t.createdAt), 'dd/MMM', { locale: ptBR }); n++; gd[k] = n; });
+                              month.forEach(t => { const k = safeFormat(t.createdAt, 'dd/MMM', { locale: ptBR }); n++; gd[k] = n; });
                               if (!Object.keys(gd).length) return [{ name: 'Sem dados', total: baseline }];
                               return Object.entries(gd).map(([name, total]) => ({ name, total }));
                             }
@@ -1178,7 +1190,7 @@ export default function TeachersPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-500">{teacher.email}</td>
                         <td className="px-6 py-4 text-sm text-slate-500">
-                          {format(new Date(teacher.updatedAt), 'dd/MM/yyyy', { locale: ptBR })}
+                          {safeFormat(teacher.updatedAt, 'dd/MM/yyyy', { locale: ptBR })}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <Button 
