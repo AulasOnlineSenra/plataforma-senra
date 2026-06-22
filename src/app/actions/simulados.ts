@@ -66,14 +66,16 @@ export async function listSimuladosForUser(userId: string) {
     const simulados = await prisma.simulado.findMany({
       where,
       include: {
-        creator: { select: { id: true, name: true } },
-        student: { select: { id: true, name: true } },
+        User_Simulado_creatorIdToUser: { select: { id: true, name: true } },
+        User_Simulado_studentIdToUser: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     const normalized = simulados.map((s) => ({
       ...s,
+      creator: (s as any).User_Simulado_creatorIdToUser,
+      student: (s as any).User_Simulado_studentIdToUser,
       questions: asQuestions(s.questions),
       attempts: asAttempts(s.attempts),
     }));
@@ -90,8 +92,8 @@ export async function getSimuladoById(simuladoId: string) {
     const simulado = await prisma.simulado.findUnique({
       where: { id: simuladoId },
       include: {
-        creator: { select: { id: true, name: true } },
-        student: { select: { id: true, name: true } },
+        User_Simulado_creatorIdToUser: { select: { id: true, name: true } },
+        User_Simulado_studentIdToUser: { select: { id: true, name: true } },
       },
     });
 
@@ -103,6 +105,8 @@ export async function getSimuladoById(simuladoId: string) {
       success: true,
       data: {
         ...simulado,
+        creator: (simulado as any).User_Simulado_creatorIdToUser,
+        student: (simulado as any).User_Simulado_studentIdToUser,
         questions: asQuestions(simulado.questions),
         attempts: asAttempts(simulado.attempts),
       },
