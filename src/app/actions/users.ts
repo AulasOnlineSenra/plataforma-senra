@@ -186,9 +186,18 @@ export async function getTeachers(showAll = false) {
         avatarUrl: true, 
         status: true, 
         subject: true, 
+        subjects: true,
+        education: true,
+        phone: true,
+        neighborhood: true,
+        state: true,
+        pixKeyType: true,
+        pixKey: true,
         isValidated: true, 
         videoUrl: true,
-        Availability: true 
+        Availability: true,
+        createdAt: true,
+        updatedAt: true
       },
       orderBy: { name: "asc" },
     });
