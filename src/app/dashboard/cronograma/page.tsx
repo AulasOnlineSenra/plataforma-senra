@@ -60,6 +60,13 @@ export default function CronogramaPage() {
     teacherId: "none",
     color: "bg-emerald-500",
   });
+  
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const id = localStorage.getItem("userId");
@@ -214,7 +221,16 @@ export default function CronogramaPage() {
         targetDate = addDays(targetDate, 7);
       }
 
+      const generateId = () => {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return crypto.randomUUID();
+        }
+        return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      };
+
       return {
+        id: generateId(),
+        subjectId: b.subject,
         subjectName: subject?.name || b.subject,
         teacherId: b.teacherId,
         teacherName: teacher?.name || "",
@@ -225,8 +241,25 @@ export default function CronogramaPage() {
       };
     });
 
-    localStorage.setItem('checkoutBookings', JSON.stringify(preBookings));
-    router.push(`/dashboard/checkout?needed=${preBookings.length}&current=0`);
+    if (userId) {
+      // Pega os agendamentos já existentes no resumo
+      const existingKey = `preBookings-${userId}`;
+      let existingBookings = [];
+      try {
+        const saved = localStorage.getItem(existingKey);
+        if (saved) {
+          existingBookings = JSON.parse(saved);
+        }
+      } catch (e) {}
+
+      // Junta os novos
+      const combinedBookings = [...existingBookings, ...preBookings];
+      localStorage.setItem(existingKey, JSON.stringify(combinedBookings));
+      
+      router.push(`/dashboard/booking`);
+    } else {
+      toast({ title: "Erro", description: "Usuário não identificado", variant: "destructive" });
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -402,7 +435,14 @@ export default function CronogramaPage() {
                 ))}
               </div>
 
-              {[1, 2, 3, 4, 5, 6, 0].map(dayIdx => (
+              {[1, 2, 3, 4, 5, 6, 0].map(dayIdx => {
+                const isToday = dayIdx === currentTime.getDay();
+                const currentHour = currentTime.getHours();
+                const currentMinute = currentTime.getMinutes();
+                const showCurrentTimeLine = isToday && currentHour >= GRID_START_HOUR && currentHour < GRID_END_HOUR;
+                const timeLineTopPx = ((currentHour - GRID_START_HOUR) * 60 + currentMinute) / 60 * HOUR_HEIGHT;
+
+                return (
                 <div key={dayIdx} className="relative flex-1 border-r border-slate-200" style={{ height: `${totalHours * HOUR_HEIGHT}px` }}>
                   {/* Grid Lines */}
                   {Array.from({ length: totalHours * 2 }).map((_, idx) => (
@@ -415,6 +455,17 @@ export default function CronogramaPage() {
                       style={{ top: `${idx * HALF_HOUR_HEIGHT}px`, height: `${HALF_HOUR_HEIGHT}px` }}
                     />
                   ))}
+                  
+                  {/* Current Time Line */}
+                  {showCurrentTimeLine && (
+                    <div 
+                      className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                      style={{ top: `${timeLineTopPx}px`, transform: 'translateY(-50%)' }}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#f5b000] -ml-1.5 z-20"></div>
+                      <div className="flex-1 border-t-2 border-[#f5b000]"></div>
+                    </div>
+                  )}
 
                   {/* Blocks */}
                   {blocks.filter(b => b.dayOfWeek === dayIdx).map(block => {
@@ -451,7 +502,7 @@ export default function CronogramaPage() {
                     );
                   })}
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         </div>
