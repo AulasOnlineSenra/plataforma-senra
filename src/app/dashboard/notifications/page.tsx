@@ -64,7 +64,6 @@ const notificationColors: Record<NotificationType | string, string> = {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -94,7 +93,15 @@ export default function NotificationsPage() {
             description: n.message, // Correção: Mapeia o campo do banco para a tela
             timestamp: new Date(n.createdAt),
           }));
-          setNotifications(dbNotifications);
+          
+          const hasUnread = dbNotifications.some((n: any) => !n.read);
+          
+          setNotifications(dbNotifications.map((n: any) => ({...n, read: true})));
+          
+          if (hasUnread) {
+            markAllNotificationsAsRead(currentUser.id).catch(console.error);
+          }
+          
           return;
         }
       }
@@ -109,6 +116,7 @@ export default function NotificationsPage() {
       setNotifications(
         notificationsData.map((n: any) => ({
           ...n,
+          read: true,
           timestamp: new Date(n.timestamp),
           events: n.events?.map((e: any) => ({ ...e, date: new Date(e.date) })),
         })),
@@ -126,24 +134,6 @@ export default function NotificationsPage() {
     };
   }, [currentUser]);
 
-  const handleToggleRead = async (id: string) => {
-    const updatedNotifications = notifications.map((n) =>
-      n.id === id ? { ...n, read: !n.read } : n,
-    );
-    setNotifications(updatedNotifications);
-    await markNotificationAsRead(id);
-  };
-
-  const handleMarkAllAsRead = async () => {
-    if (!currentUser) return;
-    const updatedNotifications = notifications.map((n) => ({
-      ...n,
-      read: true,
-    }));
-    setNotifications(updatedNotifications);
-    await markAllNotificationsAsRead(currentUser.id);
-  };
-
   const handleDeleteNotification = (id: string) => {
     const updatedNotifications = notifications.filter((n) => n.id !== id);
     setNotifications(updatedNotifications);
@@ -156,14 +146,8 @@ export default function NotificationsPage() {
 
   const filteredNotifications = useMemo(() => {
     return relevantNotifications
-      .filter((n) => !showUnreadOnly || !n.read)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [relevantNotifications, showUnreadOnly]);
-
-  const unreadCount = useMemo(
-    () => relevantNotifications.filter((n) => !n.read).length,
-    [relevantNotifications],
-  );
+  }, [relevantNotifications]);
 
   return (
     <div className="flex flex-1 flex-col gap-6 md:gap-8 w-full max-w-7xl mx-auto">
@@ -173,37 +157,10 @@ export default function NotificationsPage() {
             <h1 className="font-headline text-3xl font-bold text-slate-900 tracking-tight">
               Central de Notificações
             </h1>
-            {unreadCount > 0 && (
-              <Badge className="border-none bg-brand-yellow px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-slate-900 shadow-sm">
-                {unreadCount} Novas
-              </Badge>
-            )}
           </div>
           <p className="mt-1 text-slate-500">
             Acompanhe as atualizações, agendamentos e avisos da plataforma.
           </p>
-        </div>
-
-        <div className="flex w-full gap-3 sm:w-auto">
-          <Button
-            variant="outline"
-            onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-            className="w-1/2 sm:w-auto h-11 rounded-xl border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 shadow-sm transition-all"
-          >
-            {showUnreadOnly ? (
-              <EyeOff className="mr-2 h-4 w-4" />
-            ) : (
-              <Eye className="mr-2 h-4 w-4" />
-            )}
-            {showUnreadOnly ? "Ver Todas" : "Apenas Não Lidas"}
-          </Button>
-          <Button
-            onClick={handleMarkAllAsRead}
-            disabled={unreadCount === 0}
-            className="w-1/2 sm:w-auto h-11 rounded-xl bg-brand-yellow font-bold text-slate-900 shadow-sm hover:scale-105 hover:bg-brand-yellow/90 transition-all"
-          >
-            Marcar todas lidas
-          </Button>
         </div>
       </div>
 
@@ -260,21 +217,6 @@ export default function NotificationsPage() {
                         </span>
 
                         <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleRead(notification.id);
-                            }}
-                          >
-                            {notification.read ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
-                            )}
-                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
