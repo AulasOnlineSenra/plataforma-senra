@@ -208,17 +208,19 @@ export default function CronogramaPage() {
       return;
     }
 
+    const now = new Date();
+    const currentWeekStart = startOfWeek(now, { weekStartsOn: 0 });
+
     const preBookings = validBlocks.map(b => {
       const teacher = teachers.find(t => t.id === b.teacherId);
       const subject = subjects.find(s => s.id === b.subject);
       
-      const now = new Date();
-      let targetDate = now.getDay() === b.dayOfWeek ? now : nextDay(now, b.dayOfWeek as any);
+      let targetDate = addDays(currentWeekStart, b.dayOfWeek);
       const [h, m] = b.startTime.split(':').map(Number);
       targetDate.setHours(h, m, 0, 0);
       
       if (isBefore(targetDate, now)) {
-        targetDate = addDays(targetDate, 7);
+        return null;
       }
 
       const generateId = () => {
@@ -239,7 +241,12 @@ export default function CronogramaPage() {
         end: b.endTime,
         isExperimental: false
       };
-    });
+    }).filter(Boolean);
+
+    if (preBookings.length === 0) {
+      toast({ title: "Atenção", description: "Todas as aulas cadastradas com professor já passaram nesta semana.", variant: "destructive" });
+      return;
+    }
 
     if (userId) {
       // Pega os agendamentos já existentes no resumo
