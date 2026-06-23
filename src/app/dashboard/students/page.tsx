@@ -67,7 +67,6 @@ import {
   deleteStudentProfile,
   getStudents,
   getMyStudents,
-  updateStudentTags,
 } from "@/app/actions/users";
 import { addTransactionAndCredits } from "@/app/actions/finance";
 import { getLessons } from "@/app/actions/bookings";
@@ -525,18 +524,44 @@ export default function AdminStudentsPage() {
       ? currentTags.filter((t) => t !== "ENEM")
       : [...currentTags, "ENEM"];
 
-    const result = await updateStudentTags(student.id, JSON.stringify(newTags));
-    if (result.success) {
-      toast({
-        title: hasEnem ? "Foco ENEM Removido" : "Foco ENEM Adicionado",
-        description: `O perfil de ${student.name} foi atualizado com sucesso.`,
+    // Optimistic UI update — update local state instantly
+    setAllStudents((prev) =>
+      prev.map((s) =>
+        s.id === student.id ? { ...s, tags: JSON.stringify(newTags) } : s,
+      ),
+    );
+
+    try {
+      const res = await fetch("/api/students/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: student.id, tags: newTags }),
       });
-      await fetchData(currentUser);
-    } else {
+      const data = await res.json();
+      if (!data.success) {
+        // Rollback on failure
+        setAllStudents((prev) =>
+          prev.map((s) =>
+            s.id === student.id ? { ...s, tags: student.tags } : s,
+          ),
+        );
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: data.error || "Falha ao atualizar a tag.",
+        });
+      }
+    } catch (err) {
+      // Rollback on network error
+      setAllStudents((prev) =>
+        prev.map((s) =>
+          s.id === student.id ? { ...s, tags: student.tags } : s,
+        ),
+      );
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: result.error || "Falha ao atualizar a tag.",
+        title: "Erro de conexão",
+        description: "Não foi possível salvar a alteração.",
       });
     }
   };
