@@ -325,6 +325,7 @@ model User {
   pixKey                                             String?
   pixKeyType                                         String?
   subjects                                           String?
+  tags                                               String?            @default("[]")
   suspendedAt                                        DateTime?
   phone                                              String?
   googleCalendarConnected                             Boolean            @default(false)
