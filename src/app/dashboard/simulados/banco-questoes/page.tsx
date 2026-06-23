@@ -512,7 +512,7 @@ export default function BancoQuestoesPage() {
     const countResult = await getLocalQuestionsCount();
     const count = countResult.success ? countResult.count : 0;
     const year = new Date().getFullYear();
-    setNewTitle(`Questão ${count + 1} - Criada por ${currentUserName} / ${year}`);
+    setNewTitle(`Questão ${count + 1} - ${currentUserName} / ${year}`);
     setShowCreateModal(true);
   };
 
@@ -1228,11 +1228,11 @@ export default function BancoQuestoesPage() {
             <div className="p-6 space-y-6 overflow-y-auto flex-1">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label className="font-bold text-slate-700">Título / Identificador (Opcional)</Label>
+                  <Label className="font-bold text-slate-700">Título / Identificador (Gerado Automaticamente)</Label>
                   <Input
-                    placeholder="Ex: Questão 1 - Geometria Espacial"
                     value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
+                    disabled
+                    className="bg-slate-50 text-slate-600 font-semibold cursor-not-allowed border-slate-200"
                   />
                 </div>
 
