@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -220,6 +220,7 @@ export default function BancoQuestoesPage() {
   const [selectedQuestions, setSelectedQuestions] = useState<UnifiedQuestion[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Modais de Ação
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -462,6 +463,26 @@ export default function BancoQuestoesPage() {
     }
     setDraggedIndex(null);
     setDragOverIndex(null);
+  };
+
+  const handleDragOverContainer = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const { top, bottom } = container.getBoundingClientRect();
+    const mouseY = e.clientY;
+    
+    // Threshold in pixels to start scrolling
+    const edgeThreshold = 80;
+    
+    if (mouseY - top < edgeThreshold) {
+      // Scroll up
+      container.scrollTop -= 15;
+    } else if (bottom - mouseY < edgeThreshold) {
+      // Scroll down
+      container.scrollTop += 15;
+    }
   };
 
   // Excluir Questão Local do BD
@@ -1057,7 +1078,7 @@ export default function BancoQuestoesPage() {
       {/* MODAL 0: REVISAR QUESTÕES SELECIONADAS */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col animate-in scale-in duration-200">
+          <div className="bg-white rounded-xl overflow-hidden w-full max-w-5xl shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col animate-in scale-in duration-200">
             <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-xl font-bold text-slate-800">Revisar Questões</h3>
@@ -1075,7 +1096,11 @@ export default function BancoQuestoesPage() {
               </Button>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-1 space-y-3">
+            <div 
+              className="p-4 overflow-y-auto flex-1 space-y-3" 
+              ref={scrollContainerRef}
+              onDragOver={handleDragOverContainer}
+            >
               {selectedQuestions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                   <CheckCircle2 className="h-12 w-12 mb-3 opacity-30" />
