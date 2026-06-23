@@ -220,6 +220,7 @@ export default function BancoQuestoesPage() {
 
   // Modais de Ação
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCompileModal, setShowCompileModal] = useState(false);
 
   // Formulário: Criar Questão Autoral
@@ -1021,10 +1022,87 @@ export default function BancoQuestoesPage() {
             </Button>
             <Button
               className="bg-brand-yellow text-slate-900 font-bold rounded-xl h-11 px-5 hover:bg-amber-400"
-              onClick={() => setShowCompileModal(true)}
+              onClick={() => setShowReviewModal(true)}
             >
-              Compilar Prova <ChevronRight className="ml-1 h-4 w-4" />
+              Revisar Questões <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 0: REVISAR QUESTÕES SELECIONADAS */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col animate-in scale-in duration-200">
+            <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">Revisar Questões</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {selectedQuestions.length} questão(ões) selecionada(s). Remova as que não quiser antes de compilar.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-xl h-9 w-9"
+                onClick={() => setShowReviewModal(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="p-4 overflow-y-auto flex-1 space-y-3">
+              {selectedQuestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <CheckCircle2 className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="font-medium">Nenhuma questão selecionada.</p>
+                  <p className="text-sm mt-1">Feche e selecione questões no banco.</p>
+                </div>
+              ) : (
+                selectedQuestions.map((q, idx) => (
+                  <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 group hover:border-red-200 transition-colors">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-black">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 text-sm">{q.title || `Questão ${idx + 1}`}</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <Badge className="bg-slate-200 text-slate-700 shadow-none text-xs font-semibold">{q.secondaryTag}</Badge>
+                        <Badge className="bg-amber-100 text-amber-800 shadow-none text-xs font-semibold border-none">{q.difficulty}</Badge>
+                        {q.source === "enem" && <Badge className="bg-blue-100 text-blue-800 shadow-none text-xs font-semibold border-none">ENEM Oficial</Badge>}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">{q.context}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0 opacity-0 group-hover:opacity-100 transition-all"
+                      onClick={() => setSelectedQuestions(selectedQuestions.filter((item) => item.id !== q.id))}
+                      title="Remover questão"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-6 border-t border-slate-200 flex gap-3 shrink-0">
+              <Button
+                variant="outline"
+                className="w-full rounded-xl h-12 font-bold border-slate-300"
+                onClick={() => setShowReviewModal(false)}
+              >
+                Continuar Selecionando
+              </Button>
+              <Button
+                disabled={selectedQuestions.length === 0}
+                className="w-full rounded-xl bg-brand-yellow text-slate-900 font-bold h-12 hover:bg-amber-400 disabled:opacity-50"
+                onClick={() => { setShowReviewModal(false); setShowCompileModal(true); }}
+              >
+                Compilar Prova ({selectedQuestions.length})
+              </Button>
+            </div>
           </div>
         </div>
       )}
