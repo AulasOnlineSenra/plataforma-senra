@@ -278,6 +278,16 @@ export async function createQuestion(input: DatabaseQuestionInput) {
   }
 }
 
+export async function getLocalQuestionsCount() {
+  try {
+    const count = await prisma.question.count();
+    return { success: true, count };
+  } catch (error) {
+    console.error('Erro ao contar questões locais:', error);
+    return { success: false, count: 0 };
+  }
+}
+
 export async function listDatabaseQuestions(filters: {
   discipline?: string;
   subject?: string;

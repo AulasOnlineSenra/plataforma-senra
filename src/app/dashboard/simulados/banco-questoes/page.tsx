@@ -43,6 +43,7 @@ import {
   deleteQuestion,
   fetchEnemQuestions,
   upsertSimulado,
+  getLocalQuestionsCount,
 } from "@/app/actions/simulados";
 import { cn } from "@/lib/utils";
 
@@ -193,6 +194,7 @@ export default function BancoQuestoesPage() {
   const { toast } = useToast();
 
   const [currentUserId, setCurrentUserId] = useState("");
+  const [currentUserName, setCurrentUserName] = useState("");
   const [currentRole, setCurrentRole] = useState<"admin" | "teacher" | "student" | "">("");
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -279,6 +281,7 @@ export default function BancoQuestoesPage() {
 
     const dbUser = userResult.data as any;
     setCurrentUserId(dbUser.id);
+    setCurrentUserName(dbUser.name || "Professor");
     setCurrentRole(dbUser.role);
 
     if (dbUser.role === "student") {
@@ -505,6 +508,14 @@ export default function BancoQuestoesPage() {
     }
   };
 
+  const handleOpenCreateModal = async () => {
+    const countResult = await getLocalQuestionsCount();
+    const count = countResult.success ? countResult.count : 0;
+    const year = new Date().getFullYear();
+    setNewTitle(`Questão ${count + 1} - Criada por ${currentUserName} / ${year}`);
+    setShowCreateModal(true);
+  };
+
   // Criar Questão Autoral
   const handleSaveAuthorialQuestion = async () => {
     if (!newSubject.trim() || !newContext.trim()) {
@@ -675,7 +686,7 @@ export default function BancoQuestoesPage() {
           <Button
             variant="outline"
             className="rounded-xl border-slate-300 font-bold h-12 w-full md:w-auto hover:bg-slate-100"
-            onClick={() => setShowCreateModal(true)}
+            onClick={handleOpenCreateModal}
           >
             <Plus className="mr-2 h-5 w-5" /> Nova Questão
           </Button>
@@ -959,11 +970,6 @@ export default function BancoQuestoesPage() {
                     >
                       {q.difficulty}
                     </Badge>
-                    {q.source === "local" && (
-                      <Badge className="bg-purple-50 text-purple-700 border border-purple-200 font-semibold rounded-full px-3 py-1 text-xs">
-                        Criada por {q.creatorName}
-                      </Badge>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
