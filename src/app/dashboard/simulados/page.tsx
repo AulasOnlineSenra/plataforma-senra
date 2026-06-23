@@ -177,8 +177,6 @@ export default function SimuladosPage() {
     return SUBJECTS;
   }, [currentRole, teacherSubject]);
 
-  };
-
   const handleDelete = async (simuladoId: string) => {
     if (
       !confirm("Tem certeza que deseja excluir permanentemente este simulado?")
