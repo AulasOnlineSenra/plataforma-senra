@@ -138,8 +138,27 @@ function BookingPageComponent() {
     ? subjectNameById.get(selectedSubjectId)
     : undefined;
 
-    useEffect(() => {
+  const [hasLoadedInitialBookings, setHasLoadedInitialBookings] = useState(false);
+
+  useEffect(() => {
     if (!currentUser?.id) return;
+    const saved = safeLocalStorage.getItem(`preBookings-${currentUser.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved).map((b: any) => ({
+          ...b,
+          date: new Date(b.date),
+        }));
+        setPreBookings(parsed);
+      } catch {
+        safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);
+      }
+    }
+    setHasLoadedInitialBookings(true);
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!hasLoadedInitialBookings || !currentUser?.id) return;
     if (preBookings.length === 0) {
       safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);
       return;
@@ -148,22 +167,7 @@ function BookingPageComponent() {
       `preBookings-${currentUser.id}`,
       JSON.stringify(preBookings.map((b) => ({ ...b, date: b.date.toISOString() }))),
     );
-  }, [preBookings, currentUser?.id]);
-
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    const saved = safeLocalStorage.getItem(`preBookings-${currentUser.id}`);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved).map((b: any) => ({
-        ...b,
-        date: new Date(b.date),
-      }));
-      setPreBookings(parsed);
-    } catch {
-      safeLocalStorage.removeItem(`preBookings-${currentUser.id}`);
-    }
-  }, [currentUser?.id]);
+  }, [preBookings, currentUser?.id, hasLoadedInitialBookings]);
 
   useEffect(() => {
     const loadData = async () => {
