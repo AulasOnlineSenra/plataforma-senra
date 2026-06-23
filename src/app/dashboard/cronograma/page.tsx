@@ -76,7 +76,7 @@ export default function CronogramaPage() {
       setUserRole(role);
       loadData(id, role || "student");
       
-      if (role === "admin") {
+      if (role === "admin" || role === "manager") {
         getStudents().then((res) => {
           if (res.success && res.data) {
             setAllStudents(res.data as any[]);
@@ -263,7 +263,9 @@ export default function CronogramaPage() {
       const combinedBookings = [...existingBookings, ...preBookings];
       localStorage.setItem(existingKey, JSON.stringify(combinedBookings));
       
-      router.push(`/dashboard/booking`);
+      const isManagerOrAdmin = userRole === "admin" || userRole === "manager";
+      const redirectUrl = isManagerOrAdmin ? `/dashboard/booking?studentId=${userId}` : `/dashboard/booking`;
+      router.push(redirectUrl);
     } else {
       toast({ title: "Erro", description: "Usuário não identificado", variant: "destructive" });
     }
@@ -358,7 +360,7 @@ export default function CronogramaPage() {
           </p>
         </div>
         <div className="flex flex-col items-end gap-[5px]">
-          {userRole === "admin" && allStudents.length > 0 && (
+          {(userRole === "admin" || userRole === "manager") && allStudents.length > 0 && (
              <Select value={userId || ""} onValueChange={(val) => {
                 setUserId(val);
                 loadData(val, "student");
