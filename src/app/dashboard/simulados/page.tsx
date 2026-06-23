@@ -402,6 +402,8 @@ export default function SimuladosPage() {
           >
             <BookOpen className="mr-2 h-5 w-5 text-brand-yellow" /> Banco de Questões
           </Button>
+        </div>
+      </div>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
         <CardHeader className="border-b bg-white pb-5">
