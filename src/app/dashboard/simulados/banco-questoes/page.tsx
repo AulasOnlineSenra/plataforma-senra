@@ -33,6 +33,7 @@ import {
   Loader2,
   Sparkles,
   User,
+  GripVertical,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStudents, getUserById, getMyStudents } from "@/app/actions/users";
@@ -217,6 +218,8 @@ export default function BancoQuestoesPage() {
 
   // Questões selecionadas (Carrinho)
   const [selectedQuestions, setSelectedQuestions] = useState<UnifiedQuestion[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Modais de Ação
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -438,6 +441,27 @@ export default function BancoQuestoesPage() {
         description: "A questão foi inclusa no seu rascunho de simulado.",
       });
     }
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newSelected = [...selectedQuestions];
+      const [draggedItem] = newSelected.splice(draggedIndex, 1);
+      newSelected.splice(dragOverIndex, 0, draggedItem);
+      setSelectedQuestions(newSelected);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Excluir Questão Local do BD
@@ -1033,7 +1057,7 @@ export default function BancoQuestoesPage() {
       {/* MODAL 0: REVISAR QUESTÕES SELECIONADAS */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col animate-in scale-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col animate-in scale-in duration-200">
             <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-xl font-bold text-slate-800">Revisar Questões</h3>
@@ -1060,27 +1084,69 @@ export default function BancoQuestoesPage() {
                 </div>
               ) : (
                 selectedQuestions.map((q, idx) => (
-                  <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 group hover:border-red-200 transition-colors">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-black">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-800 text-sm">{q.title || `Questão ${idx + 1}`}</p>
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <Badge className="bg-slate-200 text-slate-700 shadow-none text-xs font-semibold">{q.secondaryTag}</Badge>
-                        <Badge className="bg-amber-100 text-amber-800 shadow-none text-xs font-semibold border-none">{q.difficulty}</Badge>
-                        {q.source === "enem" && <Badge className="bg-blue-100 text-blue-800 shadow-none text-xs font-semibold border-none">ENEM Oficial</Badge>}
+                  <div
+                    key={q.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragEnter={(e) => handleDragEnter(e, idx)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={cn(
+                      "flex items-start gap-4 p-5 bg-white rounded-2xl transition-all group relative cursor-grab active:cursor-grabbing border-2",
+                      dragOverIndex === idx ? "border-brand-yellow border-dashed bg-amber-50/30 shadow-inner" : "border-slate-100 hover:border-slate-300",
+                      draggedIndex === idx ? "opacity-40 scale-[0.99]" : "opacity-100 scale-100"
+                    )}
+                  >
+                    <div className="flex flex-col items-center gap-3 mt-1 cursor-grab text-slate-300 hover:text-slate-500">
+                      <GripVertical className="h-6 w-6" />
+                      <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-black shadow-md">
+                        {idx + 1}
                       </div>
-                      <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">{q.context}</p>
                     </div>
+                    
+                    <div className="flex-1 min-w-0 pb-2">
+                      <div className="flex justify-between items-start mb-3">
+                         <h4 className="font-bold text-slate-900 text-lg leading-tight pr-4">{q.title || `Questão ${idx + 1}`}</h4>
+                         <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                          <Badge className="bg-slate-100 text-slate-700 shadow-none text-xs font-bold border border-slate-200">{q.secondaryTag}</Badge>
+                          <Badge className="bg-amber-100 text-amber-800 shadow-none text-xs font-bold border-none">{q.difficulty}</Badge>
+                          {q.source === "enem" && <Badge className="bg-blue-100 text-blue-800 shadow-none text-xs font-bold border-none">ENEM Oficial</Badge>}
+                        </div>
+                      </div>
+                      
+                      <div className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed font-medium mb-4">
+                        {q.context}
+                      </div>
+                      
+                      {q.files && q.files.length > 0 && (
+                        <div className="flex flex-wrap gap-4 py-4 bg-slate-50 rounded-xl mb-4 border border-slate-100 justify-center">
+                          {q.files.map((fileUrl, fIdx) => (
+                            <img key={fIdx} src={fileUrl} alt="Ilustração" className="max-h-56 rounded-lg object-contain bg-white border border-slate-200 p-1.5 shadow-sm" />
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="grid gap-2.5">
+                        {q.alternatives.map((alt) => {
+                          const isCorrect = alt.letter === q.correctAlternative;
+                          return (
+                            <div key={alt.letter} className={cn("flex items-start gap-3 p-3.5 rounded-xl border-2 transition-colors", isCorrect ? "bg-green-50 border-green-200" : "bg-white border-slate-100")}>
+                                <Badge className={cn("w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0 shadow-none", isCorrect ? "bg-green-600 text-white border-none" : "bg-slate-100 text-slate-600 border border-slate-200")}>{alt.letter}</Badge>
+                                <div className="text-slate-700 text-sm leading-relaxed font-medium pt-0.5">{alt.text}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0 opacity-0 group-hover:opacity-100 transition-all"
+                      className="h-10 w-10 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0 transition-colors absolute top-4 right-4 z-10 bg-white shadow-sm border border-slate-100"
                       onClick={() => setSelectedQuestions(selectedQuestions.filter((item) => item.id !== q.id))}
                       title="Remover questão"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                     </Button>
                   </div>
                 ))
