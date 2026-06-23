@@ -13,6 +13,7 @@ import {
   Trash2,
   Wallet,
   Users,
+  Tag,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +67,7 @@ import {
   deleteStudentProfile,
   getStudents,
   getMyStudents,
+  updateStudentTags,
 } from "@/app/actions/users";
 import { addTransactionAndCredits } from "@/app/actions/finance";
 import { getLessons } from "@/app/actions/bookings";
@@ -76,6 +78,7 @@ type StudentRow = {
   email: string;
   avatarUrl?: string | null;
   status?: string | null;
+  tags?: string | null;
   lastAccess?: string | Date | null;
   updatedAt?: string | Date | null;
 };
@@ -120,6 +123,7 @@ function StudentList({
   scheduledCountByStudent: Record<string, number>;
   onAddCredits: (student: StudentRow) => void;
   onDeleteStudent: (student: StudentRow) => void;
+  onToggleTagEnem: (student: StudentRow) => void;
   isAdmin: boolean;
 }) {
   const router = useRouter();
@@ -184,12 +188,19 @@ function StudentList({
                     </Link>
                   </TableCell>
                   <TableCell className="py-4">
-                    <Link
-                      href={`/dashboard/student/${student.id}`}
-                      className="font-bold text-slate-800 transition-colors hover:text-brand-yellow text-base"
-                    >
-                      {student.name}
-                    </Link>
+                    <div className="flex flex-col">
+                      <Link
+                        href={`/dashboard/student/${student.id}`}
+                        className="font-bold text-slate-800 transition-colors hover:text-brand-yellow text-base"
+                      >
+                        {student.name}
+                      </Link>
+                      {student.tags && student.tags.includes("ENEM") && (
+                        <span className="mt-1 w-max inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 border border-indigo-200">
+                          Foco ENEM
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-slate-500 font-medium py-4">
                     {student.email}
@@ -239,6 +250,17 @@ function StudentList({
                           <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
                           Chat Privado
                         </DropdownMenuItem>
+                        {isAdmin && (
+                          <DropdownMenuItem
+                            onSelect={() => onToggleTagEnem(student)}
+                            className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
+                          >
+                            <Tag className="mr-2 h-4 w-4 text-indigo-500" />
+                            {student.tags && student.tags.includes("ENEM")
+                              ? "Remover Foco ENEM"
+                              : "Adicionar Foco ENEM"}
+                          </DropdownMenuItem>
+                        )}
                         {isAdmin && (
                           <DropdownMenuItem
                             className="cursor-pointer rounded-xl py-2.5 font-medium text-red-600 focus:bg-red-50 focus:text-red-700 mt-1 border-t border-slate-50"
@@ -492,6 +514,33 @@ export default function AdminStudentsPage() {
     setIsDeleting(false);
   };
 
+  const handleToggleTagEnem = async (student: StudentRow) => {
+    let currentTags: string[] = [];
+    try {
+      currentTags = JSON.parse(student.tags || "[]");
+    } catch (e) {}
+
+    const hasEnem = currentTags.includes("ENEM");
+    const newTags = hasEnem
+      ? currentTags.filter((t) => t !== "ENEM")
+      : [...currentTags, "ENEM"];
+
+    const result = await updateStudentTags(student.id, JSON.stringify(newTags));
+    if (result.success) {
+      toast({
+        title: hasEnem ? "Foco ENEM Removido" : "Foco ENEM Adicionado",
+        description: `O perfil de ${student.name} foi atualizado com sucesso.`,
+      });
+      await fetchData(currentUser);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Falha ao atualizar a tag.",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center text-slate-400 font-medium animate-pulse">
@@ -532,6 +581,7 @@ export default function AdminStudentsPage() {
           scheduledCountByStudent={scheduledCountByStudent}
           onAddCredits={openAddCreditsModal}
           onDeleteStudent={setStudentToDelete}
+          onToggleTagEnem={handleToggleTagEnem}
           isAdmin={currentUser?.role === "admin"}
         />
         {inactiveStudents.length > 0 && (
@@ -541,6 +591,7 @@ export default function AdminStudentsPage() {
             scheduledCountByStudent={scheduledCountByStudent}
             onAddCredits={openAddCreditsModal}
             onDeleteStudent={setStudentToDelete}
+            onToggleTagEnem={handleToggleTagEnem}
             isAdmin={currentUser?.role === "admin"}
           />
         )}

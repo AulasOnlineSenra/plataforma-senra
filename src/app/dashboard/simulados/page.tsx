@@ -112,7 +112,6 @@ export default function SimuladosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [teacherSubject, setTeacherSubject] = useState<string | null>(null);
 
-
   const loadAll = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
@@ -398,7 +397,8 @@ export default function SimuladosPage() {
             className="rounded-xl border-slate-300 font-bold h-12 px-6 hover:bg-slate-100 w-full sm:w-auto"
             onClick={() => router.push("/dashboard/simulados/banco-questoes")}
           >
-            <BookOpen className="mr-2 h-5 w-5 text-brand-yellow" /> Banco de Questões
+            <BookOpen className="mr-2 h-5 w-5 text-brand-yellow" /> Banco de
+            Questões
           </Button>
         </div>
       </div>

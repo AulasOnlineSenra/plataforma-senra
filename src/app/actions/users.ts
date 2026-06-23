@@ -24,7 +24,8 @@ export async function getStudents() {
         credits: true, 
         status: true, 
         createdAt: true, 
-        phone: true 
+        phone: true,
+        tags: true
       },
       orderBy: { createdAt: "desc" },
     });
@@ -60,7 +61,7 @@ export async function getMyStudents(teacherId: string) {
         role: "student",
         status: { not: "deleted" },
       },
-      select: { id: true, name: true, email: true, avatarUrl: true, phone: true },
+      select: { id: true, name: true, email: true, avatarUrl: true, phone: true, tags: true },
       orderBy: { name: "asc" },
     });
 
@@ -135,6 +136,20 @@ export async function toggleStudentStatus(
   } catch (error) {
     console.error("Erro ao alterar status do aluno:", error);
     return { success: false, error: "Falha ao alterar o status do aluno." };
+  }
+}
+
+export async function updateStudentTags(studentId: string, newTagsJson: string) {
+  try {
+    await prisma.user.update({
+      where: { id: studentId },
+      data: { tags: newTagsJson },
+    });
+    revalidatePath("/dashboard/students");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao atualizar tags do aluno:", error);
+    return { success: false, error: "Falha ao atualizar tags do aluno." };
   }
 }
 
