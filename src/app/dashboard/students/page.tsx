@@ -70,6 +70,7 @@ import {
 } from "@/app/actions/users";
 import { addTransactionAndCredits } from "@/app/actions/finance";
 import { getLessons } from "@/app/actions/bookings";
+import { ENEM_TAG } from "@/lib/enem-utils";
 
 type StudentRow = {
   id: string;
@@ -114,6 +115,7 @@ function StudentList({
   scheduledCountByStudent,
   onAddCredits,
   onDeleteStudent,
+  onToggleTagEnem,
   isAdmin,
 }: {
   id?: string;
@@ -194,7 +196,7 @@ function StudentList({
                       >
                         {student.name}
                       </Link>
-                      {student.tags && student.tags.includes("ENEM") && (
+                      {student.tags && student.tags.includes(ENEM_TAG) && (
                         <span className="mt-1 w-max inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 border border-indigo-200">
                           Foco ENEM
                         </span>
@@ -255,7 +257,7 @@ function StudentList({
                             className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
                           >
                             <Tag className="mr-2 h-4 w-4 text-indigo-500" />
-                            {student.tags && student.tags.includes("ENEM")
+                            {student.tags && student.tags.includes(ENEM_TAG)
                               ? "Remover Foco ENEM"
                               : "Adicionar Foco ENEM"}
                           </DropdownMenuItem>
@@ -522,10 +524,10 @@ export default function AdminStudentsPage() {
         currentTags = JSON.parse(live?.tags || "[]");
       } catch (e) {}
 
-      const hasEnem = currentTags.includes("ENEM");
+      const hasEnem = currentTags.includes(ENEM_TAG);
       const newTags = hasEnem
-        ? currentTags.filter((t) => t !== "ENEM")
-        : [...currentTags, "ENEM"];
+        ? currentTags.filter((t) => t !== ENEM_TAG)
+        : [...currentTags, ENEM_TAG];
 
       // Fire API call (side-effect inside updater is intentional here)
       fetch("/api/students/tags", {
