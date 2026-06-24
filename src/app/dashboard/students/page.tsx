@@ -514,56 +514,49 @@ export default function AdminStudentsPage() {
   };
 
   const handleToggleTagEnem = async (student: StudentRow) => {
-    let currentTags: string[] = [];
-    try {
-      currentTags = JSON.parse(student.tags || "[]");
-    } catch (e) {}
+    // Read live value from state to avoid stale closure
+    setAllStudents((prev) => {
+      const live = prev.find((s) => s.id === student.id);
+      let currentTags: string[] = [];
+      try {
+        currentTags = JSON.parse(live?.tags || "[]");
+      } catch (e) {}
 
-    const hasEnem = currentTags.includes("ENEM");
-    const newTags = hasEnem
-      ? currentTags.filter((t) => t !== "ENEM")
-      : [...currentTags, "ENEM"];
+      const hasEnem = currentTags.includes("ENEM");
+      const newTags = hasEnem
+        ? currentTags.filter((t) => t !== "ENEM")
+        : [...currentTags, "ENEM"];
 
-    // Optimistic UI update — update local state instantly
-    setAllStudents((prev) =>
-      prev.map((s) =>
-        s.id === student.id ? { ...s, tags: JSON.stringify(newTags) } : s,
-      ),
-    );
-
-    try {
-      const res = await fetch("/api/students/tags", {
+      // Fire API call (side-effect inside updater is intentional here)
+      fetch("/api/students/tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId: student.id, tags: newTags }),
-      });
-      const data = await res.json();
-      if (!data.success) {
-        // Rollback on failure
-        setAllStudents((prev) =>
-          prev.map((s) =>
-            s.id === student.id ? { ...s, tags: student.tags } : s,
-          ),
-        );
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: data.error || "Falha ao atualizar a tag.",
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.success) {
+            // Rollback: restore original tags
+            setAllStudents((p) =>
+              p.map((s) =>
+                s.id === student.id ? { ...s, tags: live?.tags ?? "[]" } : s,
+              ),
+            );
+          }
+        })
+        .catch(() => {
+          setAllStudents((p) =>
+            p.map((s) =>
+              s.id === student.id ? { ...s, tags: live?.tags ?? "[]" } : s,
+            ),
+          );
         });
-      }
-    } catch (err) {
-      // Rollback on network error
-      setAllStudents((prev) =>
-        prev.map((s) =>
-          s.id === student.id ? { ...s, tags: student.tags } : s,
-        ),
+
+      // Optimistic update: apply immediately
+      return prev.map((s) =>
+        s.id === student.id ? { ...s, tags: JSON.stringify(newTags) } : s,
       );
-      toast({
-        variant: "destructive",
-        title: "Erro de conexão",
-        description: "Não foi possível salvar a alteração.",
-      });
-    }
+    });
   };
 
   if (isLoading) {
