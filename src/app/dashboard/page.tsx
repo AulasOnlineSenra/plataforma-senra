@@ -903,7 +903,7 @@ export default function DashboardPage() {
                       Créditos Disponíveis
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+<CardContent>
                     <p className="text-4xl font-extrabold text-[#FFC107]">
                       {Math.max(0, user.credits)}
                     </p>

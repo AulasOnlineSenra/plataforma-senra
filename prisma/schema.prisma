@@ -10,26 +10,34 @@ datasource db {
 }
 
 model AppSetting {
-  id               String   @id @default("global")
-  whatsapp         String   @default("")
-  classValue       String   @default("50.00")
-  referralBonus    String   @default("1")
-  availabilityType String   @default("weekly")
-  pixKey           String   @default("")
-  pixKeyType       String   @default("cnpj")
-  geminiApiKey     String?
-  openaiApiKey     String?
-  anthropicApiKey  String?
-  openRouterApiKey String?
-  minimaxApiKey    String?
-  grokApiKey       String?
-  searchApiKey     String?
-  backupAuto       Boolean  @default(false)
-  backupFrequency  String   @default("weekly")
-  backupRetention  Int      @default(5)
-  backupEmail      String?
-  backupDrive      String?
-  updatedAt        DateTime @updatedAt
+  id                      String   @id @default("global")
+  whatsapp                String   @default("")
+  classValue              String   @default("50.00")
+  referralBonus           String   @default("1")
+  availabilityType        String   @default("weekly")
+  pixKey                  String   @default("")
+  pixKeyType              String   @default("cnpj")
+  geminiApiKey            String?
+  openaiApiKey            String?
+  anthropicApiKey         String?
+  openRouterApiKey        String?
+  minimaxApiKey           String?
+  grokApiKey              String?
+  searchApiKey            String?
+  backupAuto              Boolean  @default(false)
+  backupFrequency         String   @default("weekly")
+  backupRetention         Int      @default(5)
+  backupEmail             String?
+  backupDrive             String?
+  updatedAt               DateTime @updatedAt
+
+  // Configurações do Simulado ENEM Automático
+  enemSimuladoEnabled     Boolean  @default(false)
+  enemDia1TemplateId      String?  // ID do SimuladoTemplate para o Dia 1 (Sábado)
+  enemDia2TemplateId      String?  // ID do SimuladoTemplate para o Dia 2 (Domingo)
+  enemReleaseHour         Int      @default(13) // Hora de liberação (padrão 13:00)
+  enemReleaseMinute       Int      @default(0)
+  enemOnlyTaggedStudents  Boolean  @default(true) // Enviar apenas para alunos com tag Foco ENEM
 }
 
 model Availability {
@@ -152,7 +160,7 @@ model Lesson {
   endDate                     DateTime @default(now())
   status                      String   @default("CONFIRMED")
   meetingLink                 String?
-  price                      Float?
+  price                       Float?
   isExperimental              Boolean  @default(false)
   cancelReason                String?
   createdAt                   DateTime @default(now())
@@ -201,9 +209,9 @@ model Plan {
   price        Float
   durationMins Int
   isPopular    Boolean  @default(false)
-  features    String   @default("[]")  // JSON array de features
+  features     String   @default("[]")  // JSON array de features
   createdAt    DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt    DateTime @updatedAt
 }
 
 model Rating {
@@ -295,6 +303,18 @@ model Transaction {
   @@index([studentId, createdAt])
 }
 
+model SimuladoTemplate {
+  id               String   @id @default(cuid())
+  title            String
+  description      String   @default("")
+  subject          String   @default("ENEM")
+  dayType          String   @default("DIA1") // "DIA1" | "DIA2" | "CUSTOM"
+  timeLimitMinutes Int?     // Dia1=330 (5h30), Dia2=300 (5h)
+  questions        Json     @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model User {
   id                                                 String             @id @default(cuid())
   name                                               String
@@ -309,7 +329,7 @@ model User {
   resetTokenExpiry                                   DateTime?
   credits                                            Int                @default(0)
   createdAt                                          DateTime           @default(now())
-  updatedAt                                          DateTime @updatedAt
+  updatedAt                                          DateTime           @updatedAt
   subject                                            String?
   cpf                                                String?            @unique
   birthDate                                          DateTime?
@@ -325,14 +345,14 @@ model User {
   pixKey                                             String?
   pixKeyType                                         String?
   subjects                                           String?
-  tags                                               String?            @default("[]")
+  tags                                               String?            @default("[]") // JSON array, ex: ["Foco ENEM"]
   suspendedAt                                        DateTime?
   phone                                              String?
-  googleCalendarConnected                             Boolean            @default(false)
-  googleCalendarToken                                 String?
-  googleCalendarRefreshToken                          String?
-  googleCalendarEmail                                 String?
-  googleCalendarTokenExpiry                           DateTime?
+  googleCalendarConnected                            Boolean            @default(false)
+  googleCalendarToken                                String?
+  googleCalendarRefreshToken                         String?
+  googleCalendarEmail                                String?
+  googleCalendarTokenExpiry                          DateTime?
   Availability                                       Availability[]
   ChatMessage_ChatMessage_receiverIdToUser           ChatMessage[]      @relation("ChatMessage_receiverIdToUser")
   ChatMessage_ChatMessage_senderIdToUser             ChatMessage[]      @relation("ChatMessage_senderIdToUser")
@@ -376,7 +396,6 @@ model AiAgent {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
-
 
 model PageVisit {
   id        String   @id @default(cuid())

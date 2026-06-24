@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot, Database, DownloadCloud, UploadCloud, History, Clock, Trash, Download } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CalendarDays, Gift, KeyRound, MessageCircle, Plus, Save, Settings, Trash2, Wallet, GripVertical, X, Bot, Database, DownloadCloud, UploadCloud, History, Clock, Trash, Download, BookCopy, Sparkles, Send, Check } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/select';
 import { getSettings, updateSettings, updateAvailabilityType } from '@/app/actions/settings';
 import { getAllQuizQuestions, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, reorderQuizQuestions } from '@/app/actions/quiz';
+import { getEnemConfig, updateEnemConfig, listSimuladoTemplates } from '@/app/actions/enem';
+import { ENEM_DIA1_MINUTES, ENEM_DIA2_MINUTES } from '@/lib/enem-utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -78,6 +80,17 @@ export default function SettingsPage() {
     isRequired: true,
   });
 
+  // ENEM Settings States
+  const [enemEnabled, setEnemEnabled] = useState(false);
+  const [enemDia1TemplateId, setEnemDia1TemplateId] = useState<string>('');
+  const [enemDia2TemplateId, setEnemDia2TemplateId] = useState<string>('');
+  const [enemReleaseHour, setEnemReleaseHour] = useState(13);
+  const [enemReleaseMinute, setEnemReleaseMinute] = useState(0);
+  const [enemOnlyTagged, setEnemOnlyTagged] = useState(true);
+  const [enemTemplates, setEnemTemplates] = useState<any[]>([]);
+  const [isSendingEnemManual, setIsSendingEnemManual] = useState<'DIA1' | 'DIA2' | null>(null);
+  const [isSavingEnem, setIsSavingEnem] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -105,6 +118,27 @@ export default function SettingsPage() {
       setBackupRetention(String((result.data as any).backupRetention || 5));
       setBackupEmail((result.data as any).backupEmail || '');
       setBackupDrive((result.data as any).backupDrive || '');
+
+      // Carregar Configurações e Templates do ENEM
+      const [configRes, templatesRes] = await Promise.all([
+        getEnemConfig(),
+        listSimuladoTemplates()
+      ]);
+
+      if (isMounted) {
+        if (configRes.success && configRes.data) {
+          const c = configRes.data;
+          setEnemEnabled(c.enemSimuladoEnabled);
+          setEnemDia1TemplateId(c.enemDia1TemplateId || '');
+          setEnemDia2TemplateId(c.enemDia2TemplateId || '');
+          setEnemReleaseHour(c.enemReleaseHour);
+          setEnemReleaseMinute(c.enemReleaseMinute);
+          setEnemOnlyTagged(c.enemOnlyTaggedStudents);
+        }
+        if (templatesRes.success && templatesRes.data) {
+          setEnemTemplates(templatesRes.data);
+        }
+      }
     };
 
     loadSettings();
@@ -158,6 +192,79 @@ export default function SettingsPage() {
       description: 'Tipo de agenda atualizado.',
       className: 'border-none bg-green-600 text-white',
     });
+  };
+
+  const handleSaveEnem = async () => {
+    setIsSavingEnem(true);
+    const res = await updateEnemConfig({
+      enemSimuladoEnabled: enemEnabled,
+      enemDia1TemplateId: enemDia1TemplateId || null,
+      enemDia2TemplateId: enemDia2TemplateId || null,
+      enemReleaseHour: Number(enemReleaseHour),
+      enemReleaseMinute: Number(enemReleaseMinute),
+      enemOnlyTaggedStudents: enemOnlyTagged,
+    });
+    setIsSavingEnem(false);
+
+    if (res.success) {
+      toast({
+        title: 'Configurações Salvas',
+        description: 'As regras de agendamento do ENEM foram atualizadas com sucesso.',
+        className: 'border-none bg-green-600 text-white',
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Salvar',
+        description: 'Houve um problema ao salvar as configurações.',
+      });
+    }
+  };
+
+  const handleManualSendEnem = async (dayType: 'DIA1' | 'DIA2') => {
+    const adminId = localStorage.getItem('userId');
+    if (!adminId) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Autenticação',
+        description: 'Você precisa estar logado para realizar esta ação.',
+      });
+      return;
+    }
+
+    setIsSendingEnemManual(dayType);
+
+    try {
+      const response = await fetch('/api/cron/enem-simulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dayType, adminId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: `Simulado ${dayType === 'DIA1' ? 'Dia 1' : 'Dia 2'} Enviado!`,
+          description: `Enviado para ${data.dispatched} alunos de um total de ${data.total} elegíveis.`,
+          className: 'border-none bg-green-600 text-white',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro no Envio',
+          description: data.error || 'Não foi possível disparar o simulado.',
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Rede',
+        description: 'Falha ao conectar ao servidor.',
+      });
+    } finally {
+      setIsSendingEnemManual(null);
+    }
   };
 
   const handleSave = async () => {
@@ -518,6 +625,175 @@ export default function SettingsPage() {
             <p className="mt-4 text-sm text-slate-500 italic">
               * Suas chaves são armazenadas de forma segura e usadas apenas para processar requisições de IA da plataforma.
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Simulado ENEM Automático */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden md:col-span-2">
+          <CardHeader className="border-b border-slate-100 pb-6 bg-slate-50/50">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-3 text-indigo-600">
+                  <BookCopy className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-slate-900 flex items-center gap-2">
+                    Simulado ENEM Automático
+                    <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-indigo-600" /> Recorrente
+                    </span>
+                  </CardTitle>
+                  <CardDescription>Configure o disparo recorrente mensal do simulado para os alunos</CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                <Label htmlFor="enem-enabled-main" className="text-sm font-bold text-slate-700 cursor-pointer">Ativar Envio Automático</Label>
+                <Switch
+                  id="enem-enabled-main"
+                  checked={enemEnabled}
+                  onCheckedChange={setEnemEnabled}
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Quando ativado, o sistema envia automaticamente a primeira parte do simulado no <strong>último sábado de cada mês</strong> e a segunda parte no <strong>último domingo de cada mês</strong>.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid gap-2">
+                <Label className="font-bold text-slate-700">Template Dia 1 (Sábado - 5h30)</Label>
+                <Select value={enemDia1TemplateId} onValueChange={setEnemDia1TemplateId}>
+                  <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200">
+                    <SelectValue placeholder="Selecione o simulado do Dia 1" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {enemTemplates.filter(t => t.dayType === 'DIA1' || t.dayType === 'CUSTOM').map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-400">Tempo limite recomendado: {ENEM_DIA1_MINUTES} minutos (5h30min)</p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="font-bold text-slate-700">Template Dia 2 (Domingo - 5h)</Label>
+                <Select value={enemDia2TemplateId} onValueChange={setEnemDia2TemplateId}>
+                  <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200">
+                    <SelectValue placeholder="Selecione o simulado do Dia 2" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {enemTemplates.filter(t => t.dayType === 'DIA2' || t.dayType === 'CUSTOM').map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-400">Tempo limite recomendado: {ENEM_DIA2_MINUTES} minutos (5h00min)</p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="font-bold text-slate-700">Horário de Liberação</Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    className="h-12 text-center font-bold text-lg w-20 rounded-xl border-slate-200"
+                    value={enemReleaseHour}
+                    onChange={(e) => setEnemReleaseHour(Number(e.target.value))}
+                  />
+                  <span className="font-bold text-slate-400">:</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="h-12 text-center font-bold text-lg w-20 rounded-xl border-slate-200"
+                    value={enemReleaseMinute}
+                    onChange={(e) => setEnemReleaseMinute(Number(e.target.value))}
+                  />
+                  <span className="text-sm text-slate-500 ml-2">horas</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200 self-end h-12">
+                <Label htmlFor="enem-only-tagged" className="font-bold text-slate-700 cursor-pointer">Apenas Alunos com Tag "Foco ENEM"</Label>
+                <Switch
+                  id="enem-only-tagged"
+                  checked={enemOnlyTagged}
+                  onCheckedChange={setEnemOnlyTagged}
+                />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="bg-slate-50 border-t py-4 flex justify-end">
+            <Button
+              className="rounded-full bg-brand-yellow hover:bg-amber-400 text-slate-900 font-bold h-11 px-6 transition-all"
+              onClick={handleSaveEnem}
+              disabled={isSavingEnem}
+            >
+              {isSavingEnem ? 'Salvando...' : <><Save className="mr-2 h-4 w-4" /> Salvar Regras do ENEM</>}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        {/* Disparo Manual de Teste */}
+        <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden md:col-span-2">
+          <CardHeader className="bg-slate-50/50 border-b pb-5">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-amber-100 p-3 text-amber-600">
+                <Send className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-slate-900">Disparo Manual de Teste (ENEM)</CardTitle>
+                <CardDescription>
+                  Envie imediatamente os simulados selecionados acima para fins de homologação e testes práticos.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6 grid md:grid-cols-2 gap-6">
+            <div className="p-5 border rounded-2xl flex flex-col justify-between h-44 bg-white hover:border-slate-300 transition-all">
+              <div>
+                <h4 className="font-bold text-slate-800">Enviar Dia 1 Agora</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Cria o simulado ENEM do Dia 1 na conta de todos os alunos elegíveis imediatamente.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full h-11 rounded-xl font-bold border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all mt-4"
+                onClick={() => handleManualSendEnem('DIA1')}
+                disabled={!!isSendingEnemManual}
+              >
+                {isSendingEnemManual === 'DIA1' ? 'Enviando...' : 'Disparar Dia 1'}
+              </Button>
+            </div>
+
+            <div className="p-5 border rounded-2xl flex flex-col justify-between h-44 bg-white hover:border-slate-300 transition-all">
+              <div>
+                <h4 className="font-bold text-slate-800">Enviar Dia 2 Agora</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Cria o simulado ENEM do Dia 2 na conta de todos os alunos elegíveis imediatamente.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full h-11 rounded-xl font-bold border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all mt-4"
+                onClick={() => handleManualSendEnem('DIA2')}
+                disabled={!!isSendingEnemManual}
+              >
+                {isSendingEnemManual === 'DIA2' ? 'Enviando...' : 'Disparar Dia 2'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
