@@ -41,8 +41,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/switch';
-import { toggleStudentEnemTag, ENEM_TAG } from '@/app/actions/enem';
+import { toggleStudentEnemTag } from '@/app/actions/enem';
+import { ENEM_TAG } from '@/lib/enem-utils';
 
 const USERS_STORAGE_KEY = 'userList';
 const SCHEDULE_STORAGE_KEY = 'scheduleEvents';
