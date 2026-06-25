@@ -129,8 +129,8 @@ export default function SettingsPage() {
         if (configRes.success && configRes.data) {
           const c = configRes.data;
           setEnemEnabled(c.enemSimuladoEnabled);
-          setEnemDia1TemplateId(c.enemDia1TemplateId || '');
-          setEnemDia2TemplateId(c.enemDia2TemplateId || '');
+          setEnemDia1TemplateId(c.enemDia1TemplateId || 'dynamic');
+          setEnemDia2TemplateId(c.enemDia2TemplateId || 'dynamic');
           setEnemReleaseHour(c.enemReleaseHour);
           setEnemReleaseMinute(c.enemReleaseMinute);
           setEnemOnlyTagged(c.enemOnlyTaggedStudents);
@@ -198,8 +198,8 @@ export default function SettingsPage() {
     setIsSavingEnem(true);
     const res = await updateEnemConfig({
       enemSimuladoEnabled: enemEnabled,
-      enemDia1TemplateId: enemDia1TemplateId || null,
-      enemDia2TemplateId: enemDia2TemplateId || null,
+      enemDia1TemplateId: enemDia1TemplateId || 'dynamic',
+      enemDia2TemplateId: enemDia2TemplateId || 'dynamic',
       enemReleaseHour: Number(enemReleaseHour),
       enemReleaseMinute: Number(enemReleaseMinute),
       enemOnlyTaggedStudents: enemOnlyTagged,
@@ -668,11 +668,12 @@ export default function SettingsPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="grid gap-2">
                 <Label className="font-bold text-slate-700">Template Dia 1 (Sábado - 5h30)</Label>
-                <Select value={enemDia1TemplateId} onValueChange={setEnemDia1TemplateId}>
+                <Select value={enemDia1TemplateId || 'dynamic'} onValueChange={setEnemDia1TemplateId}>
                   <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200">
                     <SelectValue placeholder="Selecione o simulado do Dia 1" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="dynamic">🎯 Gerador Inteligente (Individualizado por Aluno)</SelectItem>
                     {enemTemplates.filter(t => t.dayType === 'DIA1' || t.dayType === 'CUSTOM').map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.title}
@@ -685,11 +686,12 @@ export default function SettingsPage() {
 
               <div className="grid gap-2">
                 <Label className="font-bold text-slate-700">Template Dia 2 (Domingo - 5h)</Label>
-                <Select value={enemDia2TemplateId} onValueChange={setEnemDia2TemplateId}>
+                <Select value={enemDia2TemplateId || 'dynamic'} onValueChange={setEnemDia2TemplateId}>
                   <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200">
                     <SelectValue placeholder="Selecione o simulado do Dia 2" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="dynamic">🎯 Gerador Inteligente (Individualizado por Aluno)</SelectItem>
                     {enemTemplates.filter(t => t.dayType === 'DIA2' || t.dayType === 'CUSTOM').map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.title}

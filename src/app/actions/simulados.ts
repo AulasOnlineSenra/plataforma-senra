@@ -356,3 +356,129 @@ export async function fetchEnemQuestions(year: number, limit = 15, offset = 0) {
     return { success: false, error: error.message || 'Falha ao buscar questões do ENEM.' };
   }
 }
+
+export async function checkEnemGabaritoRelease(simuladoId: string) {
+  try {
+    const simulado = await prisma.simulado.findUnique({
+      where: { id: simuladoId },
+    });
+
+    if (!simulado) {
+      return { success: false, error: 'Simulado não encontrado.' };
+    }
+
+    const isEnem = simulado.subject.startsWith('ENEM_');
+    if (!isEnem) {
+      // Simulados normais são liberados imediatamente
+      return { success: true, released: true };
+    }
+
+    const studentId = simulado.studentId;
+    const createdAt = new Date(simulado.createdAt);
+    const month = createdAt.getMonth();
+    const year = createdAt.getFullYear();
+
+    // Buscar o simulado do Dia 2 do mesmo aluno criado no mesmo mês e ano
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+    const dia2Simulado = await prisma.simulado.findFirst({
+      where: {
+        studentId,
+        subject: 'ENEM_DIA2',
+        createdAt: {
+          gte: monthStart,
+          lte: monthEnd,
+        },
+      },
+    });
+
+    if (!dia2Simulado || dia2Simulado.status !== 'Concluido') {
+      return {
+        success: true,
+        released: false,
+        reason: 'O gabarito estará disponível 60 minutos após a conclusão do simulado do Dia 2.',
+      };
+    }
+
+    // O Dia 2 está concluído. Pegar o horário de conclusão do Dia 2
+    const attempts = asAttempts(dia2Simulado.attempts);
+    const lastAttempt = attempts[attempts.length - 1];
+    if (!lastAttempt) {
+      return {
+        success: true,
+        released: false,
+        reason: 'O simulado do Dia 2 foi marcado como concluído mas não possui tentativas.',
+      };
+    }
+
+    const completedAt = new Date(lastAttempt.completedAt);
+    const now = new Date();
+    const releaseTime = new Date(completedAt.getTime() + 60 * 60 * 1000); // 60 minutos depois
+
+    if (now < releaseTime) {
+      return {
+        success: true,
+        released: false,
+        releaseTime: releaseTime.toISOString(),
+        reason: `O gabarito estará disponível em ${completedAt.toLocaleDateString('pt-BR')} às ${releaseTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (60 minutos após a finalização do segundo dia de prova).`,
+      };
+    }
+
+    // Liberado! Vamos calcular estatísticas de desempenho por área e matéria
+    const qList = asQuestions(simulado.questions);
+    const sAttempts = asAttempts(simulado.attempts);
+    const sLastAttempt = sAttempts[sAttempts.length - 1];
+
+    let totalQuestions = qList.length;
+    let totalCorrect = 0;
+    let totalWrong = 0;
+
+    const areaStats: Record<string, { correct: number; wrong: number; total: number }> = {};
+    const subjectStats: Record<string, { correct: number; wrong: number; total: number }> = {};
+
+    if (sLastAttempt) {
+      qList.forEach((q) => {
+        const discipline = q.discipline || (simulado.subject === 'ENEM_DIA1' ? 'Linguagens, Códigos e suas Tecnologias' : 'Matemática e suas Tecnologias');
+        const subject = q.subject || 'Geral';
+
+        const correctOpt = q.options.find((opt) => opt.isCorrect);
+        const userAns = sLastAttempt.userAnswers[q.id];
+        const isCorrect = correctOpt && userAns === correctOpt.id;
+
+        if (!areaStats[discipline]) areaStats[discipline] = { correct: 0, wrong: 0, total: 0 };
+        if (!subjectStats[subject]) subjectStats[subject] = { correct: 0, wrong: 0, total: 0 };
+
+        areaStats[discipline].total++;
+        subjectStats[subject].total++;
+
+        if (isCorrect) {
+          totalCorrect++;
+          areaStats[discipline].correct++;
+          subjectStats[subject].correct++;
+        } else {
+          totalWrong++;
+          areaStats[discipline].wrong++;
+          subjectStats[subject].wrong++;
+        }
+      });
+    }
+
+    return {
+      success: true,
+      released: true,
+      stats: {
+        totalQuestions,
+        totalCorrect,
+        totalWrong,
+        score: sLastAttempt ? sLastAttempt.score : 0,
+        areaStats,
+        subjectStats,
+      },
+    };
+  } catch (error) {
+    console.error('Erro ao verificar liberação do gabarito:', error);
+    return { success: false, error: 'Falha ao processar liberação do gabarito.' };
+  }
+}
+

@@ -27,11 +27,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getSimuladoById,
   submitSimuladoAttempt,
+  checkEnemGabaritoRelease,
 } from "@/app/actions/simulados";
 import { cn } from "@/lib/utils";
 
 type QuestionOption = { id: string; text: string; isCorrect: boolean };
-type Question = { id: string; title: string; options: QuestionOption[] };
+type Question = { id: string; title: string; options: QuestionOption[]; discipline?: string; subject?: string };
 type Attempt = {
   score: number;
   durationSeconds: number;
@@ -41,10 +42,12 @@ type Simulado = {
   id: string;
   title: string;
   description: string;
+  subject: string;
   questions: Question[];
   timeLimitMinutes?: number | null;
   attempts: Attempt[];
   maxAttempts: number;
+  studentId: string;
 };
 
 function formatDuration(totalSeconds: number) {
@@ -70,6 +73,20 @@ function StartSimuladoPageComponent() {
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingGabarito, setCheckingGabarito] = useState(false);
+  const [gabaritoReleaseInfo, setGabaritoReleaseInfo] = useState<{
+    released: boolean;
+    reason?: string;
+    stats?: {
+      totalQuestions: number;
+      totalCorrect: number;
+      totalWrong: number;
+      score: number;
+      areaStats: Record<string, { correct: number; wrong: number; total: number }>;
+      subjectStats: Record<string, { correct: number; wrong: number; total: number }>;
+    };
+  } | null>(null);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadSimulado = async () => {
@@ -88,7 +105,24 @@ function StartSimuladoPageComponent() {
 
     // Se ele já respondeu, mostra o resultado direto
     if (dbSimulado.attempts && dbSimulado.attempts.length > 0) {
-      setSubmittedAttempt(dbSimulado.attempts[dbSimulado.attempts.length - 1]);
+      const lastAtt = dbSimulado.attempts[dbSimulado.attempts.length - 1];
+      setSubmittedAttempt(lastAtt);
+      
+      const isEnem = dbSimulado.subject && dbSimulado.subject.startsWith("ENEM_");
+      if (isEnem) {
+        setCheckingGabarito(true);
+        const releaseRes = await checkEnemGabaritoRelease(dbSimulado.id);
+        if (releaseRes.success) {
+          setGabaritoReleaseInfo({
+            released: releaseRes.released || false,
+            reason: releaseRes.reason,
+            stats: releaseRes.stats,
+          });
+        }
+        setCheckingGabarito(false);
+      } else {
+        setGabaritoReleaseInfo({ released: true });
+      }
     } else {
       setStartTime(new Date());
       if (dbSimulado.timeLimitMinutes) {
@@ -163,6 +197,23 @@ function StartSimuladoPageComponent() {
       userAnswers: answers,
     };
     setSubmittedAttempt(nextAttempt);
+
+    const isEnem = simulado.subject && simulado.subject.startsWith("ENEM_");
+    if (isEnem) {
+      setCheckingGabarito(true);
+      const releaseRes = await checkEnemGabaritoRelease(simulado.id);
+      if (releaseRes.success) {
+        setGabaritoReleaseInfo({
+          released: releaseRes.released || false,
+          reason: releaseRes.reason,
+          stats: releaseRes.stats,
+        });
+      }
+      setCheckingGabarito(false);
+    } else {
+      setGabaritoReleaseInfo({ released: true });
+    }
+
     toast({
       title: "Simulado Finalizado! 🏆",
       description: `Sua pontuação foi gravada com sucesso.`,
@@ -198,14 +249,51 @@ function StartSimuladoPageComponent() {
     );
   }
 
+  if (checkingGabarito) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-muted-foreground animate-pulse font-medium">
+        Verificando liberação do gabarito...
+      </div>
+    );
+  }
+
+  if (submittedAttempt && gabaritoReleaseInfo && !gabaritoReleaseInfo.released) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center p-6 text-center min-h-[50vh]">
+        <Card className="rounded-[2rem] border-slate-200 shadow-md p-8 bg-white w-full space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-50 border-2 border-brand-yellow flex items-center justify-center text-brand-yellow">
+            <Clock className="h-8 w-8 animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-black text-slate-800">
+              Gabarito Temporariamente Bloqueado
+            </CardTitle>
+            <CardDescription className="text-base text-slate-500 font-medium leading-relaxed">
+              {gabaritoReleaseInfo.reason || "O gabarito estará disponível após a conclusão do simulado."}
+            </CardDescription>
+          </div>
+          <div className="p-4 bg-slate-50 rounded-2xl border text-sm text-slate-600 font-medium">
+            ⚠️ Para manter a integridade do exame, as respostas e correções do simulado só são liberadas 60 minutos após a finalização do Dia 2 da prova.
+          </div>
+          <Button
+            className="w-full rounded-2xl bg-slate-900 text-white font-bold h-12 hover:bg-slate-800"
+            onClick={() => router.push("/dashboard/simulados")}
+          >
+            Voltar para Meus Simulados
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   // ===============================================
-  // 🏆 TELA DE RESULTADO (GABARITO)
+  // 🏆 TELA DE RESULTADO (GABARITO LIBERADO)
   // ===============================================
-  if (submittedAttempt) {
+  if (submittedAttempt && gabaritoReleaseInfo?.released) {
     const isGoodScore = submittedAttempt.score >= 70;
 
     return (
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 pb-12">
         <Button
           variant="ghost"
           className="w-fit rounded-full text-slate-500 hover:bg-slate-100"
@@ -280,6 +368,80 @@ function StartSimuladoPageComponent() {
           </CardHeader>
         </Card>
 
+        {/* 📊 PAINEL DE ANALYTICS DETALHADO */}
+        {gabaritoReleaseInfo?.stats && (
+          <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden p-6 bg-slate-50/50 space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                📊 Análise Detalhada de Desempenho
+              </h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Confira seus resultados consolidados por área de conhecimento e disciplina.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Desempenho por Área de Conhecimento */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4">
+                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                  Por Área de Conhecimento
+                </h4>
+                <div className="space-y-3">
+                  {Object.entries(gabaritoReleaseInfo.stats.areaStats).map(([area, stat]) => {
+                    const percent = stat.total > 0 ? (stat.correct / stat.total) * 100 : 0;
+                    return (
+                      <div key={area} className="space-y-1">
+                        <div className="flex justify-between text-sm font-semibold text-slate-700">
+                          <span className="truncate max-w-[200px] md:max-w-xs">{area}</span>
+                          <span>{stat.correct}/{stat.total} ({percent.toFixed(0)}%)</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full rounded-full transition-all duration-500",
+                              percent >= 70 ? "bg-green-500" : percent >= 40 ? "bg-amber-500" : "bg-red-500"
+                            )}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Desempenho por Matéria/Disciplina */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4">
+                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                  Por Disciplina
+                </h4>
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                  {Object.entries(gabaritoReleaseInfo.stats.subjectStats).map(([subject, stat]) => {
+                    const percent = stat.total > 0 ? (stat.correct / stat.total) * 100 : 0;
+                    return (
+                      <div key={subject} className="space-y-1">
+                        <div className="flex justify-between text-sm font-semibold text-slate-700">
+                          <span>{subject}</span>
+                          <span>{stat.correct}/{stat.total} ({percent.toFixed(0)}%)</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full rounded-full transition-all duration-500",
+                              percent >= 70 ? "bg-green-500" : percent >= 40 ? "bg-amber-500" : "bg-red-500"
+                            )}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-slate-800 px-2 mt-4">
             Gabarito da Prova
@@ -287,7 +449,6 @@ function StartSimuladoPageComponent() {
           {simulado.questions.map((question, questionIndex) => {
             const selectedId = submittedAttempt.userAnswers[question.id];
 
-            // Lógica para saber se a questão inteira foi acertada
             const correctOption = question.options.find((opt) => opt.isCorrect);
             const questionIsCorrect = correctOption?.id === selectedId;
 
@@ -318,7 +479,7 @@ function StartSimuladoPageComponent() {
                   {question.options.map((option, idx) => {
                     const isCorrect = option.isCorrect;
                     const isSelected = selectedId === option.id;
-                    const letter = String.fromCharCode(65 + idx); // A, B, C, D...
+                    const letter = String.fromCharCode(65 + idx);
 
                     return (
                       <div

@@ -259,18 +259,20 @@ export async function dispatchEnemSimulado(
       return { success: false, error: 'Envio automático desativado.' };
 
     const templateId =
-      dayType === 'DIA1' ? cfg.enemDia1TemplateId : cfg.enemDia2TemplateId;
-    if (!templateId)
-      return { success: false, error: `Template do ${dayType} não configurado.` };
+      (dayType === 'DIA1' ? cfg.enemDia1TemplateId : cfg.enemDia2TemplateId) || 'dynamic';
+    const isDynamic = templateId === 'dynamic';
+    let template: any = null;
 
-    const template = await (prisma as any).simuladoTemplate.findUnique({
-      where: { id: templateId },
-    });
-    if (!template)
-      return { success: false, error: 'Template não encontrado no banco.' };
+    if (!isDynamic) {
+      template = await (prisma as any).simuladoTemplate.findUnique({
+        where: { id: templateId },
+      });
+      if (!template)
+        return { success: false, error: 'Template não encontrado no banco.' };
+    }
 
     // Buscar alunos
-    let students: { id: string; name: string }[];
+    let students: { id: string; name: string; tags: string | null }[];
     if (cfg.enemOnlyTaggedStudents) {
       const all = await prisma.user.findMany({
         where: { role: 'student', status: 'active' },
@@ -280,14 +282,13 @@ export async function dispatchEnemSimulado(
     } else {
       students = await prisma.user.findMany({
         where: { role: 'student', status: 'active' },
-        select: { id: true, name: true },
+        select: { id: true, name: true, tags: true },
       });
     }
 
     if (students.length === 0)
       return { success: true, dispatched: 0, message: 'Nenhum aluno elegível.' };
 
-    // Criar simulados e notificações para cada aluno
     const dayLabel = dayType === 'DIA1' ? 'Dia 1 (Sábado)' : 'Dia 2 (Domingo)';
     let dispatched = 0;
 
@@ -304,17 +305,200 @@ export async function dispatchEnemSimulado(
       });
       if (existing) continue;
 
+      let questionsToUse: any[] = [];
+      let timeLimit = 300;
+      let title = '';
+      let description = '';
+
+      if (isDynamic) {
+        // 1. Descobrir questões respondidas pelo aluno
+        const completed = await prisma.simulado.findMany({
+          where: { studentId: student.id, status: 'Concluido' },
+          select: { questions: true, attempts: true },
+        });
+
+        const answeredIds = new Set<string>();
+        completed.forEach((s) => {
+          if (Array.isArray(s.questions)) {
+            s.questions.forEach((q: any) => {
+              if (q && q.id) answeredIds.add(String(q.id));
+            });
+          }
+        });
+
+        // 2. Buscar questões do banco local
+        const disciplines =
+          dayType === 'DIA1'
+            ? [
+                'Linguagens, Códigos e suas Tecnologias',
+                'Ciências Humanas e suas Tecnologias',
+              ]
+            : [
+                'Matemática e suas Tecnologias',
+                'Ciências da Natureza e suas Tecnologias',
+              ];
+
+        const dbQuestions = await prisma.question.findMany({
+          where: {
+            discipline: { in: disciplines },
+          },
+        });
+
+        // 3. Juntar questões de templates estáticos como fallback
+        const allTemplates = await (prisma as any).simuladoTemplate.findMany({
+          where: { dayType },
+        });
+
+        const templateQuestionsPool: any[] = [];
+        allTemplates.forEach((t: any) => {
+          if (Array.isArray(t.questions)) {
+            t.questions.forEach((q: any) => {
+              templateQuestionsPool.push({
+                id: q.id || `tpl-q-${Math.random()}`,
+                title: q.title || q.context || '',
+                options: q.options || [],
+                discipline:
+                  q.discipline ||
+                  (dayType === 'DIA1'
+                    ? 'Linguagens, Códigos e suas Tecnologias'
+                    : 'Matemática e suas Tecnologias'),
+                subject: q.subject || 'Geral',
+              });
+            });
+          }
+        });
+
+        // Mapear banco local
+        const localQuestionsPool = dbQuestions.map((q) => {
+          const rawAlts =
+            typeof q.alternatives === 'string'
+              ? JSON.parse(q.alternatives)
+              : q.alternatives;
+          const alts = Array.isArray(rawAlts) ? rawAlts : [];
+          const options = alts.map((alt: any, idx: number) => ({
+            id: alt.letter || String.fromCharCode(65 + idx),
+            text: alt.text || '',
+            isCorrect:
+              (alt.letter || String.fromCharCode(65 + idx)) ===
+              q.correctAlternative,
+          }));
+
+          return {
+            id: q.id,
+            title: q.context || q.title || '',
+            options,
+            discipline: q.discipline,
+            subject: q.subject,
+          };
+        });
+
+        const combinedPool = [...localQuestionsPool, ...templateQuestionsPool];
+
+        // Filtrar repetições por ID ou por semelhança de enunciado
+        const uniquePool: any[] = [];
+        const seenTexts = new Set<string>();
+
+        combinedPool.forEach((q) => {
+          const normText = q.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+          if (!answeredIds.has(q.id) && !seenTexts.has(normText)) {
+            seenTexts.add(normText);
+            uniquePool.push(q);
+          }
+        });
+
+        // Se faltarem questões não respondidas, complementar com as respondidas
+        if (uniquePool.length < 15) {
+          combinedPool.forEach((q) => {
+            const normText = q.title
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '');
+            if (!seenTexts.has(normText)) {
+              seenTexts.add(normText);
+              uniquePool.push(q);
+            }
+          });
+        }
+
+        // Embaralhar
+        const shuffled = uniquePool.sort(() => 0.5 - Math.random());
+        const targetCount = Math.min(shuffled.length, 45);
+        questionsToUse = shuffled.slice(0, targetCount);
+
+        if (questionsToUse.length === 0) {
+          questionsToUse = [
+            {
+              id: 'fallback-1',
+              title:
+                'A preparação para o ENEM envolve constância e resiliência. Qual das alternativas representa a melhor prática de estudos?',
+              options: [
+                {
+                  id: 'A',
+                  text: 'Fazer simulados frequentes e analisar os erros cometidos.',
+                  isCorrect: true,
+                },
+                {
+                  id: 'B',
+                  text: 'Estudar somente na véspera da prova.',
+                  isCorrect: false,
+                },
+                {
+                  id: 'C',
+                  text: 'Evitar fazer revisões de matérias antigas.',
+                  isCorrect: false,
+                },
+                {
+                  id: 'D',
+                  text: 'Decorar fórmulas sem entender a aplicação prática.',
+                  isCorrect: false,
+                },
+              ],
+              discipline:
+                dayType === 'DIA1'
+                  ? 'Linguagens, Códigos e suas Tecnologias'
+                  : 'Matemática e suas Tecnologias',
+              subject: 'Orientação de Estudos',
+            },
+          ];
+        }
+
+        timeLimit = dayType === 'DIA1' ? 330 : 300;
+        title = `Simulado ENEM Inteligente — ${dayLabel}`;
+        description = `Prova personalizada com questões selecionadas para evitar repetição.`;
+      } else {
+        const rawQuestions = Array.isArray(template.questions)
+          ? template.questions
+          : [];
+        questionsToUse = rawQuestions.map((q: any) => ({
+          id: q.id || `q-${Math.random()}`,
+          title: q.title || q.context || '',
+          options: q.options || [],
+          discipline:
+            q.discipline ||
+            (dayType === 'DIA1'
+              ? 'Linguagens, Códigos e suas Tecnologias'
+              : 'Matemática e suas Tecnologias'),
+          subject: q.subject || 'Geral',
+        }));
+
+        timeLimit =
+          template.timeLimitMinutes || (dayType === 'DIA1' ? 330 : 300);
+        title = `${template.title} — ${dayLabel}`;
+        description = template.description || '';
+      }
+
       await prisma.simulado.create({
         data: {
-          title: `${template.title} — ${dayLabel}`,
-          description: template.description || '',
+          title,
+          description,
           subject: `ENEM_${dayType}`,
           creatorId: adminId,
           studentId: student.id,
           status: 'Pendente',
           maxAttempts: 1,
-          timeLimitMinutes: template.timeLimitMinutes,
-          questions: template.questions,
+          timeLimitMinutes: timeLimit,
+          questions: questionsToUse,
           attempts: [],
         },
       });
@@ -323,7 +507,7 @@ export async function dispatchEnemSimulado(
         data: {
           userId: student.id,
           title: `🎯 Simulado ENEM ${dayLabel} disponível!`,
-          message: `Seu simulado "${template.title}" está no seu painel. Você tem ${template.timeLimitMinutes} minutos. Boa sorte!`,
+          message: `Seu simulado "${title}" está no seu painel. Você tem ${timeLimit} minutos. Boa sorte!`,
           type: 'ENEM_SIMULADO',
           read: false,
         },

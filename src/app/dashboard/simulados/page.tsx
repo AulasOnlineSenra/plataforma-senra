@@ -111,6 +111,7 @@ export default function SimuladosPage() {
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [teacherSubject, setTeacherSubject] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"enem" | "disciplines">("enem");
 
   const loadAll = async () => {
     const userId = localStorage.getItem("userId");
@@ -153,18 +154,42 @@ export default function SimuladosPage() {
     loadAll();
   }, []);
 
-  const pendingSimulados = useMemo(
+  const pendingEnemSimulados = useMemo(
     () =>
-      simulados.filter((simulado) =>
-        simulado.status.toLowerCase().startsWith("pend"),
+      simulados.filter(
+        (s) =>
+          s.status.toLowerCase().startsWith("pend") &&
+          (s.subject.startsWith("ENEM_") || s.subject === "ENEM")
       ),
     [simulados],
   );
 
-  const answeredSimulados = useMemo(
+  const answeredEnemSimulados = useMemo(
     () =>
       simulados.filter(
-        (simulado) => !simulado.status.toLowerCase().startsWith("pend"),
+        (s) =>
+          !s.status.toLowerCase().startsWith("pend") &&
+          (s.subject.startsWith("ENEM_") || s.subject === "ENEM")
+      ),
+    [simulados],
+  );
+
+  const pendingRegularSimulados = useMemo(
+    () =>
+      simulados.filter(
+        (s) =>
+          s.status.toLowerCase().startsWith("pend") &&
+          !(s.subject.startsWith("ENEM_") || s.subject === "ENEM")
+      ),
+    [simulados],
+  );
+
+  const answeredRegularSimulados = useMemo(
+    () =>
+      simulados.filter(
+        (s) =>
+          !s.status.toLowerCase().startsWith("pend") &&
+          !(s.subject.startsWith("ENEM_") || s.subject === "ENEM")
       ),
     [simulados],
   );
@@ -208,6 +233,9 @@ export default function SimuladosPage() {
 
   // VISÃO DO ALUNO
   if (currentRole === "student") {
+    const currentPending = activeTab === "enem" ? pendingEnemSimulados : pendingRegularSimulados;
+    const currentAnswered = activeTab === "enem" ? answeredEnemSimulados : answeredRegularSimulados;
+
     return (
       <div className="flex flex-1 flex-col gap-6 max-w-6xl mx-auto w-full">
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -223,7 +251,7 @@ export default function SimuladosPage() {
           <div className="flex gap-4">
             <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-center px-6">
               <span className="block text-3xl font-black text-amber-700">
-                {pendingSimulados.length}
+                {currentPending.length}
               </span>
               <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">
                 Pendentes
@@ -231,7 +259,7 @@ export default function SimuladosPage() {
             </div>
             <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center px-6">
               <span className="block text-3xl font-black text-green-700">
-                {answeredSimulados.length}
+                {currentAnswered.length}
               </span>
               <span className="text-xs font-bold text-green-800 uppercase tracking-wider">
                 Concluídos
@@ -240,23 +268,62 @@ export default function SimuladosPage() {
           </div>
         </div>
 
+        {/* SELETOR DE ABAS PREMIUM */}
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl w-full max-w-md border border-slate-200 shadow-sm self-center md:self-start">
+          <Button
+            variant="ghost"
+            className={cn(
+              "flex-1 rounded-xl font-bold h-11 transition-all text-sm flex items-center justify-center gap-2",
+              activeTab === "enem"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50/50"
+            )}
+            onClick={() => setActiveTab("enem")}
+          >
+            🎯 Simulados ENEM
+            {pendingEnemSimulados.length > 0 && (
+              <span className="bg-brand-yellow text-slate-900 text-xs px-2 py-0.5 rounded-full font-black">
+                {pendingEnemSimulados.length}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            className={cn(
+              "flex-1 rounded-xl font-bold h-11 transition-all text-sm flex items-center justify-center gap-2",
+              activeTab === "disciplines"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50/50"
+            )}
+            onClick={() => setActiveTab("disciplines")}
+          >
+            📚 Por Disciplinas
+            {pendingRegularSimulados.length > 0 && (
+              <span className="bg-slate-900 text-white text-xs px-2 py-0.5 rounded-full font-black">
+                {pendingRegularSimulados.length}
+              </span>
+            )}
+          </Button>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2">
           {/* COLUNA: PENDENTES */}
           <div className="flex flex-col gap-4">
             <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
-              <AlertCircle className="h-5 w-5 text-brand-yellow" /> Aguardando
-              Você
+              <AlertCircle className="h-5 w-5 text-brand-yellow" /> Aguardando Você
             </h2>
-            {pendingSimulados.length === 0 ? (
-              <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-full flex flex-col items-center justify-center">
+            {currentPending.length === 0 ? (
+              <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
                 <CheckCircle2 className="h-12 w-12 text-slate-300 mb-3" />
                 <p className="text-slate-500 font-medium">
-                  Você não tem simulados pendentes.
+                  {activeTab === "enem" 
+                    ? "Você não tem simulados ENEM pendentes."
+                    : "Você não tem simulados pendentes por disciplina."}
                 </p>
                 <p className="text-sm text-slate-400 mt-1">Ótimo trabalho!</p>
               </Card>
             ) : (
-              pendingSimulados.map((simulado) => (
+              currentPending.map((simulado) => (
                 <Card
                   key={simulado.id}
                   className="rounded-3xl border-slate-200 shadow-sm hover:border-brand-yellow transition-all hover:shadow-md overflow-hidden group"
@@ -268,7 +335,7 @@ export default function SimuladosPage() {
                           variant="secondary"
                           className="mb-2 bg-white border shadow-sm font-semibold"
                         >
-                          {simulado.subject}
+                          {simulado.subject.startsWith("ENEM_") ? "ENEM" : simulado.subject}
                         </Badge>
                         <CardTitle className="text-xl text-slate-800 leading-tight">
                           {simulado.title}
@@ -314,17 +381,18 @@ export default function SimuladosPage() {
           {/* COLUNA: CONCLUÍDOS */}
           <div className="flex flex-col gap-4">
             <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
-              <BarChart3 className="h-5 w-5 text-green-500" /> Resultados
-              Anteriores
+              <BarChart3 className="h-5 w-5 text-green-500" /> Resultados Anteriores
             </h2>
-            {answeredSimulados.length === 0 ? (
-              <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-full flex flex-col items-center justify-center">
+            {currentAnswered.length === 0 ? (
+              <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
                 <p className="text-slate-500 font-medium">
-                  Nenhum histórico disponível.
+                  {activeTab === "enem" 
+                    ? "Nenhum histórico do ENEM disponível."
+                    : "Nenhum histórico por disciplina disponível."}
                 </p>
               </Card>
             ) : (
-              answeredSimulados.map((simulado) => {
+              currentAnswered.map((simulado) => {
                 const lastAttempt =
                   simulado.attempts[simulado.attempts.length - 1];
                 const isGoodScore = lastAttempt && lastAttempt.score >= 70;
@@ -351,7 +419,7 @@ export default function SimuladosPage() {
                           {simulado.title}
                         </h3>
                         <p className="text-sm text-slate-500 font-medium">
-                          {simulado.subject} • {simulado.questions.length}{" "}
+                          {simulado.subject.startsWith("ENEM_") ? "ENEM" : simulado.subject} • {simulado.questions.length}{" "}
                           Questões
                         </p>
                       </div>
