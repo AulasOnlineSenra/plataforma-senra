@@ -311,7 +311,7 @@ export async function dispatchEnemSimulado(
       let description = '';
 
       if (isDynamic) {
-        // 1. Descobrir questões respondidas pelo aluno
+        // 1. Descobrir questões respondidas pelo aluno para manter o ineditismo
         const completed = await prisma.simulado.findMany({
           where: { studentId: student.id, status: 'Concluido' },
           select: { questions: true, attempts: true },
@@ -326,49 +326,29 @@ export async function dispatchEnemSimulado(
           }
         });
 
-        // 2. Buscar questões do banco local
-        const disciplines =
+        // 2. Buscar questões do banco local (aceitando formatos curtos e longos de disciplina)
+        const dbDisciplines =
           dayType === 'DIA1'
             ? [
                 'Linguagens, Códigos e suas Tecnologias',
                 'Ciências Humanas e suas Tecnologias',
+                'linguagens',
+                'humanas',
               ]
             : [
                 'Matemática e suas Tecnologias',
                 'Ciências da Natureza e suas Tecnologias',
+                'matematica',
+                'natureza',
               ];
 
         const dbQuestions = await prisma.question.findMany({
           where: {
-            discipline: { in: disciplines },
+            discipline: { in: dbDisciplines },
           },
         });
 
-        // 3. Juntar questões de templates estáticos como fallback
-        const allTemplates = await (prisma as any).simuladoTemplate.findMany({
-          where: { dayType },
-        });
-
-        const templateQuestionsPool: any[] = [];
-        allTemplates.forEach((t: any) => {
-          if (Array.isArray(t.questions)) {
-            t.questions.forEach((q: any) => {
-              templateQuestionsPool.push({
-                id: q.id || `tpl-q-${Math.random()}`,
-                title: q.title || q.context || '',
-                options: q.options || [],
-                discipline:
-                  q.discipline ||
-                  (dayType === 'DIA1'
-                    ? 'Linguagens, Códigos e suas Tecnologias'
-                    : 'Matemática e suas Tecnologias'),
-                subject: q.subject || 'Geral',
-              });
-            });
-          }
-        });
-
-        // Mapear banco local
+        // Mapear banco local normalizando as disciplinas
         const localQuestionsPool = dbQuestions.map((q) => {
           const rawAlts =
             typeof q.alternatives === 'string'
@@ -383,23 +363,140 @@ export async function dispatchEnemSimulado(
               q.correctAlternative,
           }));
 
+          let finalDiscipline = q.discipline;
+          const lowerDiscipline = q.discipline.toLowerCase();
+          if (lowerDiscipline.includes('linguagens')) {
+            finalDiscipline = 'Linguagens, Códigos e suas Tecnologias';
+          } else if (lowerDiscipline.includes('humanas')) {
+            finalDiscipline = 'Ciências Humanas e suas Tecnologias';
+          } else if (lowerDiscipline.includes('matematica')) {
+            finalDiscipline = 'Matemática e suas Tecnologias';
+          } else if (lowerDiscipline.includes('natureza')) {
+            finalDiscipline = 'Ciências da Natureza e suas Tecnologias';
+          }
+
           return {
             id: q.id,
             title: q.context || q.title || '',
             options,
-            discipline: q.discipline,
-            subject: q.subject,
+            discipline: finalDiscipline,
+            subject: q.subject || 'Geral',
           };
         });
 
-        const combinedPool = [...localQuestionsPool, ...templateQuestionsPool];
+        // 3. Buscar questões oficiais da API do ENEM (anos 2021, 2022, 2023)
+        const apiQuestionsPool: any[] = [];
+        const yearsToFetch = [2021, 2022, 2023];
+        try {
+          const apiPromises = yearsToFetch.map(async (year) => {
+            const res = await fetch(`https://api.enem.dev/v1/exams/${year}/questions?limit=180`, {
+              next: { revalidate: 86400 }, // Cache de 24 horas para excelente performance
+            });
+            if (res.ok) {
+              const data = await res.json();
+              return Array.isArray(data) ? data : (data.questions || []);
+            }
+            return [];
+          });
 
-        // Filtrar repetições por ID ou por semelhança de enunciado
+          const apiResults = await Promise.all(apiPromises);
+
+          apiResults.forEach((questions, index) => {
+            const year = yearsToFetch[index];
+            questions.forEach((q: any) => {
+              let finalDiscipline = 'Linguagens, Códigos e suas Tecnologias';
+              const lowerDiscipline = (q.discipline || '').toLowerCase();
+
+              if (lowerDiscipline.includes('matematica')) {
+                finalDiscipline = 'Matemática e suas Tecnologias';
+              } else if (lowerDiscipline.includes('natureza')) {
+                finalDiscipline = 'Ciências da Natureza e suas Tecnologias';
+              } else if (lowerDiscipline.includes('humanas')) {
+                finalDiscipline = 'Ciências Humanas e suas Tecnologias';
+              } else {
+                finalDiscipline = 'Linguagens, Códigos e suas Tecnologias';
+              }
+
+              // Mapear alternativas da API oficial
+              const alts = Array.isArray(q.alternatives) ? q.alternatives : [];
+              const options = alts.map((alt: any, idx: number) => ({
+                id: alt.letter || String.fromCharCode(65 + idx),
+                text: alt.text || '',
+                isCorrect: (alt.letter || String.fromCharCode(65 + idx)) === q.correctAlternative,
+              }));
+
+              apiQuestionsPool.push({
+                id: `enem-api-${year}-${q.index || q.id || Math.random()}`,
+                title: q.context || q.title || `Questão ${q.index} - ENEM ${year}`,
+                options,
+                discipline: finalDiscipline,
+                subject: q.subject || 'Geral',
+              });
+            });
+          });
+        } catch (apiError) {
+          console.error('Erro ao consultar API do ENEM dev no gerador dinâmico:', apiError);
+        }
+
+        // 4. Juntar questões de templates estáticos como fallback adicional
+        const allTemplates = await (prisma as any).simuladoTemplate.findMany({
+          where: { dayType },
+        });
+
+        const templateQuestionsPool: any[] = [];
+        allTemplates.forEach((t: any) => {
+          if (Array.isArray(t.questions)) {
+            t.questions.forEach((q: any) => {
+              let finalDiscipline = q.discipline || (dayType === 'DIA1'
+                ? 'Linguagens, Códigos e suas Tecnologias'
+                : 'Matemática e suas Tecnologias');
+
+              const lower = finalDiscipline.toLowerCase();
+              if (lower.includes('linguagens')) {
+                finalDiscipline = 'Linguagens, Códigos e suas Tecnologias';
+              } else if (lower.includes('humanas')) {
+                finalDiscipline = 'Ciências Humanas e suas Tecnologias';
+              } else if (lower.includes('matematica')) {
+                finalDiscipline = 'Matemática e suas Tecnologias';
+              } else if (lower.includes('natureza')) {
+                finalDiscipline = 'Ciências da Natureza e suas Tecnologias';
+              }
+
+              templateQuestionsPool.push({
+                id: q.id || `tpl-q-${Math.random()}`,
+                title: q.title || q.context || '',
+                options: q.options || [],
+                discipline: finalDiscipline,
+                subject: q.subject || 'Geral',
+              });
+            });
+          }
+        });
+
+        // 5. Mesclar todos os pools e filtrar pelas matérias do respectivo Dia do ENEM
+        const targetDisciplines =
+          dayType === 'DIA1'
+            ? [
+                'Linguagens, Códigos e suas Tecnologias',
+                'Ciências Humanas e suas Tecnologias',
+              ]
+            : [
+                'Matemática e suas Tecnologias',
+                'Ciências da Natureza e suas Tecnologias',
+              ];
+
+        const combinedPool = [
+          ...localQuestionsPool,
+          ...apiQuestionsPool,
+          ...templateQuestionsPool,
+        ].filter((q) => targetDisciplines.includes(q.discipline));
+
+        // 6. Filtrar repetições por ID ou por semelhança de enunciado
         const uniquePool: any[] = [];
         const seenTexts = new Set<string>();
 
         combinedPool.forEach((q) => {
-          const normText = q.title
+          const normText = (q.title || '')
             .toLowerCase()
             .replace(/[^a-z0-9]/g, '');
           if (!answeredIds.has(q.id) && !seenTexts.has(normText)) {
@@ -408,10 +505,10 @@ export async function dispatchEnemSimulado(
           }
         });
 
-        // Se faltarem questões não respondidas, complementar com as respondidas
-        if (uniquePool.length < 15) {
+        // Se faltarem questões não respondidas no pool inédito, complementar com as respondidas
+        if (uniquePool.length < 45) {
           combinedPool.forEach((q) => {
-            const normText = q.title
+            const normText = (q.title || '')
               .toLowerCase()
               .replace(/[^a-z0-9]/g, '');
             if (!seenTexts.has(normText)) {
@@ -421,11 +518,12 @@ export async function dispatchEnemSimulado(
           });
         }
 
-        // Embaralhar
+        // 7. Embaralhar e extrair as 45 questões oficiais do dia do ENEM
         const shuffled = uniquePool.sort(() => 0.5 - Math.random());
         const targetCount = Math.min(shuffled.length, 45);
         questionsToUse = shuffled.slice(0, targetCount);
 
+        // Fallback de contingência caso todos os pools falhem por ausência de conexão
         if (questionsToUse.length === 0) {
           questionsToUse = [
             {
