@@ -384,25 +384,46 @@ export async function dispatchEnemSimulado(
           };
         });
 
-        // 3. Buscar questões oficiais da API do ENEM (anos 2021, 2022, 2023)
+        // 3. Buscar questões oficiais da API do ENEM (anos de 2009 a 2023, priorizando anos mais recentes via janela deslizante)
         const apiQuestionsPool: any[] = [];
-        const yearsToFetch = [2021, 2022, 2023];
+        const VALID_YEARS_DESC = [2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009];
+        
+        // Janela deslizante: a cada 2 simulados ENEM concluídos pelo aluno, avançamos a janela de busca em 1 ano para trás
+        const completedCount = completed.length;
+        const yearOffset = Math.floor(completedCount / 2);
+        const startIndex = Math.min(yearOffset, VALID_YEARS_DESC.length - 4);
+        const selectedYears = VALID_YEARS_DESC.slice(startIndex, startIndex + 4);
+
         try {
-          const apiPromises = yearsToFetch.map(async (year) => {
-            const res = await fetch(`https://api.enem.dev/v1/exams/${year}/questions?limit=180`, {
-              next: { revalidate: 86400 }, // Cache de 24 horas para excelente performance
-            });
-            if (res.ok) {
-              const data = await res.json();
-              return Array.isArray(data) ? data : (data.questions || []);
-            }
-            return [];
+          const apiPromises: Promise<any>[][] = [];
+          
+          selectedYears.forEach((year) => {
+            const offsets = [0, 45, 90, 135];
+            const promisesForYear = offsets.map((offset) =>
+              fetch(`https://api.enem.dev/v1/exams/${year}/questions?limit=45&offset=${offset}`, {
+                next: { revalidate: 86400 }, // Cache de 24 horas para excelente performance na VPS
+              })
+                .then(async (res) => {
+                  if (res.ok) {
+                    const data = await res.json();
+                    return {
+                      year,
+                      questions: Array.isArray(data) ? data : (data.questions || []),
+                    };
+                  }
+                  return { year, questions: [] };
+                })
+                .catch(() => ({ year, questions: [] }))
+            );
+            apiPromises.push(...promisesForYear);
           });
 
           const apiResults = await Promise.all(apiPromises);
 
-          apiResults.forEach((questions, index) => {
-            const year = yearsToFetch[index];
+          apiResults.forEach((resObj: any) => {
+            const { year, questions } = resObj;
+            if (!Array.isArray(questions)) return;
+
             questions.forEach((q: any) => {
               let finalDiscipline = 'Linguagens, Códigos e suas Tecnologias';
               const lowerDiscipline = (q.discipline || '').toLowerCase();
