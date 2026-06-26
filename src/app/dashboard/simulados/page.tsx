@@ -46,6 +46,10 @@ import {
   X,
   ListPlus,
   BookOpen,
+  Settings as SettingsIcon,
+  Sparkles,
+  Send,
+  Save,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +59,10 @@ import {
   listSimuladosForUser,
   upsertSimulado,
 } from "@/app/actions/simulados";
+import { getEnemConfig, updateEnemConfig, listSimuladoTemplates } from "@/app/actions/enem";
+import { ENEM_DIA1_MINUTES, ENEM_DIA2_MINUTES } from "@/lib/enem-utils";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 // TIPAGENS
@@ -113,6 +121,18 @@ export default function SimuladosPage() {
   const [teacherSubject, setTeacherSubject] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"enem" | "disciplines">("enem");
 
+  // Estados das Configurações do ENEM
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [enemEnabled, setEnemEnabled] = useState(false);
+  const [enemDia1TemplateId, setEnemDia1TemplateId] = useState<string>("dynamic");
+  const [enemDia2TemplateId, setEnemDia2TemplateId] = useState<string>("dynamic");
+  const [enemReleaseHour, setEnemReleaseHour] = useState(13);
+  const [enemReleaseMinute, setEnemReleaseMinute] = useState(0);
+  const [enemOnlyTagged, setEnemOnlyTagged] = useState(true);
+  const [enemTemplates, setEnemTemplates] = useState<any[]>([]);
+  const [isSendingEnemManual, setIsSendingEnemManual] = useState<'DIA1' | 'DIA2' | null>(null);
+  const [isSavingEnem, setIsSavingEnem] = useState(false);
+
   const loadAll = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
@@ -145,6 +165,31 @@ export default function SimuladosPage() {
       setStudents(
         (studentsResult.data as any[]).map((s) => ({ id: s.id, name: s.name })),
       );
+    }
+
+    // Carregar configurações do ENEM se for admin ou professor
+    if (dbUser.role === "admin" || dbUser.role === "teacher") {
+      try {
+        const [configRes, templatesRes] = await Promise.all([
+          getEnemConfig(),
+          listSimuladoTemplates()
+        ]);
+
+        if (configRes.success && configRes.data) {
+          const c = configRes.data;
+          setEnemEnabled(c.enemSimuladoEnabled);
+          setEnemDia1TemplateId(c.enemDia1TemplateId || 'dynamic');
+          setEnemDia2TemplateId(c.enemDia2TemplateId || 'dynamic');
+          setEnemReleaseHour(c.enemReleaseHour);
+          setEnemReleaseMinute(c.enemReleaseMinute);
+          setEnemOnlyTagged(c.enemOnlyTaggedStudents);
+        }
+        if (templatesRes.success && templatesRes.data) {
+          setEnemTemplates(templatesRes.data);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar configurações do ENEM na página de simulados:", error);
+      }
     }
 
     setIsLoading(false);
@@ -221,6 +266,79 @@ export default function SimuladosPage() {
       description: "O registro foi removido com sucesso.",
     });
     await loadAll();
+  };
+
+  const handleSaveEnem = async () => {
+    setIsSavingEnem(true);
+    const res = await updateEnemConfig({
+      enemSimuladoEnabled: enemEnabled,
+      enemDia1TemplateId: enemDia1TemplateId || 'dynamic',
+      enemDia2TemplateId: enemDia2TemplateId || 'dynamic',
+      enemReleaseHour: Number(enemReleaseHour),
+      enemReleaseMinute: Number(enemReleaseMinute),
+      enemOnlyTaggedStudents: enemOnlyTagged,
+    });
+    setIsSavingEnem(false);
+
+    if (res.success) {
+      toast({
+        title: "Configurações Salvas",
+        description: "As regras de agendamento do ENEM foram atualizadas com sucesso.",
+        className: "border-none bg-green-600 text-white",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro ao Salvar",
+        description: "Houve um problema ao salvar as configurações.",
+      });
+    }
+  };
+
+  const handleManualSendEnem = async (dayType: 'DIA1' | 'DIA2') => {
+    const adminId = localStorage.getItem('userId');
+    if (!adminId) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Autenticação',
+        description: 'Você precisa estar logado para realizar esta ação.',
+      });
+      return;
+    }
+
+    setIsSendingEnemManual(dayType);
+
+    try {
+      const response = await fetch('/api/cron/enem-simulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dayType, adminId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: `Simulado ${dayType === 'DIA1' ? 'Dia 1' : 'Dia 2'} Enviado!`,
+          description: `Enviado para ${data.dispatched} alunos de um total de ${data.total} elegíveis.`,
+          className: 'border-none bg-green-600 text-white',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro no Envio',
+          description: data.error || 'Não foi possível disparar o simulado.',
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Rede',
+        description: 'Falha ao conectar ao servidor.',
+      });
+    } finally {
+      setIsSendingEnemManual(null);
+    }
   };
 
   if (isLoading) {
@@ -468,6 +586,16 @@ export default function SimuladosPage() {
             <BookOpen className="mr-2 h-5 w-5 text-brand-yellow" /> Banco de
             Questões
           </Button>
+          {(currentRole === "admin" || currentRole === "teacher") && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-xl border-slate-300 h-12 w-12 hover:bg-slate-100 flex items-center justify-center shrink-0"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <SettingsIcon className="h-5 w-5 text-slate-600" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -592,6 +720,201 @@ export default function SimuladosPage() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl text-slate-900 font-black">
+              <SettingsIcon className="h-7 w-7 text-indigo-600" />
+              Configurações do ENEM
+            </DialogTitle>
+            <CardDescription className="text-sm">
+              Gerencie as regras de agendamento automático e disparos manuais.
+            </CardDescription>
+          </DialogHeader>
+
+          <div className="space-y-8 mt-4">
+            {/* Simulado ENEM Automático */}
+            <Card className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <CardHeader className="border-b border-slate-100 pb-5 bg-slate-50/50">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-indigo-100 p-2 text-indigo-600">
+                      <BookCopy className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg text-slate-900 flex items-center gap-2 font-bold">
+                        Simulado ENEM Automático
+                        <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5">
+                          <Sparkles className="h-2.5 w-2.5 text-indigo-600" /> Recorrente
+                        </span>
+                      </CardTitle>
+                      <CardDescription className="text-xs">Configure o disparo recorrente mensal do simulado para os alunos</CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                    <Label htmlFor="enem-enabled-main" className="text-xs font-bold text-slate-700 cursor-pointer">Ativar Envio Automático</Label>
+                    <Switch
+                      id="enem-enabled-main"
+                      checked={enemEnabled}
+                      onCheckedChange={setEnemEnabled}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Quando ativado, o sistema envia automaticamente a primeira parte do simulado no <strong>último sábado de cada mês</strong> e a segunda parte no <strong>último domingo de cada mês</strong>.
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid gap-1.5">
+                    <Label className="font-bold text-xs text-slate-700">Template Dia 1 (Sábado - 5h30)</Label>
+                    <Select value={enemDia1TemplateId || 'dynamic'} onValueChange={setEnemDia1TemplateId}>
+                      <SelectTrigger className="h-11 bg-white rounded-lg border-slate-200">
+                        <SelectValue placeholder="Selecione o simulado do Dia 1" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dynamic">🎯 Gerador Inteligente (Individualizado por Aluno)</SelectItem>
+                        {enemTemplates.filter(t => t.dayType === 'DIA1' || t.dayType === 'CUSTOM').map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-slate-400">Tempo limite recomendado: {ENEM_DIA1_MINUTES} minutos (5h30min)</p>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <Label className="font-bold text-xs text-slate-700">Template Dia 2 (Domingo - 5h)</Label>
+                    <Select value={enemDia2TemplateId || 'dynamic'} onValueChange={setEnemDia2TemplateId}>
+                      <SelectTrigger className="h-11 bg-white rounded-lg border-slate-200">
+                        <SelectValue placeholder="Selecione o simulado do Dia 2" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dynamic">🎯 Gerador Inteligente (Individualizado por Aluno)</SelectItem>
+                        {enemTemplates.filter(t => t.dayType === 'DIA2' || t.dayType === 'CUSTOM').map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-slate-400">Tempo limite recomendado: {ENEM_DIA2_MINUTES} minutos (5h00min)</p>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <Label className="font-bold text-xs text-slate-700">Horário de Liberação</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        className="h-11 text-center font-bold text-sm w-16 rounded-lg border-slate-200"
+                        value={enemReleaseHour}
+                        onChange={(e) => setEnemReleaseHour(Number(e.target.value))}
+                      />
+                      <span className="font-bold text-slate-400">:</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        className="h-11 text-center font-bold text-sm w-16 rounded-lg border-slate-200"
+                        value={enemReleaseMinute}
+                        onChange={(e) => setEnemReleaseMinute(Number(e.target.value))}
+                      />
+                      <span className="text-xs text-slate-500 ml-1">horas</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 self-end h-11">
+                    <Label htmlFor="enem-only-tagged" className="font-bold text-xs text-slate-700 cursor-pointer">Apenas com Tag "Foco ENEM"</Label>
+                    <Switch
+                      id="enem-only-tagged"
+                      checked={enemOnlyTagged}
+                      onCheckedChange={setEnemOnlyTagged}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="bg-slate-50 border-t py-3 flex justify-end">
+                <Button
+                  className="rounded-full bg-brand-yellow hover:bg-amber-400 text-slate-900 font-bold h-10 px-5 text-sm transition-all"
+                  onClick={handleSaveEnem}
+                  disabled={isSavingEnem}
+                >
+                  {isSavingEnem ? 'Salvando...' : <><Save className="mr-2 h-4 w-4" /> Salvar Regras do ENEM</>}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Disparo Manual de Teste */}
+            <Card className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <CardHeader className="bg-slate-50/50 border-b pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-amber-100 p-2 text-amber-600">
+                    <Send className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg text-slate-900 font-bold">Disparo Manual de Teste (ENEM)</CardTitle>
+                    <CardDescription className="text-xs">
+                      Envie imediatamente os simulados selecionados acima para fins de homologação.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 grid md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-xl flex flex-col justify-between h-36 bg-white hover:border-slate-300 transition-all">
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-800">Enviar Dia 1 Agora</h4>
+                    <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                      Cria o simulado do Dia 1 na conta de todos os alunos elegíveis imediatamente.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 rounded-lg text-xs font-bold border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all mt-3"
+                    onClick={() => handleManualSendEnem('DIA1')}
+                    disabled={!!isSendingEnemManual}
+                  >
+                    {isSendingEnemManual === 'DIA1' ? 'Enviando...' : 'Disparar Dia 1'}
+                  </Button>
+                </div>
+
+                <div className="p-4 border rounded-xl flex flex-col justify-between h-36 bg-white hover:border-slate-300 transition-all">
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-800">Enviar Dia 2 Agora</h4>
+                    <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                      Cria o simulado do Dia 2 na conta de todos os alunos elegíveis imediatamente.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 rounded-lg text-xs font-bold border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all mt-3"
+                    onClick={() => handleManualSendEnem('DIA2')}
+                    disabled={!!isSendingEnemManual}
+                  >
+                    {isSendingEnemManual === 'DIA2' ? 'Enviando...' : 'Disparar Dia 2'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter className="mt-6 border-t pt-4">
+            <Button
+              className="rounded-xl border-slate-300 hover:bg-slate-100 font-bold"
+              variant="outline"
+              onClick={() => setIsSettingsOpen(false)}
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
