@@ -505,9 +505,6 @@ export default function SimuladosPage() {
         {activeTab === "enem" ? (
           /* ABA ENEM: VISUALIZAÇÃO EM LISTA SANFONA (ACCORDION) */
           <div className="flex flex-col gap-4 w-full">
-            <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
-              <ClipboardList className="h-5 w-5 text-indigo-600" /> Seus Simulados ENEM
-            </h2>
             {enemGroups.length === 0 ? (
               <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
                 <CheckCircle2 className="h-12 w-12 text-slate-300 mb-3" />
@@ -525,6 +522,30 @@ export default function SimuladosPage() {
                   const hasPending = dia1Pending || dia2Pending;
                   const totalDays = (group.dia1 ? 1 : 0) + (group.dia2 ? 1 : 0);
                   const completedDays = (group.dia1 && !dia1Pending ? 1 : 0) + (group.dia2 && !dia2Pending ? 1 : 0);
+
+                  // Calcula o resultado/score do simulado
+                  const getSimuladoScore = () => {
+                    const scores: number[] = [];
+                    if (group.dia1) {
+                      const isPending = group.dia1.status.toLowerCase().startsWith("pend");
+                      const lastAttempt = group.dia1.attempts?.[group.dia1.attempts.length - 1];
+                      if (!isPending && lastAttempt) {
+                        scores.push(lastAttempt.score);
+                      }
+                    }
+                    if (group.dia2) {
+                      const isPending = group.dia2.status.toLowerCase().startsWith("pend");
+                      const lastAttempt = group.dia2.attempts?.[group.dia2.attempts.length - 1];
+                      if (!isPending && lastAttempt) {
+                        scores.push(lastAttempt.score);
+                      }
+                    }
+                    if (scores.length === 0) return null;
+                    const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+                    return `${Math.round(average)}%`;
+                  };
+
+                  const simuladoScore = getSimuladoScore();
 
                   const toggleExpand = () => {
                     setExpandedSimulados((prev) => ({
@@ -561,6 +582,16 @@ export default function SimuladosPage() {
                               Liberação: {format(new Date(group.createdAt), "dd/MM/yyyy")}
                             </p>
                           </div>
+                        </div>
+
+                        {/* Coluna de Resultado */}
+                        <div className="hidden sm:flex flex-col items-start min-w-[120px]">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            Resultado
+                          </span>
+                          <span className="text-sm font-extrabold text-slate-700 mt-0.5">
+                            {simuladoScore || "Aguardando"}
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-3">
