@@ -177,6 +177,54 @@ export async function deleteSimulado(simuladoId: string) {
   }
 }
 
+export async function startSimuladoAttempt(simuladoId: string) {
+  try {
+    const simulado = await prisma.simulado.findUnique({
+      where: { id: simuladoId },
+    });
+
+    if (!simulado) {
+      return { success: false, error: 'Simulado não encontrado.' };
+    }
+
+    const existingAttempts = asAttempts(simulado.attempts);
+    
+    // Verificar se já existe uma tentativa ativa (com completedAt vazio/nulo)
+    const activeAttempt = existingAttempts.find((a) => !a.completedAt);
+    if (activeAttempt) {
+      return { success: true, startedAt: activeAttempt.startedAt };
+    }
+
+    // Verificar limite de tentativas concluídas
+    const completedAttempts = existingAttempts.filter((a) => a.completedAt);
+    if (completedAttempts.length >= simulado.maxAttempts) {
+      return { success: false, error: 'Limite de tentativas atingido.' };
+    }
+
+    const startedAt = new Date().toISOString();
+    const newAttempt = {
+      startedAt,
+      completedAt: '', // indica ativa
+      durationSeconds: 0,
+      score: 0,
+      userAnswers: {},
+    };
+
+    await prisma.simulado.update({
+      where: { id: simuladoId },
+      data: {
+        status: 'EmAndamento',
+        attempts: [...existingAttempts, newAttempt],
+      },
+    });
+
+    return { success: true, startedAt };
+  } catch (error) {
+    console.error('Erro ao iniciar tentativa de simulado:', error);
+    return { success: false, error: 'Falha ao iniciar tentativa.' };
+  }
+}
+
 export async function submitSimuladoAttempt(params: {
   simuladoId: string;
   startedAt: string;
@@ -195,7 +243,8 @@ export async function submitSimuladoAttempt(params: {
     const questions = asQuestions(simulado.questions);
     const existingAttempts = asAttempts(simulado.attempts);
 
-    if (existingAttempts.length >= simulado.maxAttempts) {
+    const completedAttempts = existingAttempts.filter((a) => a.completedAt);
+    if (completedAttempts.length >= simulado.maxAttempts) {
       return { success: false, error: 'Limite de tentativas atingido.' };
     }
 
@@ -224,11 +273,14 @@ export async function submitSimuladoAttempt(params: {
       userAnswers: params.userAnswers,
     };
 
+    // Remove qualquer tentativa ativa pendente e adiciona a nova concluída
+    const filteredAttempts = existingAttempts.filter((a) => a.completedAt);
+
     const updated = await prisma.simulado.update({
       where: { id: params.simuladoId },
       data: {
         status: 'Concluido',
-        attempts: [...existingAttempts, newAttempt],
+        attempts: [...filteredAttempts, newAttempt],
       },
     });
 

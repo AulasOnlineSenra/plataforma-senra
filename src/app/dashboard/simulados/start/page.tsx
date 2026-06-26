@@ -28,6 +28,7 @@ import {
   getSimuladoById,
   submitSimuladoAttempt,
   checkEnemGabaritoRelease,
+  startSimuladoAttempt,
 } from "@/app/actions/simulados";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,8 @@ type Attempt = {
   score: number;
   durationSeconds: number;
   userAnswers: Record<string, string>;
+  startedAt?: string;
+  completedAt?: string | null;
 };
 type Simulado = {
   id: string;
@@ -131,29 +134,60 @@ function StartSimuladoPageComponent() {
       
       setSubmittedAttempt(lastAtt);
       setGabaritoReleaseInfo({ released: true }); // Ignora travas de gabarito para Admin
-    } else if (dbSimulado.attempts && dbSimulado.attempts.length > 0) {
-      const lastAtt = dbSimulado.attempts[dbSimulado.attempts.length - 1];
-      setSubmittedAttempt(lastAtt);
-      
-      const isEnem = dbSimulado.subject && dbSimulado.subject.startsWith("ENEM_");
-      if (isEnem) {
-        setCheckingGabarito(true);
-        const releaseRes = await checkEnemGabaritoRelease(dbSimulado.id);
-        if (releaseRes.success) {
-          setGabaritoReleaseInfo({
-            released: releaseRes.released || false,
-            reason: releaseRes.reason,
-            stats: releaseRes.stats,
-          });
-        }
-        setCheckingGabarito(false);
-      } else {
-        setGabaritoReleaseInfo({ released: true });
-      }
     } else {
-      setStartTime(new Date());
-      if (dbSimulado.timeLimitMinutes) {
-        setRemainingSeconds(dbSimulado.timeLimitMinutes * 60);
+      const attempts = dbSimulado.attempts || [];
+      const completedAtts = attempts.filter((a) => a.completedAt);
+      const activeAtt = attempts.find((a) => !a.completedAt);
+
+      if (completedAtts.length > 0) {
+        // Aluno já completou a tentativa, exibe gabarito
+        const lastAtt = completedAtts[completedAtts.length - 1];
+        setSubmittedAttempt(lastAtt);
+        
+        const isEnem = dbSimulado.subject && dbSimulado.subject.startsWith("ENEM_");
+        if (isEnem) {
+          setCheckingGabarito(true);
+          const releaseRes = await checkEnemGabaritoRelease(dbSimulado.id);
+          if (releaseRes.success) {
+            setGabaritoReleaseInfo({
+              released: releaseRes.released || false,
+              reason: releaseRes.reason,
+              stats: releaseRes.stats,
+            });
+          }
+          setCheckingGabarito(false);
+        } else {
+          setGabaritoReleaseInfo({ released: true });
+        }
+      } else {
+        // Aluno está realizando a prova
+        if (activeAtt && activeAtt.startedAt) {
+          // Já existe uma tentativa ativa! Recupera o tempo dela
+          const startedTime = new Date(activeAtt.startedAt);
+          setStartTime(startedTime);
+
+          const elapsedSeconds = Math.floor((new Date().getTime() - startedTime.getTime()) / 1000);
+          const totalLimitSeconds = (dbSimulado.timeLimitMinutes || 0) * 60;
+          const remaining = totalLimitSeconds - elapsedSeconds;
+
+          if (remaining <= 0) {
+            // Estourou o tempo enquanto estava fora! Finaliza a prova passando o startedTime correto
+            setRemainingSeconds(0);
+            handleFinish(startedTime);
+          } else {
+            setRemainingSeconds(remaining);
+          }
+        } else {
+          // Não há tentativa ativa: inicia uma nova agora!
+          const now = new Date();
+          setStartTime(now);
+          if (dbSimulado.timeLimitMinutes) {
+            setRemainingSeconds(dbSimulado.timeLimitMinutes * 60);
+          }
+
+          // Salva no banco que a tentativa começou em background
+          startSimuladoAttempt(dbSimulado.id);
+        }
       }
     }
 
@@ -187,15 +221,16 @@ function StartSimuladoPageComponent() {
     return ((currentIndex + 1) / simulado.questions.length) * 100;
   }, [currentIndex, simulado]);
 
-  const handleFinish = async () => {
-    if (!simulado || !startTime) return;
+  const handleFinish = async (forcedStartTime?: Date) => {
+    const activeStartTime = forcedStartTime || startTime;
+    if (!simulado || !activeStartTime) return;
     if (timerRef.current) clearInterval(timerRef.current);
 
     setIsSubmitting(true);
     const endTime = new Date();
     const result = await submitSimuladoAttempt({
       simuladoId: simulado.id,
-      startedAt: startTime.toISOString(),
+      startedAt: activeStartTime.toISOString(),
       completedAt: endTime.toISOString(),
       userAnswers: answers,
     });
