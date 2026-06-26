@@ -123,6 +123,8 @@ export default function SimuladosPage() {
   const [teacherSubject, setTeacherSubject] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"enem" | "disciplines">("enem");
   const [expandedSimulados, setExpandedSimulados] = useState<Record<number, boolean>>({});
+  const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>("all");
+  const [expandedAdminSimulados, setExpandedAdminSimulados] = useState<Record<string, boolean>>({});
 
   // Estados das Configurações do ENEM
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -305,6 +307,105 @@ export default function SimuladosPage() {
     }
     return SUBJECTS;
   }, [currentRole, teacherSubject]);
+
+  const displayItems = useMemo(() => {
+    // 1. Filtrar pelo aluno selecionado
+    let filtered = simulados;
+    if (selectedStudentFilter !== "all") {
+      filtered = simulados.filter((s) => s.studentId === selectedStudentFilter);
+    }
+
+    // 2. Separar ENEM e Regulares
+    const enemSims = filtered.filter(
+      (s) => s.subject.startsWith("ENEM_") || s.subject === "ENEM"
+    );
+    const regularSims = filtered.filter(
+      (s) => !(s.subject.startsWith("ENEM_") || s.subject === "ENEM")
+    );
+
+    // 3. Agrupar ENEM por aluno
+    const enemGroupsByStudent: Record<string, SimuladoItem[]> = {};
+    enemSims.forEach((sim) => {
+      const sId = sim.studentId;
+      if (!enemGroupsByStudent[sId]) {
+        enemGroupsByStudent[sId] = [];
+      }
+      enemGroupsByStudent[sId].push(sim);
+    });
+
+    const enemGroupsList: any[] = [];
+    Object.entries(enemGroupsByStudent).forEach(([studentId, studentSims]) => {
+      // Ordena e pareia
+      const dia1List = studentSims
+        .filter((sim) => {
+          const title = (sim.title || "").toLowerCase();
+          const subject = (sim.subject || "").toUpperCase();
+          return (
+            subject === "ENEM_DIA1" ||
+            title.includes("dia 1") ||
+            title.includes("sábado") ||
+            title.includes("sabado")
+          );
+        })
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      const dia2List = studentSims
+        .filter((sim) => {
+          const title = (sim.title || "").toLowerCase();
+          const subject = (sim.subject || "").toUpperCase();
+          return (
+            subject === "ENEM_DIA2" ||
+            title.includes("dia 2") ||
+            title.includes("domingo")
+          );
+        })
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      const maxLen = Math.max(dia1List.length, dia2List.length);
+      for (let i = 0; i < maxLen; i++) {
+        const d1 = dia1List[i];
+        const d2 = dia2List[i];
+        const studentInfo = d1?.student || d2?.student || null;
+
+        const createdAt = d1 
+          ? new Date(d1.createdAt) 
+          : d2 
+            ? new Date(d2.createdAt) 
+            : new Date();
+
+        enemGroupsList.push({
+          id: `enem-group-${studentId}-${i + 1}`,
+          number: i + 1,
+          student: studentInfo,
+          dia1: d1,
+          dia2: d2,
+          createdAt,
+          isEnemGroup: true,
+        });
+      }
+    });
+
+    // 4. Mapear os simulados regulares para termos uma estrutura comum
+    const mappedRegulars = regularSims.map((sim) => ({
+      id: sim.id,
+      title: sim.title,
+      subject: sim.subject,
+      student: sim.student,
+      questionsCount: sim.questions.length,
+      status: sim.status,
+      createdAt: new Date(sim.createdAt),
+      rawSimulado: sim,
+      isEnemGroup: false,
+    }));
+
+    // 5. Unificar e ordenar por data de criação decrescente
+    const combined = [
+      ...enemGroupsList,
+      ...mappedRegulars,
+    ];
+
+    return combined.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }, [simulados, selectedStudentFilter]);
 
   const handleDelete = async (simuladoId: string) => {
     if (
@@ -859,123 +960,286 @@ export default function SimuladosPage() {
       </div>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="border-b bg-white pb-5">
-          <CardTitle className="flex items-center gap-2 text-xl text-slate-800">
-            <ClipboardList className="h-6 w-6 text-slate-500" />
-            Histórico de Simulados
-          </CardTitle>
-          <CardDescription className="text-base">
-            Todas as provas criadas e seus status atuais.
-          </CardDescription>
+        <CardHeader className="border-b bg-white pb-5 flex flex-row items-center justify-between flex-wrap gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-xl text-slate-800">
+              <ClipboardList className="h-6 w-6 text-slate-500" />
+              Histórico de Simulados
+            </CardTitle>
+            <CardDescription className="text-base">
+              Todas as provas criadas e seus status atuais.
+            </CardDescription>
+          </div>
+          <div className="w-64">
+            <Select value={selectedStudentFilter} onValueChange={setSelectedStudentFilter}>
+              <SelectTrigger className="h-10 bg-white rounded-lg border-slate-200">
+                <SelectValue placeholder="Filtrar por Aluno" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">👥 Todos os Alunos</SelectItem>
+                {students.map((student) => (
+                  <SelectItem key={student.id} value={student.id}>
+                    {student.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-96">
-            <Table>
-              <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                <TableRow>
-                  <TableHead className="font-bold text-slate-700 px-6">
-                    Título
-                  </TableHead>
-                  <TableHead className="font-bold text-slate-700">
-                    Aluno
-                  </TableHead>
-                  <TableHead className="font-bold text-slate-700 text-center">
-                    Questões
-                  </TableHead>
-                  <TableHead className="font-bold text-slate-700">
-                    Status
-                  </TableHead>
-                  <TableHead className="font-bold text-slate-700 text-right">
-                    Data
-                  </TableHead>
-                  <TableHead className="font-bold text-slate-700 text-right px-6">
-                    Ações
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {simulados.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-40 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-400">
-                        <BookCopy className="h-10 w-10 mb-2 opacity-30" />
-                        <p className="font-medium text-slate-600">
-                          Nenhum simulado cadastrado.
-                        </p>
-                        <p className="text-sm mt-1">
-                          Acesse o "Banco de Questões" para começar.
-                        </p>
+          <ScrollArea className="h-[500px]">
+            <div className="p-6 space-y-4">
+              {displayItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-slate-400 py-16">
+                  <BookCopy className="h-10 w-10 mb-2 opacity-30" />
+                  <p className="font-medium text-slate-600">
+                    Nenhum simulado cadastrado.
+                  </p>
+                  <p className="text-sm mt-1">
+                    Acesse o "Banco de Questões" para começar.
+                  </p>
+                </div>
+              ) : (
+                displayItems.map((item) => {
+                  if (item.isEnemGroup) {
+                    const isExpanded = expandedAdminSimulados[item.id] ?? false;
+                    const dia1Pending = item.dia1 ? item.dia1.status.toLowerCase().startsWith("pend") : false;
+                    const dia2Pending = item.dia2 ? item.dia2.status.toLowerCase().startsWith("pend") : false;
+                    const hasPending = dia1Pending || dia2Pending;
+                    const totalDays = (item.dia1 ? 1 : 0) + (item.dia2 ? 1 : 0);
+                    const completedDays = (item.dia1 && !dia1Pending ? 1 : 0) + (item.dia2 && !dia2Pending ? 1 : 0);
+
+                    const toggleExpand = () => {
+                      setExpandedAdminSimulados((prev) => ({
+                        ...prev,
+                        [item.id]: !isExpanded,
+                      }));
+                    };
+
+                    const cleanTitle = (t: string) => {
+                      return t.replace(/nº\s*\d+\s*[-—–]\s*/i, "")
+                              .replace(/nº\s*\d+\s*/i, "")
+                              .trim();
+                    };
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200"
+                      >
+                        {/* Cabeçalho do Accordion */}
+                        <div
+                          className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors text-left flex-wrap md:flex-nowrap gap-4 cursor-pointer"
+                          onClick={toggleExpand}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
+                              <BookOpen className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-base font-black text-slate-900">
+                                Simulado {item.number} (ENEM)
+                              </h3>
+                              <p className="text-xs text-slate-400 font-bold mt-0.5">
+                                Liberação: {format(new Date(item.createdAt), "dd/MM/yyyy")}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Coluna do Aluno */}
+                          <div className="flex items-center gap-2 min-w-[180px]">
+                            <Avatar className="h-7 w-7">
+                              <AvatarFallback className="bg-amber-100 text-xs text-amber-800 font-bold">
+                                {item.student?.name?.charAt(0) || "-"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-semibold text-slate-700">
+                              {item.student?.name || "Não atribuído"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 ml-auto md:ml-0">
+                            <Badge
+                              className={cn(
+                                "font-bold text-[10px] uppercase tracking-wider rounded-full px-2.5 py-1 border-none",
+                                hasPending
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-green-100 text-green-800"
+                              )}
+                            >
+                              {hasPending 
+                                ? `${completedDays}/${totalDays} Concluído` 
+                                : "Concluído"
+                              }
+                            </Badge>
+                            {isExpanded ? (
+                              <ChevronUp className="h-5 w-5 text-slate-400" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5 text-slate-400" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Conteúdo do Accordion */}
+                        {isExpanded && (
+                          <div className="border-t border-slate-100 bg-slate-50/30 p-6 space-y-3">
+                            {item.dia1 && (
+                              <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-white shadow-xs gap-4 flex-wrap sm:flex-nowrap">
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-slate-800 text-sm">
+                                    {cleanTitle(item.dia1.title)}
+                                  </h4>
+                                  <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    {item.dia1.questions.length} questões • {item.dia1.timeLimitMinutes || 330} min
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Badge
+                                    className={cn(
+                                      "font-bold text-[9px] uppercase tracking-wider rounded-full px-2 py-0.5 border-none",
+                                      item.dia1.status.toLowerCase().startsWith("pend")
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-green-100 text-green-800"
+                                    )}
+                                  >
+                                    {item.dia1.status}
+                                  </Badge>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="font-bold text-xs text-slate-600 hover:text-slate-900 border-slate-200 h-8"
+                                      onClick={() => router.push(`/dashboard/simulados/start?id=${item.dia1.id}`)}
+                                    >
+                                      Visualizar
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-slate-400 hover:bg-red-50 hover:text-red-600 h-8 w-8 rounded-lg"
+                                      onClick={() => handleDelete(item.dia1.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {item.dia2 && (
+                              <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-white shadow-xs gap-4 flex-wrap sm:flex-nowrap">
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-slate-800 text-sm">
+                                    {cleanTitle(item.dia2.title)}
+                                  </h4>
+                                  <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    {item.dia2.questions.length} questões • {item.dia2.timeLimitMinutes || 300} min
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Badge
+                                    className={cn(
+                                      "font-bold text-[9px] uppercase tracking-wider rounded-full px-2 py-0.5 border-none",
+                                      item.dia2.status.toLowerCase().startsWith("pend")
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-green-100 text-green-800"
+                                    )}
+                                  >
+                                    {item.dia2.status}
+                                  </Badge>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="font-bold text-xs text-slate-600 hover:text-slate-900 border-slate-200 h-8"
+                                      onClick={() => router.push(`/dashboard/simulados/start?id=${item.dia2.id}`)}
+                                    >
+                                      Visualizar
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-slate-400 hover:bg-red-50 hover:text-red-600 h-8 w-8 rounded-lg"
+                                      onClick={() => handleDelete(item.dia2.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  simulados.map((simulado) => (
-                    <TableRow
-                      key={simulado.id}
-                      className="hover:bg-slate-50/50"
-                    >
-                      <TableCell className="font-bold text-slate-800 px-6">
-                        {simulado.title}
-                        <p className="font-normal text-sm text-slate-500">
-                          {simulado.subject}
-                        </p>
-                      </TableCell>
-                      <TableCell className="font-medium text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 flex items-center justify-between gap-4 flex-wrap md:flex-nowrap"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="rounded-xl bg-amber-50 p-2.5 text-amber-600">
+                            <ClipboardList className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-slate-800">
+                              {item.title}
+                            </h3>
+                            <p className="text-xs text-slate-400 font-medium mt-0.5">
+                              {item.subject} • {item.questionsCount} questões • Liberação: {format(new Date(item.createdAt), "dd/MM/yyyy")}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Coluna do Aluno */}
+                        <div className="flex items-center gap-2 min-w-[180px]">
+                          <Avatar className="h-7 w-7">
                             <AvatarFallback className="bg-amber-100 text-xs text-amber-800 font-bold">
-                              {simulado.student?.name?.charAt(0) || "-"}
+                              {item.student?.name?.charAt(0) || "-"}
                             </AvatarFallback>
                           </Avatar>
-                          {simulado.student?.name || "Não atribuído"}
+                          <span className="text-sm font-semibold text-slate-700">
+                            {item.student?.name || "Não atribuído"}
+                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-slate-600">
-                        {simulado.questions.length}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            simulado.status.toLowerCase().startsWith("pend")
-                              ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border-none"
-                              : "bg-green-100 text-green-800 hover:bg-green-200 border-none"
-                          }
-                        >
-                          {simulado.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-slate-500">
-                        {format(new Date(simulado.createdAt), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell className="text-right px-6">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="font-bold text-slate-600 hover:text-slate-900 border-slate-300"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/simulados/start?id=${simulado.id}`,
-                              )
-                            }
+
+                        <div className="flex items-center gap-3 ml-auto md:ml-0">
+                          <Badge
+                            className={cn(
+                              "font-bold text-[10px] uppercase tracking-wider rounded-full px-2.5 py-1 border-none",
+                              item.status.toLowerCase().startsWith("pend")
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-green-100 text-green-800"
+                            )}
                           >
-                            Visualizar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-slate-400 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => handleDelete(simulado.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            {item.status}
+                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="font-bold text-xs text-slate-600 hover:text-slate-900 border-slate-200 h-8"
+                              onClick={() => router.push(`/dashboard/simulados/start?id=${item.id}`)}
+                            >
+                              Visualizar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-slate-400 hover:bg-red-50 hover:text-red-600 h-8 w-8 rounded-lg"
+                              onClick={() => handleDelete(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                      </div>
+                    );
+                  }
+                })
+              )}
+            </div>
           </ScrollArea>
         </CardContent>
       </Card>
