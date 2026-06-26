@@ -617,53 +617,60 @@ function StartSimuladoPageComponent() {
           {currentQuestion ? (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               
-              {/* TAGS DA QUESTÃO */}
-              <div className="flex flex-wrap items-center gap-2">
-                {currentQuestion.discipline && (
-                  <Badge className="bg-slate-900 text-white font-bold rounded-full px-3 py-1 text-xs">
-                    {currentQuestion.discipline === "Matemática e suas Tecnologias" ? "matemática" :
-                     currentQuestion.discipline === "Ciências da Natureza e suas Tecnologias" ? "ciências da natureza" :
-                     currentQuestion.discipline === "Ciências Humanas e suas Tecnologias" ? "ciências humanas" : "linguagens"}
-                  </Badge>
-                )}
-                {currentQuestion.subject && (
-                  <Badge variant="outline" className="border-slate-300 text-slate-700 bg-white font-semibold rounded-full px-3 py-1 text-xs">
-                    {currentQuestion.subject.toLowerCase()}
-                  </Badge>
-                )}
+              {/* TÍTULO DA QUESTÃO (NUMERAÇÃO DO SIMULADO) E METADADOS */}
+              <div className="flex flex-col gap-2">
+                <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Questão {currentIndex + 1}
+                </h3>
+                
+                {/* ORIGEM E METADADOS DA QUESTÃO */}
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 font-medium">
+                  <span className="italic">
+                    {(() => {
+                      const id = currentQuestion.id || "";
+                      const parts = id.split("-");
+                      
+                      if (currentQuestion.enemIndex && currentQuestion.enemYear) {
+                        return `(Questão ${currentQuestion.enemIndex} - ENEM ${currentQuestion.enemYear})`;
+                      } else if (parts[0] === 'enem' && parts[1] === 'api') {
+                        const year = parts[2];
+                        const index = parts[3];
+                        return `(Questão ${index} - ENEM ${year})`;
+                      }
+                      
+                      if (currentQuestion.localTitle) {
+                        return `(${currentQuestion.localTitle})`;
+                      }
+                      
+                      const yearMatch = currentQuestion.title?.match(/ENEM\s*(\d{4})/i);
+                      const indexMatch = currentQuestion.title?.match(/Questão\s*(\d+)/i);
+                      if (yearMatch && indexMatch) {
+                        return `(Questão ${indexMatch[1]} - ENEM ${yearMatch[1]})`;
+                      }
+                      
+                      if (currentQuestion.title && currentQuestion.title.length <= 80) {
+                        return `(${currentQuestion.title})`;
+                      }
+                      
+                      return "(Questão Autoral)";
+                    })()}
+                  </span>
+                  
+                  {/* TAGS DA QUESTÃO */}
+                  {currentQuestion.discipline && (
+                    <Badge className="bg-slate-900 text-white font-bold rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider">
+                      {currentQuestion.discipline === "Matemática e suas Tecnologias" ? "matemática" :
+                       currentQuestion.discipline === "Ciências da Natureza e suas Tecnologias" ? "ciências da natureza" :
+                       currentQuestion.discipline === "Ciências Humanas e suas Tecnologias" ? "ciências humanas" : "linguagens"}
+                    </Badge>
+                  )}
+                  {currentQuestion.subject && (
+                    <Badge variant="outline" className="border-slate-300 text-slate-700 bg-white font-semibold rounded-full px-2.5 py-0.5 text-[10px]">
+                      {currentQuestion.subject.toLowerCase()}
+                    </Badge>
+                  )}
+                </div>
               </div>
-
-              {/* TÍTULO DA QUESTÃO */}
-              <h3 className="text-xl font-bold text-slate-900">
-                {(() => {
-                  const id = currentQuestion.id || "";
-                  const parts = id.split("-");
-                  
-                  if (currentQuestion.enemIndex && currentQuestion.enemYear) {
-                    return `Questão ${currentQuestion.enemIndex} - ENEM ${currentQuestion.enemYear}`;
-                  } else if (parts[0] === 'enem' && parts[1] === 'api') {
-                    const year = parts[2];
-                    const index = parts[3];
-                    return `Questão ${index} - ENEM ${year}`;
-                  }
-                  
-                  if (currentQuestion.localTitle) {
-                    return currentQuestion.localTitle;
-                  }
-                  
-                  const yearMatch = currentQuestion.title?.match(/ENEM\s*(\d{4})/i);
-                  const indexMatch = currentQuestion.title?.match(/Questão\s*(\d+)/i);
-                  if (yearMatch && indexMatch) {
-                    return `Questão ${indexMatch[1]} - ENEM ${yearMatch[1]}`;
-                  }
-                  
-                  if (currentQuestion.title && currentQuestion.title.length <= 80) {
-                    return currentQuestion.title;
-                  }
-                  
-                  return `Questão ${currentIndex + 1}`;
-                })()}
-              </h3>
 
               {/* ENUNCIADO E IMAGENS DE APOIO */}
               {(() => {
