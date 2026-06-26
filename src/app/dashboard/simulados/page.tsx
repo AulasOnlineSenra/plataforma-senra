@@ -789,7 +789,7 @@ export default function SimuladosPage() {
                                 
                                 <Button
                                   className={cn(
-                                    "rounded-lg font-bold text-xs px-5 h-9 transition-colors w-full sm:w-auto shrink-0",
+                                    "rounded-[10px] font-bold text-xs px-5 h-9 transition-colors w-full sm:w-auto shrink-0",
                                     isRetamable
                                       ? "bg-amber-500 text-slate-950 hover:bg-amber-600 border border-amber-600"
                                       : isPending 
@@ -847,7 +847,7 @@ export default function SimuladosPage() {
                                 
                                 <Button
                                   className={cn(
-                                    "rounded-lg font-bold text-xs px-5 h-9 transition-colors w-full sm:w-auto shrink-0",
+                                    "rounded-[10px] font-bold text-xs px-5 h-9 transition-colors w-full sm:w-auto shrink-0",
                                     isRetamable
                                       ? "bg-amber-500 text-slate-950 hover:bg-amber-600 border border-amber-600"
                                       : isPending 

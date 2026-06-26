@@ -110,6 +110,9 @@ function StartSimuladoPageComponent() {
     };
   } | null>(null);
 
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
+  
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isUserAdminOrTeacher = useMemo(() => {
@@ -683,7 +686,11 @@ function StartSimuladoPageComponent() {
                             <img
                               src={url}
                               alt={`Ilustração da questão ${uIdx + 1}`}
-                              className="max-h-60 rounded-xl object-contain border bg-white shadow-sm p-1"
+                              className="max-h-60 rounded-xl object-contain border bg-white shadow-sm p-1 cursor-zoom-in hover:scale-[1.02] transition-transform duration-200"
+                              onClick={() => {
+                                setZoomImageUrl(url);
+                                setZoomScale(1);
+                              }}
                             />
                           </div>
                         ))}
@@ -916,7 +923,11 @@ function StartSimuladoPageComponent() {
                         <img
                           src={url}
                           alt={`Ilustração da questão ${uIdx + 1}`}
-                          className="max-h-64 rounded-xl object-contain border bg-white shadow-sm p-1"
+                          className="max-h-64 rounded-xl object-contain border bg-white shadow-sm p-1 cursor-zoom-in hover:scale-[1.02] transition-transform duration-200"
+                          onClick={() => {
+                            setZoomImageUrl(url);
+                            setZoomScale(1);
+                          }}
                         />
                       </div>
                     ))}
@@ -1010,6 +1021,71 @@ function StartSimuladoPageComponent() {
           )}
         </CardFooter>
       </Card>
+
+      {/* Lightbox Modal de Zoom para Imagens */}
+      {zoomImageUrl && (
+        <div 
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/85 backdrop-blur-sm transition-all duration-300"
+          onClick={() => setZoomImageUrl(null)}
+        >
+          {/* Botão de Fechar no topo direito */}
+          <button 
+            className="absolute top-6 right-6 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+            onClick={() => setZoomImageUrl(null)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+
+          {/* Painel Central com a Imagem */}
+          <div 
+            className="relative max-w-[90vw] max-h-[75vh] overflow-auto rounded-2xl flex items-center justify-center p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={zoomImageUrl}
+              alt="Imagem ampliada"
+              style={{ transform: `scale(${zoomScale})` }}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg transition-transform duration-200 select-none shadow-2xl bg-white"
+            />
+          </div>
+
+          {/* Controles do Zoom */}
+          <div 
+            className="absolute bottom-10 flex items-center gap-6 bg-slate-900/90 border border-slate-700/50 px-6 py-3 rounded-full text-white shadow-2xl backdrop-blur-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="p-2 hover:bg-white/10 rounded-full active:scale-90 transition-all text-slate-300 hover:text-white cursor-pointer"
+              onClick={() => setZoomScale(prev => Math.max(0.5, prev - 0.25))}
+              title="Diminuir Zoom"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-minus"><path d="M5 12h14"/></svg>
+            </button>
+            
+            <span className="font-extrabold text-sm tracking-widest min-w-[50px] text-center select-none">
+              {Math.round(zoomScale * 100)}%
+            </span>
+
+            <button 
+              className="p-2 hover:bg-white/10 rounded-full active:scale-90 transition-all text-slate-300 hover:text-white cursor-pointer"
+              onClick={() => setZoomScale(prev => Math.min(3, prev + 0.25))}
+              title="Aumentar Zoom"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            </button>
+
+            <div className="w-[1px] h-6 bg-slate-700/50"></div>
+
+            <button 
+              className="p-2 hover:bg-white/10 rounded-full active:scale-90 transition-all text-slate-300 hover:text-white text-xs font-black uppercase tracking-wider px-3 cursor-pointer"
+              onClick={() => setZoomScale(1)}
+              title="Resetar"
+            >
+              Resetar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
