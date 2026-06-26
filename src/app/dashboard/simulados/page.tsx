@@ -224,25 +224,50 @@ export default function SimuladosPage() {
     [simulados],
   );
 
-  const pendingRegularSimulados = useMemo(
-    () =>
-      simulados.filter(
-        (s) =>
-          s.status.toLowerCase().startsWith("pend") &&
-          !(s.subject.startsWith("ENEM_") || s.subject === "ENEM")
-      ),
-    [simulados],
-  );
+  const pendingRegularSimulados = useMemo(() => {
+    return simulados.filter((s) => {
+      const isEnem = s.subject.startsWith("ENEM_") || s.subject === "ENEM";
+      if (isEnem) return false;
+      
+      const attempts = s.attempts || [];
+      const activeAttempt = attempts.find((a) => !a.completedAt);
+      let isRetamable = false;
+      if (activeAttempt) {
+        if (!s.timeLimitMinutes) {
+          isRetamable = true;
+        } else {
+          const startedTime = new Date(activeAttempt.startedAt).getTime();
+          const elapsed = Math.floor((new Date().getTime() - startedTime) / 1000);
+          isRetamable = (s.timeLimitMinutes * 60) - elapsed > 0;
+        }
+      }
+      
+      const isPending = s.status.toLowerCase().startsWith("pend");
+      return isPending || isRetamable;
+    });
+  }, [simulados]);
 
-  const answeredRegularSimulados = useMemo(
-    () =>
-      simulados.filter(
-        (s) =>
-          !s.status.toLowerCase().startsWith("pend") &&
-          !(s.subject.startsWith("ENEM_") || s.subject === "ENEM")
-      ),
-    [simulados],
-  );
+  const answeredRegularSimulados = useMemo(() => {
+    return simulados.filter((s) => {
+      const isEnem = s.subject.startsWith("ENEM_") || s.subject === "ENEM";
+      if (isEnem) return false;
+      
+      const attempts = s.attempts || [];
+      const activeAttempt = attempts.find((a) => !a.completedAt);
+      let isRetamable = false;
+      if (activeAttempt) {
+        if (!s.timeLimitMinutes) {
+          isRetamable = true;
+        } else {
+          const startedTime = new Date(activeAttempt.startedAt).getTime();
+          const elapsed = Math.floor((new Date().getTime() - startedTime) / 1000);
+          isRetamable = (s.timeLimitMinutes * 60) - elapsed > 0;
+        }
+      }
+      
+      return !s.status.toLowerCase().startsWith("pend") && !isRetamable;
+    });
+  }, [simulados]);
 
   const enemGroups = useMemo(() => {
     const allEnem = [...pendingEnemSimulados, ...answeredEnemSimulados];
@@ -723,8 +748,22 @@ export default function SimuladosPage() {
                         <div className="border-t border-slate-100 bg-slate-50/30 p-6 space-y-4">
                           {/* Bloco do Dia 1 */}
                           {group.dia1 && (() => {
+                            const attempts = group.dia1.attempts || [];
+                            const activeAttempt = attempts.find((a) => !a.completedAt);
+                            let isRetamable = false;
+                            if (activeAttempt) {
+                              if (!group.dia1.timeLimitMinutes) {
+                                isRetamable = true;
+                              } else {
+                                const startedTime = new Date(activeAttempt.startedAt).getTime();
+                                const elapsed = Math.floor((new Date().getTime() - startedTime) / 1000);
+                                isRetamable = (group.dia1.timeLimitMinutes * 60) - elapsed > 0;
+                              }
+                            }
+                            
                             const isPending = group.dia1.status.toLowerCase().startsWith("pend");
                             const lastAttempt = group.dia1.attempts?.[group.dia1.attempts.length - 1];
+
                             return (
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-100 bg-white shadow-xs">
                                 <div className="flex-1">
@@ -734,11 +773,13 @@ export default function SimuladosPage() {
                                     </h4>
                                     <Badge className={cn(
                                       "font-bold text-[9px] uppercase tracking-wider rounded-full px-2 py-0.5 border-none",
-                                      isPending 
-                                        ? "bg-amber-100 text-amber-800" 
-                                        : "bg-green-100 text-green-800"
+                                      isRetamable
+                                        ? "bg-amber-100 text-amber-800"
+                                        : isPending 
+                                          ? "bg-slate-100 text-slate-700" 
+                                          : "bg-green-100 text-green-800"
                                     )}>
-                                      {isPending ? "Pendente" : `${Math.round(lastAttempt?.score || 0)}%`}
+                                      {isRetamable ? "Em Andamento" : isPending ? "Pendente" : `${Math.round(lastAttempt?.score || 0)}%`}
                                     </Badge>
                                   </div>
                                   <p className="text-xs text-slate-400 font-medium mt-1">
@@ -749,13 +790,15 @@ export default function SimuladosPage() {
                                 <Button
                                   className={cn(
                                     "rounded-lg font-bold text-xs px-5 h-9 transition-colors w-full sm:w-auto shrink-0",
-                                    isPending 
-                                      ? "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900" 
-                                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                                    isRetamable
+                                      ? "bg-amber-500 text-slate-950 hover:bg-amber-600 border border-amber-600"
+                                      : isPending 
+                                        ? "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900" 
+                                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
                                   )}
                                   onClick={() => router.push(`/dashboard/simulados/start?id=${group.dia1!.id}`)}
                                 >
-                                  {isPending ? "Iniciar Dia 1" : "Visualizar Gabarito"}
+                                  {isRetamable ? "Retomar Dia 1" : isPending ? "Iniciar Dia 1" : "Visualizar Gabarito"}
                                 </Button>
                               </div>
                             );
@@ -763,8 +806,22 @@ export default function SimuladosPage() {
 
                           {/* Bloco do Dia 2 */}
                           {group.dia2 && (() => {
+                            const attempts = group.dia2.attempts || [];
+                            const activeAttempt = attempts.find((a) => !a.completedAt);
+                            let isRetamable = false;
+                            if (activeAttempt) {
+                              if (!group.dia2.timeLimitMinutes) {
+                                isRetamable = true;
+                              } else {
+                                const startedTime = new Date(activeAttempt.startedAt).getTime();
+                                const elapsed = Math.floor((new Date().getTime() - startedTime) / 1000);
+                                isRetamable = (group.dia2.timeLimitMinutes * 60) - elapsed > 0;
+                              }
+                            }
+                            
                             const isPending = group.dia2.status.toLowerCase().startsWith("pend");
                             const lastAttempt = group.dia2.attempts?.[group.dia2.attempts.length - 1];
+
                             return (
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-100 bg-white shadow-xs">
                                 <div className="flex-1">
@@ -774,11 +831,13 @@ export default function SimuladosPage() {
                                     </h4>
                                     <Badge className={cn(
                                       "font-bold text-[9px] uppercase tracking-wider rounded-full px-2 py-0.5 border-none",
-                                      isPending 
-                                        ? "bg-amber-100 text-amber-800" 
-                                        : "bg-green-100 text-green-800"
+                                      isRetamable
+                                        ? "bg-amber-100 text-amber-800"
+                                        : isPending 
+                                          ? "bg-slate-100 text-slate-700" 
+                                          : "bg-green-100 text-green-800"
                                     )}>
-                                      {isPending ? "Pendente" : `${Math.round(lastAttempt?.score || 0)}%`}
+                                      {isRetamable ? "Em Andamento" : isPending ? "Pendente" : `${Math.round(lastAttempt?.score || 0)}%`}
                                     </Badge>
                                   </div>
                                   <p className="text-xs text-slate-400 font-medium mt-1">
@@ -789,13 +848,15 @@ export default function SimuladosPage() {
                                 <Button
                                   className={cn(
                                     "rounded-lg font-bold text-xs px-5 h-9 transition-colors w-full sm:w-auto shrink-0",
-                                    isPending 
-                                      ? "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900" 
-                                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                                    isRetamable
+                                      ? "bg-amber-500 text-slate-950 hover:bg-amber-600 border border-amber-600"
+                                      : isPending 
+                                        ? "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900" 
+                                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
                                   )}
                                   onClick={() => router.push(`/dashboard/simulados/start?id=${group.dia2!.id}`)}
                                 >
-                                  {isPending ? "Iniciar Dia 2" : "Visualizar Gabarito"}
+                                  {isRetamable ? "Retomar Dia 2" : isPending ? "Iniciar Dia 2" : "Visualizar Gabarito"}
                                 </Button>
                               </div>
                             );
@@ -823,49 +884,74 @@ export default function SimuladosPage() {
                   <p className="text-sm text-slate-400 mt-1">Ótimo trabalho!</p>
                 </Card>
               ) : (
-                pendingRegularSimulados.map((simulado) => (
-                  <Card
-                    key={simulado.id}
-                    className="rounded-3xl border-slate-200 shadow-sm hover:border-brand-yellow transition-all hover:shadow-md overflow-hidden group"
-                  >
-                    <CardHeader className="bg-slate-50/50 border-b pb-4">
-                      <div className="flex justify-between items-start gap-4">
-                        <div>
-                          <Badge variant="secondary" className="mb-2 bg-white border shadow-sm font-semibold">
-                            {simulado.subject}
+                pendingRegularSimulados.map((simulado) => {
+                  const attempts = simulado.attempts || [];
+                  const activeAttempt = attempts.find((a) => !a.completedAt);
+                  let isRetamable = false;
+                  if (activeAttempt) {
+                    if (!simulado.timeLimitMinutes) {
+                      isRetamable = true;
+                    } else {
+                      const startedTime = new Date(activeAttempt.startedAt).getTime();
+                      const elapsed = Math.floor((new Date().getTime() - startedTime) / 1000);
+                      isRetamable = (simulado.timeLimitMinutes * 60) - elapsed > 0;
+                    }
+                  }
+
+                  return (
+                    <Card
+                      key={simulado.id}
+                      className="rounded-3xl border-slate-200 shadow-sm hover:border-brand-yellow transition-all hover:shadow-md overflow-hidden group"
+                    >
+                      <CardHeader className="bg-slate-50/50 border-b pb-4">
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <Badge variant="secondary" className="mb-2 bg-white border shadow-sm font-semibold">
+                              {simulado.subject}
+                            </Badge>
+                            <CardTitle className="text-xl text-slate-800 leading-tight">
+                              {simulado.title}
+                            </CardTitle>
+                          </div>
+                          <Badge className={cn(
+                            "font-bold border-none shrink-0",
+                            isRetamable 
+                              ? "bg-amber-100 text-amber-800" 
+                              : "bg-brand-yellow text-slate-900"
+                          )}>
+                            {isRetamable ? "Em Andamento" : "Pendente"}
                           </Badge>
-                          <CardTitle className="text-xl text-slate-800 leading-tight">
-                            {simulado.title}
-                          </CardTitle>
                         </div>
-                        <Badge className="bg-brand-yellow text-slate-900 font-bold border-none shrink-0">
-                          Pendente
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4 pb-2">
-                      <p className="text-sm text-slate-600 line-clamp-2">
-                        {simulado.description}
-                      </p>
-                      <div className="flex items-center gap-4 mt-4 text-sm font-medium text-slate-500">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-4 w-4" /> {simulado.timeLimitMinutes || "Sem limite"} min
+                      </CardHeader>
+                      <CardContent className="pt-4 pb-2">
+                        <p className="text-sm text-slate-600 line-clamp-2">
+                          {simulado.description}
+                        </p>
+                        <div className="flex items-center gap-4 mt-4 text-sm font-medium text-slate-500">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4" /> {simulado.timeLimitMinutes || "Sem limite"} min
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <ClipboardList className="h-4 w-4" /> {simulado.questions.length} questões
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <ClipboardList className="h-4 w-4" /> {simulado.questions.length} questões
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="bg-slate-50 pt-4">
-                      <Button
-                        className="w-full rounded-xl bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900 font-bold text-base h-12 transition-colors"
-                        onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}
-                      >
-                        Iniciar Simulado <ChevronRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))
+                      </CardContent>
+                      <CardFooter className="bg-slate-50 pt-4">
+                        <Button
+                          className={cn(
+                            "w-full rounded-xl font-bold text-base h-12 transition-colors",
+                            isRetamable
+                              ? "bg-amber-500 text-slate-950 hover:bg-amber-600"
+                              : "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900"
+                          )}
+                          onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}
+                        >
+                          {isRetamable ? "Retomar Simulado" : "Iniciar Simulado"} <ChevronRight className="ml-2 h-5 w-5" />
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  );
+                })
               )}
             </div>
 
