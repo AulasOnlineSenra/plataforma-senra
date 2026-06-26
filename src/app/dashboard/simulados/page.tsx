@@ -411,11 +411,29 @@ export default function SimuladosPage() {
 
   // VISÃO DO ALUNO
   if (currentRole === "student") {
-    const currentPending = activeTab === "enem" ? pendingEnemSimulados : pendingRegularSimulados;
-    const currentAnswered = activeTab === "enem" ? answeredEnemSimulados : answeredRegularSimulados;
+    // Calcula pendentes e concluídos considerando a aba ativa e agrupamento do ENEM
+    const enemPendingCount = enemGroups.filter(
+      (g) =>
+        (g.dia1 && g.dia1.status.toLowerCase().startsWith("pend")) ||
+        (g.dia2 && g.dia2.status.toLowerCase().startsWith("pend"))
+    ).length;
+
+    const enemCompletedCount = enemGroups.filter(
+      (g) =>
+        (!g.dia1 || !g.dia1.status.toLowerCase().startsWith("pend")) &&
+        (!g.dia2 || !g.dia2.status.toLowerCase().startsWith("pend"))
+    ).length;
+
+    const pendingCountToShow = activeTab === "enem" 
+      ? enemPendingCount
+      : pendingRegularSimulados.length;
+
+    const completedCountToShow = activeTab === "enem"
+      ? enemCompletedCount
+      : answeredRegularSimulados.length;
 
     return (
-      <div className="flex flex-1 flex-col gap-6 max-w-6xl mx-auto w-full">
+      <div className="flex flex-1 flex-col gap-6 max-w-4xl mx-auto w-full">
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="font-headline text-3xl font-bold text-slate-900 flex items-center gap-3">
@@ -429,7 +447,7 @@ export default function SimuladosPage() {
           <div className="flex gap-4">
             <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-center px-6">
               <span className="block text-3xl font-black text-amber-700">
-                {currentPending.length}
+                {pendingCountToShow}
               </span>
               <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">
                 Pendentes
@@ -437,7 +455,7 @@ export default function SimuladosPage() {
             </div>
             <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center px-6">
               <span className="block text-3xl font-black text-green-700">
-                {currentAnswered.length}
+                {completedCountToShow}
               </span>
               <span className="text-xs font-bold text-green-800 uppercase tracking-wider">
                 Concluídos
@@ -459,9 +477,9 @@ export default function SimuladosPage() {
             onClick={() => setActiveTab("enem")}
           >
             🎯 Simulados ENEM
-            {pendingEnemSimulados.length > 0 && (
+            {enemPendingCount > 0 && (
               <span className="bg-brand-yellow text-slate-900 text-xs px-2 py-0.5 rounded-full font-black">
-                {pendingEnemSimulados.length}
+                {enemPendingCount}
               </span>
             )}
           </Button>
@@ -486,7 +504,7 @@ export default function SimuladosPage() {
 
         {activeTab === "enem" ? (
           /* ABA ENEM: VISUALIZAÇÃO EM LISTA SANFONA (ACCORDION) */
-          <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+          <div className="flex flex-col gap-4 w-full">
             <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
               <ClipboardList className="h-5 w-5 text-indigo-600" /> Seus Simulados ENEM
             </h2>
