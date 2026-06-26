@@ -243,49 +243,60 @@ export default function SimuladosPage() {
   );
 
   const enemGroups = useMemo(() => {
-    const groups: Record<number, {
+    const allEnem = [...pendingEnemSimulados, ...answeredEnemSimulados];
+
+    const dia1List = allEnem
+      .filter((sim) => {
+        const title = (sim.title || "").toLowerCase();
+        const subject = (sim.subject || "").toUpperCase();
+        return (
+          subject === "ENEM_DIA1" ||
+          title.includes("dia 1") ||
+          title.includes("sábado") ||
+          title.includes("sabado")
+        );
+      })
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    const dia2List = allEnem
+      .filter((sim) => {
+        const title = (sim.title || "").toLowerCase();
+        const subject = (sim.subject || "").toUpperCase();
+        return (
+          subject === "ENEM_DIA2" ||
+          title.includes("dia 2") ||
+          title.includes("domingo")
+        );
+      })
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    const maxLen = Math.max(dia1List.length, dia2List.length);
+    const groups: {
       number: number;
       dia1?: SimuladoItem;
       dia2?: SimuladoItem;
       createdAt: Date;
-    }> = {};
+    }[] = [];
 
-    const allEnem = [...pendingEnemSimulados, ...answeredEnemSimulados];
+    for (let i = 0; i < maxLen; i++) {
+      const d1 = dia1List[i];
+      const d2 = dia2List[i];
+      
+      const createdAt = d1 
+        ? new Date(d1.createdAt) 
+        : d2 
+          ? new Date(d2.createdAt) 
+          : new Date();
 
-    allEnem.forEach((sim) => {
-      const title = sim.title || "";
-      const match = title.match(/nº\s*(\d+)/i) || title.match(/Simulado\s+(\d+)/i);
-      const num = match ? parseInt(match[1]) : 999;
+      groups.push({
+        number: i + 1,
+        dia1: d1,
+        dia2: d2,
+        createdAt,
+      });
+    }
 
-      const isDia1 = title.toLowerCase().includes("dia 1") || title.toLowerCase().includes("sábado") || title.toLowerCase().includes("sabado");
-      const isDia2 = title.toLowerCase().includes("dia 2") || title.toLowerCase().includes("domingo");
-
-      if (!groups[num]) {
-        groups[num] = {
-          number: num,
-          createdAt: new Date(sim.createdAt),
-        };
-      } else {
-        const currentSimDate = new Date(sim.createdAt);
-        if (currentSimDate > groups[num].createdAt) {
-          groups[num].createdAt = currentSimDate;
-        }
-      }
-
-      if (isDia1) {
-        groups[num].dia1 = sim;
-      } else if (isDia2) {
-        groups[num].dia2 = sim;
-      } else {
-        if (!groups[num].dia1) {
-          groups[num].dia1 = sim;
-        } else {
-          groups[num].dia2 = sim;
-        }
-      }
-    });
-
-    return Object.values(groups).sort((a, b) => b.number - a.number);
+    return groups.sort((a, b) => b.number - a.number);
   }, [pendingEnemSimulados, answeredEnemSimulados]);
 
   const availableSubjects = useMemo(() => {

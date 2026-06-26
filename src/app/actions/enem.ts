@@ -612,14 +612,14 @@ export async function dispatchEnemSimulado(
           ];
         }
 
-        // Obter a quantidade total de simulados ENEM já criados para este aluno para fins de numeração sequencial
-        const totalEnemSimuladosCount = await prisma.simulado.count({
+        // Obter a quantidade total de simulados ENEM já criados deste dia para este aluno para fins de numeração sequencial
+        const totalEnemDayCount = await prisma.simulado.count({
           where: {
             studentId: student.id,
-            subject: { startsWith: 'ENEM_' },
+            subject: `ENEM_${dayType}`,
           },
         });
-        const simuladoNumber = totalEnemSimuladosCount + 1;
+        const simuladoNumber = totalEnemDayCount + 1;
 
         timeLimit = dayType === 'DIA1' ? 330 : 300;
         title = `Simulado ENEM nº ${simuladoNumber} — ${dayLabel}`;
