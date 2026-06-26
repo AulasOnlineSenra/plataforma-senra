@@ -32,7 +32,19 @@ import {
 import { cn } from "@/lib/utils";
 
 type QuestionOption = { id: string; text: string; isCorrect: boolean };
-type Question = { id: string; title: string; options: QuestionOption[]; discipline?: string; subject?: string };
+type Question = {
+  id: string;
+  title: string;
+  options: QuestionOption[];
+  discipline?: string;
+  subject?: string;
+  context?: string;
+  localTitle?: string;
+  enemYear?: number;
+  enemIndex?: number;
+  isEnemApi?: boolean;
+  isLocal?: boolean;
+};
 type Attempt = {
   score: number;
   durationSeconds: number;
@@ -556,25 +568,32 @@ function StartSimuladoPageComponent() {
               <CardTitle className="text-2xl font-black text-slate-900">
                 {simulado.title}
               </CardTitle>
-              <CardDescription className="mt-1 text-base">
-                {simulado.description}
-              </CardDescription>
             </div>
-            {remainingSeconds !== null && (
-              <div
-                className={cn(
-                  "flex items-center gap-2 rounded-2xl border-2 bg-white px-6 py-3 shadow-sm",
-                  remainingSeconds < 300
-                    ? "border-red-200 text-red-600 animate-pulse"
-                    : "border-brand-yellow text-slate-800",
-                )}
+            <div className="flex flex-wrap items-center gap-3">
+              {remainingSeconds !== null && (
+                <div
+                  className={cn(
+                    "flex items-center gap-2 rounded-2xl border-2 bg-white px-6 py-3 shadow-sm",
+                    remainingSeconds < 300
+                      ? "border-red-200 text-red-600 animate-pulse"
+                      : "border-brand-yellow text-slate-800",
+                  )}
+                >
+                  <Clock className="h-6 w-6" />
+                  <span className="text-2xl font-black tracking-wider">
+                    {formatDuration(remainingSeconds)}
+                  </span>
+                </div>
+              )}
+              <Button
+                variant="destructive"
+                disabled={isSubmitting}
+                className="h-12 px-5 rounded-2xl font-bold bg-red-600 text-white hover:bg-red-700 shadow-sm border border-red-200"
+                onClick={handleFinish}
               >
-                <Clock className="h-6 w-6" />
-                <span className="text-2xl font-black tracking-wider">
-                  {formatDuration(remainingSeconds)}
-                </span>
-              </div>
-            )}
+                {isSubmitting ? "Finalizando..." : "Finalizar Simulado"}
+              </Button>
+            </div>
           </div>
           <div className="pt-8">
             <div className="flex justify-between items-end mb-2">
@@ -596,10 +615,95 @@ function StartSimuladoPageComponent() {
 
         <CardContent className="p-6 sm:p-10 min-h-[300px]">
           {currentQuestion ? (
-            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-              <p className="text-xl sm:text-2xl font-semibold text-slate-800 leading-relaxed">
-                {currentQuestion.title}
-              </p>
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              
+              {/* TAGS DA QUESTÃO */}
+              <div className="flex flex-wrap items-center gap-2">
+                {currentQuestion.discipline && (
+                  <Badge className="bg-slate-900 text-white font-bold rounded-full px-3 py-1 text-xs">
+                    {currentQuestion.discipline === "Matemática e suas Tecnologias" ? "matemática" :
+                     currentQuestion.discipline === "Ciências da Natureza e suas Tecnologias" ? "ciências da natureza" :
+                     currentQuestion.discipline === "Ciências Humanas e suas Tecnologias" ? "ciências humanas" : "linguagens"}
+                  </Badge>
+                )}
+                {currentQuestion.subject && (
+                  <Badge variant="outline" className="border-slate-300 text-slate-700 bg-white font-semibold rounded-full px-3 py-1 text-xs">
+                    {currentQuestion.subject.toLowerCase()}
+                  </Badge>
+                )}
+              </div>
+
+              {/* TÍTULO DA QUESTÃO */}
+              <h3 className="text-xl font-bold text-slate-900">
+                {(() => {
+                  const id = currentQuestion.id || "";
+                  const parts = id.split("-");
+                  
+                  if (currentQuestion.enemIndex && currentQuestion.enemYear) {
+                    return `Questão ${currentQuestion.enemIndex} - ENEM ${currentQuestion.enemYear}`;
+                  } else if (parts[0] === 'enem' && parts[1] === 'api') {
+                    const year = parts[2];
+                    const index = parts[3];
+                    return `Questão ${index} - ENEM ${year}`;
+                  }
+                  
+                  if (currentQuestion.localTitle) {
+                    return currentQuestion.localTitle;
+                  }
+                  
+                  const yearMatch = currentQuestion.title?.match(/ENEM\s*(\d{4})/i);
+                  const indexMatch = currentQuestion.title?.match(/Questão\s*(\d+)/i);
+                  if (yearMatch && indexMatch) {
+                    return `Questão ${indexMatch[1]} - ENEM ${yearMatch[1]}`;
+                  }
+                  
+                  if (currentQuestion.title && currentQuestion.title.length <= 80) {
+                    return currentQuestion.title;
+                  }
+                  
+                  return `Questão ${currentIndex + 1}`;
+                })()}
+              </h3>
+
+              {/* ENUNCIADO E IMAGENS DE APOIO */}
+              {(() => {
+                const titleIsShort = currentQuestion.title && currentQuestion.title.length <= 80;
+                let rawEnunciado = currentQuestion.title;
+                if (titleIsShort && currentQuestion.context) {
+                  rawEnunciado = currentQuestion.context;
+                }
+
+                // Regex para extrair e limpar imagens de markdown do tipo: ![](url)
+                const markdownImageRegex = /!\[.*?\]\((.*?)\)/g;
+                const imageUrls: string[] = [];
+                let match;
+                while ((match = markdownImageRegex.exec(rawEnunciado)) !== null) {
+                  if (match[1]) imageUrls.push(match[1]);
+                }
+
+                // Limpar imagens do texto
+                const cleanEnunciado = rawEnunciado.replace(markdownImageRegex, '').trim();
+
+                return (
+                  <div className="space-y-4">
+                    <p className="text-lg sm:text-xl font-medium text-slate-800 leading-relaxed whitespace-pre-line">
+                      {cleanEnunciado}
+                    </p>
+                    
+                    {/* Renderizar as imagens de apoio extraídas da regex */}
+                    {imageUrls.map((url, uIdx) => (
+                      <div key={uIdx} className="flex justify-center py-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <img
+                          src={url}
+                          alt={`Ilustração da questão ${uIdx + 1}`}
+                          className="max-h-64 rounded-xl object-contain border bg-white shadow-sm p-1"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               <RadioGroup
                 value={answers[currentQuestion.id]}
                 onValueChange={(value) =>

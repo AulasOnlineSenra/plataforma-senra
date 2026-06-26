@@ -381,6 +381,8 @@ export async function dispatchEnemSimulado(
             options,
             discipline: finalDiscipline,
             subject: q.subject || 'Geral',
+            isLocal: true,
+            localTitle: q.title || '',
           };
         });
 
@@ -452,6 +454,9 @@ export async function dispatchEnemSimulado(
                 options,
                 discipline: finalDiscipline,
                 subject: q.subject || 'Geral',
+                isEnemApi: true,
+                enemYear: year,
+                enemIndex: q.index,
               });
             });
           });

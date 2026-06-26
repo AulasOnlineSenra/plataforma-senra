@@ -592,17 +592,36 @@ export default function BancoQuestoesPage() {
 
     setIsCompiling(true);
 
-    const mappedQuestions = selectedQuestions.map((sq, index) => ({
-      id: sq.id,
-      title: sq.title || `Questão ${index + 1}`,
-      type: "multiple-choice" as const,
-      isRequired: true,
-      options: sq.alternatives.map((alt) => ({
-        id: alt.letter,
-        text: alt.text,
-        isCorrect: alt.letter === sq.correctAlternative,
-      })),
-    }));
+    const mappedQuestions = selectedQuestions.map((sq, index) => {
+      const extractYear = (t: string) => {
+        const m = t.match(/ENEM\s*(\d{4})/i);
+        return m ? parseInt(m[1]) : undefined;
+      };
+      const extractIndex = (t: string) => {
+        const m = t.match(/Questão\s*(\d+)/i);
+        return m ? parseInt(m[1]) : undefined;
+      };
+
+      return {
+        id: sq.id,
+        title: sq.context || sq.title || `Questão ${index + 1}`,
+        type: "multiple-choice" as const,
+        isRequired: true,
+        options: sq.alternatives.map((alt) => ({
+          id: alt.letter,
+          text: alt.text,
+          isCorrect: alt.letter === sq.correctAlternative,
+        })),
+        discipline: sq.discipline,
+        subject: sq.secondaryTag,
+        context: sq.context,
+        localTitle: sq.title || `Questão ${index + 1}`,
+        isLocal: sq.source === "local",
+        isEnemApi: sq.source === "enem",
+        enemYear: sq.source === "enem" && sq.title ? extractYear(sq.title) : undefined,
+        enemIndex: sq.source === "enem" && sq.title ? extractIndex(sq.title) : undefined,
+      };
+    });
 
     const result = await upsertSimulado({
       title: simuladoTitle.trim(),
