@@ -239,6 +239,52 @@ export default function SimuladosPage() {
     [simulados],
   );
 
+  const enemGroups = useMemo(() => {
+    const groups: Record<number, {
+      number: number;
+      dia1?: SimuladoItem;
+      dia2?: SimuladoItem;
+      createdAt: Date;
+    }> = {};
+
+    const allEnem = [...pendingEnemSimulados, ...answeredEnemSimulados];
+
+    allEnem.forEach((sim) => {
+      const title = sim.title || "";
+      const match = title.match(/nº\s*(\d+)/i) || title.match(/Simulado\s+(\d+)/i);
+      const num = match ? parseInt(match[1]) : 999;
+
+      const isDia1 = title.toLowerCase().includes("dia 1") || title.toLowerCase().includes("sábado") || title.toLowerCase().includes("sabado");
+      const isDia2 = title.toLowerCase().includes("dia 2") || title.toLowerCase().includes("domingo");
+
+      if (!groups[num]) {
+        groups[num] = {
+          number: num,
+          createdAt: new Date(sim.createdAt),
+        };
+      } else {
+        const currentSimDate = new Date(sim.createdAt);
+        if (currentSimDate > groups[num].createdAt) {
+          groups[num].createdAt = currentSimDate;
+        }
+      }
+
+      if (isDia1) {
+        groups[num].dia1 = sim;
+      } else if (isDia2) {
+        groups[num].dia2 = sim;
+      } else {
+        if (!groups[num].dia1) {
+          groups[num].dia1 = sim;
+        } else {
+          groups[num].dia2 = sim;
+        }
+      }
+    });
+
+    return Object.values(groups).sort((a, b) => b.number - a.number);
+  }, [pendingEnemSimulados, answeredEnemSimulados]);
+
   const availableSubjects = useMemo(() => {
     if (currentRole === "teacher" && teacherSubject) {
       return SUBJECTS.filter((s) => s === teacherSubject);
@@ -424,141 +470,240 @@ export default function SimuladosPage() {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* COLUNA: PENDENTES */}
+        {activeTab === "enem" ? (
+          /* ABA ENEM: VISUALIZAÇÃO AGRUPADA E PREMIUM */
           <div className="flex flex-col gap-4">
             <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
-              <AlertCircle className="h-5 w-5 text-brand-yellow" /> Aguardando Você
+              <ClipboardList className="h-5 w-5 text-indigo-600" /> Seus Simulados ENEM
             </h2>
-            {currentPending.length === 0 ? (
+            {enemGroups.length === 0 ? (
               <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
                 <CheckCircle2 className="h-12 w-12 text-slate-300 mb-3" />
-                <p className="text-slate-500 font-medium">
-                  {activeTab === "enem" 
-                    ? "Você não tem simulados ENEM pendentes."
-                    : "Você não tem simulados pendentes por disciplina."}
-                </p>
-                <p className="text-sm text-slate-400 mt-1">Ótimo trabalho!</p>
+                <p className="text-slate-500 font-medium">Você não tem simulados ENEM disponíveis.</p>
               </Card>
             ) : (
-              currentPending.map((simulado) => (
-                <Card
-                  key={simulado.id}
-                  className="rounded-3xl border-slate-200 shadow-sm hover:border-brand-yellow transition-all hover:shadow-md overflow-hidden group"
-                >
-                  <CardHeader className="bg-slate-50/50 border-b pb-4">
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <Badge
-                          variant="secondary"
-                          className="mb-2 bg-white border shadow-sm font-semibold"
-                        >
-                          {simulado.subject.startsWith("ENEM_") ? "ENEM" : simulado.subject}
-                        </Badge>
-                        <CardTitle className="text-xl text-slate-800 leading-tight">
-                          {simulado.title}
+              <div className="grid gap-6 md:grid-cols-2">
+                {enemGroups.map((group) => {
+                  const cleanTitle = (t: string) => {
+                    return t.replace(/nº\s*\d+\s*[-—–]\s*/i, "")
+                            .replace(/nº\s*\d+\s*/i, "")
+                            .trim();
+                  };
+
+                  return (
+                    <Card key={group.number} className="rounded-3xl border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+                      <CardHeader className="bg-slate-50/50 border-b pb-4">
+                        <div className="flex justify-between items-center">
+                          <Badge className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-full px-3 py-1 text-xs">
+                            ENEM
+                          </Badge>
+                          <span className="text-xs font-bold text-slate-400">
+                            Liberação: {format(new Date(group.createdAt), "dd/MM/yyyy")}
+                          </span>
+                        </div>
+                        <CardTitle className="text-2xl font-black text-slate-900 mt-2">
+                          {group.number === 999 ? "Simulado ENEM Especial" : `Simulado ${group.number}`}
                         </CardTitle>
-                      </div>
-                      <Badge className="bg-brand-yellow text-slate-900 font-bold border-none shrink-0">
-                        Pendente
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4 pb-2">
-                    <p className="text-sm text-slate-600 line-clamp-2">
-                      {simulado.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-4 text-sm font-medium text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" />{" "}
-                        {simulado.timeLimitMinutes || "Sem limite"} min
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <ClipboardList className="h-4 w-4" />{" "}
-                        {simulado.questions.length} questões
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="bg-slate-50 pt-4">
-                    <Button
-                      className="w-full rounded-xl bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900 font-bold text-base h-12 transition-colors"
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/simulados/start?id=${simulado.id}`,
-                        )
-                      }
-                    >
-                      Iniciar Simulado <ChevronRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))
+                      </CardHeader>
+                      
+                      <CardContent className="p-6 space-y-4 flex-1">
+                        {/* Bloco do Dia 1 */}
+                        {group.dia1 && (() => {
+                          const isPending = group.dia1.status.toLowerCase().startsWith("pend");
+                          const lastAttempt = group.dia1.attempts?.[group.dia1.attempts.length - 1];
+                          return (
+                            <div className="p-4 rounded-2xl border border-slate-100 bg-white shadow-xs flex flex-col gap-3">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-bold text-slate-800 text-base">
+                                    {cleanTitle(group.dia1.title)}
+                                  </h4>
+                                  <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    {group.dia1.questions.length} questões • {group.dia1.timeLimitMinutes || 330} min
+                                  </p>
+                                </div>
+                                <Badge className={cn(
+                                  "font-bold text-[10px] uppercase tracking-wider rounded-full px-2.5 py-0.5 border-none",
+                                  isPending 
+                                    ? "bg-amber-100 text-amber-800" 
+                                    : "bg-green-100 text-green-800"
+                                )}>
+                                  {isPending ? "Pendente" : `${Math.round(lastAttempt?.score || 0)}%`}
+                                </Badge>
+                              </div>
+                              
+                              <Button
+                                className={cn(
+                                  "w-full rounded-xl font-bold text-sm h-10 transition-colors",
+                                  isPending 
+                                    ? "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900" 
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                                )}
+                                onClick={() => router.push(`/dashboard/simulados/start?id=${group.dia1!.id}`)}
+                              >
+                                {isPending ? "Iniciar Dia 1" : "Visualizar Gabarito"}
+                              </Button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Bloco do Dia 2 */}
+                        {group.dia2 && (() => {
+                          const isPending = group.dia2.status.toLowerCase().startsWith("pend");
+                          const lastAttempt = group.dia2.attempts?.[group.dia2.attempts.length - 1];
+                          return (
+                            <div className="p-4 rounded-2xl border border-slate-100 bg-white shadow-xs flex flex-col gap-3">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-bold text-slate-800 text-base">
+                                    {cleanTitle(group.dia2.title)}
+                                  </h4>
+                                  <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    {group.dia2.questions.length} questões • {group.dia2.timeLimitMinutes || 300} min
+                                  </p>
+                                </div>
+                                <Badge className={cn(
+                                  "font-bold text-[10px] uppercase tracking-wider rounded-full px-2.5 py-0.5 border-none",
+                                  isPending 
+                                    ? "bg-amber-100 text-amber-800" 
+                                    : "bg-green-100 text-green-800"
+                                )}>
+                                  {isPending ? "Pendente" : `${Math.round(lastAttempt?.score || 0)}%`}
+                                </Badge>
+                              </div>
+                              
+                              <Button
+                                className={cn(
+                                  "w-full rounded-xl font-bold text-sm h-10 transition-colors",
+                                  isPending 
+                                    ? "bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900" 
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                                )}
+                                onClick={() => router.push(`/dashboard/simulados/start?id=${group.dia2!.id}`)}
+                              >
+                                {isPending ? "Iniciar Dia 2" : "Visualizar Gabarito"}
+                              </Button>
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </div>
-
-          {/* COLUNA: CONCLUÍDOS */}
-          <div className="flex flex-col gap-4">
-            <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
-              <BarChart3 className="h-5 w-5 text-green-500" /> Resultados Anteriores
-            </h2>
-            {currentAnswered.length === 0 ? (
-              <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
-                <p className="text-slate-500 font-medium">
-                  {activeTab === "enem" 
-                    ? "Nenhum histórico do ENEM disponível."
-                    : "Nenhum histórico por disciplina disponível."}
-                </p>
-              </Card>
-            ) : (
-              currentAnswered.map((simulado) => {
-                const lastAttempt =
-                  simulado.attempts[simulado.attempts.length - 1];
-                const isGoodScore = lastAttempt && lastAttempt.score >= 70;
-                return (
+        ) : (
+          /* ABA DISCIPLINAS: VISUALIZAÇÃO PADRÃO DE DUAS COLUNAS */
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* COLUNA: PENDENTES */}
+            <div className="flex flex-col gap-4">
+              <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
+                <AlertCircle className="h-5 w-5 text-brand-yellow" /> Aguardando Você
+              </h2>
+              {pendingRegularSimulados.length === 0 ? (
+                <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
+                  <CheckCircle2 className="h-12 w-12 text-slate-300 mb-3" />
+                  <p className="text-slate-500 font-medium">Você não tem simulados pendentes por disciplina.</p>
+                  <p className="text-sm text-slate-400 mt-1">Ótimo trabalho!</p>
+                </Card>
+              ) : (
+                pendingRegularSimulados.map((simulado) => (
                   <Card
                     key={simulado.id}
-                    className="rounded-3xl border-slate-200 shadow-sm opacity-90 hover:opacity-100 transition-opacity"
+                    className="rounded-3xl border-slate-200 shadow-sm hover:border-brand-yellow transition-all hover:shadow-md overflow-hidden group"
                   >
-                    <CardContent className="p-5 flex flex-col sm:flex-row items-center gap-4">
-                      <div
-                        className={cn(
-                          "flex-shrink-0 h-16 w-16 rounded-2xl flex items-center justify-center text-xl font-black",
-                          isGoodScore
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700",
-                        )}
-                      >
-                        {lastAttempt
-                          ? `${Math.round(lastAttempt.score)}%`
-                          : "-"}
+                    <CardHeader className="bg-slate-50/50 border-b pb-4">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <Badge variant="secondary" className="mb-2 bg-white border shadow-sm font-semibold">
+                            {simulado.subject}
+                          </Badge>
+                          <CardTitle className="text-xl text-slate-800 leading-tight">
+                            {simulado.title}
+                          </CardTitle>
+                        </div>
+                        <Badge className="bg-brand-yellow text-slate-900 font-bold border-none shrink-0">
+                          Pendente
+                        </Badge>
                       </div>
-                      <div className="flex-1 text-center sm:text-left">
-                        <h3 className="font-bold text-slate-800 text-lg">
-                          {simulado.title}
-                        </h3>
-                        <p className="text-sm text-slate-500 font-medium">
-                          {simulado.subject.startsWith("ENEM_") ? "ENEM" : simulado.subject} • {simulado.questions.length}{" "}
-                          Questões
-                        </p>
+                    </CardHeader>
+                    <CardContent className="pt-4 pb-2">
+                      <p className="text-sm text-slate-600 line-clamp-2">
+                        {simulado.description}
+                      </p>
+                      <div className="flex items-center gap-4 mt-4 text-sm font-medium text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4" /> {simulado.timeLimitMinutes || "Sem limite"} min
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <ClipboardList className="h-4 w-4" /> {simulado.questions.length} questões
+                        </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="rounded-xl border-slate-300 font-bold w-full sm:w-auto hover:bg-slate-100"
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/simulados/start?id=${simulado.id}`,
-                          )
-                        }
-                      >
-                        Gabarito
-                      </Button>
                     </CardContent>
+                    <CardFooter className="bg-slate-50 pt-4">
+                      <Button
+                        className="w-full rounded-xl bg-slate-900 text-white hover:bg-brand-yellow hover:text-slate-900 font-bold text-base h-12 transition-colors"
+                        onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}
+                      >
+                        Iniciar Simulado <ChevronRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </CardFooter>
                   </Card>
-                );
-              })
-            )}
+                ))
+              )}
+            </div>
+
+            {/* COLUNA: CONCLUÍDOS */}
+            <div className="flex flex-col gap-4">
+              <h2 className="font-bold text-xl text-slate-800 flex items-center gap-2 px-2">
+                <BarChart3 className="h-5 w-5 text-green-500" /> Resultados Anteriores
+              </h2>
+              {answeredRegularSimulados.length === 0 ? (
+                <Card className="rounded-3xl border-dashed border-2 bg-slate-50 shadow-none text-center p-10 h-[250px] flex flex-col items-center justify-center">
+                  <p className="text-slate-500 font-medium">Nenhum histórico por disciplina disponível.</p>
+                </Card>
+              ) : (
+                answeredRegularSimulados.map((simulado) => {
+                  const lastAttempt = simulado.attempts[simulado.attempts.length - 1];
+                  const isGoodScore = lastAttempt && lastAttempt.score >= 70;
+                  return (
+                    <Card
+                      key={simulado.id}
+                      className="rounded-3xl border-slate-200 shadow-sm opacity-90 hover:opacity-100 transition-opacity"
+                    >
+                      <CardContent className="p-5 flex flex-col sm:flex-row items-center gap-4">
+                        <div
+                          className={cn(
+                            "flex-shrink-0 h-16 w-16 rounded-2xl flex items-center justify-center text-xl font-black",
+                            isGoodScore ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          )}
+                        >
+                          {lastAttempt ? `${Math.round(lastAttempt.score)}%` : "-"}
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                          <h3 className="font-bold text-slate-800 text-lg">
+                            {simulado.title}
+                          </h3>
+                          <p className="text-sm text-slate-500 font-medium">
+                            {simulado.subject} • {simulado.questions.length} Questões
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="rounded-xl border-slate-300 font-bold w-full sm:w-auto hover:bg-slate-100"
+                          onClick={() => router.push(`/dashboard/simulados/start?id=${simulado.id}`)}
+                        >
+                          Gabarito
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
