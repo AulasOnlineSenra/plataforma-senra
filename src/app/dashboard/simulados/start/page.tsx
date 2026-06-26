@@ -103,8 +103,23 @@ function StartSimuladoPageComponent() {
     const dbSimulado = result.data as unknown as Simulado;
     setSimulado(dbSimulado);
 
-    // Se ele já respondeu, mostra o resultado direto
-    if (dbSimulado.attempts && dbSimulado.attempts.length > 0) {
+    // Verificar se o usuário atual é professor ou administrador
+    const isUserAdminOrTeacher = (() => {
+      const stored = typeof window !== "undefined" ? localStorage.getItem("currentUser") : null;
+      const u = stored ? JSON.parse(stored) : null;
+      return u?.role === "teacher" || u?.role === "admin";
+    })();
+
+    if (isUserAdminOrTeacher) {
+      // Admin/Teacher visualiza o gabarito. Se não houver tentativas do aluno, simulamos uma tentativa vazia para renderizar as questões
+      const hasAttempts = dbSimulado.attempts && dbSimulado.attempts.length > 0;
+      const lastAtt = hasAttempts
+        ? dbSimulado.attempts[dbSimulado.attempts.length - 1]
+        : { score: 100, durationSeconds: 0, userAnswers: {} }; // Mock de visualização para Admin
+      
+      setSubmittedAttempt(lastAtt);
+      setGabaritoReleaseInfo({ released: true }); // Ignora travas de gabarito para Admin
+    } else if (dbSimulado.attempts && dbSimulado.attempts.length > 0) {
       const lastAtt = dbSimulado.attempts[dbSimulado.attempts.length - 1];
       setSubmittedAttempt(lastAtt);
       
@@ -134,14 +149,6 @@ function StartSimuladoPageComponent() {
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    const user = storedUser ? JSON.parse(storedUser) : null;
-
-    if (user?.role === "teacher" || user?.role === "admin") {
-      router.replace("/dashboard/simulados");
-      return;
-    }
-
     loadSimulado();
   }, [simuladoId]);
 

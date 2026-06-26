@@ -526,23 +526,48 @@ export async function dispatchEnemSimulado(
           }
         });
 
-        // Se faltarem questões não respondidas no pool inédito, complementar com as respondidas
-        if (uniquePool.length < 45) {
-          combinedPool.forEach((q) => {
-            const normText = (q.title || '')
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '');
-            if (!seenTexts.has(normText)) {
-              seenTexts.add(normText);
-              uniquePool.push(q);
-            }
-          });
+        // Separar as duas disciplinas correspondentes ao dia
+        const disciplineA = targetDisciplines[0];
+        const disciplineB = targetDisciplines[1];
+
+        // Filtrar pool inédito por disciplina
+        let poolA = uniquePool.filter((q) => q.discipline === disciplineA);
+        let poolB = uniquePool.filter((q) => q.discipline === disciplineB);
+
+        // Se faltarem questões inéditas na disciplina A, complementamos com as já respondidas da disciplina A
+        if (poolA.length < 45) {
+          const seenInA = new Set(poolA.map((q) => (q.title || '').toLowerCase().replace(/[^a-z0-9]/g, '')));
+          combinedPool
+            .filter((q) => q.discipline === disciplineA)
+            .forEach((q) => {
+              const normText = (q.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (!seenInA.has(normText)) {
+                seenInA.add(normText);
+                poolA.push(q);
+              }
+            });
         }
 
-        // 7. Embaralhar e extrair as 45 questões oficiais do dia do ENEM
-        const shuffled = uniquePool.sort(() => 0.5 - Math.random());
-        const targetCount = Math.min(shuffled.length, 45);
-        questionsToUse = shuffled.slice(0, targetCount);
+        // Se faltarem questões inéditas na disciplina B, complementamos com as já respondidas da disciplina B
+        if (poolB.length < 45) {
+          const seenInB = new Set(poolB.map((q) => (q.title || '').toLowerCase().replace(/[^a-z0-9]/g, '')));
+          combinedPool
+            .filter((q) => q.discipline === disciplineB)
+            .forEach((q) => {
+              const normText = (q.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (!seenInB.has(normText)) {
+                seenInB.add(normText);
+                poolB.push(q);
+              }
+            });
+        }
+
+        // 7. Embaralhar individualmente e selecionar exatamente 45 questões de cada disciplina
+        const selectedA = poolA.sort(() => 0.5 - Math.random()).slice(0, 45);
+        const selectedB = poolB.sort(() => 0.5 - Math.random()).slice(0, 45);
+
+        // Mesclar as duas disciplinas para formar as 90 questões finais
+        questionsToUse = [...selectedA, ...selectedB].sort(() => 0.5 - Math.random());
 
         // Fallback de contingência caso todos os pools falhem por ausência de conexão
         if (questionsToUse.length === 0) {
@@ -582,8 +607,17 @@ export async function dispatchEnemSimulado(
           ];
         }
 
+        // Obter a quantidade total de simulados ENEM já criados para este aluno para fins de numeração sequencial
+        const totalEnemSimuladosCount = await prisma.simulado.count({
+          where: {
+            studentId,
+            subject: { startsWith: 'ENEM_' },
+          },
+        });
+        const simuladoNumber = totalEnemSimuladosCount + 1;
+
         timeLimit = dayType === 'DIA1' ? 330 : 300;
-        title = `Simulado ENEM Inteligente — ${dayLabel}`;
+        title = `Simulado ENEM nº ${simuladoNumber} — ${dayLabel}`;
         description = `Prova personalizada com questões selecionadas para evitar repetição.`;
       } else {
         const rawQuestions = Array.isArray(template.questions)
