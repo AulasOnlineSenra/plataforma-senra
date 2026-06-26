@@ -610,7 +610,7 @@ export async function dispatchEnemSimulado(
         // Obter a quantidade total de simulados ENEM já criados para este aluno para fins de numeração sequencial
         const totalEnemSimuladosCount = await prisma.simulado.count({
           where: {
-            studentId,
+            studentId: student.id,
             subject: { startsWith: 'ENEM_' },
           },
         });
