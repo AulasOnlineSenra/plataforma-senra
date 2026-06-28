@@ -539,7 +539,7 @@ export default function HomePage() {
         <SubjectCarousel />
 
         {/* CRONOGRAMA INTERATIVO PÚBLICO */}
-        <section className="pt-20 pb-[100px] bg-slate-50 border-y border-slate-100">
+        <section className="pt-20 pb-[140px] bg-slate-50 border-y border-slate-100">
           <div className="container mx-auto px-4">
             <div className="max-w-[1400px] mx-auto space-y-8">
               
@@ -705,7 +705,7 @@ export default function HomePage() {
 
           {/* Modal de Adição/Edição de Bloco */}
           <Dialog open={isCronogramaDialogOpen} onOpenChange={setIsCronogramaDialogOpen}>
-            <DialogContent className="sm:max-w-[425px] rounded-[10px]">
+            <DialogContent className="sm:max-w-[425px] sm:rounded-[10px] rounded-[10px]">
               <DialogHeader>
                 <DialogTitle>{cronogramaBlocks.some(b => b.id === (cronogramaBlock as any).id) ? 'Editar Aula Simulado' : 'Simular Nova Aula'}</DialogTitle>
               </DialogHeader>
