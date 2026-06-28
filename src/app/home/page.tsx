@@ -4,6 +4,7 @@ import { SenraLogo } from '@/components/senra-logo';
 import HeroCarousel from '@/components/hero-carousel';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -49,6 +50,22 @@ import { getTeacherAverageRating } from '@/app/actions/ratings';
 import { getQuizQuestions } from '@/app/actions/quiz';
 import QuizCarousel from '@/components/quiz-carousel';
 
+import { format, startOfWeek, endOfWeek, addDays, isBefore } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarRange, Trash2, BookOpen, Plus, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { checkScheduleAvailability } from '@/app/actions/schedule-structure';
+
+const GRID_START_HOUR = 7;
+const GRID_END_HOUR = 22;
+const totalHours = GRID_END_HOUR - GRID_START_HOUR;
+const HOUR_HEIGHT = 60; // 60px per hour
+const HALF_HOUR_HEIGHT = 30;
+
+const DAYS_OF_WEEK = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const defaultColors = ["bg-emerald-500", "bg-blue-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-slate-700"];
+
 const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-image-1');
 
 const navLinks = [
@@ -62,6 +79,7 @@ const navLinks = [
 type TeacherRating = { average: number; count: number };
 
 export default function HomePage() {
+  const router = useRouter();
   const [leadEmail, setLeadEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -75,10 +93,40 @@ export default function HomePage() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
+  // Estados do Cronograma Público
+  const [cronogramaBlocks, setCronogramaBlocks] = useState<any[]>([]);
+  const [subjectsList, setSubjectsList] = useState<{ id: string; name: string }[]>([]);
+  const [teachersList, setTeachersList] = useState<{ id: string; name: string; subject?: string; subjects?: string[] }[]>([]);
+  const [isCronogramaDialogOpen, setIsCronogramaDialogOpen] = useState(false);
+  const [cronogramaBlock, setCronogramaBlock] = useState({
+    dayOfWeek: 1,
+    startTime: "07:00",
+    endTime: "08:30",
+    subject: "",
+    teacherId: "none",
+    color: "bg-emerald-500",
+  });
+  const [cronogramaAvailabilityError, setCronogramaAvailabilityError] = useState<string | null>(null);
+  const [isValidatingCronogramaAvailability, setIsValidatingCronogramaAvailability] = useState(false);
+
+  // KPI Calculations do Cronograma Público
+  const calculateCronogramaKPIs = () => {
+    let plannedMinutes = 0;
+    cronogramaBlocks.forEach(b => {
+      const [sh, sm] = b.startTime.split(':').map(Number);
+      const [eh, em] = b.endTime.split(':').map(Number);
+      plannedMinutes += (eh * 60 + em) - (sh * 60 + sm);
+    });
+    return { plannedMinutes };
+  };
+
+  const cronogramaKpis = calculateCronogramaKPIs();
+
   useEffect(() => {
     const buscarDisciplinas = async () => {
       const result = await getSubjects();
       if (result.success && result.data) {
+        setSubjectsList(result.data as any[]);
         const nomes = (result.data as { name: string }[]).map(d => d.name);
         setDisciplinas(nomes);
       }
@@ -98,6 +146,7 @@ export default function HomePage() {
     const loadTeachers = async () => {
       const result = await getTeachers(false);
       if (result.success && result.data) {
+        setTeachersList(result.data as any[]);
         const teachersData = result.data.slice(0, 6);
         setTeachers(teachersData);
         
@@ -115,6 +164,193 @@ export default function HomePage() {
     };
     loadTeachers();
   }, []);
+
+  // Efeito para validar disponibilidade em tempo real do professor
+  useEffect(() => {
+    const validate = async () => {
+      if (cronogramaBlock.teacherId && cronogramaBlock.teacherId !== "none" && cronogramaBlock.startTime && cronogramaBlock.endTime) {
+        setIsValidatingCronogramaAvailability(true);
+        const res = await checkScheduleAvailability(
+          cronogramaBlock.teacherId,
+          cronogramaBlock.dayOfWeek,
+          cronogramaBlock.startTime,
+          cronogramaBlock.endTime
+        );
+        if (!res.available) {
+          setCronogramaAvailabilityError(res.error || "Professor indisponível neste dia/horário.");
+        } else {
+          setCronogramaAvailabilityError(null);
+        }
+        setIsValidatingCronogramaAvailability(false);
+      } else {
+        setCronogramaAvailabilityError(null);
+      }
+    };
+    if (isCronogramaDialogOpen) {
+      validate();
+    }
+  }, [cronogramaBlock.teacherId, cronogramaBlock.dayOfWeek, cronogramaBlock.startTime, cronogramaBlock.endTime, isCronogramaDialogOpen]);
+
+  const handleSaveCronogramaBlock = () => {
+    if (!cronogramaBlock.subject) {
+      toast({ title: "Erro", description: "Selecione uma disciplina", variant: "destructive" });
+      return;
+    }
+    if (cronogramaBlock.teacherId === "none" || !cronogramaBlock.teacherId) {
+      toast({ title: "Erro", description: "Selecione um professor", variant: "destructive" });
+      return;
+    }
+    if (cronogramaAvailabilityError) {
+      toast({ title: "Indisponível", description: cronogramaAvailabilityError, variant: "destructive" });
+      return;
+    }
+
+    const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const newBlock = {
+      id: generateId(),
+      ...cronogramaBlock,
+    };
+    setCronogramaBlocks([...cronogramaBlocks, newBlock]);
+    setIsCronogramaDialogOpen(false);
+  };
+
+  const handleDeleteCronogramaBlock = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setCronogramaBlocks(cronogramaBlocks.filter(b => b.id !== id));
+  };
+
+  const handleCronogramaDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData("blockId", id);
+  };
+
+  const handleCronogramaDrop = (e: React.DragEvent, dayIndex: number, startHour: number, isHalfHour: boolean) => {
+    e.preventDefault();
+    const blockId = e.dataTransfer.getData("blockId");
+    if (!blockId) return;
+
+    const block = cronogramaBlocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    const [sh, sm] = block.startTime.split(':').map(Number);
+    const [eh, em] = block.endTime.split(':').map(Number);
+    const durationMin = (eh * 60 + em) - (sh * 60 + sm);
+
+    const newStartStr = `${String(startHour).padStart(2, '0')}:${isHalfHour ? '30' : '00'}`;
+    const startMin = startHour * 60 + (isHalfHour ? 30 : 0);
+    const endMin = startMin + durationMin;
+    const newEndStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+
+    const validateAndMove = async () => {
+      const res = await checkScheduleAvailability(
+        block.teacherId,
+        dayIndex,
+        newStartStr,
+        newEndStr
+      );
+      if (!res.available) {
+        toast({
+          title: "Horário indisponível",
+          description: `O professor ${teachersList.find(t => t.id === block.teacherId)?.name} não está disponível nesse horário.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      setCronogramaBlocks(cronogramaBlocks.map(b => b.id === blockId ? { ...b, dayOfWeek: dayIndex, startTime: newStartStr, endTime: newEndStr } : b));
+    };
+
+    validateAndMove();
+  };
+
+  const handleCronogramaAdicionarAoResumo = () => {
+    if (cronogramaBlocks.length === 0) {
+      toast({ title: "Cronograma vazio", description: "Adicione blocos antes de prosseguir.", variant: "destructive" });
+      return;
+    }
+
+    const blocksWithoutTeacher = cronogramaBlocks.filter(b => !b.teacherId || b.teacherId === "none");
+    if (blocksWithoutTeacher.length > 0) {
+      toast({ 
+        title: "Professores obrigatórios", 
+        description: "Selecione professores para todas as disciplinas para prosseguir.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    const now = new Date();
+    const currentWeekStart = startOfWeek(now, { weekStartsOn: 0 });
+
+    const preBookings = cronogramaBlocks.map(b => {
+      const teacher = teachersList.find(t => t.id === b.teacherId);
+      const subject = subjectsList.find(s => s.id === b.subject);
+      
+      let targetDate = addDays(currentWeekStart, b.dayOfWeek);
+      const [h, m] = b.startTime.split(':').map(Number);
+      targetDate.setHours(h, m, 0, 0);
+      
+      if (isBefore(targetDate, now)) {
+        targetDate = addDays(targetDate, 7);
+      }
+
+      const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+
+      return {
+        id: generateId(),
+        subjectId: b.subject,
+        subjectName: subject?.name || b.subject,
+        teacherId: b.teacherId,
+        teacherName: teacher?.name || "",
+        date: targetDate.toISOString(),
+        start: b.startTime,
+        end: b.endTime,
+        isExperimental: false
+      };
+    });
+
+    localStorage.setItem('checkoutBookings', JSON.stringify(preBookings));
+    router.push(`/dashboard/checkout?needed=${preBookings.length}&current=0`);
+  };
+
+  const filteredTeachersForCronograma = teachersList.filter(t => {
+    if (!cronogramaBlock.subject) return true;
+    const selectedSubject = subjectsList.find(s => s.id === cronogramaBlock.subject);
+    const subjectName = selectedSubject?.name || cronogramaBlock.subject;
+
+    return t.subject === cronogramaBlock.subject || 
+           t.subject === subjectName ||
+           (t.subjects && t.subjects.includes(cronogramaBlock.subject)) ||
+           (t.subjects && t.subjects.includes(subjectName));
+  });
+
+  const handleCronogramaCellClick = (dayOfWeek: number, startHour: number, isHalfHour: boolean) => {
+    const formatTime = (h: number, half: boolean) => {
+      const min = half ? "30" : "00";
+      return `${String(h).padStart(2, "0")}:${min}`;
+    };
+
+    const startTime = formatTime(startHour, isHalfHour);
+    const endMin = startHour * 60 + (isHalfHour ? 30 : 0) + 90; // Default 1.5h
+    const eh = Math.floor(endMin / 60);
+    const em = endMin % 60;
+    const endTime = `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+
+    setCronogramaBlock({
+      dayOfWeek,
+      startTime,
+      endTime,
+      subject: subjectsList[0]?.id || "",
+      teacherId: "none",
+      color: defaultColors[cronogramaBlocks.length % defaultColors.length]
+    });
+    setCronogramaAvailabilityError(null);
+    setIsCronogramaDialogOpen(true);
+  };
+
+  const handleEditCronogramaBlock = (block: any) => {
+    setCronogramaBlock(block);
+    setCronogramaAvailabilityError(null);
+    setIsCronogramaDialogOpen(true);
+  };
 
   useEffect(() => {
     const loadQuizQuestions = async () => {
@@ -286,6 +522,253 @@ export default function HomePage() {
 
         {/* SUBJECT CAROUSEL - Abaixo dos botões da hero */}
         <SubjectCarousel />
+
+        {/* CRONOGRAMA INTERATIVO PÚBLICO */}
+        <section className="py-20 bg-slate-50 border-y border-slate-100">
+          <div className="container mx-auto px-4">
+            <div className="max-w-[1400px] mx-auto space-y-8">
+              
+              {/* Cabeçalho da Seção */}
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                <div className="max-w-2xl">
+                  <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight">
+                    Monte seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Cronograma</span> de Aulas
+                  </h2>
+                  <p className="text-slate-500 mt-3 text-lg">
+                    Simule sua semana ideal de estudos selecionando os professores e horários reais disponíveis na plataforma.
+                  </p>
+                </div>
+                
+                {/* Botão de Checkout */}
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <Card className="rounded-2xl border-slate-200 bg-white/50 backdrop-blur-md px-6 py-2 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <CalendarRange className="h-5 w-5 text-amber-500" />
+                      <div>
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tempo Simulado</p>
+                        <p className="text-lg font-bold text-slate-800">
+                          {Math.round(cronogramaKpis.plannedMinutes / 60)}h {cronogramaKpis.plannedMinutes % 60}m
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                  <Button 
+                    onClick={handleCronogramaAdicionarAoResumo} 
+                    className="h-14 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 gap-3 font-bold border border-emerald-600 px-8 text-base w-full sm:w-auto"
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    Avançar para Agendamento
+                  </Button>
+                </div>
+              </div>
+
+              {/* Grade do Cronograma */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                
+                {/* Painel Lateral de Instruções / Ajuda */}
+                <div className="lg:col-span-1 space-y-6">
+                  <Card className="rounded-3xl border-slate-200 shadow-sm bg-white p-6 space-y-6">
+                    <div className="space-y-4">
+                      <h3 className="font-bold text-lg text-slate-800">Como funciona?</h3>
+                      <div className="space-y-3">
+                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                          <span className="font-bold text-amber-500 flex-shrink-0">1.</span>
+                          <span>Clique em qualquer horário vazio na grade para simular uma aula.</span>
+                        </div>
+                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                          <span className="font-bold text-amber-500 flex-shrink-0">2.</span>
+                          <span>Selecione a disciplina e o professor desejado. A plataforma valida a agenda real.</span>
+                        </div>
+                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                          <span className="font-bold text-amber-500 flex-shrink-0">3.</span>
+                          <span>Se desejar, altere o dia ou arraste o bloco para outro horário.</span>
+                        </div>
+                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                          <span className="font-bold text-amber-500 flex-shrink-0">4.</span>
+                          <span>Clique em <strong>"Avançar para Agendamento"</strong> para realizar seu cadastro e garantir suas aulas!</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <Clock className="h-4 w-4 text-slate-400" /> Duração padrão
+                      </div>
+                      <p className="text-sm text-slate-600">
+                        Cada aula possui duração recomendada de <strong>1h30 (90 minutos)</strong> para melhor aproveitamento do conteúdo.
+                      </p>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Grade Principal do Cronograma */}
+                <div className="lg:col-span-3">
+                  <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+                    <div className="overflow-auto max-h-[70vh]">
+                      <div className="min-w-[800px] relative">
+                        {/* Header */}
+                        <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-20 shadow-sm">
+                          <div className="w-16 flex-shrink-0 border-r border-slate-200 bg-slate-50"></div>
+                          {[1, 2, 3, 4, 5, 6, 0].map(dayIdx => (
+                            <div key={dayIdx} className="flex-1 py-3 text-center border-r border-slate-200 font-semibold text-slate-700 text-sm bg-slate-50">
+                              {DAYS_OF_WEEK[dayIdx]}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Grid */}
+                        <div className="flex relative">
+                          <div className="w-16 flex-shrink-0 border-r border-slate-200 bg-slate-50">
+                            {Array.from({ length: totalHours }, (_, i) => GRID_START_HOUR + i).map(h => (
+                              <div key={h} style={{ height: `${HOUR_HEIGHT}px` }} className="border-b border-slate-200 pr-2 pt-1 text-right text-xs font-medium text-slate-400">
+                                {h}:00
+                              </div>
+                            ))}
+                          </div>
+
+                          {[1, 2, 3, 4, 5, 6, 0].map(dayIdx => {
+                            return (
+                              <div key={dayIdx} className="relative flex-1 border-r border-slate-200" style={{ height: `${totalHours * HOUR_HEIGHT}px` }}>
+                                {/* Grid Lines */}
+                                {Array.from({ length: totalHours * 2 }).map((_, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    onClick={() => handleCronogramaCellClick(dayIdx, Math.floor(idx / 2) + GRID_START_HOUR, idx % 2 !== 0)}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={(e) => handleCronogramaDrop(e, dayIdx, Math.floor(idx / 2) + GRID_START_HOUR, idx % 2 !== 0)}
+                                    className={`absolute left-0 right-0 cursor-pointer hover:bg-slate-50/80 transition-colors ${idx % 2 === 0 ? 'border-b border-slate-100 border-dashed' : 'border-b border-slate-200'}`}
+                                    style={{ top: `${idx * HALF_HOUR_HEIGHT}px`, height: `${HALF_HOUR_HEIGHT}px` }}
+                                  />
+                                ))}
+
+                                {/* Blocks */}
+                                {cronogramaBlocks.filter(b => b.dayOfWeek === dayIdx).map(block => {
+                                  const [sh, sm] = block.startTime.split(':').map(Number);
+                                  const [eh, em] = block.endTime.split(':').map(Number);
+                                  const startMin = (sh - GRID_START_HOUR) * 60 + sm;
+                                  const durationMin = (eh * 60 + em) - (sh * 60 + sm);
+                                  
+                                  const topPx = (startMin / 60) * HOUR_HEIGHT;
+                                  const heightPx = (durationMin / 60) * HOUR_HEIGHT;
+                                  const teacher = teachersList.find(t => t.id === block.teacherId);
+
+                                  return (
+                                    <div
+                                      key={block.id}
+                                      draggable
+                                      onClick={(e) => { e.stopPropagation(); handleEditCronogramaBlock(block); }}
+                                      onDragStart={(e) => handleCronogramaDragStart(e, block.id)}
+                                      className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group cursor-pointer ${block.color || 'bg-emerald-500'}`}
+                                      style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+                                    >
+                                      <p className="font-bold text-xs">{subjectsList.find(s => s.id === block.subject)?.name || block.subject}</p>
+                                      {teacher && <p className="text-[10px] opacity-90 truncate">({teacher.name})</p>}
+                                      <p className="text-[10px] opacity-75 mt-0.5">{block.startTime} - {block.endTime}</p>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white/20"
+                                        onClick={(e) => handleDeleteCronogramaBlock(e, block.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          {/* Modal de Adição/Edição de Bloco */}
+          <Dialog open={isCronogramaDialogOpen} onOpenChange={setIsCronogramaDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{cronogramaBlocks.some(b => b.id === (cronogramaBlock as any).id) ? 'Editar Aula Simulado' : 'Simular Nova Aula'}</DialogTitle>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Início</label>
+                    <Input type="time" value={cronogramaBlock.startTime} onChange={(e) => setCronogramaBlock({...cronogramaBlock, startTime: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Fim</label>
+                    <Input type="time" value={cronogramaBlock.endTime} onChange={(e) => setCronogramaBlock({...cronogramaBlock, endTime: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Disciplina</label>
+                  <Select 
+                    value={cronogramaBlock.subject} 
+                    onValueChange={(val) => setCronogramaBlock({...cronogramaBlock, subject: val, teacherId: "none"})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a disciplina" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectsList.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Professor</label>
+                  <Select 
+                    value={cronogramaBlock.teacherId} 
+                    onValueChange={(val) => setCronogramaBlock({...cronogramaBlock, teacherId: val})}
+                    disabled={!cronogramaBlock.subject}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o professor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Selecione o professor</SelectItem>
+                      {filteredTeachersForCronograma.map((teacher) => (
+                        <SelectItem key={teacher.id} value={teacher.id}>
+                          {teacher.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!cronogramaBlock.subject && (
+                    <p className="text-xs text-slate-400">Escolha primeiro a disciplina para ver os professores disponíveis.</p>
+                  )}
+                </div>
+
+                {isValidatingCronogramaAvailability && (
+                  <p className="text-xs text-slate-500 animate-pulse">Verificando agenda do professor...</p>
+                )}
+
+                {cronogramaAvailabilityError && (
+                  <p className="text-xs text-rose-500 font-medium bg-rose-50 p-2 rounded-md border border-rose-100">
+                    ⚠️ {cronogramaAvailabilityError}
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button onClick={handleSaveCronogramaBlock} disabled={!!cronogramaAvailabilityError || isValidatingCronogramaAvailability}>
+                  Confirmar Aula
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </section>
 
         {/* MAPA CIRCLE - Escada */}
         <MapaCircle />

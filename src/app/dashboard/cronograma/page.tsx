@@ -60,6 +60,9 @@ export default function CronogramaPage() {
     teacherId: "none",
     color: "bg-emerald-500",
   });
+
+  const [isNextWeekConfirmOpen, setIsNextWeekConfirmOpen] = useState(false);
+  const [nextWeekRangeStr, setNextWeekRangeStr] = useState("");
   
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -244,7 +247,12 @@ export default function CronogramaPage() {
     }).filter(Boolean);
 
     if (preBookings.length === 0) {
-      toast({ title: "Atenção", description: "Todas as aulas cadastradas com professor já passaram nesta semana.", variant: "destructive" });
+      const nextWeekStart = addDays(currentWeekStart, 7);
+      const nextWeekEnd = addDays(endOfWeek(now, { weekStartsOn: 0 }), 7);
+      const startStr = format(nextWeekStart, "dd/MM");
+      const endStr = format(nextWeekEnd, "dd/MM");
+      setNextWeekRangeStr(`${startStr} a ${endStr}`);
+      setIsNextWeekConfirmOpen(true);
       return;
     }
 
@@ -262,6 +270,63 @@ export default function CronogramaPage() {
       // Junta os novos
       const combinedBookings = [...existingBookings, ...preBookings];
       localStorage.setItem(existingKey, JSON.stringify(combinedBookings));
+      
+      const isManagerOrAdmin = userRole === "admin" || userRole === "manager";
+      const redirectUrl = isManagerOrAdmin ? `/dashboard/booking?studentId=${userId}` : `/dashboard/booking`;
+      router.push(redirectUrl);
+    } else {
+      toast({ title: "Erro", description: "Usuário não identificado", variant: "destructive" });
+    }
+  };
+
+  const handleAgendarSemanaSeguinte = () => {
+    const validBlocks = blocks.filter(b => b.teacherId && b.teacherId !== "none");
+    const now = new Date();
+    const currentWeekStart = startOfWeek(now, { weekStartsOn: 0 });
+    const nextWeekStart = addDays(currentWeekStart, 7);
+
+    const preBookings = validBlocks.map(b => {
+      const teacher = teachers.find(t => t.id === b.teacherId);
+      const subject = subjects.find(s => s.id === b.subject);
+      
+      let targetDate = addDays(nextWeekStart, b.dayOfWeek);
+      const [h, m] = b.startTime.split(':').map(Number);
+      targetDate.setHours(h, m, 0, 0);
+
+      const generateId = () => {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return crypto.randomUUID();
+        }
+        return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      };
+
+      return {
+        id: generateId(),
+        subjectId: b.subject,
+        subjectName: subject?.name || b.subject,
+        teacherId: b.teacherId,
+        teacherName: teacher?.name || "",
+        date: targetDate.toISOString(),
+        start: b.startTime,
+        end: b.endTime,
+        isExperimental: false
+      };
+    });
+
+    if (userId) {
+      const existingKey = `preBookings-${userId}`;
+      let existingBookings = [];
+      try {
+        const saved = localStorage.getItem(existingKey);
+        if (saved) {
+          existingBookings = JSON.parse(saved);
+        }
+      } catch (e) {}
+
+      const combinedBookings = [...existingBookings, ...preBookings];
+      localStorage.setItem(existingKey, JSON.stringify(combinedBookings));
+      
+      setIsNextWeekConfirmOpen(false);
       
       const isManagerOrAdmin = userRole === "admin" || userRole === "manager";
       const redirectUrl = isManagerOrAdmin ? `/dashboard/booking?studentId=${userId}` : `/dashboard/booking`;
@@ -588,6 +653,36 @@ export default function CronogramaPage() {
               disabled={!!availabilityError || isValidatingAvailability}
             >
               {isValidatingAvailability ? "Verificando..." : "Salvar Bloco"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isNextWeekConfirmOpen} onOpenChange={setIsNextWeekConfirmOpen}>
+        <DialogContent className="sm:max-w-[450px] rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <CalendarRange className="h-6 w-6 text-brand-yellow" />
+              Agendar para a Próxima Semana?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-slate-600 leading-relaxed text-sm">
+              Todas as aulas cadastradas com professor já passaram nesta semana.
+            </p>
+            <p className="text-slate-800 font-semibold text-sm">
+              Deseja agendar as aulas do seu cronograma para a semana seguinte ({nextWeekRangeStr})?
+            </p>
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button variant="outline" className="rounded-xl font-semibold" onClick={() => setIsNextWeekConfirmOpen(false)}>
+              Voltar
+            </Button>
+            <Button 
+              onClick={handleAgendarSemanaSeguinte} 
+              className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-bold px-5"
+            >
+              Sim, Agendar Semana Seguinte
             </Button>
           </DialogFooter>
         </DialogContent>
