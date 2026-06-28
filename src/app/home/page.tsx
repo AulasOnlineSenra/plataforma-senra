@@ -352,6 +352,21 @@ export default function HomePage() {
     setIsCronogramaDialogOpen(true);
   };
 
+  const handleStartTimeChange = (newStartTime: string) => {
+    if (!newStartTime) return;
+    const [h, m] = newStartTime.split(':').map(Number);
+    const totalMin = h * 60 + m + 90;
+    const eh = Math.floor(totalMin / 60) % 24;
+    const em = totalMin % 60;
+    const newEndTime = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+    
+    setCronogramaBlock(prev => ({
+      ...prev,
+      startTime: newStartTime,
+      endTime: newEndTime
+    }));
+  };
+
   useEffect(() => {
     const loadQuizQuestions = async () => {
       const result = await getQuizQuestions();
@@ -524,14 +539,14 @@ export default function HomePage() {
         <SubjectCarousel />
 
         {/* CRONOGRAMA INTERATIVO PÚBLICO */}
-        <section className="py-20 bg-slate-50 border-y border-slate-100">
+        <section className="pt-20 pb-[100px] bg-slate-50 border-y border-slate-100">
           <div className="container mx-auto px-4">
             <div className="max-w-[1400px] mx-auto space-y-8">
               
               {/* Cabeçalho da Seção */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                 <div className="max-w-2xl">
-                  <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight">
+                  <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight lg:whitespace-nowrap">
                     Monte seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Cronograma</span> de Aulas
                   </h2>
                   <p className="text-slate-500 mt-3 text-lg">
@@ -690,7 +705,7 @@ export default function HomePage() {
 
           {/* Modal de Adição/Edição de Bloco */}
           <Dialog open={isCronogramaDialogOpen} onOpenChange={setIsCronogramaDialogOpen}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] rounded-[10px]">
               <DialogHeader>
                 <DialogTitle>{cronogramaBlocks.some(b => b.id === (cronogramaBlock as any).id) ? 'Editar Aula Simulado' : 'Simular Nova Aula'}</DialogTitle>
               </DialogHeader>
@@ -699,7 +714,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Início</label>
-                    <Input type="time" value={cronogramaBlock.startTime} onChange={(e) => setCronogramaBlock({...cronogramaBlock, startTime: e.target.value})} />
+                    <Input type="time" value={cronogramaBlock.startTime} onChange={(e) => handleStartTimeChange(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Fim</label>
