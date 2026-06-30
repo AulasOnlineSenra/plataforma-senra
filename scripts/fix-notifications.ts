@@ -5,13 +5,36 @@ import { ptBR } from 'date-fns/locale';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Buscar todas as disciplinas para criar um mapa de ID -> Nome amigável
-  const subjects = await prisma.subject.findMany();
-  const subjectMap = new Map<string, string>();
-  subjects.forEach((s) => {
-    subjectMap.set(s.id, s.name);
-  });
+  // Lista padrão de disciplinas como fallback
+  const defaultSubjects = [
+    { id: 'default-subj-1', name: 'Matemática' },
+    { id: 'default-subj-2', name: 'Português' },
+    { id: 'default-subj-3', name: 'Física' },
+    { id: 'default-subj-4', name: 'Redação' },
+    { id: 'default-subj-5', name: 'História' },
+    { id: 'default-subj-6', name: 'Química' },
+    { id: 'default-subj-7', name: 'Espanhol' },
+    { id: 'default-subj-8', name: 'Filosofia' },
+    { id: 'default-subj-9', name: 'Geografia' },
+    { id: 'default-subj-10', name: 'Inglês' },
+    { id: 'default-subj-11', name: 'Sociologia' },
+    { id: 'default-subj-12', name: 'Biologia' },
+  ];
 
+  const subjectMap = new Map<string, string>();
+  defaultSubjects.forEach(s => subjectMap.set(s.id, s.name));
+
+  // Buscar do banco de dados (se houver alguma lá)
+  try {
+    const dbSubjects = await prisma.subject.findMany();
+    dbSubjects.forEach((s) => {
+      subjectMap.set(s.id, s.name);
+    });
+  } catch (err) {
+    console.error('Erro ao ler disciplinas do banco:', err);
+  }
+
+  // Notificações com type class_scheduled ou class_cancelled
   const notifications = await prisma.notification.findMany({
     where: {
       type: { in: ['class_scheduled', 'class_cancelled'] }
@@ -87,6 +110,62 @@ async function main() {
         });
         updatedCount++;
       }
+    } else {
+      // Caso não encontre a aula no banco, fazemos a correção fallback de fuso horário
+      const timeRangeMatch = message.match(/às (\d{2}):(\d{2}) - (\d{2}):(\d{2})/);
+      if (timeRangeMatch) {
+        const [_, sh, sm, eh, em] = timeRangeMatch;
+        let startH = parseInt(sh) - 3;
+        let endH = parseInt(eh) - 3;
+        if (startH < 0) startH += 24;
+        if (endH < 0) endH += 24;
+        
+        const newStartStr = `${String(startH).padStart(2, '0')}:${sm}`;
+        const newEndStr = `${String(endH).padStart(2, '0')}:${em}`;
+        const newRange = `às ${newStartStr} - ${newEndStr}`;
+        let newMessage = message.replace(/às \d{2}:\d{2} - \d{2}:\d{2}/, newRange);
+
+        // Se a mensagem continha algum ID residual default-subj-XX (por segurança)
+        for (const [id, name] of subjectMap.entries()) {
+          if (newMessage.includes(id)) {
+            newMessage = newMessage.replace(new RegExp(id, 'g'), name);
+          }
+        }
+
+        if (newMessage !== message) {
+          console.log(`Atualizando notificação (fallback regex) ${notif.id}:`);
+          console.log(`  De:  "${message}"`);
+          console.log(`  Para: "${newMessage}"`);
+          await prisma.notification.update({
+            where: { id: notif.id },
+            data: { message: newMessage }
+          });
+          updatedCount++;
+        }
+      }
+    }
+  }
+
+  // Correção secundária direta para quaisquer strings contendo default-subj- no banco (garantia extra)
+  const allNotifications = await prisma.notification.findMany();
+  for (const notif of allNotifications) {
+    let newMessage = notif.message;
+    let changed = false;
+    for (const [id, name] of subjectMap.entries()) {
+      if (newMessage.includes(id)) {
+        newMessage = newMessage.replace(new RegExp(id, 'g'), name);
+        changed = true;
+      }
+    }
+    if (changed) {
+      console.log(`Correção extra de ID de disciplina para a notificação ${notif.id}:`);
+      console.log(`  De:  "${notif.message}"`);
+      console.log(`  Para: "${newMessage}"`);
+      await prisma.notification.update({
+        where: { id: notif.id },
+        data: { message: newMessage }
+      });
+      updatedCount++;
     }
   }
 
