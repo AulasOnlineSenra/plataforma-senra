@@ -824,6 +824,19 @@ export async function markAllNotificationsAsRead(userId: string) {
   }
 }
 
+export async function deleteNotification(notificationId: string) {
+  try {
+    await prisma.notification.delete({
+      where: { id: notificationId },
+    });
+    revalidatePath("/dashboard/notifications");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao deletar notificação:", error);
+    return { success: false, error: "Erro ao deletar notificação." };
+  }
+}
+
 // Buscar disponibilidade de um professor
 export async function getTeacherAvailability(teacherId: string) {
   try {

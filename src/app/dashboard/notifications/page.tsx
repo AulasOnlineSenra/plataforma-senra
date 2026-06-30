@@ -31,6 +31,7 @@ import {
   getUserNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  deleteNotification,
 } from "@/app/actions/users";
 
 const NOTIFICATIONS_STORAGE_KEY = "notificationsList";
@@ -134,9 +135,14 @@ export default function NotificationsPage() {
     };
   }, [currentUser]);
 
-  const handleDeleteNotification = (id: string) => {
+  const handleDeleteNotification = async (id: string) => {
     const updatedNotifications = notifications.filter((n) => n.id !== id);
     setNotifications(updatedNotifications);
+    try {
+      await deleteNotification(id);
+    } catch (err) {
+      console.error("Erro ao deletar notificação:", err);
+    }
   };
 
   const formatDescription = (description: string) => {
