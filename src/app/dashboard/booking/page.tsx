@@ -95,6 +95,44 @@ type PreBooking = {
 
 const CLASS_DURATION_MINUTES = 90;
 
+function mergeAvailabilitySlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
+  if (slots.length <= 1) return slots;
+
+  const sorted = [...slots].sort((a, b) => {
+    if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  const merged: AvailabilitySlot[] = [];
+  let current = { ...sorted[0] };
+
+  for (let i = 1; i < sorted.length; i++) {
+    const next = sorted[i];
+
+    if (current.dayOfWeek === next.dayOfWeek) {
+      const [currEndH, currEndM] = current.endTime.split(":").map(Number);
+      const [nextStartH, nextStartM] = next.startTime.split(":").map(Number);
+      const currEndMins = currEndH * 60 + currEndM;
+      const nextStartMins = nextStartH * 60 + nextStartM;
+
+      if (nextStartMins <= currEndMins) {
+        const [nextEndH, nextEndM] = next.endTime.split(":").map(Number);
+        const nextEndMins = nextEndH * 60 + nextEndM;
+        if (nextEndMins > currEndMins) {
+          current.endTime = next.endTime;
+        }
+        continue;
+      }
+    }
+
+    merged.push(current);
+    current = { ...next };
+  }
+  merged.push(current);
+
+  return merged;
+}
+
 function BookingPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -303,19 +341,20 @@ function BookingPageComponent() {
   }, [studentIdParam, teacherIdParam]);
 
   useEffect(() => {
-    if (!selectedTeacherId || teacherAvailability.has(selectedTeacherId)) return;
-    const loadAvailability = async () => {
-      const result = await getTeacherAvailability(selectedTeacherId);
+    const teachersToLoad = Array.from(new Set([selectedTeacherId, editingTeacher].filter(Boolean)));
+    
+    teachersToLoad.forEach(async (id) => {
+      if (!id || teacherAvailability.has(id)) return;
+      const result = await getTeacherAvailability(id);
       if (result.success && result.data) {
         setTeacherAvailability((prev) => {
           const next = new Map(prev);
-          next.set(selectedTeacherId, result.data);
+          next.set(id, result.data);
           return next;
         });
       }
-    };
-    loadAvailability();
-  }, [selectedTeacherId, teacherAvailability]);
+    });
+  }, [selectedTeacherId, editingTeacher, teacherAvailability]);
 
   const teacherTeachesSubject = (teacher: Teacher, subjectName: string): boolean => {
     if (teacher.subject === subjectName) return true;
@@ -348,7 +387,8 @@ function BookingPageComponent() {
 
     const dayOfWeek = getDay(selectedDate);
     const slots = teacherAvailability.get(selectedTeacherId) || [];
-    const daySlots = slots.filter((s) => s.dayOfWeek === dayOfWeek);
+    const mergedSlots = mergeAvailabilitySlots(slots);
+    const daySlots = mergedSlots.filter((s) => s.dayOfWeek === dayOfWeek);
 
     if (daySlots.length === 0) return [];
 
@@ -372,9 +412,10 @@ function BookingPageComponent() {
         const conflicts = lessons.some((lesson) => {
           if (!["PENDING", "CONFIRMED", "scheduled"].includes(lesson.status))
             return false;
-          // Verifica conflito pelo ALUNO (mesmo professor diferente)
+          // Verifica conflito pelo ALUNO ou pelo PROFESSOR
           const studentConflict = lesson.studentId === currentUser.id;
-          if (!studentConflict) return false;
+          const teacherConflict = lesson.teacherId === selectedTeacherId;
+          if (!studentConflict && !teacherConflict) return false;
           return start < lesson.endDate && end > lesson.date;
         });
 
@@ -420,7 +461,8 @@ function BookingPageComponent() {
     const dateObj = new Date(editingDate);
     const dayOfWeek = getDay(dateObj);
     const slots = teacherAvailability.get(editingTeacher) || [];
-    const daySlots = slots.filter((s) => s.dayOfWeek === dayOfWeek);
+    const mergedSlots = mergeAvailabilitySlots(slots);
+    const daySlots = mergedSlots.filter((s) => s.dayOfWeek === dayOfWeek);
 
     if (daySlots.length === 0) return [];
 
@@ -444,9 +486,10 @@ function BookingPageComponent() {
         const conflicts = lessons.some((lesson) => {
           if (!["PENDING", "CONFIRMED", "scheduled"].includes(lesson.status))
             return false;
-          // Verifica conflito pelo ALUNO (mesmo professor diferente)
+          // Verifica conflito pelo ALUNO ou pelo PROFESSOR
           const studentConflict = lesson.studentId === currentUser.id;
-          if (!studentConflict) return false;
+          const teacherConflict = lesson.teacherId === editingTeacher;
+          if (!studentConflict && !teacherConflict) return false;
           return start < lesson.endDate && end > lesson.date;
         });
 
