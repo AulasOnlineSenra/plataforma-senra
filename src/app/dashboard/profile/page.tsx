@@ -138,6 +138,36 @@ function formatPhone(value: string) {
   return formatted;
 }
 
+const ESTADOS_BRASIL = [
+  { value: 'AC', label: 'Acre' },
+  { value: 'AL', label: 'Alagoas' },
+  { value: 'AP', label: 'Amapá' },
+  { value: 'AM', label: 'Amazonas' },
+  { value: 'BA', label: 'Bahia' },
+  { value: 'CE', label: 'Ceará' },
+  { value: 'DF', label: 'Distrito Federal' },
+  { value: 'ES', label: 'Espírito Santo' },
+  { value: 'GO', label: 'Goiás' },
+  { value: 'MA', label: 'Maranhão' },
+  { value: 'MT', label: 'Mato Grosso' },
+  { value: 'MS', label: 'Mato Grosso do Sul' },
+  { value: 'MG', label: 'Minas Gerais' },
+  { value: 'PA', label: 'Pará' },
+  { value: 'PB', label: 'Paraíba' },
+  { value: 'PR', label: 'Paraná' },
+  { value: 'PE', label: 'Pernambuco' },
+  { value: 'PI', label: 'Piauí' },
+  { value: 'RJ', label: 'Rio de Janeiro' },
+  { value: 'RN', label: 'Rio Grande do Norte' },
+  { value: 'RS', label: 'Rio Grande do Sul' },
+  { value: 'RO', label: 'Rondônia' },
+  { value: 'RR', label: 'Roraima' },
+  { value: 'SC', label: 'Santa Catarina' },
+  { value: 'SP', label: 'São Paulo' },
+  { value: 'SE', label: 'Sergipe' },
+  { value: 'TO', label: 'Tocantins' },
+];
+
 function isValidPixKey(type: string, key: string): boolean {
   const numbers = key.replace(/\D/g, '');
   switch (type) {
@@ -959,7 +989,18 @@ export default function ProfilePage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="state" className="font-bold text-slate-700">Estado</Label>
-                          <Input id="state" className="h-12 bg-white" value={state} onChange={(e) => setState(e.target.value)} placeholder="SP" />
+                          <Select value={state} onValueChange={setState}>
+                            <SelectTrigger id="state" className="h-12 bg-white rounded-xl">
+                              <SelectValue placeholder="Selecione o estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ESTADOS_BRASIL.map((est) => (
+                                <SelectItem key={est.value} value={est.value}>
+                                  {est.label} ({est.value})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="phone" className="font-bold text-slate-700">Telefone</Label>

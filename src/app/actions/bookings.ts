@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { sendNewBookingNotificationEmail } from "@/lib/mailer";
 import { triggerAiAutomation } from "@/lib/ai/automation-engine";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 import crypto from "crypto";
 import { getSubjects } from "@/app/actions/users";
@@ -178,7 +179,7 @@ export async function createBookings(
 
               const startDate = booking.start;
               const endDate = new Date(startDate.getTime() + 90 * 60 * 1000);
-              const formattedDate = format(startDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(endDate, "HH:mm");
+              const formattedDate = formatInTimeZone(startDate, 'America/Sao_Paulo', "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + formatInTimeZone(endDate, 'America/Sao_Paulo', "HH:mm");
 
               try {
                 await client.notification.create({
@@ -204,7 +205,7 @@ export async function createBookings(
 
     // Notificação confimando o agendamento para o aluno
     try {
-      const studentFormattedDate = format(bookings[0].start, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(new Date(bookings[0].start.getTime() + 90 * 60 * 1000), "HH:mm");
+      const studentFormattedDate = formatInTimeZone(bookings[0].start, 'America/Sao_Paulo', "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + formatInTimeZone(new Date(bookings[0].start.getTime() + 90 * 60 * 1000), 'America/Sao_Paulo', "HH:mm");
       await client.notification.create({
         data: {
           id: crypto.randomUUID(),
@@ -233,7 +234,7 @@ export async function createBookings(
                   id: crypto.randomUUID(),
                   senderId: studentId,
                   receiverId: teacherId,
-                  content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${getSubjectName(booking.subjectId)} para o dia ${format(booking.start, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
+                  content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${getSubjectName(booking.subjectId)} para o dia ${formatInTimeZone(booking.start, 'America/Sao_Paulo', "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
                 }
               });
             } catch (e) {
@@ -470,7 +471,7 @@ export async function cancelLesson(lessonId: string, cancelReason?: string) {
 
     const cancelledStartDate = existingLesson.date;
     const cancelledEndDate = new Date(cancelledStartDate.getTime() + 90 * 60 * 1000);
-    const cancelledFormattedDate = format(cancelledStartDate, "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + format(cancelledEndDate, "HH:mm");
+    const cancelledFormattedDate = formatInTimeZone(cancelledStartDate, 'America/Sao_Paulo', "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + formatInTimeZone(cancelledEndDate, 'America/Sao_Paulo', "HH:mm");
 
     await prisma.notification.create({
       data: {
