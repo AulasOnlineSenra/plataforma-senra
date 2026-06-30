@@ -5,6 +5,13 @@ import { ptBR } from 'date-fns/locale';
 const prisma = new PrismaClient();
 
 async function main() {
+  // Buscar todas as disciplinas para criar um mapa de ID -> Nome amigável
+  const subjects = await prisma.subject.findMany();
+  const subjectMap = new Map<string, string>();
+  subjects.forEach((s) => {
+    subjectMap.set(s.id, s.name);
+  });
+
   const notifications = await prisma.notification.findMany({
     where: {
       type: { in: ['class_scheduled', 'class_cancelled'] }
@@ -25,11 +32,10 @@ async function main() {
     const dateString = `${year}-${month}-${day}`; // yyyy-mm-dd
     
     // Vamos buscar as aulas desse usuário (aluno ou professor) nesse dia
-    // Definimos o início e o fim do dia em UTC para cobrir qualquer fuso
     const startOfDay = new Date(`${dateString}T00:00:00Z`);
-    startOfDay.setHours(startOfDay.getHours() - 12); // margem de segurança
+    startOfDay.setHours(startOfDay.getHours() - 12);
     const endOfDay = new Date(`${dateString}T23:59:59Z`);
-    endOfDay.setHours(endOfDay.getHours() + 12); // margem de segurança
+    endOfDay.setHours(endOfDay.getHours() + 12);
 
     const lessons = await prisma.lesson.findMany({
       where: {
@@ -48,9 +54,7 @@ async function main() {
       }
     });
 
-    // Se acharmos a aula correspondente nesse dia
     if (lessons.length > 0) {
-      // Se houver mais de uma aula, pegamos a que melhor aproxima ou a primeira
       const lesson = lessons[0];
       const correctStart = lesson.date;
       const correctEnd = lesson.endDate || new Date(correctStart.getTime() + 90 * 60 * 1000);
@@ -59,17 +63,18 @@ async function main() {
       const formattedEndStr = formatInTimeZone(correctEnd, 'America/Sao_Paulo', "HH:mm");
       const correctFormattedDate = `${formattedStartStr} - ${formattedEndStr}`;
 
+      // Resolve o nome da disciplina usando o map (ex: default-subj-12 -> Biologia)
+      const subjectName = subjectMap.get(lesson.subject) || lesson.subject;
+
       let newMessage = message;
       if (notif.type === 'class_scheduled') {
         if (message.includes('Sua aula de')) {
-          // Mensagem para o aluno
-          newMessage = `Sua aula de ${lesson.subject} foi agendada para o dia ${correctFormattedDate}.`;
+          newMessage = `Sua aula de ${subjectName} foi agendada para o dia ${correctFormattedDate}.`;
         } else {
-          // Mensagem para o professor
-          newMessage = `O aluno ${lesson.student.name} agendou uma aula de ${lesson.subject} para o dia ${correctFormattedDate}.`;
+          newMessage = `O aluno ${lesson.student.name} agendou uma aula de ${subjectName} para o dia ${correctFormattedDate}.`;
         }
       } else if (notif.type === 'class_cancelled') {
-        newMessage = `A aula de ${lesson.subject} marcada para ${correctFormattedDate} foi cancelada.`;
+        newMessage = `A aula de ${subjectName} marcada para ${correctFormattedDate} foi cancelada.`;
       }
 
       if (newMessage !== message) {
@@ -81,32 +86,6 @@ async function main() {
           data: { message: newMessage }
         });
         updatedCount++;
-      }
-    } else {
-      // Caso não encontre a aula no banco, fazemos uma aproximação de string subtraindo 3 horas
-      const timeRangeMatch = message.match(/às (\d{2}):(\d{2}) - (\d{2}):(\d{2})/);
-      if (timeRangeMatch) {
-        const [_, sh, sm, eh, em] = timeRangeMatch;
-        let startH = parseInt(sh) - 3;
-        let endH = parseInt(eh) - 3;
-        if (startH < 0) startH += 24;
-        if (endH < 0) endH += 24;
-        
-        const newStartStr = `${String(startH).padStart(2, '0')}:${sm}`;
-        const newEndStr = `${String(endH).padStart(2, '0')}:${em}`;
-        const newRange = `às ${newStartStr} - ${newEndStr}`;
-        const newMessage = message.replace(/às \d{2}:\d{2} - \d{2}:\d{2}/, newRange);
-
-        if (newMessage !== message) {
-          console.log(`Atualizando notificação (fallback regex) ${notif.id}:`);
-          console.log(`  De:  "${message}"`);
-          console.log(`  Para: "${newMessage}"`);
-          await prisma.notification.update({
-            where: { id: notif.id },
-            data: { message: newMessage }
-          });
-          updatedCount++;
-        }
       }
     }
   }
