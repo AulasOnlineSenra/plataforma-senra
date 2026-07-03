@@ -248,6 +248,7 @@ export async function updateEnemConfig(data: {
 export async function dispatchEnemSimulado(
   dayType: 'DIA1' | 'DIA2',
   adminId: string,
+  isManualDispatch: boolean = false
 ) {
   try {
     const config = await getEnemConfig();
@@ -293,17 +294,20 @@ export async function dispatchEnemSimulado(
     let dispatched = 0;
 
     for (const student of students) {
-      // Verifica se já foi enviado este mês para evitar duplicatas
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const existing = await prisma.simulado.findFirst({
-        where: {
-          studentId: student.id,
-          subject: `ENEM_${dayType}`,
-          createdAt: { gte: monthStart },
-        },
-      });
-      if (existing) continue;
+      // Evita duplicatas: se for automático, verifica se já foi gerado algum simulado HOJE.
+      // Isso permite que disparos manuais em dias anteriores não bloqueiem o envio automático no fim de semana.
+      if (!isManualDispatch) {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const existing = await prisma.simulado.findFirst({
+          where: {
+            studentId: student.id,
+            subject: `ENEM_${dayType}`,
+            createdAt: { gte: todayStart },
+          },
+        });
+        if (existing) continue;
+      }
 
       let questionsToUse: any[] = [];
       let timeLimit = 300;

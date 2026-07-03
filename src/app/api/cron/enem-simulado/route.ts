@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'dayType e adminId são obrigatórios.' }, { status: 400 });
     }
 
-    const result = await dispatchEnemSimulado(dayType, adminId);
+    const result = await dispatchEnemSimulado(dayType, adminId, true);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
