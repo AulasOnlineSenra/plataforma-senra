@@ -284,7 +284,7 @@ export default function MinhasAulasPage() {
     });
     
     return groups;
-  }, [lessons, completedStudentFilter]);
+  }, [lessons, completedStudentFilter, completedMonthFilter]);
 
   const groupedCancelledLessons = useMemo(() => {
     let filtered = lessons.filter((l) => l.status === "CANCELLED");
