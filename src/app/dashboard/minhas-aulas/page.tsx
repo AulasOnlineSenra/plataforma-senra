@@ -463,62 +463,50 @@ export default function MinhasAulasPage() {
   };
 
   const handleConfirmDelete = async (withRefund = false) => {
-    if (!lessonToDelete) return;
+    const isBulk = bulkDeleteTarget !== null;
+    if (!lessonToDelete && !isBulk) return;
 
     setIsRefunding(true);
     try {
-      if (withRefund) {
-        const res = await fetch('/api/dashboard/refund-credit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studentId: lessonToDelete.student?.id }),
-        });
-        if (!res.ok) throw new Error('Falha ao restituir crédito');
+      const idsToDelete = isBulk 
+        ? (bulkDeleteTarget === 'completed' ? selectedCompleted : selectedCancelled)
+        : [lessonToDelete?.id].filter(Boolean) as string[];
+
+      if (idsToDelete.length === 0) return;
+
+      for (const id of idsToDelete) {
+        const currentLesson = isBulk ? lessons.find(l => l.id === id) : lessonToDelete;
+        if (!currentLesson) continue;
+        
+        if (withRefund && currentLesson.student?.id) {
+          const res = await fetch('/api/dashboard/refund-credit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId: currentLesson.student.id }),
+          });
+          if (!res.ok) throw new Error(`Falha ao restituir crédito para o aluno ${currentLesson.student.name}`);
+        }
+
+        await cancelLesson(id, deleteReason.trim() || "Removida do histórico pelo administrador.");
       }
 
-      const result = await cancelLesson(lessonToDelete.id, deleteReason.trim() || "Removida do histórico pelo administrador.");
-      if (result.success) {
-        toast({
-          title: "Sucesso",
-          description: withRefund ? "Aula excluída e crédito restituído." : "Registro de aula removido do histórico.",
-        });
-        setIsDeleteDialogOpen(false);
-        setLessonToDelete(null);
-        setDeleteReason('');
-        if (role && userId) loadLessons(userId, role);
-      } else {
-        toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível excluir o histórico." });
-      }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro", description: err.message });
-    } finally {
-      setIsRefunding(false);
-    }
-  };
-
-    const handleBulkDelete = async (withRefund = false) => {
-    setIsRefunding(true);
-    try {
-      const idsToDelete = bulkDeleteTarget === 'completed' ? selectedCompleted : selectedCancelled;
-      
-      if (bulkDeleteTarget === 'completed') {
-        for (const id of idsToDelete) {
-          await cancelLesson(id, deleteReason.trim() || "Removida do histÃ³rico em massa.");
-        }
-      } else {
-        for (const id of idsToDelete) {
-          await deleteLesson(id);
-        }
-      }
-      
       toast({
         title: "Sucesso",
-        description: +idsToDelete.length + " aula(s) removida(s).",
+        description: isBulk 
+          ? `${idsToDelete.length} aula(s) removida(s).` 
+          : (withRefund ? "Aula excluída e crédito restituído." : "Registro de aula removido do histórico."),
       });
-      setIsBulkDeleteDialogOpen(false);
+      
+      setIsDeleteDialogOpen(false);
+      setLessonToDelete(null);
       setDeleteReason('');
-      if (bulkDeleteTarget === 'completed') setSelectedCompleted([]);
-      else setSelectedCancelled([]);
+      
+      if (isBulk) {
+        if (bulkDeleteTarget === 'completed') setSelectedCompleted([]);
+        if (bulkDeleteTarget === 'cancelled') setSelectedCancelled([]);
+        setBulkDeleteTarget(null);
+      }
+      
       if (role && userId) loadLessons(userId, role);
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro", description: err.message });
@@ -1021,7 +1009,7 @@ export default function MinhasAulasPage() {
                 {selectedCompleted.length > 0 && (
                   <Button 
                     variant="destructive" 
-                    onClick={() => { setBulkDeleteTarget('completed'); setIsBulkDeleteDialogOpen(true); }}
+                    onClick={() => { setBulkDeleteTarget('completed'); setIsDeleteDialogOpen(true); }}
                   >
                     Excluir selecionados ({selectedCompleted.length})
                   </Button>
@@ -1130,7 +1118,7 @@ export default function MinhasAulasPage() {
                 {selectedCancelled.length > 0 && (
                   <Button 
                     variant="destructive" 
-                    onClick={() => { setBulkDeleteTarget('cancelled'); setIsBulkDeleteDialogOpen(true); }}
+                    onClick={() => { setBulkDeleteTarget('cancelled'); setIsDeleteDialogOpen(true); }}
                   >
                     Excluir selecionados ({selectedCancelled.length})
                   </Button>
@@ -1327,7 +1315,7 @@ export default function MinhasAulasPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setDeleteReason(''); }}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) { setDeleteReason(''); setBulkDeleteTarget(null); setLessonToDelete(null); } }}>
         <AlertDialogContent className="sm:max-w-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Aula do Histórico</AlertDialogTitle>
@@ -1353,7 +1341,7 @@ export default function MinhasAulasPage() {
               <AlertDialogCancel
                 disabled={isRefunding}
                 className="sm:flex-1"
-                onClick={() => { setIsDeleteDialogOpen(false); setLessonToDelete(null); setDeleteReason(''); }}
+                onClick={() => { setIsDeleteDialogOpen(false); setLessonToDelete(null); setBulkDeleteTarget(null); setDeleteReason(''); }}
               >
                 Cancelar
               </AlertDialogCancel>
