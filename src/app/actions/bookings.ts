@@ -460,8 +460,8 @@ export async function cancelLesson(lessonId: string, cancelReason?: string) {
       return { success: false, error: "Aula não encontrada." };
     }
 
-    if (existingLesson.status === "COMPLETED" || existingLesson.status === "CANCELLED") {
-      return { success: false, error: "Aula já foi concluída ou cancelada anteriormente." };
+    if (existingLesson.status === "CANCELLED") {
+      return { success: false, error: "Aula já foi cancelada anteriormente." };
     }
 
     const updatedLesson = await prisma.lesson.update({

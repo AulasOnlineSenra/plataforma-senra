@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { format, startOfWeek, endOfWeek, addDays, eachDayOfInterval, isSameDay, isToday, isTomorrow } from "date-fns";
@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getStudents } from "@/app/actions/users";
 
 const subjectMap: Record<string, string> = {
@@ -104,8 +105,9 @@ export default function MinhasAulasPage() {
   const [highlightCancelled, setHighlightCancelled] = useState(false);
   const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
   const [completedStudentFilter, setCompletedStudentFilter] = useState("all");
-  const [completedMonthFilter, setCompletedMonthFilter] = useState("all");
+  const [completedMonthFilter, setCompletedMonthFilter] = useState(() => format(new Date(), "MM/yyyy"));
   const [cancelledStudentFilter, setCancelledStudentFilter] = useState("all");
+  const [cancelledMonthFilter, setCancelledMonthFilter] = useState(() => format(new Date(), "MM/yyyy"));
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [gridWeekStart, setGridWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [openMenuLessonId, setOpenMenuLessonId] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export default function MinhasAulasPage() {
   const [openMenuLesson, setOpenMenuLesson] = useState<LessonItem | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [cancelReason, setCancelReason] = useState<string>('');
+  const [deleteReason, setDeleteReason] = useState<string>('');
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     // 1. Load from cache first for instant feedback
@@ -279,14 +282,37 @@ export default function MinhasAulasPage() {
     return groups;
   }, [lessons, completedStudentFilter]);
 
-  const cancelledLessons = useMemo(() => {
+  const groupedCancelledLessons = useMemo(() => {
     let filtered = lessons.filter((l) => l.status === "CANCELLED");
     if (cancelledStudentFilter !== "all") {
       filtered = filtered.filter(l => l.student?.id === cancelledStudentFilter);
     }
-    // Reverse order: newest first
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [lessons, cancelledStudentFilter]);
+    if (cancelledMonthFilter !== "all") {
+      filtered = filtered.filter(l => {
+        const d = new Date(l.date);
+        return format(d, "MM/yyyy") === cancelledMonthFilter;
+      });
+    }
+    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const groups: { weekLabel: string; lessons: LessonItem[] }[] = [];
+    
+    filtered.forEach(lesson => {
+      const d = new Date(lesson.date);
+      const start = startOfWeek(d, { weekStartsOn: 1 });
+      const end = endOfWeek(d, { weekStartsOn: 1 });
+      const label = `Semana de ${format(start, "dd/MM")} até ${format(end, "dd/MM/yyyy")}`;
+      
+      let group = groups.find(g => g.weekLabel === label);
+      if (!group) {
+        group = { weekLabel: label, lessons: [] };
+        groups.push(group);
+      }
+      group.lessons.push(lesson);
+    });
+    
+    return groups;
+  }, [lessons, cancelledStudentFilter, cancelledMonthFilter]);
 
   const calendarMarkedDays = useMemo(() => {
     const now = new Date();
@@ -446,7 +472,7 @@ export default function MinhasAulasPage() {
         if (!res.ok) throw new Error('Falha ao restituir crédito');
       }
 
-      const result = await cancelLesson(lessonToDelete.id, "Removida do histórico pelo administrador.");
+      const result = await cancelLesson(lessonToDelete.id, deleteReason.trim() || "Removida do histórico pelo administrador.");
       if (result.success) {
         toast({
           title: "Sucesso",
@@ -454,6 +480,7 @@ export default function MinhasAulasPage() {
         });
         setIsDeleteDialogOpen(false);
         setLessonToDelete(null);
+        setDeleteReason('');
         if (role && userId) loadLessons(userId, role);
       } else {
         toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível excluir o histórico." });
@@ -465,7 +492,38 @@ export default function MinhasAulasPage() {
     }
   };
 
-  const renderTableRow = (lesson: LessonItem) => {
+    const handleBulkDelete = async (withRefund = false) => {
+    setIsRefunding(true);
+    try {
+      const idsToDelete = bulkDeleteTarget === 'completed' ? selectedCompleted : selectedCancelled;
+      
+      if (bulkDeleteTarget === 'completed') {
+        for (const id of idsToDelete) {
+          await cancelLesson(id, deleteReason.trim() || "Removida do histÃ³rico em massa.");
+        }
+      } else {
+        for (const id of idsToDelete) {
+          await deleteLesson(id);
+        }
+      }
+      
+      toast({
+        title: "Sucesso",
+        description: +idsToDelete.length + " aula(s) removida(s).",
+      });
+      setIsBulkDeleteDialogOpen(false);
+      setDeleteReason('');
+      if (bulkDeleteTarget === 'completed') setSelectedCompleted([]);
+      else setSelectedCancelled([]);
+      if (role && userId) loadLessons(userId, role);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message });
+    } finally {
+      setIsRefunding(false);
+    }
+  };
+
+  const renderTableRow = (lesson: LessonItem, type: 'completed' | 'cancelled') => {
     const studentName = lesson.student?.name || "-";
     const studentAvatar = lesson.student?.avatarUrl;
     const teacherName = lesson.teacher?.name || "-";
@@ -929,7 +987,15 @@ export default function MinhasAulasPage() {
               </CardDescription>
             </div>
             {role === "admin" && (
-              <div className="flex w-full sm:w-auto gap-2">
+              <div className="flex w-full sm:w-auto gap-2 items-center">
+                {selectedCompleted.length > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => { setBulkDeleteTarget('completed'); setIsBulkDeleteDialogOpen(true); }}
+                  >
+                    Excluir selecionados ({selectedCompleted.length})
+                  </Button>
+                )}
                 <div className="w-full sm:w-48">
                   <Select value={completedMonthFilter} onValueChange={setCompletedMonthFilter}>
                     <SelectTrigger className="rounded-2xl">
@@ -982,6 +1048,21 @@ export default function MinhasAulasPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          {role === "admin" && (
+                            <TableHead className="w-[40px]">
+                              <Checkbox 
+                                checked={group.lessons.length > 0 && group.lessons.every(l => selectedCompleted.includes(l.id))}
+                                onCheckedChange={(c) => {
+                                  const ids = group.lessons.map(l => l.id);
+                                  if (c) {
+                                    setSelectedCompleted(prev => Array.from(new Set([...prev, ...ids])));
+                                  } else {
+                                    setSelectedCompleted(prev => prev.filter(id => !ids.includes(id)));
+                                  }
+                                }}
+                              />
+                            </TableHead>
+                          )}
                           {(role === "admin" || role === "teacher") && <TableHead>Aluno</TableHead>}
                           {(role === "admin" || role === "student") && <TableHead>Professor</TableHead>}
                           <TableHead>Matéria</TableHead>
@@ -991,7 +1072,7 @@ export default function MinhasAulasPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {group.lessons.map(renderTableRow)}
+                        {group.lessons.map(l => renderTableRow(l, 'completed'))}
                       </TableBody>
                     </Table>
                   </div>
@@ -1015,8 +1096,33 @@ export default function MinhasAulasPage() {
               </CardDescription>
             </div>
             {role === "admin" && (
-              <div className="w-full sm:w-64">
-                <Select value={cancelledStudentFilter} onValueChange={setCancelledStudentFilter}>
+              <div className="flex w-full sm:w-auto gap-2 items-center">
+                {selectedCancelled.length > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => { setBulkDeleteTarget('cancelled'); setIsBulkDeleteDialogOpen(true); }}
+                  >
+                    Excluir selecionados ({selectedCancelled.length})
+                  </Button>
+                )}
+                <div className="w-full sm:w-48">
+                  <Select value={cancelledMonthFilter} onValueChange={setCancelledMonthFilter}>
+                    <SelectTrigger className="rounded-2xl">
+                      <div className="flex items-center gap-2 truncate">
+                        <Search className="h-3 w-3 text-slate-400" />
+                        <SelectValue placeholder="Mês/Ano" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="all">Todos os meses</SelectItem>
+                      {availableMonths.map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full sm:w-64">
+                  <Select value={cancelledStudentFilter} onValueChange={setCancelledStudentFilter}>
                   <SelectTrigger className="rounded-2xl">
                     <div className="flex items-center gap-2 truncate">
                       <Search className="h-3 w-3 text-slate-400" />
@@ -1035,79 +1141,51 @@ export default function MinhasAulasPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {!loading && cancelledLessons.length === 0 && (
+          {!loading && groupedCancelledLessons.length === 0 && (
             renderEmptyMessage("Nenhuma aula cancelada.")
           )}
 
-          {!loading && cancelledLessons.length > 0 && (
+          {!loading && groupedCancelledLessons.length > 0 && (
             <ScrollArea className="h-96">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Aluno</TableHead>
-                      <TableHead>Professor</TableHead>
-                      <TableHead>Matéria</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Observações</TableHead>
-                      {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cancelledLessons.map((lesson) => (
-                      <TableRow key={lesson.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={lesson.student?.avatarUrl || undefined} alt={lesson.student?.name} />
-                              <AvatarFallback>{lesson.student?.name?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{lesson.student?.name || "-"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={lesson.teacher?.avatarUrl || undefined} alt={lesson.teacher?.name} />
-                              <AvatarFallback>{lesson.teacher?.name?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{lesson.teacher?.name || "-"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{subjectMap[lesson.subject] || lesson.subject}</TableCell>
-                        <TableCell>
-                          {lesson.isExperimental ? <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span> : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          {lesson.cancelReason ? (
-                            <span className="text-xs text-slate-600 italic">"{lesson.cancelReason}"</span>
-                          ) : (
-                            <span className="text-xs text-slate-400">-</span>
+                {groupedCancelledLessons.map(group => (
+                  <div key={group.weekLabel} className="mb-6">
+                    <h3 className="font-semibold text-slate-800 bg-slate-100 px-3 py-2 rounded-lg mb-2">
+                      {group.weekLabel}
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {role === "admin" && (
+                            <TableHead className="w-[40px]">
+                              <Checkbox 
+                                checked={group.lessons.length > 0 && group.lessons.every(l => selectedCancelled.includes(l.id))}
+                                onCheckedChange={(c) => {
+                                  const ids = group.lessons.map(l => l.id);
+                                  if (c) {
+                                    setSelectedCancelled(prev => Array.from(new Set([...prev, ...ids])));
+                                  } else {
+                                    setSelectedCancelled(prev => prev.filter(id => !ids.includes(id)));
+                                  }
+                                }}
+                              />
+                            </TableHead>
                           )}
-                        </TableCell>
-                        {role === "admin" && (
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => {
-                                setLessonToDelete(lesson);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          <TableHead>Aluno</TableHead>
+                          <TableHead>Professor</TableHead>
+                          <TableHead>Matéria</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Data/Hora</TableHead>
+                          <TableHead>Observações</TableHead>
+                          {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.lessons.map(l => renderTableRow(l, 'cancelled'))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           )}
@@ -1218,7 +1296,7 @@ export default function MinhasAulasPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setDeleteReason(''); }}>
         <AlertDialogContent className="sm:max-w-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Aula do Histórico</AlertDialogTitle>
@@ -1226,12 +1304,25 @@ export default function MinhasAulasPage() {
               O que deseja fazer com este registro de aula?
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="px-1 py-2">
+            <Label htmlFor="deleteReason" className="text-sm font-medium text-slate-700">
+              Observações (Opcional)
+            </Label>
+            <textarea
+              id="deleteReason"
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              placeholder="Adicione uma observação sobre esta exclusão..."
+              rows={3}
+              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-300 resize-none"
+            />
+          </div>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               <AlertDialogCancel
                 disabled={isRefunding}
                 className="sm:flex-1"
-                onClick={() => { setIsDeleteDialogOpen(false); setLessonToDelete(null); }}
+                onClick={() => { setIsDeleteDialogOpen(false); setLessonToDelete(null); setDeleteReason(''); }}
               >
                 Cancelar
               </AlertDialogCancel>
@@ -1296,3 +1387,4 @@ export default function MinhasAulasPage() {
     </div>
   );
 }
+
