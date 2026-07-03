@@ -104,6 +104,7 @@ export default function MinhasAulasPage() {
   const [highlightCancelled, setHighlightCancelled] = useState(false);
   const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
   const [completedStudentFilter, setCompletedStudentFilter] = useState("all");
+  const [completedMonthFilter, setCompletedMonthFilter] = useState("all");
   const [cancelledStudentFilter, setCancelledStudentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [gridWeekStart, setGridWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -233,10 +234,29 @@ export default function MinhasAulasPage() {
     );
   }, [sortedLessons]);
 
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    lessons.filter(l => l.status === "COMPLETED").forEach(l => {
+      months.add(format(new Date(l.date), "MM/yyyy"));
+    });
+    return Array.from(months).sort((a, b) => {
+      const [mA, yA] = a.split("/");
+      const [mB, yB] = b.split("/");
+      if (yA !== yB) return Number(yB) - Number(yA);
+      return Number(mB) - Number(mA);
+    });
+  }, [lessons]);
+
   const groupedCompletedLessons = useMemo(() => {
     let filtered = lessons.filter((l) => l.status === "COMPLETED");
     if (completedStudentFilter !== "all") {
       filtered = filtered.filter(l => l.student?.id === completedStudentFilter);
+    }
+    if (completedMonthFilter !== "all") {
+      filtered = filtered.filter(l => {
+        const d = new Date(l.date);
+        return format(d, "MM/yyyy") === completedMonthFilter;
+      });
     }
     filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
@@ -426,7 +446,7 @@ export default function MinhasAulasPage() {
         if (!res.ok) throw new Error('Falha ao restituir crédito');
       }
 
-      const result = await deleteLesson(lessonToDelete.id);
+      const result = await cancelLesson(lessonToDelete.id, "Removida do histórico pelo administrador.");
       if (result.success) {
         toast({
           title: "Sucesso",
@@ -909,21 +929,39 @@ export default function MinhasAulasPage() {
               </CardDescription>
             </div>
             {role === "admin" && (
-              <div className="w-full sm:w-64">
-                <Select value={completedStudentFilter} onValueChange={setCompletedStudentFilter}>
-                  <SelectTrigger className="rounded-2xl">
-                    <div className="flex items-center gap-2 truncate">
-                      <Search className="h-3 w-3 text-slate-400" />
-                      <SelectValue placeholder="Filtrar por aluno" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    <SelectItem value="all">Todos os alunos</SelectItem>
-                    {students.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex w-full sm:w-auto gap-2">
+                <div className="w-full sm:w-48">
+                  <Select value={completedMonthFilter} onValueChange={setCompletedMonthFilter}>
+                    <SelectTrigger className="rounded-2xl">
+                      <div className="flex items-center gap-2 truncate">
+                        <Search className="h-3 w-3 text-slate-400" />
+                        <SelectValue placeholder="Mês/Ano" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="all">Todos os meses</SelectItem>
+                      {availableMonths.map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full sm:w-64">
+                  <Select value={completedStudentFilter} onValueChange={setCompletedStudentFilter}>
+                    <SelectTrigger className="rounded-2xl">
+                      <div className="flex items-center gap-2 truncate">
+                        <Search className="h-3 w-3 text-slate-400" />
+                        <SelectValue placeholder="Filtrar por aluno" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="all">Todos os alunos</SelectItem>
+                      {students.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
           </div>
@@ -1012,7 +1050,7 @@ export default function MinhasAulasPage() {
                       <TableHead>Matéria</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Data/Hora</TableHead>
-                      <TableHead>Motivo do Cancelamento</TableHead>
+                      <TableHead>Observações</TableHead>
                       {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
