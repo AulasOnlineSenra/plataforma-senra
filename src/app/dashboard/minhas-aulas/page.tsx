@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { format, startOfWeek, endOfWeek, addDays, eachDayOfInterval, isSameDay, isToday, isTomorrow } from "date-fns";
@@ -529,8 +529,25 @@ export default function MinhasAulasPage() {
     const teacherName = lesson.teacher?.name || "-";
     const teacherAvatar = lesson.teacher?.avatarUrl;
 
+    const isSelected = type === 'completed' 
+      ? selectedCompleted.includes(lesson.id) 
+      : selectedCancelled.includes(lesson.id);
+
+    const toggleSelection = (checked: boolean) => {
+      if (type === 'completed') {
+        setSelectedCompleted(prev => checked ? [...prev, lesson.id] : prev.filter(id => id !== lesson.id));
+      } else {
+        setSelectedCancelled(prev => checked ? [...prev, lesson.id] : prev.filter(id => id !== lesson.id));
+      }
+    };
+
     return (
-      <TableRow key={lesson.id}>
+      <TableRow key={lesson.id} className={isSelected ? 'bg-slate-50' : ''}>
+        {role === "admin" && (
+          <TableCell className="w-[40px]">
+            <Checkbox checked={isSelected} onCheckedChange={toggleSelection} />
+          </TableCell>
+        )}
         {(role === "admin" || role === "teacher") && (
           <TableCell>
             <div className="flex items-center gap-3">
@@ -560,6 +577,15 @@ export default function MinhasAulasPage() {
         <TableCell>
           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + (lesson.endDate ? ' - ' + format(new Date(lesson.endDate), "HH:mm") : '')}
         </TableCell>
+        {type === 'cancelled' && (
+          <TableCell>
+            {lesson.cancelReason ? (
+              <span className="text-xs text-slate-600 italic">"{lesson.cancelReason}"</span>
+            ) : (
+              <span className="text-xs text-slate-400">-</span>
+            )}
+          </TableCell>
+        )}
         {role === "admin" && (
           <TableCell className="text-right">
             <Button 
@@ -1137,6 +1163,7 @@ export default function MinhasAulasPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
             )}
           </div>
         </CardHeader>
