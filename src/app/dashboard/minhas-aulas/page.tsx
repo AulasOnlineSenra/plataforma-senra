@@ -1004,32 +1004,32 @@ export default function MinhasAulasPage() {
                 Aulas concluídas com sucesso.
               </CardDescription>
             </div>
-            {role === "admin" && (
-              <div className="flex w-full sm:w-auto gap-2 items-center">
-                {selectedCompleted.length > 0 && (
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => { setBulkDeleteTarget('completed'); setIsDeleteDialogOpen(true); }}
-                  >
-                    Excluir selecionados ({selectedCompleted.length})
-                  </Button>
-                )}
-                <div className="w-full sm:w-48">
-                  <Select value={completedMonthFilter} onValueChange={setCompletedMonthFilter}>
-                    <SelectTrigger className="rounded-2xl">
-                      <div className="flex items-center gap-2 truncate">
-                        <Search className="h-3 w-3 text-slate-400" />
-                        <SelectValue placeholder="Mês/Ano" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
-                      <SelectItem value="all">Todos os meses</SelectItem>
-                      {availableMonths.map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="flex w-full sm:w-auto gap-2 items-center">
+              {role === "admin" && selectedCompleted.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => { setBulkDeleteTarget('completed'); setIsDeleteDialogOpen(true); }}
+                >
+                  Excluir selecionados ({selectedCompleted.length})
+                </Button>
+              )}
+              <div className="w-full sm:w-48">
+                <Select value={completedMonthFilter} onValueChange={setCompletedMonthFilter}>
+                  <SelectTrigger className="rounded-2xl">
+                    <div className="flex items-center gap-2 truncate">
+                      <Search className="h-3 w-3 text-slate-400" />
+                      <SelectValue placeholder="Mês/Ano" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="all">Todos os meses</SelectItem>
+                    {availableMonths.map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {role === "admin" && (
                 <div className="w-full sm:w-64">
                   <Select value={completedStudentFilter} onValueChange={setCompletedStudentFilter}>
                     <SelectTrigger className="rounded-2xl">
@@ -1046,8 +1046,8 @@ export default function MinhasAulasPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">
@@ -1113,50 +1113,50 @@ export default function MinhasAulasPage() {
                 Aulas canceladas por qualquer motivo.
               </CardDescription>
             </div>
-            {role === "admin" && (
-              <div className="flex w-full sm:w-auto gap-2 items-center">
-                {selectedCancelled.length > 0 && (
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => { setBulkDeleteTarget('cancelled'); setIsDeleteDialogOpen(true); }}
-                  >
-                    Excluir selecionados ({selectedCancelled.length})
-                  </Button>
-                )}
-                <div className="w-full sm:w-48">
-                  <Select value={cancelledMonthFilter} onValueChange={setCancelledMonthFilter}>
-                    <SelectTrigger className="rounded-2xl">
-                      <div className="flex items-center gap-2 truncate">
-                        <Search className="h-3 w-3 text-slate-400" />
-                        <SelectValue placeholder="Mês/Ano" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
-                      <SelectItem value="all">Todos os meses</SelectItem>
-                      {availableMonths.map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="w-full sm:w-64">
-                  <Select value={cancelledStudentFilter} onValueChange={setCancelledStudentFilter}>
+            <div className="flex w-full sm:w-auto gap-2 items-center">
+              {role === "admin" && selectedCancelled.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => { setBulkDeleteTarget('cancelled'); setIsDeleteDialogOpen(true); }}
+                >
+                  Excluir selecionados ({selectedCancelled.length})
+                </Button>
+              )}
+              <div className="w-full sm:w-48">
+                <Select value={cancelledMonthFilter} onValueChange={setCancelledMonthFilter}>
                   <SelectTrigger className="rounded-2xl">
                     <div className="flex items-center gap-2 truncate">
                       <Search className="h-3 w-3 text-slate-400" />
-                      <SelectValue placeholder="Filtrar por aluno" />
+                      <SelectValue placeholder="Mês/Ano" />
                     </div>
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="all">Todos os alunos</SelectItem>
-                    {students.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    <SelectItem value="all">Todos os meses</SelectItem>
+                    {availableMonths.map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {role === "admin" && (
+                <div className="w-full sm:w-64">
+                  <Select value={cancelledStudentFilter} onValueChange={setCancelledStudentFilter}>
+                    <SelectTrigger className="rounded-2xl">
+                      <div className="flex items-center gap-2 truncate">
+                        <Search className="h-3 w-3 text-slate-400" />
+                        <SelectValue placeholder="Filtrar por aluno" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="all">Todos os alunos</SelectItem>
+                      {students.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-            )}
           </div>
         </CardHeader>
         <CardContent className="p-6">
