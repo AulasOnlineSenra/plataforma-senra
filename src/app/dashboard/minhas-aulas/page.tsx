@@ -116,6 +116,10 @@ export default function MinhasAulasPage() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [cancelReason, setCancelReason] = useState<string>('');
   const [deleteReason, setDeleteReason] = useState<string>('');
+  const [selectedCompleted, setSelectedCompleted] = useState<string[]>([]);
+  const [selectedCancelled, setSelectedCancelled] = useState<string[]>([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<'completed' | 'cancelled' | null>(null);
 
   const loadLessons = async (currentUserId: string, currentRole: string) => {
     // 1. Load from cache first for instant feedback
