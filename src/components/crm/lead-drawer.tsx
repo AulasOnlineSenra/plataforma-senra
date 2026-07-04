@@ -517,35 +517,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                 </div>
               )}
 
-              {/* Informações de Contato */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">E-mail</label>
-                  <div className="flex items-center gap-2 group">
-                    <Mail className="h-4 w-4 text-slate-400" />
-                    <Input
-                      value={formData.email}
-                      onChange={(e) => handleChange('email', e.target.value)}
-                      onBlur={() => handleSave()}
-                      className="border-none p-0 h-7 focus-visible:ring-0 bg-transparent text-sm"
-                      placeholder="Adicionar e-mail"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Telefone</label>
-                  <div className="flex items-center gap-2 group">
-                    <Phone className="h-4 w-4 text-slate-400" />
-                    <Input
-                      value={formData.phone}
-                      onChange={(e) => handleChange('phone', e.target.value)}
-                      onBlur={() => handleSave()}
-                      className="border-none p-0 h-7 focus-visible:ring-0 bg-transparent text-sm"
-                      placeholder="Adicionar telefone"
-                    />
-                  </div>
-                </div>
-              </div>
+
 
               {/* Descrição */}
               <div className="space-y-3">
@@ -557,7 +529,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                   onChange={(e) => handleChange('description', e.target.value)}
                   onBlur={() => handleSave()}
                   placeholder="Adicione uma descrição mais detalhada..."
-                  className="bg-slate-50/50 border-slate-200 focus-visible:ring-primary rounded-xl min-h-[160px] resize-none"
+                  className="bg-slate-50/50 border-slate-200 focus-visible:ring-primary rounded-xl min-h-[320px] resize-none"
                 />
               </div>
 
