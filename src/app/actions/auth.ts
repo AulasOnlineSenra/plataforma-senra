@@ -133,7 +133,7 @@ export async function loginUser(data: { email: string; password: string }) {
 
     if (!user) {
       console.log(`[LOGIN_DEBUG] Falha: E-mail não encontrado - ${normalizedEmail}`);
-      return { success: false, error: "E-mail não encontrado no sistema." };
+      return { success: false, error: "E-mail ou senha incorretos." };
     }
 
     console.log(`[LOGIN_DEBUG] Usuário encontrado: ${user.email} (Role: ${user.role})`);
@@ -145,7 +145,7 @@ export async function loginUser(data: { email: string; password: string }) {
     const isLegacyPassword = user.password === data.password;
 
     if (!isPasswordValid && !isLegacyPassword) {
-      return { success: false, error: "Senha incorreta. Tente novamente." };
+      return { success: false, error: "E-mail ou senha incorretos." };
     }
 
     // Validando o status ANTES de deixar entrar
@@ -166,7 +166,8 @@ export async function loginUser(data: { email: string; password: string }) {
     }
 
     // Se a senha tá certa e o status tá 'active', portas abertas!
-    return { success: true, user };
+    const { password, ...safeUser } = user;
+    return { success: true, user: safeUser };
   } catch (error) {
     console.error("Erro ao iniciar sessão:", error);
     return { success: false, error: "Erro interno ao iniciar sessão." };
