@@ -136,14 +136,8 @@ export async function loginUser(data: { email: string; password: string }) {
       return { success: false, error: "E-mail ou senha incorretos." };
     }
 
-    const now = new Date();
-    if (user.failedLoginAttempts >= 5 && user.lastFailedLogin) {
-      const lockTime = 15 * 60 * 1000; // 15 minutes in ms
-      const timeSinceLastFail = now.getTime() - user.lastFailedLogin.getTime();
-      if (timeSinceLastFail < lockTime) {
-        const minutesLeft = Math.ceil((lockTime - timeSinceLastFail) / 60000);
-        return { success: false, error: `Muitas tentativas. Sua conta foi temporariamente bloqueada. Tente novamente em ${minutesLeft} minutos.` };
-      }
+    if (user.failedLoginAttempts >= 5) {
+      return { success: false, error: "Muitas tentativas falhas. Sua conta foi bloqueada por segurança. Redefina a senha ou contate o suporte." };
     }
 
     console.log(`[LOGIN_DEBUG] Usuário encontrado: ${user.email} (Role: ${user.role})`);
@@ -314,6 +308,8 @@ export async function resetPasswordWithToken(
         password: hashedNewPassword,
         resetToken: null,
         resetTokenExpiry: null,
+        failedLoginAttempts: 0,
+        lastFailedLogin: null,
       },
     });
 

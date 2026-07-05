@@ -67,6 +67,7 @@ import {
   deleteStudentProfile,
   getStudents,
   getMyStudents,
+  unlockUserAccount,
 } from "@/app/actions/users";
 import { addTransactionAndCredits } from "@/app/actions/finance";
 import { getLessons } from "@/app/actions/bookings";
@@ -81,6 +82,7 @@ type StudentRow = {
   tags?: string | null;
   lastAccess?: string | Date | null;
   updatedAt?: string | Date | null;
+  failedLoginAttempts?: number | null;
 };
 
 type LessonRow = {
@@ -125,6 +127,7 @@ function StudentList({
   onAddCredits: (student: StudentRow) => void;
   onDeleteStudent: (student: StudentRow) => void;
   onToggleTagEnem: (student: StudentRow) => void;
+  onUnlockStudent: (student: StudentRow) => void;
   isAdmin: boolean;
 }) {
   const router = useRouter();
@@ -201,6 +204,11 @@ function StudentList({
                           Foco ENEM
                         </span>
                       )}
+                      {(student.failedLoginAttempts ?? 0) >= 5 && (
+                        <span className="mt-1 w-max inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+                          🔒 Bloqueado
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-slate-500 font-medium py-4">
@@ -260,6 +268,15 @@ function StudentList({
                             {student.tags && student.tags.includes(ENEM_TAG)
                               ? "Remover Foco ENEM"
                               : "Adicionar Foco ENEM"}
+                          </DropdownMenuItem>
+                        )}
+                        {isAdmin && (student.failedLoginAttempts ?? 0) >= 5 && (
+                          <DropdownMenuItem
+                            onSelect={() => onUnlockStudent(student)}
+                            className="cursor-pointer rounded-xl py-2.5 font-medium text-amber-700 focus:bg-amber-50 focus:text-amber-800 border-t border-slate-50"
+                          >
+                            <span className="mr-2 h-4 w-4 text-amber-500 text-lg leading-none">🔓</span>
+                            Desbloquear Conta
                           </DropdownMenuItem>
                         )}
                         {isAdmin && (
@@ -561,6 +578,33 @@ export default function AdminStudentsPage() {
     });
   };
 
+  const handleUnlockStudent = async (student: StudentRow) => {
+    toast({
+      title: "Desbloqueando...",
+      description: "Aguarde um instante.",
+    });
+
+    const res = await unlockUserAccount(student.id);
+    if (res.success) {
+      setAllStudents((prev) =>
+        prev.map((s) =>
+          s.id === student.id ? { ...s, failedLoginAttempts: 0 } : s
+        )
+      );
+      toast({
+        title: "Conta Desbloqueada!",
+        description: `O aluno ${student.name} pode acessar a plataforma novamente.`,
+        className: "bg-emerald-600 text-white border-none",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro ao desbloquear",
+        description: res.error,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center text-slate-400 font-medium animate-pulse">
@@ -602,6 +646,7 @@ export default function AdminStudentsPage() {
           onAddCredits={openAddCreditsModal}
           onDeleteStudent={setStudentToDelete}
           onToggleTagEnem={handleToggleTagEnem}
+          onUnlockStudent={handleUnlockStudent}
           isAdmin={currentUser?.role === "admin"}
         />
         {inactiveStudents.length > 0 && (
@@ -612,6 +657,7 @@ export default function AdminStudentsPage() {
             onAddCredits={openAddCreditsModal}
             onDeleteStudent={setStudentToDelete}
             onToggleTagEnem={handleToggleTagEnem}
+            onUnlockStudent={handleUnlockStudent}
             isAdmin={currentUser?.role === "admin"}
           />
         )}

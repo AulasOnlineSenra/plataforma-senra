@@ -25,7 +25,8 @@ export async function getStudents() {
         status: true, 
         createdAt: true, 
         phone: true,
-        tags: true
+        tags: true,
+        failedLoginAttempts: true
       },
       orderBy: { createdAt: "desc" },
     });
@@ -61,7 +62,7 @@ export async function getMyStudents(teacherId: string) {
         role: "student",
         status: { not: "deleted" },
       },
-      select: { id: true, name: true, email: true, avatarUrl: true, phone: true, tags: true },
+      select: { id: true, name: true, email: true, avatarUrl: true, phone: true, tags: true, failedLoginAttempts: true },
       orderBy: { name: "asc" },
     });
 
@@ -69,6 +70,19 @@ export async function getMyStudents(teacherId: string) {
   } catch (error) {
     console.error("Erro ao buscar alunos do professor:", error);
     return { success: false, error: "Falha ao buscar seus alunos." };
+  }
+}
+
+export async function unlockUserAccount(userId: string) {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: 0, lastFailedLogin: null },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao desbloquear usuário:", error);
+    return { success: false, error: "Falha ao desbloquear conta." };
   }
 }
 
