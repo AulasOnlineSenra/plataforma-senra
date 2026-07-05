@@ -353,6 +353,8 @@ model User {
   googleCalendarRefreshToken                         String?
   googleCalendarEmail                                String?
   googleCalendarTokenExpiry                          DateTime?
+  failedLoginAttempts                                Int                @default(0)
+  lastFailedLogin                                    DateTime?
   Availability                                       Availability[]
   ChatMessage_ChatMessage_receiverIdToUser           ChatMessage[]      @relation("ChatMessage_receiverIdToUser")
   ChatMessage_ChatMessage_senderIdToUser             ChatMessage[]      @relation("ChatMessage_senderIdToUser")

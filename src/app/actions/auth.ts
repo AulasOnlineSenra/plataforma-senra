@@ -136,6 +136,16 @@ export async function loginUser(data: { email: string; password: string }) {
       return { success: false, error: "E-mail ou senha incorretos." };
     }
 
+    const now = new Date();
+    if (user.failedLoginAttempts >= 5 && user.lastFailedLogin) {
+      const lockTime = 15 * 60 * 1000; // 15 minutes in ms
+      const timeSinceLastFail = now.getTime() - user.lastFailedLogin.getTime();
+      if (timeSinceLastFail < lockTime) {
+        const minutesLeft = Math.ceil((lockTime - timeSinceLastFail) / 60000);
+        return { success: false, error: `Muitas tentativas. Sua conta foi temporariamente bloqueada. Tente novamente em ${minutesLeft} minutos.` };
+      }
+    }
+
     console.log(`[LOGIN_DEBUG] Usuário encontrado: ${user.email} (Role: ${user.role})`);
 
     // Verifica se a senha digitada bate com a criptografia do banco
@@ -145,7 +155,22 @@ export async function loginUser(data: { email: string; password: string }) {
     const isLegacyPassword = user.password === data.password;
 
     if (!isPasswordValid && !isLegacyPassword) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: { increment: 1 },
+          lastFailedLogin: new Date()
+        }
+      });
       return { success: false, error: "E-mail ou senha incorretos." };
+    }
+
+    // Reset fail count on successful password
+    if (user.failedLoginAttempts > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lastFailedLogin: null }
+      });
     }
 
     // Validando o status ANTES de deixar entrar
