@@ -136,6 +136,14 @@ export async function loginUser(data: { email: string; password: string }) {
       return { success: false, error: "E-mail ou senha incorretos." };
     }
 
+    // Sliding Window: Zera as falhas antigas se já passaram 15 minutos do último erro (e ele ainda não foi bloqueado permanentemente)
+    if (user.failedLoginAttempts > 0 && user.failedLoginAttempts < 5 && user.lastFailedLogin) {
+      const timeSinceLastFail = Date.now() - user.lastFailedLogin.getTime();
+      if (timeSinceLastFail > 15 * 60 * 1000) {
+        user.failedLoginAttempts = 0;
+      }
+    }
+
     if (user.failedLoginAttempts >= 5) {
       return { success: false, error: "Muitas tentativas falhas. Sua conta foi bloqueada por segurança. Redefina a senha ou contate o suporte." };
     }
@@ -152,7 +160,7 @@ export async function loginUser(data: { email: string; password: string }) {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          failedLoginAttempts: { increment: 1 },
+          failedLoginAttempts: user.failedLoginAttempts + 1,
           lastFailedLogin: new Date()
         }
       });
