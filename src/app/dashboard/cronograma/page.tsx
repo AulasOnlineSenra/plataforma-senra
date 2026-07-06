@@ -7,7 +7,7 @@ import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Plus, Trash2, CalendarRange, TrendingUp, BookOpen, Clock } from "lucide-react";
 import { getScheduleStructure, createScheduleBlock, deleteScheduleBlock, updateScheduleBlock, checkScheduleAvailability } from "@/app/actions/schedule-structure";
 import { getLessonsForSchedule } from "@/app/actions/bookings";
-import { getTeachers, getSubjects, getStudents } from "@/app/actions/users";
+import { getTeachers, getSubjects, getStudents, getUserById, toggleAutoSchedule } from "@/app/actions/users";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +40,8 @@ export default function CronogramaPage() {
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isAutoScheduleEnabled, setIsAutoScheduleEnabled] = useState(false);
+  const [isTogglingAuto, setIsTogglingAuto] = useState(false);
   const [allStudents, setAllStudents] = useState<{ id: string; name: string }[]>([]);
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
@@ -96,21 +98,39 @@ export default function CronogramaPage() {
       const start = startOfWeek(now, { weekStartsOn: 0 });
       const end = endOfWeek(now, { weekStartsOn: 0 });
 
-      const [structRes, lessonsRes, teachersRes, subjectsRes] = await Promise.all([
+      const [structRes, lessonsRes, teachersRes, subjectsRes, userRes] = await Promise.all([
         getScheduleStructure(uid),
         getLessonsForSchedule(uid, role, start.toISOString(), end.toISOString()),
         getTeachers(),
-        getSubjects()
+        getSubjects(),
+        getUserById(uid)
       ]);
 
       if (structRes.success) setBlocks(structRes.data as any[]);
       if (lessonsRes.success) setLessons(lessonsRes.data as any[]);
       if (teachersRes.success) setTeachers(teachersRes.data as any[]);
       if (subjectsRes.success) setSubjects(subjectsRes.data as any[]);
+      if (userRes.success && userRes.data) {
+        setIsAutoScheduleEnabled((userRes.data as any).autoSchedule || false);
+      }
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
+  const handleToggleAutoSchedule = async (enabled: boolean) => {
+    if (!userId) return;
+    setIsTogglingAuto(true);
+    const res = await toggleAutoSchedule(userId, enabled);
+    if (res.success) {
+      setIsAutoScheduleEnabled(enabled);
+      toast({ 
+        title: enabled ? "Automação Ativada" : "Automação Desativada", 
+        description: enabled ? "As aulas desse cronograma serão agendadas automaticamente toda semana, debitando os créditos disponíveis." : "As aulas agora precisam ser agendadas manualmente." 
+      });
+    } else {
+      toast({ variant: "destructive", title: "Erro", description: res.error });
+    }
+    setIsTogglingAuto(false);
   };
 
   useEffect(() => {
@@ -442,6 +462,28 @@ export default function CronogramaPage() {
                </SelectContent>
              </Select>
           )}
+          
+          {userId && (
+            <div className="flex items-center justify-between bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl w-full sm:w-[250px] shadow-sm mb-1 mt-1">
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-800">Auto-Agendar</span>
+                <span className="text-[10px] text-slate-500 font-medium leading-tight">Toda sexta (Usa créditos)</span>
+              </div>
+              <button 
+                onClick={() => handleToggleAutoSchedule(!isAutoScheduleEnabled)}
+                disabled={isTogglingAuto}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:ring-offset-2 ${isAutoScheduleEnabled ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                role="switch"
+                aria-checked={isAutoScheduleEnabled}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isAutoScheduleEnabled ? 'translate-x-5' : 'translate-x-0'}`}
+                />
+              </button>
+            </div>
+          )}
+
           <Button onClick={handleAdicionarAoResumo} className="bg-emerald-600 text-white w-full sm:w-[250px] hover:bg-emerald-700">
             <BookOpen className="mr-2 h-4 w-4" /> Adicionar ao Resumo
           </Button>

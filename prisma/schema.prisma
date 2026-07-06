@@ -346,6 +346,7 @@ model User {
   pixKeyType                                         String?
   subjects                                           String?
   tags                                               String?            @default("[]") // JSON array, ex: ["Foco ENEM"]
+  autoSchedule                                       Boolean            @default(false)
   suspendedAt                                        DateTime?
   phone                                              String?
   googleCalendarConnected                            Boolean            @default(false)

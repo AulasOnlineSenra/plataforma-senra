@@ -657,6 +657,19 @@ export async function updateUserPassword(
   }
 }
 
+export async function toggleAutoSchedule(userId: string, isEnabled: boolean) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { autoSchedule: isEnabled },
+    });
+    return { success: true, autoSchedule: updatedUser.autoSchedule };
+  } catch (error) {
+    console.error("Erro ao alterar autoSchedule:", error);
+    return { success: false, error: "Erro interno ao atualizar configuração." };
+  }
+}
+
 export async function applyReferralOnSignup(
   newUserId: string,
   referralCode?: string,
