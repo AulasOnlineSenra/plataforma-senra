@@ -46,7 +46,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false, // Temporariamente false enquanto o SSL não é ativado
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_DURATION_SECONDS,
