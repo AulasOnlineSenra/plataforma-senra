@@ -15,6 +15,7 @@ import type { UserRole } from "@/lib/types";
 import { PendingProfileBanner } from "@/components/pending-profile-banner";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import { CheckoutAuthModal } from "@/components/checkout-auth-modal";
+import { useUser } from "@/hooks/use-user";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, toggleCollapse } = useResizablePanel();
@@ -25,8 +26,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   // Verifica se a rota atual é de checkout
   const isCheckoutRoute = pathname.includes('/dashboard/checkout');
 
+  const { user: sessionUser, isLoading: sessionLoading } = useUser();
+
   const allowedByRole = useMemo(() => {
-    const role = safeLocalStorage.getItem("userRole") as UserRole | null;
+    // 1. Tenta pegar do sessionUser
+    let role = sessionUser?.role;
+    // 2. Fallback para localStorage
+    if (!role) {
+      role = safeLocalStorage.getItem("userRole") as UserRole | null;
+    }
     if (!role) return false;
     const allowedItems = [...navItems, ...adminNavItems].filter((item) =>
       item.roles.includes(role),
@@ -36,10 +44,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       pathname === "/dashboard" ||
       pathname.startsWith("/dashboard/checkout") // checkout sempre permitido após login
     );
-  }, [pathname]);
+  }, [pathname, sessionUser]);
 
   // Verifica se o professor está com status 'pending' e tenta acessar outra rota
   const isPendingTeacherBlocked = useMemo(() => {
+    // 1. Tenta pegar do sessionUser
+    if (sessionUser) {
+      return (
+        sessionUser.role === "teacher" &&
+        sessionUser.status === "pending" &&
+        pathname !== "/dashboard/profile"
+      );
+    }
+    // 2. Fallback para localStorage
     if (typeof window === "undefined") return false;
     try {
       const stored = localStorage.getItem("currentUser");
@@ -53,10 +70,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     } catch {
       return false;
     }
-  }, [pathname]);
+  }, [pathname, sessionUser]);
 
   useEffect(() => {
-    const role = safeLocalStorage.getItem("userRole");
+    if (sessionLoading) return; // aguarda o carregamento da sessão
+
+    let role = sessionUser?.role;
+    if (!role) {
+      role = safeLocalStorage.getItem("userRole") as UserRole | null;
+    }
     console.log('[DashboardLayout] pathname:', pathname, 'role:', role);
 
     if (!role) {
@@ -83,7 +105,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     if (!allowedByRole) {
       router.push("/dashboard");
     }
-  }, [pathname, allowedByRole, isPendingTeacherBlocked, isCheckoutRoute, router]);
+  }, [pathname, allowedByRole, isPendingTeacherBlocked, isCheckoutRoute, router, sessionLoading, sessionUser]);
 
   // Controle dinâmico do scroll global (apenas para o Dashboard)
   useEffect(() => {

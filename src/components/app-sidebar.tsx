@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getChatMessagesForUser } from '@/app/actions/chat';
 import { getUserById, getUserNotifications } from '@/app/actions/users';
 import { safeLocalStorage } from '@/lib/safe-storage';
+import { useUser } from '@/hooks/use-user';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   student: 'Aluno',
@@ -66,33 +67,45 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       ? { href: '/dashboard/admin/settings', icon: Settings, label: 'Configurações', roles: ['admin'] }
       : { href: '/dashboard/profile', icon: UserIcon, label: 'Meu Perfil', roles: ['student', 'teacher'] };
 
+  const { user: sessionUser, isLoading: sessionLoading } = useUser();
+
   useEffect(() => {
-    const loadUser = async () => {
-      const role = localStorage.getItem('userRole') as UserRole | null;
-      const userId = localStorage.getItem('userId');
-      
-      const isCheckoutRoute = pathname.includes('/dashboard/checkout');
+    // Se a API ainda estiver carregando, não faz nada
+    if (sessionLoading) return;
 
-      if (!role || !userId) {
-        if (isCheckoutRoute) return; // Não redireciona se for checkout
-        router.push('/login');
-        return;
-      }
+    const isCheckoutRoute = pathname.includes('/dashboard/checkout');
 
-      setUserRole(role);
-      const result = await getUserById(userId);
-      if (!result.success || !result.data) {
-        if (isCheckoutRoute) return; // Não redireciona se for checkout
-        localStorage.clear();
-        router.push('/login');
-        return;
-      }
+    // 1. Tenta carregar do Cookie via hook useUser (novo sistema)
+    if (sessionUser) {
+      setUserRole(sessionUser.role as UserRole);
+      setUser(sessionUser);
+      // Mantém no localStorage para compatibilidade com outros componentes na transição
+      localStorage.setItem('userRole', sessionUser.role);
+      localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+      localStorage.setItem('userId', sessionUser.id);
+      return;
+    }
 
-      setUser(result.data);
-      localStorage.setItem('currentUser', JSON.stringify(result.data));
-    };
+    // 2. Fallback para localStorage (sistema antigo / visitante de checkout)
+    const role = localStorage.getItem('userRole') as UserRole | null;
+    const userId = localStorage.getItem('userId');
 
-    loadUser();
+    if (!role || !userId) {
+      if (isCheckoutRoute) return; 
+      router.push('/login');
+      return;
+    }
+
+    // Se tem no localStorage mas não tem cookie, pode ser que o cookie expirou.
+    // O middleware já vai barrar a maioria das rotas, mas o sidebar tbm atua.
+    // Para coexistência suave, vamos apenas checar o checkout.
+    setUserRole(role);
+    const stored = localStorage.getItem('currentUser');
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch (e) {}
+    }
 
     const handleStorageChange = () => {
       const stored = localStorage.getItem('currentUser');
@@ -104,7 +117,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [router]);
+  }, [sessionUser, sessionLoading, router, pathname]);
 
   useEffect(() => {
     if (!user?.id) return;
