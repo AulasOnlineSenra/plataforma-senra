@@ -13,6 +13,18 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
+  const renderDescription = (desc: any) => {
+    if (typeof desc === 'string') {
+      const parts = desc.split(/(https?:\/\/[^\s]+)/g);
+      return parts.map((part, i) => 
+        part.match(/^https?:\/\//) 
+          ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline font-bold hover:text-current opacity-90 hover:opacity-100">{part}</a> 
+          : part
+      );
+    }
+    return desc;
+  }
+
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
@@ -21,7 +33,7 @@ export function Toaster() {
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
-                <ToastDescription>{description}</ToastDescription>
+                <ToastDescription>{renderDescription(description)}</ToastDescription>
               )}
             </div>
             {action}

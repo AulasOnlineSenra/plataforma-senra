@@ -4,7 +4,12 @@ import path from "path";
 import { constants } from "fs";
 import { bucket } from "@/lib/firebase-admin";
 
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB (suporte a vídeos)
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // 2MB
+
+// MIME Types e Extensões permitidas (Whitelist de Segurança)
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,8 +20,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Nenhum arquivo enviado." }, { status: 400 });
     }
 
+    // 1. Validação de Tamanho (2MB)
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ success: false, error: "Arquivo muito grande (máx 15MB)." }, { status: 400 });
+      return NextResponse.json({ 
+        success: false, 
+        error: `Máximo ${MAX_FILE_SIZE_MB}MB. Comprima seu arquivo e tente novamente: https://www.ilovepdf.com/pt` 
+      }, { status: 400 });
+    }
+
+    // 2. Validação de MIME Type
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Tipo de arquivo não permitido. Envie apenas imagens (JPG, PNG, WEBP) ou PDF." 
+      }, { status: 400 });
+    }
+
+    // 3. Validação de Extensão dupla checagem (Prevenção contra bypass de MIME Type)
+    const fileNameLower = file.name.toLowerCase();
+    const hasAllowedExtension = ALLOWED_EXTENSIONS.some(ext => fileNameLower.endsWith(ext));
+    if (!hasAllowedExtension) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Extensão de arquivo inválida. Apenas imagens ou PDF são aceitos." 
+      }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
