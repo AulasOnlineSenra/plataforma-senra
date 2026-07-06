@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { loginUser } from "@/app/actions/auth";
 import { setSessionCookie } from "@/lib/session";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
