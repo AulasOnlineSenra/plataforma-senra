@@ -144,7 +144,14 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     }
   }, [filteredAdminNavItems, filteredNavItems, pathname, router, settingsLink, userRole]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // 1. Destrói o Cookie HttpOnly no servidor (novo sistema)
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {
+      // Se falhar, segue o fluxo de qualquer forma
+    }
+    // 2. Limpa o localStorage (sistema legado)
     localStorage.clear();
     router.push('/login');
   };

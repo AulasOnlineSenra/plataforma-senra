@@ -536,7 +536,9 @@ export async function getUserById(userId: string) {
     if (!user) {
       return { success: false, error: "Usuario não encontrado." };
     }
-    return { success: true, data: user };
+    // Remove campos sensíveis antes de retornar ao cliente
+    const { password, resetToken, resetTokenExpiry, failedLoginAttempts, lastFailedLogin, ...safeUser } = user;
+    return { success: true, data: safeUser };
   } catch (error) {
     console.error(error);
     return { success: false, error: "Erro ao buscar usuario." };

@@ -233,42 +233,49 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Login 100% Blindado no Banco de Dados
-    const result = await loginUser({ email: email.trim(), password });
+    // 1. Chama a API Route que emite o Cookie HttpOnly (novo sistema seguro)
+    const apiRes = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
+      credentials: "include",
+    });
+
+    const result = await apiRes.json();
 
     if (!result.success || !result.user) {
-        toast({
-            variant: "destructive",
-            title: "Acesso Negado",
-            description: result.error || "Email ou senha incorretos.",
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Acesso Negado",
+        description: result.error || "Email ou senha incorretos.",
+      });
+      return;
     }
 
     const loggedUser = result.user;
 
     if (loggedUser.role?.toLowerCase() !== role?.toLowerCase()) {
-        toast({
-            variant: "destructive",
-            title: "Perfil Incorreto",
-            description: `Este e-mail pertence a um perfil de ${loggedUser.role.toLowerCase() === 'teacher' ? 'Professor' : loggedUser.role.toLowerCase() === 'admin' ? 'Administrador' : 'Aluno'}. Volte e selecione o perfil correto.`,
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Perfil Incorreto",
+        description: `Este e-mail pertence a um perfil de ${loggedUser.role.toLowerCase() === 'teacher' ? 'Professor' : loggedUser.role.toLowerCase() === 'admin' ? 'Administrador' : 'Aluno'}. Volte e selecione o perfil correto.`,
+      });
+      return;
     }
 
-    // Salva os dados na memória do navegador se a autenticação foi um sucesso
+    // 2. Mantém localStorage para coexistência com componentes que ainda o leem
     localStorage.setItem('userRole', loggedUser.role);
     localStorage.setItem('currentUser', JSON.stringify(loggedUser));
     localStorage.setItem(`savedEmail-${loggedUser.role}`, email);
-    localStorage.setItem(`savedPassword-${email}`, password);
     localStorage.setItem('userId', String(loggedUser.id));
+    // NOTA: Senha NÃO é mais salva no localStorage (remoção de risco de segurança)
 
     window.dispatchEvent(new Event('storage'));
     localStorage.removeItem('newlyRegisteredUser'); 
     
     toast({
-        title: "Login bem-sucedido!",
-        description: `Bem-vindo(a) de volta, ${loggedUser.name.split(' ')[0]}!`,
+      title: "Login bem-sucedido!",
+      description: `Bem-vindo(a) de volta, ${loggedUser.name.split(' ')[0]}!`,
     });
     
     router.push('/dashboard');

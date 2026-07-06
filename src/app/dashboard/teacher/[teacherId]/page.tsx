@@ -11,14 +11,6 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { getUserById, getTeacherAvailability } from '@/app/actions/users';
 import { getTeacherAverageRating, getTeacherRatings } from '@/app/actions/ratings';
 import { getLessonsForUser } from '@/app/actions/bookings';
@@ -142,66 +134,57 @@ function TeacherDetailPageComponent() {
 
   const isAdmin = currentUser?.role === 'admin';
 
-  const dayLabels = ['Dom', 'Seg', 'Ter', 'Quar', 'Quin', 'Sex', 'Sab'];
+  const DAY_LABELS_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const DAY_LABELS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    return `${parseInt(hours)}:${minutes}`;
-  };
+  // Group availability slots by day, sorted by startTime
+  const availabilityByDay = useMemo(() => {
+    const grouped: Record<number, { startTime: string; endTime: string }[]> = {};
+    availability.forEach((slot) => {
+      if (!grouped[slot.dayOfWeek]) grouped[slot.dayOfWeek] = [];
+      grouped[slot.dayOfWeek].push({ startTime: slot.startTime, endTime: slot.endTime });
+    });
+    // Sort each day's slots by startTime
+    Object.keys(grouped).forEach((day) => {
+      grouped[Number(day)].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    });
+    return grouped;
+  }, [availability]);
 
-  const generateTimeSlots = () => {
-    const slots: string[] = [];
-    let startHour = 7;
-    let startMinute = 0;
-    while (startHour < 22 || (startHour === 22 && startMinute === 0)) {
-      const endHour = startHour + 1;
-      const endMinute = startMinute + 30;
-      let actualEndHour = endHour;
-      let actualEndMinute = endMinute;
-      if (actualEndMinute >= 60) {
-        actualEndHour += 1;
-        actualEndMinute -= 60;
-      }
-      const startStr = `${startHour}:${startMinute.toString().padStart(2, '0')}`;
-      const endStr = `${actualEndHour}:${actualEndMinute.toString().padStart(2, '0')}`;
-      slots.push(`${formatTime(startStr)} - ${formatTime(endStr)}`);
-      startHour = actualEndHour;
-      startMinute = actualEndMinute;
-    }
-    return slots;
-  };
+  // Get all unique time ranges across all days
+  const allUniqueRanges = useMemo(() => {
+    const ranges = new Set<string>();
+    availability.forEach((slot) => {
+      ranges.add(`${slot.startTime.substring(0, 5)}|${slot.endTime.substring(0, 5)}`);
+    });
+    return Array.from(ranges)
+      .sort((a, b) => a.localeCompare(b))
+      .map((r) => {
+        const [start, end] = r.split('|');
+        return { start, end };
+      });
+  }, [availability]);
 
-  const allTimeSlots = useMemo(() => generateTimeSlots(), []);
-
+  // For each unique time range, which days is the teacher available?
   const availabilityByTime = useMemo(() => {
-    return allTimeSlots.map((timeSlot) => {
-      const [startStr] = timeSlot.split(' - ');
-      const startTime = `${startStr.split(':')[0].padStart(2, '0')}:${startStr.split(':')[1].padStart(2, '0')}`;
-      const endTimeCalc = (s: string) => {
-        const [h, m] = s.split(':').map(Number);
-        const endH = h + 1;
-        const endM = m + 30;
-        const finalH = endM >= 60 ? endH + 1 : endH;
-        const finalM = endM >= 60 ? endM - 60 : endM;
-        return `${finalH.toString().padStart(2, '0')}:${finalM.toString().padStart(2, '0')}`;
-      };
-      const endTime = endTimeCalc(startTime);
+    return allUniqueRanges.map((range) => {
       const daysAvailable: number[] = [];
-
       availability.forEach((slot) => {
         const slotStart = slot.startTime.substring(0, 5);
         const slotEnd = slot.endTime.substring(0, 5);
-        
-        const isWithinInterval = startTime >= slotStart && endTime <= slotEnd;
-        
-        if (isWithinInterval && !daysAvailable.includes(slot.dayOfWeek)) {
-          daysAvailable.push(slot.dayOfWeek);
+        if (slotStart === range.start && slotEnd === range.end) {
+          if (!daysAvailable.includes(slot.dayOfWeek)) {
+            daysAvailable.push(slot.dayOfWeek);
+          }
         }
       });
-
-      return { time: timeSlot, days: daysAvailable.sort() };
+      return {
+        start: range.start,
+        end: range.end,
+        days: daysAvailable.sort(),
+      };
     });
-  }, [availability, allTimeSlots]);
+  }, [availability, allUniqueRanges]);
 
   const teacherSubjects = teacher?.subjects
     ? (() => {
@@ -315,41 +298,40 @@ function TeacherDetailPageComponent() {
                   )}
 
                   {availability.length > 0 && (
-                    <div className="mt-3 w-full h-full">
-                      <h4 className="text-sm font-bold text-slate-700 mb-2 pl-[10px]">Disponibilidade</h4>
-                      <div className="pl-[10px] overflow-y-auto" style={{ maxHeight: '380px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
-                        <style dangerouslySetInnerHTML={{__html: `
-                          .availability-scroll::-webkit-scrollbar { width: 6px; }
-                          .availability-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
-                          .availability-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-                          .availability-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-                        `}} />
-                        <Table className="text-xs w-full availability-scroll">
-                          <TableHeader>
-                            <TableRow className="bg-slate-100">
-                              <TableHead className="text-center font-bold text-slate-700 w-40">Horários</TableHead>
-                              {dayLabels.map((day) => (
-                                <TableHead key={day} className="text-center font-bold text-slate-700 w-20">{day}</TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {availabilityByTime.map((slot) => (
-                              <TableRow key={slot.time}>
-                                <TableCell className="font-medium text-slate-700 text-center w-40">{slot.time}</TableCell>
-                                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                                  <TableCell key={day} className="text-center w-20">
-                                    {slot.days.includes(day) ? (
-                                      <span className="text-green-600 font-bold">✓</span>
-                                    ) : (
-                                      <span className="text-red-500 font-bold">X</span>
-                                    )}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                    <div className="mt-3 w-full">
+                      <h4 className="text-sm font-bold text-slate-700 mb-3 pl-[10px]">Disponibilidade Semanal</h4>
+                      <div className="pl-[10px] space-y-2 overflow-y-auto" style={{ maxHeight: '380px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
+                        {availabilityByTime.length > 0 && (
+                          <div className="rounded-xl border border-slate-100 overflow-hidden">
+                            <div className="grid grid-cols-[120px_1fr] bg-slate-50 border-b border-slate-100 px-3 py-1.5">
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Horário</span>
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Dias</span>
+                            </div>
+                            {availabilityByTime.map((slot, idx) => {
+                              const dayNames = slot.days.map((d) => DAY_LABELS_SHORT[d]);
+                              return (
+                                <div
+                                  key={`${slot.start}-${slot.end}`}
+                                  className={`grid grid-cols-[120px_1fr] items-center px-3 py-2 ${idx > 0 ? 'border-t border-slate-100' : ''}`}
+                                >
+                                  <span className="text-sm font-semibold text-slate-700">
+                                    {slot.start} – {slot.end}
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {dayNames.map((dayName) => (
+                                      <span
+                                        key={dayName}
+                                        className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-xs font-semibold text-green-700"
+                                      >
+                                        ✓ {dayName}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
