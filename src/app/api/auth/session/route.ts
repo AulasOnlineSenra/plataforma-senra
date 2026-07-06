@@ -33,7 +33,6 @@ export async function GET() {
         neighborhood: true,
         street: true,
         number: true,
-        complement: true,
       },
     });
 
