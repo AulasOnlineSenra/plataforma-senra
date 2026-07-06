@@ -117,6 +117,8 @@ export default function CronogramaPage() {
       console.error(e);
     }
     setLoading(false);
+  };
+
   const handleToggleAutoSchedule = async (enabled: boolean) => {
     if (!userId) return;
     setIsTogglingAuto(true);
