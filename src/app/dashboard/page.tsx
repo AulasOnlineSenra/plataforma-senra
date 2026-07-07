@@ -229,6 +229,12 @@ export default function DashboardPage() {
   const [viewBookingDetails, setViewBookingDetails] = useState<StudentPendingTransaction | null>(null);
   const [isCreditHistoryOpen, setIsCreditHistoryOpen] = useState(false);
   const [creditHistoryMonth, setCreditHistoryMonth] = useState<string>("all");
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 10000); // Check every 10 seconds
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -341,8 +347,6 @@ export default function DashboardPage() {
 
     load();
   }, []);
-
-  const now = new Date();
 
   const scheduled = useMemo(
     () =>
@@ -1037,23 +1041,35 @@ export default function DashboardPage() {
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-2">
                               {lesson.teacher?.videoUrl && (
-                                <Button asChild className="h-8 px-2 rounded-xl bg-slate-900 text-slate-50 hover:bg-slate-800">
-                                  <a href={lesson.teacher?.videoUrl} target="_blank" rel="noreferrer">
-                                    <Video className="h-4 w-4" />
-                                  </a>
-                                </Button>
+                                (() => {
+                                  const lessonTime = new Date(lesson.date);
+                                  const unlockTime = new Date(lessonTime.getTime() - 5 * 60000); // 5 mins before
+                                  const isLocked = now < unlockTime;
+                                  
+                                  return isLocked ? (
+                                    <Button disabled title={`Disponível 5 minutos antes da aula (às ${format(unlockTime, 'HH:mm')})`} className="h-8 px-2 rounded-xl bg-slate-300 text-slate-500 cursor-not-allowed">
+                                      <Video className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button asChild title="Acessar Sala de Aula" className="h-8 px-2 rounded-xl bg-slate-900 text-slate-50 hover:bg-slate-800">
+                                      <a href={lesson.teacher?.videoUrl} target="_blank" rel="noreferrer">
+                                        <Video className="h-4 w-4" />
+                                      </a>
+                                    </Button>
+                                  );
+                                })()
                               )}
                               {((user.role === "admin") || 
                                 (user.role === "teacher" && lesson.teacher?.id === user.id) || 
                                 (user.role === "student" && lesson.student?.id === user.id)) && (
                                 <>
-                                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl" onClick={() => {
+                                  <Button title="Remarcar Aula" variant="outline" size="icon" className="h-8 w-8 rounded-xl" onClick={() => {
                                     setLessonToEdit(lesson);
                                     setIsEditDialogOpen(true);
                                   }}>
                                     <Pencil className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl text-red-600 hover:text-red-600 hover:bg-red-50" onClick={() => {
+                                  <Button title="Cancelar Aula" variant="outline" size="icon" className="h-8 w-8 rounded-xl text-red-600 hover:text-red-600 hover:bg-red-50" onClick={() => {
                                     setLessonToCancel(lesson);
                                     setIsCancelDialogOpen(true);
                                   }}>
