@@ -1092,7 +1092,8 @@ export default function DashboardPage() {
                           </TableCell>
                         </TableRow>
                       );
-                    })}
+                    })
+                  )}
                   </TableBody>
                 </Table>
               </ScrollArea>
