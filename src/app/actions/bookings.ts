@@ -448,13 +448,21 @@ export async function cancelLesson(lessonId: string, cancelReason?: string) {
     const cancelledEndDate = new Date(cancelledStartDate.getTime() + 90 * 60 * 1000);
     const cancelledFormattedDate = formatInTimeZone(cancelledStartDate, 'America/Sao_Paulo', "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + ' - ' + formatInTimeZone(cancelledEndDate, 'America/Sao_Paulo', "HH:mm");
 
+    const subjectsRes = await getSubjects();
+    const subjectsList = subjectsRes.data || [];
+    const getSubjectName = (id: string) => {
+      const subj = subjectsList.find((s: any) => s.id === id);
+      return subj ? subj.name : id;
+    };
+    const subjectName = getSubjectName(existingLesson.subject);
+
     await prisma.notification.create({
       data: {
         id: crypto.randomUUID(),
         userId: existingLesson.studentId,
         type: "class_cancelled",
         title: "Aula Cancelada",
-        message: `A aula de ${existingLesson.subject} marcada para ${cancelledFormattedDate} foi cancelada.`,
+        message: `A aula de ${subjectName} marcada para ${cancelledFormattedDate} foi cancelada.`,
         read: false,
       },
     });
@@ -465,7 +473,7 @@ export async function cancelLesson(lessonId: string, cancelReason?: string) {
         userId: existingLesson.teacherId,
         type: "class_cancelled",
         title: "Aula Cancelada",
-        message: `A aula de ${existingLesson.subject} com ${existingLesson.student.name} marcada para ${cancelledFormattedDate} foi cancelada.`,
+        message: `A aula de ${subjectName} com ${existingLesson.student.name} marcada para ${cancelledFormattedDate} foi cancelada.`,
         read: false,
       },
     });
