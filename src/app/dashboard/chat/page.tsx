@@ -144,6 +144,7 @@ function ChatContent() {
     students: true,
     teachers: true,
   });
+  const [expandedAuditFolders, setExpandedAuditFolders] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUnreadTotalRef = useRef(0);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -309,6 +310,39 @@ function ChatContent() {
       teachers,
     };
   }, [contacts, currentUser?.role]);
+
+  const auditGroups = useMemo(() => {
+    if (!isAuditMode || currentUser?.role !== "admin") return null;
+
+    const groups = new Map<string, { student: ChatUser; pairs: ChatUser[] }>();
+
+    contacts.forEach((contact) => {
+      if (!contact.id.includes("_")) return;
+      const [id1, id2] = contact.id.split("_");
+      const user1 = allUsers.find((u) => u.id === id1);
+      const user2 = allUsers.find((u) => u.id === id2);
+
+      if (user1 && user2) {
+        const student = user1.role === "student" ? user1 : (user2.role === "student" ? user2 : null);
+        const other = user1.role === "student" ? user2 : user1;
+
+        if (student) {
+          if (!groups.has(student.id)) {
+            groups.set(student.id, { student, pairs: [] });
+          }
+          const sidebarContact = {
+            ...contact,
+            name: other.name,
+            avatarUrl: other.avatarUrl,
+            role: roleTranslations[other.role] || other.role,
+          };
+          groups.get(student.id)!.pairs.push(sidebarContact);
+        }
+      }
+    });
+
+    return Array.from(groups.values()).sort((a, b) => a.student.name.localeCompare(b.student.name));
+  }, [isAuditMode, currentUser, contacts, allUsers]);
 
   useEffect(() => {
     if (!contacts.length) return;
@@ -754,6 +788,56 @@ function ChatContent() {
             <p className="p-4 text-sm text-muted-foreground">
               Nenhum contato disponivel.
             </p>
+          ) : isAuditMode && auditGroups ? (
+            <div className="flex flex-col pb-4">
+              {auditGroups.map((group) => (
+                <div key={group.student.id} className="mb-2">
+                  <div 
+                    className="flex items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-100 cursor-pointer hover:bg-slate-200 border-y border-border/50"
+                    onClick={() => setExpandedAuditFolders(prev => ({ ...prev, [group.student.id]: prev[group.student.id] === false ? true : false }))}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={group.student.avatarUrl || undefined} />
+                        <AvatarFallback>{group.student.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span>{group.student.name.split(" ")[0]} (aluno)</span>
+                    </div>
+                    <span className="text-xs text-slate-500">{expandedAuditFolders[group.student.id] === false ? "▶" : "▼"}</span>
+                  </div>
+                  {expandedAuditFolders[group.student.id] !== false && (
+                    <div className="pt-1 bg-muted/5 flex flex-col gap-1">
+                      {group.pairs.map((contact) => renderContactButton(contact))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : isAuditMode && auditGroups ? (
+            <div className="flex flex-col pb-4">
+              {auditGroups.map((group) => (
+                <div key={group.student.id} className="mb-2">
+                  <div 
+                    className="flex items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-100 cursor-pointer hover:bg-slate-200 border-y border-border/50"
+                    onClick={() => setExpandedAuditFolders(prev => ({ ...prev, [group.student.id]: prev[group.student.id] === false ? true : false }))}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={group.student.avatarUrl || undefined} />
+                        <AvatarFallback>{group.student.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span>{group.student.name.split(" ")[0]} (aluno)</span>
+                    </div>
+                    <span className="text-xs text-slate-500">{expandedAuditFolders[group.student.id] === false ? "▶" : "▼"}</span>
+                  </div>
+                  {expandedAuditFolders[group.student.id] !== false && (
+                    <div className="pt-1 bg-muted/5 flex flex-col gap-1">
+                      {group.pairs.map((contact) => renderContactButton(contact))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : groupedContacts ? (
             // Renderizar grupos para admin
             <div className="flex flex-col">
