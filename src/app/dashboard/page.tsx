@@ -351,9 +351,13 @@ export default function DashboardPage() {
   const scheduled = useMemo(
     () =>
       lessons.filter(
-        (l) =>
-          ["PENDING", "CONFIRMED", "scheduled"].includes(l.status) &&
-          new Date(l.date) >= now,
+        (l) => {
+          if (!["PENDING", "CONFIRMED", "scheduled"].includes(l.status)) return false;
+          
+          const lessonTime = new Date(l.date).getTime();
+          // Keep it visible until the 90-minute slot is over
+          return new Date(lessonTime + 90 * 60 * 1000) > now;
+        }
       ),
     [lessons],
   );
@@ -1006,38 +1010,45 @@ export default function DashboardPage() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      scheduled.slice(0, 8).map((lesson) => (
-                        <TableRow key={lesson.id}>
-                          <TableCell>
-                            <Badge
-                              variant="secondary"
-                              className="bg-slate-100 text-slate-700"
-                            >
-                              {subjectMap[lesson.subject] || lesson.subject}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {user.role === "student"
-                              ? lesson.teacher?.name
-                              : lesson.student?.name}
-                          </TableCell>
-                          <TableCell>
-                            {lesson.isExperimental && (
-                              <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">
-                                Experimental
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {(() => {
-                              const lessonDate = new Date(lesson.date);
-                              const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
-                              const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
-                              if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
-                              if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
-                              return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
-                            })()}
-                          </TableCell>
+                      scheduled.slice(0, 8).map((lesson) => {
+                        const lessonDate = new Date(lesson.date);
+                        const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                        const isOngoing = now >= lessonDate && now < endDate;
+
+                        return (
+                          <TableRow 
+                            key={lesson.id} 
+                            className={isOngoing ? "border-2 border-[#f5b000] shadow-[0_0_15px_rgba(245,176,0,0.3)] bg-amber-50/20 relative animate-pulse-border" : ""}
+                          >
+                            <TableCell>
+                              <Badge
+                                variant="secondary"
+                                className="bg-slate-100 text-slate-700"
+                              >
+                                {subjectMap[lesson.subject] || lesson.subject}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {user.role === "student"
+                                ? lesson.teacher?.name
+                                : lesson.student?.name}
+                            </TableCell>
+                            <TableCell>
+                              {lesson.isExperimental && (
+                                <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">
+                                  Experimental
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(() => {
+                                const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+                                if (isOngoing) return <span className="font-bold text-[#f5b000]">Agora {format(lessonDate, 'dd/MM/yyyy')} {time}</span>;
+                                if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                                if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                                return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
+                              })()}
+                            </TableCell>
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-2">
                               {lesson.teacher?.videoUrl && (
@@ -1080,8 +1091,8 @@ export default function DashboardPage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </ScrollArea>
