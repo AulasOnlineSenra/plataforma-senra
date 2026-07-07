@@ -1018,7 +1018,7 @@ export default function DashboardPage() {
                         return (
                           <TableRow 
                             key={lesson.id} 
-                            className={isOngoing ? "border-2 border-[#f5b000] shadow-[0_0_15px_rgba(245,176,0,0.3)] bg-amber-50/20 relative animate-pulse-border" : ""}
+                            className={isOngoing ? "bg-amber-50/20 relative after:absolute after:inset-0 after:rounded-[15px] after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""}
                           >
                             <TableCell>
                               <Badge
@@ -1043,7 +1043,7 @@ export default function DashboardPage() {
                             <TableCell className="text-right">
                               {(() => {
                                 const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
-                                if (isOngoing) return <span className="font-bold text-[#f5b000]">Agora {format(lessonDate, 'dd/MM/yyyy')} {time}</span>;
+                                if (isOngoing) return <><span className="font-bold text-[#f5b000]">Agora</span> {format(lessonDate, 'dd/MM/yyyy')} {time}</>;
                                 if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
                                 if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
                                 return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
