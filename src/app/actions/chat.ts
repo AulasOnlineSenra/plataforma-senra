@@ -400,3 +400,19 @@ export async function sendPaymentChatToAdmins(
     return { success: false, error: "Falha ao notificar administradores." };
   }
 }
+
+export async function getAllAuditMessages() {
+  try {
+    const messages = await prisma.chatMessage.findMany({
+      orderBy: {
+        createdAt: "asc",
+      },
+      take: 3000, // Grab up to 3000 latest messages for audit
+    });
+
+    return { success: true, data: messages };
+  } catch (error) {
+    console.error("Erro ao buscar mensagens de auditoria:", error);
+    return { success: false, error: "Falha ao buscar mensagens de auditoria." };
+  }
+}

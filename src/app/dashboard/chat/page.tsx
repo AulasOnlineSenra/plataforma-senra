@@ -34,6 +34,7 @@ import {
   getChatUsers,
   markConversationAsRead,
   sendChatMessage,
+  getAllAuditMessages,
 } from "@/app/actions/chat";
 import { ChatAttachmentPreview } from "@/components/chat-attachment-preview";
 import { HighlightText } from "@/components/highlight-text";
@@ -138,6 +139,7 @@ function ChatContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchResultIndices, setSearchResultIndices] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [isAuditMode, setIsAuditMode] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     students: true,
     teachers: true,
@@ -159,8 +161,8 @@ function ChatContent() {
   }, [currentUser]);
 
   const loadMessages = useCallback(
-    async (userId: string, showNewMessageToast: boolean) => {
-      const result = await getChatMessagesForUser(userId);
+    async (userId: string, showNewMessageToast: boolean, auditMode: boolean) => {
+      const result = auditMode ? await getAllAuditMessages() : await getChatMessagesForUser(userId);
       if (!result.success || !result.data) return;
 
       const normalizedMessages: ChatMessage[] = result.data.map(
@@ -216,7 +218,7 @@ function ChatContent() {
 
     const bootstrap = async () => {
       setIsLoading(true);
-      await Promise.all([loadUsers(), loadMessages(currentUser.id, false)]);
+      await Promise.all([loadUsers(), loadMessages(currentUser.id, false, isAuditMode)]);
       if (mounted) setIsLoading(false);
     };
 
@@ -224,17 +226,55 @@ function ChatContent() {
 
     interval = setInterval(() => {
       loadUsers();
-      loadMessages(currentUser.id, true);
+      loadMessages(currentUser.id, true, isAuditMode);
     }, POLLING_MS);
 
     return () => {
       mounted = false;
       if (interval) clearInterval(interval);
     };
-  }, [currentUser?.id, loadMessages, loadUsers]);
+  }, [currentUser?.id, loadMessages, loadUsers, isAuditMode]);
 
   const contacts = useMemo(() => {
     if (!currentUser) return [];
+
+    if (isAuditMode && currentUser.role === "admin") {
+      const pairs = new Map<string, ChatUser>();
+      allMessages.forEach((m) => {
+        if (m.senderId !== currentUser.id && m.receiverId !== currentUser.id) {
+          const u1 = m.senderId;
+          const u2 = m.receiverId;
+          const pairId = [u1, u2].sort().join("_");
+          if (!pairs.has(pairId)) {
+            const user1 = allUsers.find((u) => u.id === u1);
+            const user2 = allUsers.find((u) => u.id === u2);
+            if (user1 && user2) {
+              pairs.set(pairId, {
+                id: pairId,
+                name: `${user1.name.split(" ")[0]} ↔ ${user2.name.split(" ")[0]}`,
+                role: "audit",
+                avatarUrl: null,
+              });
+            }
+          }
+        }
+      });
+      return Array.from(pairs.values()).sort((a, b) => {
+        const getLatest = (pairId: string) => {
+          const [u1, u2] = pairId.split("_");
+          const msgs = allMessages.filter(
+            (m) =>
+              (m.senderId === u1 && m.receiverId === u2) ||
+              (m.senderId === u2 && m.receiverId === u1)
+          );
+          return msgs.length > 0
+            ? toDate(msgs[msgs.length - 1].createdAt).getTime()
+            : 0;
+        };
+        return getLatest(b.id) - getLatest(a.id);
+      });
+    }
+
     const list = allUsers.filter((u) => u.id !== currentUser.id);
 
     let filtered = list;
@@ -258,9 +298,8 @@ function ChatContent() {
     });
   }, [allUsers, currentUser, allMessages]);
 
-  // Separar contatos em grupos para o admin
   const groupedContacts = useMemo(() => {
-    if (currentUser?.role !== "admin") return null;
+    if (currentUser?.role !== "admin" || isAuditMode) return null;
     
     const students = contacts.filter(c => c.role === "student");
     const teachers = contacts.filter(c => c.role === "teacher");
@@ -353,6 +392,20 @@ function ChatContent() {
 
   const conversation = useMemo(() => {
     if (!currentUser?.id || !activeContact?.id) return [];
+
+    if (isAuditMode && activeContact.id.includes("_")) {
+      const [u1, u2] = activeContact.id.split("_");
+      return allMessages
+        .filter(
+          (m) =>
+            (m.senderId === u1 && m.receiverId === u2) ||
+            (m.senderId === u2 && m.receiverId === u1),
+        )
+        .sort(
+          (a, b) => toDate(a.createdAt).getTime() - toDate(b.createdAt).getTime(),
+        );
+    }
+
     return allMessages
       .filter(
         (m) =>
@@ -366,7 +419,7 @@ function ChatContent() {
   }, [allMessages, activeContact?.id, currentUser?.id]);
 
   const markAsRead = useCallback(async () => {
-    if (!currentUser?.id || !activeContact?.id) return;
+    if (!currentUser?.id || !activeContact?.id || isAuditMode) return;
     const result = await markConversationAsRead(
       currentUser.id,
       activeContact.id,
@@ -675,8 +728,22 @@ function ChatContent() {
       <section
         className={`${activeContact ? "hidden md:flex" : "flex"} h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-md`}
       >
-        <div className="border-b border-border/70 bg-muted/20 px-4 py-4">
+        <div className="flex items-center justify-between border-b border-border/70 bg-muted/20 px-4 py-4">
           <h1 className="text-lg font-semibold tracking-tight">Conversas</h1>
+          {currentUser?.role === "admin" && (
+            <Button 
+              variant={isAuditMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setIsAuditMode(!isAuditMode);
+                setActiveContactId(null);
+                setAllMessages([]);
+              }}
+              className="text-xs h-7"
+            >
+              {isAuditMode ? "Modo Pessoal" : "Auditoria"}
+            </Button>
+          )}
         </div>
         <ScrollArea className="h-[90vh] flex-1">
           {isLoading ? (
