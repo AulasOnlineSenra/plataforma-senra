@@ -815,12 +815,23 @@ export async function getStudentFinancialSummary(userId: string) {
 }
 
 //funções de Notificação
-export async function getUserNotifications(userId: string) {
+export async function getUserNotifications(userId: string, month?: number, year?: number) {
   try {
     if (!userId) return { success: false, error: "ID inválido." };
 
+    const whereClause: any = { userId: userId };
+
+    if (month !== undefined && year !== undefined) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 1);
+      whereClause.createdAt = {
+        gte: startDate,
+        lt: endDate
+      };
+    }
+
     const notifications = await prisma.notification.findMany({
-      where: { userId: userId },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
     });
 

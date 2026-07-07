@@ -28,6 +28,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getUserNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
@@ -67,6 +74,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
@@ -87,7 +96,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     const updateNotifications = async () => {
       if (currentUser?.id) {
-        const response = await getUserNotifications(currentUser.id);
+        const response = await getUserNotifications(currentUser.id, selectedMonth, selectedYear);
         if (response.success && response.data) {
           const dbNotifications = response.data.map((n: any) => ({
             ...n,
@@ -133,7 +142,7 @@ export default function NotificationsPage() {
       window.removeEventListener("storage", updateNotifications);
       clearInterval(interval);
     };
-  }, [currentUser]);
+  }, [currentUser, selectedMonth, selectedYear]);
 
   const handleDeleteNotification = async (id: string) => {
     const updatedNotifications = notifications.filter((n) => n.id !== id);
@@ -167,6 +176,45 @@ export default function NotificationsPage() {
           <p className="mt-1 text-slate-500">
             Acompanhe as atualizações, agendamentos e avisos da plataforma.
           </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Select
+            value={selectedMonth.toString()}
+            onValueChange={(val) => setSelectedMonth(Number(val))}
+          >
+            <SelectTrigger className="w-full sm:w-[150px] bg-white h-11 rounded-xl">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {Array.from({ length: 12 }, (_, i) => {
+                const monthName = format(new Date(2024, i, 1), "MMMM", { locale: ptBR });
+                return (
+                  <SelectItem key={i + 1} value={(i + 1).toString()} className="capitalize">
+                    {monthName}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(val) => setSelectedYear(Number(val))}
+          >
+            <SelectTrigger className="w-full sm:w-[120px] bg-white h-11 rounded-xl">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {Array.from({ length: 5 }, (_, i) => {
+                const year = new Date().getFullYear() - 2 + i;
+                return (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
