@@ -79,6 +79,8 @@ export async function unlockUserAccount(userId: string) {
       where: { id: userId },
       data: { failedLoginAttempts: 0, lastFailedLogin: null },
     });
+    revalidatePath("/dashboard/students");
+    revalidatePath("/dashboard/admin/students");
     return { success: true };
   } catch (error) {
     console.error("Erro ao desbloquear usuário:", error);
