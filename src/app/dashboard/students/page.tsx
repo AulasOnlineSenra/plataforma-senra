@@ -118,6 +118,7 @@ function StudentList({
   onAddCredits,
   onDeleteStudent,
   onToggleTagEnem,
+  onUnlockStudent,
   isAdmin,
 }: {
   id?: string;
