@@ -220,32 +220,7 @@ export async function createBookings(
       console.error("Notificação aluno falhou:", e);
     }
 
-    // Notificacao de nova marcacao para o professor via Chat
-    try {
-      await Promise.allSettled(
-        Array.from(firstBookingByTeacher.entries()).map(
-          async ([teacherId, booking]) => {
-            const teacher = teachersById.get(teacherId);
-            if (!teacher) return;
 
-            try {
-              await prisma.chatMessage.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  senderId: studentId,
-                  receiverId: teacherId,
-                  content: `Olá Professor ${teacher.name}! Acabei de agendar uma aula de ${getSubjectName(booking.subjectId)} para o dia ${formatInTimeZone(booking.start, 'America/Sao_Paulo', "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
-                }
-              });
-            } catch (e) {
-              console.error("Chat message falhou:", e);
-            }
-          },
-        ),
-      );
-    } catch (e) {
-      console.error("Loop de chat messages falhou:", e);
-    }
 
     // Revalidar paths (não afecta o resultado se falhar)
     try {
