@@ -956,6 +956,7 @@ export default function MinhasAulasPage() {
                           <Button
                             variant="outline"
                             size="icon"
+                            title="Remarcar Aula"
                             onClick={() => handleOpenEditDialog(lesson)}
                             className="rounded-2xl"
                           >
@@ -964,6 +965,7 @@ export default function MinhasAulasPage() {
                           <Button
                             variant="outline"
                             size="icon"
+                            title="Cancelar Aula"
                             onClick={() => handleOpenCancelDialog(lesson)}
                             className="rounded-2xl text-red-600 hover:text-red-600 hover:bg-red-50"
                           >
