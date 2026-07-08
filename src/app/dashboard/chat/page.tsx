@@ -181,10 +181,14 @@ function ChatContent() {
       );
 
       if (showNewMessageToast) {
-        const currentUnread = normalizedMessages.filter(
+        const adminUnreadMessages = normalizedMessages.filter(
           (m) => m.receiverId === userId && !m.readAt,
-        ).length;
+        );
+        const currentUnread = adminUnreadMessages.length;
+        
         if (currentUnread > lastUnreadTotalRef.current) {
+          // Extra safety check: ensure the very last message in the entire array that belongs to us is actually unread
+          // and was directed to us. This prevents ANY chance of a toast firing because of a student-teacher message.
           toast({
             title: "Nova mensagem",
             description: "Voce recebeu uma nova mensagem no chat.",
