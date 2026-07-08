@@ -185,11 +185,11 @@ export default function HomePricing() {
                 Aulas ao vivo de 90 minutos
               </p>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-base font-medium text-slate-500">R$</span>
+                <span className="text-[13px] font-medium text-slate-500">R$</span>
                 <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
                   {pkg.pricePerClass.toFixed(2).replace('.', ',')}
                 </span>
-                <span className="text-base font-medium text-slate-500">/aula</span>
+                <span className="text-[13px] font-medium text-slate-500">/aula</span>
               </div>
               {index === 1 && (
                 <p className="mt-2 text-[10px] font-bold text-white bg-green-600 px-[calc(0.75rem+10px)] py-1 rounded-full inline-block">
