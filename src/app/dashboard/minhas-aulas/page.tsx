@@ -923,19 +923,33 @@ export default function MinhasAulasPage() {
 
                     <div className="flex items-center gap-2 mt-[-8px] mb-[-8px]">
                       {lesson.teacher?.videoUrl && (
-                        <Button
-                          asChild
-                          className="rounded-2xl bg-slate-900 px-4 text-slate-50 hover:bg-slate-800 h-8"
-                        >
-                          <a
-                            href={lesson.teacher?.videoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Entrar na Sala
-                            <Video className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
+                        (() => {
+                          const lessonTime = new Date(lesson.date);
+                          const unlockTime = new Date(lessonTime.getTime() - 5 * 60000); // 5 mins before
+                          const isLocked = currentTime < unlockTime;
+
+                          return isLocked ? (
+                            <Button disabled title={`Disponível 5 minutos antes da aula (às ${format(unlockTime, 'HH:mm')})`} className="rounded-2xl bg-slate-300 px-4 text-slate-500 cursor-not-allowed h-8">
+                              Entrar na Sala
+                              <Video className="ml-2 h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              asChild
+                              title="Acessar Sala de Aula"
+                              className="rounded-2xl bg-slate-900 px-4 text-slate-50 hover:bg-slate-800 h-8"
+                            >
+                              <a
+                                href={lesson.teacher?.videoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Entrar na Sala
+                                <Video className="ml-2 h-4 w-4" />
+                              </a>
+                            </Button>
+                          );
+                        })()
                       )}
                       {canEditOrCancel(lesson) && (
                         <div className="flex gap-2">
@@ -1379,15 +1393,31 @@ export default function MinhasAulasPage() {
           onClick={e => e.stopPropagation()}
         >
           {openMenuLesson.teacher?.videoUrl && (
-            <a
-              href={openMenuLesson.teacher.videoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              onClick={() => setOpenMenuLessonId(null)}
-            >
-              <Video className="h-4 w-4 text-slate-500" /> Entrar na Sala
-            </a>
+            (() => {
+              const lessonTime = new Date(openMenuLesson.date);
+              const unlockTime = new Date(lessonTime.getTime() - 5 * 60000);
+              const isLocked = currentTime < unlockTime;
+
+              return isLocked ? (
+                <button
+                  disabled
+                  title={`Disponível 5 minutos antes da aula (às ${format(unlockTime, 'HH:mm')})`}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-400 cursor-not-allowed"
+                >
+                  <Video className="h-4 w-4 text-slate-400" /> Entrar na Sala
+                </button>
+              ) : (
+                <a
+                  href={openMenuLesson.teacher.videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  onClick={() => setOpenMenuLessonId(null)}
+                >
+                  <Video className="h-4 w-4 text-slate-500" /> Entrar na Sala
+                </a>
+              );
+            })()
           )}
           {canEditOrCancel(openMenuLesson) && (
             <>
