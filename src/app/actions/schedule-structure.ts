@@ -88,7 +88,12 @@ export async function checkScheduleAvailability(
     });
 
     if (!isAvailable) {
-      return { available: false, error: "Professor não atende neste horário." };
+      const slots = availabilities.map(a => `${a.startTime} às ${a.endTime}`).join(", ");
+      return { 
+        available: false, 
+        error: "Professor não atende neste horário.",
+        availableSlots: slots ? `Horários disponíveis neste dia: ${slots}` : 'Não atende neste dia.'
+      };
     }
 
     // 2. Check for conflicts with other students' schedule blocks
@@ -114,5 +119,20 @@ export async function checkScheduleAvailability(
   } catch (error: any) {
     console.error("Error checking availability:", error);
     return { available: false, error: "Erro ao verificar disponibilidade." };
+  }
+}
+
+export async function getTeacherAvailabilityGrid(teacherId: string) {
+  try {
+    const availabilities = await prisma.availability.findMany({
+      where: { teacherId }
+    });
+    const existingBlocks = await prisma.scheduleStructure.findMany({
+      where: { teacherId }
+    });
+    return { success: true, availabilities, existingBlocks };
+  } catch (error: any) {
+    console.error("Error fetching teacher availability grid:", error);
+    return { success: false, error: error.message };
   }
 }

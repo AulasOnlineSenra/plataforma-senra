@@ -55,7 +55,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarRange, Trash2, BookOpen, Plus, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { checkScheduleAvailability } from '@/app/actions/schedule-structure';
+import { checkScheduleAvailability, getTeacherAvailabilityGrid } from '@/app/actions/schedule-structure';
 
 const GRID_START_HOUR = 7;
 const GRID_END_HOUR = 22;
@@ -107,6 +107,9 @@ export default function HomePage() {
     color: "bg-emerald-500",
   });
   const [cronogramaAvailabilityError, setCronogramaAvailabilityError] = useState<string | null>(null);
+  const [cronogramaAvailableSlots, setCronogramaAvailableSlots] = useState<string | null>(null);
+  const [draggingTeacherGrid, setDraggingTeacherGrid] = useState<{ availabilities: any[], existingBlocks: any[] } | null>(null);
+  const [isDraggingBlockId, setIsDraggingBlockId] = useState<string | null>(null);
   const [isValidatingCronogramaAvailability, setIsValidatingCronogramaAvailability] = useState(false);
 
   // KPI Calculations do Cronograma Público
@@ -178,12 +181,15 @@ export default function HomePage() {
         );
         if (!res.available) {
           setCronogramaAvailabilityError(res.error || "Professor indisponível neste dia/horário.");
+          setCronogramaAvailableSlots(res.availableSlots || null);
         } else {
           setCronogramaAvailabilityError(null);
+          setCronogramaAvailableSlots(null);
         }
         setIsValidatingCronogramaAvailability(false);
       } else {
         setCronogramaAvailabilityError(null);
+        setCronogramaAvailableSlots(null);
       }
     };
     if (isCronogramaDialogOpen) {
@@ -219,8 +225,21 @@ export default function HomePage() {
     setCronogramaBlocks(cronogramaBlocks.filter(b => b.id !== id));
   };
 
-  const handleCronogramaDragStart = (e: React.DragEvent, id: string) => {
+  const handleCronogramaDragStart = async (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData("blockId", id);
+    setIsDraggingBlockId(id);
+    const block = cronogramaBlocks.find(b => b.id === id);
+    if (block && block.teacherId && block.teacherId !== "none") {
+      const result = await getTeacherAvailabilityGrid(block.teacherId);
+      if (result.success) {
+        setDraggingTeacherGrid({ availabilities: result.availabilities, existingBlocks: result.existingBlocks });
+      }
+    }
+  };
+
+  const handleCronogramaDragEnd = () => {
+    setIsDraggingBlockId(null);
+    setDraggingTeacherGrid(null);
   };
 
   const handleCronogramaDrop = (e: React.DragEvent, dayIndex: number, startHour: number, isHalfHour: boolean) => {
@@ -645,16 +664,44 @@ export default function HomePage() {
                             return (
                               <div key={dayIdx} className="relative flex-1 border-r border-slate-200" style={{ height: `${totalHours * HOUR_HEIGHT}px` }}>
                                 {/* Grid Lines */}
-                                {Array.from({ length: totalHours * 2 }).map((_, idx) => (
-                                  <div 
-                                    key={idx} 
-                                    onClick={() => handleCronogramaCellClick(dayIdx, Math.floor(idx / 2) + GRID_START_HOUR, idx % 2 !== 0)}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => handleCronogramaDrop(e, dayIdx, Math.floor(idx / 2) + GRID_START_HOUR, idx % 2 !== 0)}
-                                    className={`absolute left-0 right-0 cursor-pointer hover:bg-slate-50/80 transition-colors ${idx % 2 === 0 ? 'border-b border-slate-100 border-dashed' : 'border-b border-slate-200'}`}
-                                    style={{ top: `${idx * HALF_HOUR_HEIGHT}px`, height: `${HALF_HOUR_HEIGHT}px` }}
-                                  />
-                                ))}
+                                {Array.from({ length: totalHours * 2 }).map((_, idx) => {
+                                  const cellStartHour = Math.floor(idx / 2) + GRID_START_HOUR;
+                                  const cellIsHalf = idx % 2 !== 0;
+                                  const cellStartMin = cellStartHour * 60 + (cellIsHalf ? 30 : 0);
+                                  const cellEndMin = cellStartMin + 30; // 30 min block
+                                  
+                                  let isInvalidForDrag = false;
+                                  if (isDraggingBlockId && draggingTeacherGrid) {
+                                    const { availabilities, existingBlocks } = draggingTeacherGrid;
+                                    
+                                    const isAvailable = availabilities.some(a => {
+                                      if (a.dayOfWeek !== dayIdx) return false;
+                                      const [ah, am] = a.startTime.split(':').map(Number);
+                                      const [eh, em] = a.endTime.split(':').map(Number);
+                                      return (ah * 60 + am) <= cellStartMin && (eh * 60 + em) >= cellEndMin;
+                                    });
+                                    
+                                    const hasConflict = existingBlocks.some(b => {
+                                      if (b.dayOfWeek !== dayIdx) return false;
+                                      const [bh, bm] = b.startTime.split(':').map(Number);
+                                      const [eh, em] = b.endTime.split(':').map(Number);
+                                      return (bh * 60 + bm) < cellEndMin && (eh * 60 + em) > cellStartMin;
+                                    });
+                                    
+                                    isInvalidForDrag = !isAvailable || hasConflict;
+                                  }
+
+                                  return (
+                                    <div 
+                                      key={idx} 
+                                      onClick={() => handleCronogramaCellClick(dayIdx, cellStartHour, cellIsHalf)}
+                                      onDragOver={(e) => e.preventDefault()}
+                                      onDrop={(e) => handleCronogramaDrop(e, dayIdx, cellStartHour, cellIsHalf)}
+                                      className={`absolute left-0 right-0 cursor-pointer transition-colors ${idx % 2 === 0 ? 'border-b border-slate-100 border-dashed' : 'border-b border-slate-200'} ${isInvalidForDrag ? 'bg-red-500/10 shadow-[inset_0_0_8px_rgba(239,68,68,0.2)] hover:bg-red-500/20' : 'hover:bg-slate-50/80'}`}
+                                      style={{ top: `${idx * HALF_HOUR_HEIGHT}px`, height: `${HALF_HOUR_HEIGHT}px` }}
+                                    />
+                                  );
+                                })}
 
                                 {/* Blocks */}
                                 {cronogramaBlocks.filter(b => b.dayOfWeek === dayIdx).map(block => {
@@ -673,6 +720,7 @@ export default function HomePage() {
                                       draggable
                                       onClick={(e) => { e.stopPropagation(); handleEditCronogramaBlock(block); }}
                                       onDragStart={(e) => handleCronogramaDragStart(e, block.id)}
+                                      onDragEnd={handleCronogramaDragEnd}
                                       className={`absolute left-1 right-1 rounded-md p-2 text-white shadow-sm overflow-hidden group cursor-pointer ${block.color || 'bg-emerald-500'}`}
                                       style={{ top: `${topPx}px`, height: `${heightPx}px` }}
                                     >
@@ -770,9 +818,12 @@ export default function HomePage() {
                 )}
 
                 {cronogramaAvailabilityError && (
-                  <p className="text-xs text-rose-500 font-medium bg-rose-50 p-2 rounded-md border border-rose-100">
-                    ⚠️ {cronogramaAvailabilityError}
-                  </p>
+                  <div className="bg-rose-50 p-2 rounded-md border border-rose-100 flex flex-col">
+                    <p className="text-xs text-rose-500 font-medium">⚠️ {cronogramaAvailabilityError}</p>
+                    {cronogramaAvailableSlots && (
+                      <p className="text-xs text-rose-400 mt-1">{cronogramaAvailableSlots}</p>
+                    )}
+                  </div>
                 )}
               </div>
 
