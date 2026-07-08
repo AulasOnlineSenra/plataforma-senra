@@ -547,7 +547,7 @@ export default function HomePage() {
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                 <div className="max-w-2xl ml-10">
                   <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight lg:whitespace-nowrap">
-                    Monte seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Cronograma</span> de Aulas
+                    Monte seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">cronograma</span> de aulas
                   </h2>
                   <p className="text-slate-500 mt-3 text-lg">
                     Simule sua semana ideal de estudos selecionando os professores e horários reais disponíveis na plataforma.
@@ -555,7 +555,7 @@ export default function HomePage() {
                 </div>
                 
                 {/* Botão de Checkout */}
-                <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4 mr-[30px]">
                   <Card className="rounded-2xl border-slate-200 bg-white/50 backdrop-blur-md px-6 py-2 shadow-sm">
                     <div className="flex items-center gap-3">
                       <CalendarRange className="h-5 w-5 text-amber-500" />
@@ -569,7 +569,7 @@ export default function HomePage() {
                   </Card>
                   <Button 
                     onClick={handleCronogramaAdicionarAoResumo} 
-                    className="h-14 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 gap-3 font-bold border border-emerald-600 px-8 text-base w-full sm:w-auto"
+                    className="h-14 rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all hover:scale-105 active:scale-95 gap-3 font-bold border border-slate-800 px-8 text-base w-full sm:w-auto"
                   >
                     <BookOpen className="h-5 w-5" />
                     Avançar para Agendamento
@@ -586,19 +586,19 @@ export default function HomePage() {
                     <div className="space-y-4">
                       <h3 className="font-bold text-lg text-slate-800">Como funciona?</h3>
                       <div className="space-y-3">
-                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[10px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">1.</span>
                           <span>Clique em qualquer horário vazio na grade para simular uma aula.</span>
                         </div>
-                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[10px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">2.</span>
                           <span>Selecione a disciplina e o professor desejado. A plataforma valida a agenda real.</span>
                         </div>
-                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[10px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">3.</span>
                           <span>Se desejar, altere o dia ou arraste o bloco para outro horário.</span>
                         </div>
-                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[10px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">4.</span>
                           <span>Clique em <strong>"Avançar para Agendamento"</strong> para realizar seu cadastro e garantir suas aulas!</span>
                         </div>
@@ -609,7 +609,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                         <Clock className="h-4 w-4 text-slate-400" /> Duração padrão
                       </div>
-                      <p className="text-[12px] text-slate-600">
+                      <p className="text-[10px] text-slate-600">
                         Cada aula possui duração recomendada de <strong>1h30 (90 minutos)</strong> para melhor aproveitamento do conteúdo.
                       </p>
                     </div>
