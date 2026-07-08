@@ -562,7 +562,7 @@ export default function HomePage() {
                       <div>
                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tempo Simulado</p>
                         <p className="text-lg font-bold text-slate-800">
-                          {Math.round(cronogramaKpis.plannedMinutes / 60)}h {cronogramaKpis.plannedMinutes % 60}m
+                          {Math.floor(cronogramaKpis.plannedMinutes / 60)}h {cronogramaKpis.plannedMinutes % 60}m
                         </p>
                       </div>
                     </div>
@@ -581,24 +581,24 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 
                 {/* Painel Lateral de Instruções / Ajuda */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className="lg:col-span-1 space-y-6 ml-10">
                   <Card className="rounded-3xl border-slate-200 shadow-sm bg-white p-6 space-y-6">
                     <div className="space-y-4">
                       <h3 className="font-bold text-lg text-slate-800">Como funciona?</h3>
                       <div className="space-y-3">
-                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">1.</span>
                           <span>Clique em qualquer horário vazio na grade para simular uma aula.</span>
                         </div>
-                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">2.</span>
                           <span>Selecione a disciplina e o professor desejado. A plataforma valida a agenda real.</span>
                         </div>
-                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">3.</span>
                           <span>Se desejar, altere o dia ou arraste o bloco para outro horário.</span>
                         </div>
-                        <div className="flex gap-3 text-sm text-slate-500 leading-relaxed">
+                        <div className="flex gap-3 text-[12px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">4.</span>
                           <span>Clique em <strong>"Avançar para Agendamento"</strong> para realizar seu cadastro e garantir suas aulas!</span>
                         </div>
@@ -609,7 +609,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                         <Clock className="h-4 w-4 text-slate-400" /> Duração padrão
                       </div>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-[12px] text-slate-600">
                         Cada aula possui duração recomendada de <strong>1h30 (90 minutos)</strong> para melhor aproveitamento do conteúdo.
                       </p>
                     </div>
@@ -617,7 +617,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Grade Principal do Cronograma */}
-                <div className="lg:col-span-3">
+                <div className="lg:col-span-3 mr-[30px]">
                   <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden bg-white">
                     <div className="overflow-auto max-h-[70vh]">
                       <div className="min-w-[800px] relative">
