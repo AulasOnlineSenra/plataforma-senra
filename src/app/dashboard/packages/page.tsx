@@ -196,8 +196,9 @@ function PackagesContent() {
                     Aulas ao vivo de 90 minutos
                   </p>
                   <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-base font-medium text-slate-500">R$</span>
                     <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                      R$ {pkg.pricePerClass.toFixed(2).replace('.', ',')}
+                      {pkg.pricePerClass.toFixed(2).replace('.', ',')}
                     </span>
                     <span className="text-base font-medium text-slate-500">/aula</span>
                   </div>
