@@ -882,8 +882,10 @@ export default function MinhasAulasPage() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Coluna Esquerda: Lista de Aulas */}
-            <div className="lg:col-span-2 space-y-4">
-              {loading && (
+            <div className="lg:col-span-2">
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-4">
+                  {loading && (
                 <p className="text-sm text-slate-500">Carregando aulas...</p>
               )}
 
@@ -958,6 +960,8 @@ export default function MinhasAulasPage() {
                     </div>
               </div>
             ))}
+                </div>
+              </ScrollArea>
             </div>
 
             {/* Coluna Direita: Calendário */}
