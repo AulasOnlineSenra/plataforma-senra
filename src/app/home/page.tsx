@@ -545,7 +545,7 @@ export default function HomePage() {
               
               {/* Cabeçalho da Seção */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-                <div className="max-w-2xl">
+                <div className="max-w-2xl ml-10">
                   <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight lg:whitespace-nowrap">
                     Monte seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Cronograma</span> de Aulas
                   </h2>
