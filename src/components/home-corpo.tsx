@@ -163,7 +163,7 @@ export default function HomeCorpo() {
           <div className="container mx-auto px-4 max-w-[90%]">
             <div className="text-center mb-8">
               <h3 className="text-2xl md:text-3xl font-bold font-headline text-slate-900">
-                Disciplinas Que ensinamos
+                Disciplinas que ensinamos
               </h3>
               <p className="mt-2 text-slate-600">
                 Tire suas dúvidas com especialistas em qualquer matéria

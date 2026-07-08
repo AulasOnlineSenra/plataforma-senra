@@ -485,7 +485,7 @@ export default function HomePage() {
             </h1>
             <div className="mt-[34px] text-lg md:text-xl max-w-3xl mx-auto text-white/90">
               <p className="hidden">Acompanhamento 100% personalizado com os melhores especialistas.</p>
-              <p>Encontre agora o tutor ideal e acaba com as dúvidas definitivamente.</p>
+              <p>Encontre agora o tutor ideal e acabe com as dúvidas definitivamente.</p>
             </div>
 
 
@@ -592,7 +592,7 @@ export default function HomePage() {
                         </div>
                         <div className="flex gap-3 text-[10px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">2.</span>
-                          <span>Selecione a disciplina e o professor desejado. A plataforma valida a agenda real.</span>
+                          <span>Selecione a disciplina e o professor desejados. A plataforma valida a agenda real.</span>
                         </div>
                         <div className="flex gap-3 text-[10px] text-slate-500 leading-relaxed">
                           <span className="font-bold text-amber-500 flex-shrink-0">3.</span>
@@ -948,7 +948,7 @@ export default function HomePage() {
                 <img src="/logo.png" alt="Aulas Online Senra" className="w-full h-auto rounded-full border-2 border-[#f5b000] shadow-[0_0_10px_#f5b000]" />
               </div>
               <p className="text-xs leading-relaxed text-slate-400 max-w-xs">
-                <EditableText storageKey="home-footer-company-description">Quais habilidade você precisa aprimorar?</EditableText>
+                <EditableText storageKey="home-footer-company-description">Quais habilidades você precisa aprimorar?</EditableText>
               </p>
             </div>
 
