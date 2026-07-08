@@ -618,7 +618,7 @@ export default function HomePage() {
 
                 {/* Grade Principal do Cronograma */}
                 <div className="lg:col-span-3 mr-[30px]">
-                  <Card className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+                  <Card className="rounded-3xl border-2 border-[#f5b000] shadow-[0_0_20px_rgba(245,176,0,0.3)] overflow-hidden bg-white">
                     <div className="overflow-auto max-h-[70vh]">
                       <div className="min-w-[800px] relative">
                         {/* Header */}
