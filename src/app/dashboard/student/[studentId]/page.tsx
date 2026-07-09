@@ -1057,10 +1057,10 @@ function StudentDetailPageComponent() {
                  setIsFileUploadDialogOpen(open);
                  if (!open) setSelectedFiles([]);
              }}>
-                 <DialogContent className="sm:max-w-md rounded-3xl border-slate-100 shadow-2xl p-8">
+                 <DialogContent className="sm:max-w-lg rounded-[15px] border-slate-100 shadow-2xl p-8">
                      <DialogHeader>
                          <DialogTitle className="text-2xl font-bold text-slate-900">Anexar Material</DialogTitle>
-                         <DialogDescription className="text-slate-500 mt-1">Anexe um arquivo para a aula de <span className="font-bold text-slate-700">{selectedClassForMaterial?.subject}</span>.</DialogDescription>
+                         <DialogDescription className="text-slate-500 mt-1">Anexe um arquivo para a aula de <span className="font-bold text-slate-700">{subjectMap[selectedClassForMaterial?.subject ?? ''] || selectedClassForMaterial?.subject}</span>.</DialogDescription>
                      </DialogHeader>
                      <div className="grid gap-5 py-4">
                          <div className="grid gap-3">
@@ -1090,7 +1090,7 @@ function StudentDetailPageComponent() {
                                      ))}
                                  </div>
                              )}
-                             <p className="text-xs font-medium text-slate-400">Suporta PDFs, planilhas e imagens. Tamanho máx por arquivo: 5MB.</p>
+                             <p className="text-xs font-medium text-slate-400">Aceita PDF, JPG, PNG e WEBP. Tamanho máx por arquivo: 2MB.</p>
                          </div>
                      </div>
                      <DialogFooter className="mt-4 gap-3 sm:gap-0">
