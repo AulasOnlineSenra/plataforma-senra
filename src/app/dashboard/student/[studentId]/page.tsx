@@ -1057,7 +1057,7 @@ function StudentDetailPageComponent() {
                  setIsFileUploadDialogOpen(open);
                  if (!open) setSelectedFiles([]);
              }}>
-                 <DialogContent className="sm:max-w-lg rounded-[15px] overflow-hidden border-slate-100 shadow-2xl p-8">
+                 <DialogContent className="sm:max-w-lg !rounded-[15px] sm:!rounded-[15px] overflow-hidden border-slate-100 shadow-2xl p-8">
                      <DialogHeader>
                          <DialogTitle className="text-2xl font-bold text-slate-900">Anexar Material</DialogTitle>
                          <DialogDescription className="text-slate-500 mt-1">Anexe um arquivo para a aula de <span className="font-bold text-slate-700">{subjectMap[selectedClassForMaterial?.subject ?? ''] || selectedClassForMaterial?.subject}</span>.</DialogDescription>
