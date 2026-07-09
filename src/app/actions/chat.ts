@@ -50,6 +50,23 @@ export async function getChatUsers(
         select: { teacherId: true },
       });
       relatedUserIds = [...new Set(lessons.map((l) => l.teacherId))];
+
+      // Nova Regra: Alunos com autoSchedule ativo e créditos > 0 mantêm contato com professores do cronograma
+      const student = await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: { credits: true, autoSchedule: true }
+      });
+
+      if (student && student.credits > 0 && student.autoSchedule) {
+        const scheduleBlocks = await prisma.scheduleStructure.findMany({
+          where: { userId: currentUserId, teacherId: { not: null } },
+          select: { teacherId: true }
+        });
+        const scheduleTeacherIds = scheduleBlocks
+          .map(b => b.teacherId as string)
+          .filter(id => id && id !== "none");
+        relatedUserIds = [...new Set([...relatedUserIds, ...scheduleTeacherIds])];
+      }
     } else if (currentUserRole === "teacher") {
       // Professor: buscar alunos que têm aulas com este professor
       const lessons = await prisma.lesson.findMany({
@@ -60,6 +77,26 @@ export async function getChatUsers(
         select: { studentId: true },
       });
       relatedUserIds = [...new Set(lessons.map((l) => l.studentId))];
+
+      // Nova Regra: Incluir alunos que tem esse professor no cronograma, se tiverem autoSchedule ativo e créditos
+      const scheduleBlocks = await prisma.scheduleStructure.findMany({
+        where: { teacherId: currentUserId },
+        select: { userId: true }
+      });
+      const potentialStudentIds = [...new Set(scheduleBlocks.map(b => b.userId))];
+      
+      if (potentialStudentIds.length > 0) {
+        const eligibleStudents = await prisma.user.findMany({
+          where: {
+            id: { in: potentialStudentIds },
+            credits: { gt: 0 },
+            autoSchedule: true
+          },
+          select: { id: true }
+        });
+        const eligibleStudentIds = eligibleStudents.map(s => s.id);
+        relatedUserIds = [...new Set([...relatedUserIds, ...eligibleStudentIds])];
+      }
     }
 
     // Buscar admins sempre visíveis
