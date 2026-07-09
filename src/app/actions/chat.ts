@@ -29,6 +29,7 @@ export async function getChatUsers(
           name: true,
           role: true,
           avatarUrl: true,
+          subjects: true,
         },
         orderBy: [{ role: "asc" }, { name: "asc" }],
       });
@@ -120,6 +121,7 @@ export async function getChatUsers(
         name: true,
         role: true,
         avatarUrl: true,
+        subjects: true,
       },
       orderBy: [{ role: "asc" }, { name: "asc" }],
     });

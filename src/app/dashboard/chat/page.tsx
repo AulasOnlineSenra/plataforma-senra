@@ -48,6 +48,7 @@ interface ChatUser {
   name: string;
   role: UserRole;
   avatarUrl?: string | null;
+  subjects?: string | null;
 }
 
 interface ChatMessage {
@@ -114,7 +115,107 @@ function normalizeUser(raw: any): ChatUser | null {
     name: String(raw.name || "Usuario"),
     role: String(raw.role || ""),
     avatarUrl: typeof raw.avatarUrl === "string" ? raw.avatarUrl : null,
+    subjects: typeof raw.subjects === "string" ? raw.subjects : null,
   };
+}
+
+/** Retorna apenas os 2 primeiros nomes para evitar overflow no layout */
+function shortName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  return parts.slice(0, 2).join(" ");
+}
+
+/** Mapa de abreviações de disciplinas */
+const subjectAbbrevMap: Record<string, string> = {
+  math: "MAT",
+  mathematics: "MAT",
+  matematica: "MAT",
+  matemática: "MAT",
+  physics: "FIS",
+  fisica: "FIS",
+  física: "FIS",
+  chemistry: "QUI",
+  quimica: "QUI",
+  química: "QUI",
+  biology: "BIO",
+  biologia: "BIO",
+  history: "HIS",
+  historia: "HIS",
+  história: "HIS",
+  geography: "GEO",
+  geografia: "GEO",
+  portuguese: "POR",
+  portugues: "POR",
+  português: "POR",
+  english: "ING",
+  ingles: "ING",
+  inglês: "ING",
+  spanish: "ESP",
+  espanhol: "ESP",
+  philosophy: "FIL",
+  filosofia: "FIL",
+  sociology: "SOC",
+  sociologia: "SOC",
+  arts: "ART",
+  artes: "ART",
+  literature: "LIT",
+  literatura: "LIT",
+  "physical education": "EDF",
+  "educacao fisica": "EDF",
+  "educação física": "EDF",
+  redacao: "RED",
+  redação: "RED",
+  writing: "RED",
+  calculus: "CAL",
+  calculo: "CAL",
+  cálculo: "CAL",
+  programming: "PRG",
+  programacao: "PRG",
+  programação: "PRG",
+  enem: "ENEM",
+};
+
+function getSubjectTags(subjects: string | null | undefined): string {
+  if (!subjects) return "";
+  try {
+    const parsed: string[] = JSON.parse(subjects);
+    if (!Array.isArray(parsed) || parsed.length === 0) return "";
+    return parsed
+      .slice(0, 3)
+      .map((s) => {
+        const key = s.toLowerCase().trim();
+        return subjectAbbrevMap[key] || s.slice(0, 3).toUpperCase();
+      })
+      .join(" • ");
+  } catch {
+    return "";
+  }
+}
+
+/** Formata o texto da mensagem tornando URLs clicáveis */
+function formatMessageContent(text: string, isMine: boolean) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) => {
+    if (urlRegex.test(part)) {
+      urlRegex.lastIndex = 0;
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`underline underline-offset-2 break-all transition-colors hover:text-[#f5b000] ${
+            isMine ? "text-primary-foreground/90" : "text-blue-300"
+          }`}
+        >
+          {part}
+        </a>
+      );
+    }
+    urlRegex.lastIndex = 0;
+    return part;
+  });
 }
 
 function ChatContent() {
@@ -377,10 +478,11 @@ function ChatContent() {
     );
   }, [allMessages, currentUser?.id]);
 
-  // Função helper para renderizar botão de contato
   const renderContactButton = (contact: ChatUser) => {
     const isActive = contact.id === activeContactId;
     const name = contact.name || "Usuario";
+    const displayName = shortName(name);
+    const subjectTag = contact.role === "teacher" ? getSubjectTags(contact.subjects) : "";
     return (
       <Button
         key={contact.id}
@@ -403,7 +505,7 @@ function ChatContent() {
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{name}</p>
+          <p className="truncate text-sm font-medium">{displayName}</p>
           <p className="text-xs text-muted-foreground/90">
             {typingContactIds.has(contact.id) ? (
               <span className="text-primary font-medium">
@@ -414,6 +516,8 @@ function ChatContent() {
                   <span className="animate-typing-dot" style={{ animationDelay: '0.4s' }}>.</span>
                 </span>
               </span>
+            ) : subjectTag ? (
+              subjectTag
             ) : (
               roleTranslations[contact.role] || contact.role || "contato"
             )}
@@ -907,7 +1011,7 @@ function ChatContent() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">
-                  {activeContact.name || "Usuario"}
+                  {shortName(activeContact.name || "Usuario")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isContactTyping ? (
@@ -919,6 +1023,8 @@ function ChatContent() {
                         <span className="animate-typing-dot" style={{ animationDelay: '0.4s' }}>.</span>
                       </span>
                     </span>
+                  ) : activeContact.role === "teacher" && getSubjectTags(activeContact.subjects) ? (
+                    getSubjectTags(activeContact.subjects)
                   ) : (
                     roleTranslations[activeContact.role] || activeContact.role || "contato"
                   )}
@@ -1062,7 +1168,7 @@ function ChatContent() {
                                   searchTerm={searchTerm}
                                 />
                               ) : (
-                                message.content
+                                formatMessageContent(message.content, isMine)
                               )}
                             </p>
                           )}
