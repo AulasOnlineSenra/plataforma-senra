@@ -894,22 +894,28 @@ export default function MinhasAulasPage() {
               )}
 
               {!loading &&
-                futureLessons.map((lesson) => (
+                futureLessons.map((lesson) => {
+                  const lessonDate = new Date(lesson.date);
+                  const endDateObj = lesson.endDate ? new Date(lesson.endDate) : new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                  const isOngoing = currentTime >= lessonDate && currentTime < endDateObj;
+
+                  return (
                   <div
                     key={lesson.id}
-                    className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[#f5b000] hover:shadow-[0_0_20px_rgba(245,176,0,0.5)]"
+                    className={`flex flex-wrap items-center justify-between gap-4 rounded-3xl border p-5 shadow-sm transition-all hover:border-[#f5b000] hover:shadow-[0_0_20px_rgba(245,176,0,0.5)] ${
+                      isOngoing ? "bg-amber-50/20 border-[#f5b000] relative after:absolute after:inset-0 after:rounded-3xl after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : "border-slate-200 bg-white"
+                    }`}
                   >
                     <div className="flex flex-wrap items-center gap-4">
                       <p className="font-semibold text-slate-900">{subjectMap[lesson.subject] || lesson.subject}</p>
                       {lesson.isExperimental && <span className="text-[11px] font-bold text-emerald-600 px-1.5 py-0.5 rounded uppercase">Experimental</span>}
                       <p className="text-sm text-slate-600">
                         {(() => {
-                          const d = new Date(lesson.date);
-                          const end = new Date(lesson.endDate);
-                          const time = `às ${format(d, 'HH:mm')} - ${format(end, 'HH:mm')}`;
-                          if (isToday(d)) return `Hoje ${format(d, 'dd/MM/yyyy')} ${time}`;
-                          if (isTomorrow(d)) return `Amanhã ${format(d, 'dd/MM/yyyy')} ${time}`;
-                          return `${format(d, "EEEE dd/MM/yyyy", { locale: ptBR })} ${time}`;
+                          const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDateObj, 'HH:mm')}`;
+                          if (isOngoing) return <><span className="font-bold text-[#f5b000]">Agora</span> {format(lessonDate, 'dd/MM/yyyy')} {time}</>;
+                          if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} {time}`;
+                          if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} {time}`;
+                          return `${format(lessonDate, "EEEE dd/MM/yyyy", { locale: ptBR })} ${time}`;
                         })()}
                       </p>
                       <p className="text-sm text-slate-600">
@@ -975,7 +981,8 @@ export default function MinhasAulasPage() {
                       )}
                     </div>
               </div>
-            ))}
+            );
+          })}
                 </div>
               </ScrollArea>
             </div>

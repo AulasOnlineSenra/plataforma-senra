@@ -104,12 +104,17 @@ export default {
             boxShadow: '0 0 8px 2px hsl(var(--brand-yellow) / 0.5)',
            },
         },
+        'pulse-border': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(245, 176, 0, 0.6)' },
+          '50%': { boxShadow: '0 0 0 8px rgba(245, 176, 0, 0)' },
+        },
       },
       animation: {
         'typing-dot': 'typing-dot 1.4s ease-in-out infinite',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'highlight': 'highlight-border 2s ease-out',
+        'pulse-border': 'pulse-border 2s ease-in-out infinite',
       },
     },
   },

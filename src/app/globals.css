@@ -183,15 +183,3 @@ html {
   }
 }
 
-@keyframes pulse-border {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(245, 176, 0, 0.6);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(245, 176, 0, 0);
-  }
-}
-
-.animate-pulse-border {
-  animation: pulse-border 2s ease-in-out infinite;
-}
