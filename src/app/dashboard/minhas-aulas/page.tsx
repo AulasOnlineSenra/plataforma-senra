@@ -913,8 +913,8 @@ export default function MinhasAulasPage() {
                         {(() => {
                           const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDateObj, 'HH:mm')}`;
                           if (isOngoing) return <><span className="font-bold text-[#f5b000]">Agora</span> {format(lessonDate, 'dd/MM/yyyy')} {time}</>;
-                          if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} {time}`;
-                          if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} {time}`;
+                          if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                          if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
                           return `${format(lessonDate, "EEEE dd/MM/yyyy", { locale: ptBR })} ${time}`;
                         })()}
                       </p>
