@@ -743,26 +743,33 @@ export default function DashboardPage() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      (adminStats?.upcomingLessons || []).map((lesson) => (
-                        <TableRow key={lesson.id}>
-                          <TableCell>{lesson.student?.name || "N/A"}</TableCell>
-                          <TableCell>{lesson.teacher?.name || "N/A"}</TableCell>
-                          <TableCell>
-                            <Badge className="bg-[#FFC107] text-slate-900">
-                              {subjectMap[lesson.subject] || lesson.subject}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {(() => {
-                              const lessonDate = new Date(lesson.date);
-                              const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
-                              const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
-                              if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
-                              if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
-                              return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
-                            })()}
-                          </TableCell>
-                          <TableCell className="text-center">
+                      (adminStats?.upcomingLessons || []).map((lesson) => {
+                        const lessonDate = new Date(lesson.date);
+                        const endDate = new Date(lessonDate.getTime() + 90 * 60 * 1000);
+                        const isOngoing = now >= lessonDate && now < endDate;
+
+                        return (
+                          <TableRow 
+                            key={lesson.id}
+                            className={isOngoing ? "bg-amber-50/20 relative after:absolute after:inset-0 after:rounded-[15px] after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""}
+                          >
+                            <TableCell>{lesson.student?.name || "N/A"}</TableCell>
+                            <TableCell>{lesson.teacher?.name || "N/A"}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-[#FFC107] text-slate-900">
+                                {subjectMap[lesson.subject] || lesson.subject}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(() => {
+                                const time = `às ${format(lessonDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+                                if (isOngoing) return <><span className="font-bold text-[#f5b000]">Agora</span> {format(lessonDate, 'dd/MM/yyyy')} {time}</>;
+                                if (isToday(lessonDate)) return `Hoje ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                                if (isTomorrow(lessonDate)) return `Amanhã ${format(lessonDate, 'dd/MM/yyyy')} ${time}`;
+                                return `${format(lessonDate, 'EEEE dd/MM/yyyy', { locale: ptBR })} ${time}`;
+                              })()}
+                            </TableCell>
+                            <TableCell className="text-center">
                             <div className="flex justify-center gap-1">
                               <Button
                                 variant="ghost"
@@ -782,8 +789,9 @@ export default function DashboardPage() {
                               </Button>
                             </div>
                           </TableCell>
-                        </TableRow>
-                      ))
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
