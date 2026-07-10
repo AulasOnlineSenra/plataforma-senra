@@ -801,8 +801,8 @@ export default function MinhasAulasPage() {
                                 width: 'calc(100% - 4px)',
                                 left: '2px',
                               }}
-                              className={`absolute overflow-visible rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm transition-all ${
-                                isOngoing ? "bg-amber-100 border-[#f5b000] relative after:absolute after:inset-0 after:rounded-lg after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : getStatusColor(lesson.status)
+                              className={`absolute overflow-visible rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm transition-all ${getStatusColor(lesson.status)} ${
+                                isOngoing ? "border-[#f5b000] relative after:absolute after:inset-0 after:rounded-lg after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""
                               }`}
                             >
                               <div className="flex items-start justify-between gap-0.5">
@@ -918,8 +918,8 @@ export default function MinhasAulasPage() {
                   return (
                   <div
                     key={lesson.id}
-                    className={`flex flex-wrap items-center justify-between gap-4 rounded-3xl border p-5 shadow-sm transition-all hover:border-[#f5b000] hover:shadow-[0_0_20px_rgba(245,176,0,0.5)] ${
-                      isOngoing ? "bg-amber-50/20 border-[#f5b000] relative after:absolute after:inset-0 after:rounded-3xl after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : "border-slate-200 bg-white"
+                    className={`flex flex-wrap items-center justify-between gap-4 rounded-3xl border p-5 shadow-sm transition-all hover:border-[#f5b000] hover:shadow-[0_0_20px_rgba(245,176,0,0.5)] bg-white ${
+                      isOngoing ? "border-[#f5b000] relative after:absolute after:inset-0 after:rounded-3xl after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : "border-slate-200"
                     }`}
                   >
                     <div className="flex flex-wrap items-center gap-4">

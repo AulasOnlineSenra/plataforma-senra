@@ -751,7 +751,7 @@ export default function DashboardPage() {
                         return (
                           <TableRow 
                             key={lesson.id}
-                            className={isOngoing ? "bg-amber-50/20 relative after:absolute after:inset-0 after:rounded-[15px] after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""}
+                            className={isOngoing ? "relative after:absolute after:inset-0 after:rounded-[15px] after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""}
                           >
                             <TableCell>{lesson.student?.name || "N/A"}</TableCell>
                             <TableCell>{lesson.teacher?.name || "N/A"}</TableCell>
@@ -1027,7 +1027,7 @@ export default function DashboardPage() {
                         return (
                           <TableRow 
                             key={lesson.id} 
-                            className={isOngoing ? "bg-amber-50/20 relative after:absolute after:inset-0 after:rounded-[15px] after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""}
+                            className={isOngoing ? "relative after:absolute after:inset-0 after:rounded-[15px] after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : ""}
                           >
                             <TableCell>
                               <Badge
