@@ -22,6 +22,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showCheckoutAuthModal, setShowCheckoutAuthModal] = useState(false);
+  const [isEmbedded, setIsEmbedded] = useState(false);
+
+  useEffect(() => {
+    setIsEmbedded(window.location.search.includes('embedded=true'));
+  }, []);
 
   // Verifica se a rota atual é de checkout
   const isCheckoutRoute = pathname.includes('/dashboard/checkout');
@@ -140,6 +145,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     // Força re-execução do useEffect para reconhecer o novo login
     router.refresh();
   };
+
+  if (isEmbedded) {
+    return (
+      <div className="h-full w-full overflow-hidden bg-background">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-layout h-full w-full overflow-hidden">

@@ -119,6 +119,7 @@ function StudentList({
   onDeleteStudent,
   onToggleTagEnem,
   onUnlockStudent,
+  onOpenChat,
   isAdmin,
 }: {
   id?: string;
@@ -129,6 +130,7 @@ function StudentList({
   onDeleteStudent: (student: StudentRow) => void;
   onToggleTagEnem: (student: StudentRow) => void;
   onUnlockStudent: (student: StudentRow) => void;
+  onOpenChat: (studentId: string) => void;
   isAdmin: boolean;
 }) {
   const router = useRouter();
@@ -290,7 +292,7 @@ function StudentList({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => window.open(`/dashboard/chat?contactId=${student.id}`, '_blank')}
+                        onClick={() => onOpenChat(student.id)}
                         className="h-10 w-10 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-600"
                         title="Chat Privado"
                       >
@@ -327,6 +329,8 @@ export default function AdminStudentsPage() {
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [chatContactId, setChatContactId] = useState<string | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -401,10 +405,11 @@ export default function AdminStudentsPage() {
     const counts: Record<string, number> = {};
     lessons.forEach((lesson) => {
       if (!isScheduledLesson(lesson.status)) return;
+      if (currentUser?.role === "teacher" && lesson.teacherId !== currentUser.id) return;
       counts[lesson.studentId] = (counts[lesson.studentId] ?? 0) + 1;
     });
     return counts;
-  }, [lessons]);
+  }, [lessons, currentUser]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -654,6 +659,7 @@ export default function AdminStudentsPage() {
           onDeleteStudent={setStudentToDelete}
           onToggleTagEnem={handleToggleTagEnem}
           onUnlockStudent={handleUnlockStudent}
+          onOpenChat={setChatContactId}
           isAdmin={currentUser?.role === "admin"}
         />
         {inactiveStudents.length > 0 && (
@@ -665,6 +671,7 @@ export default function AdminStudentsPage() {
             onDeleteStudent={setStudentToDelete}
             onToggleTagEnem={handleToggleTagEnem}
             onUnlockStudent={handleUnlockStudent}
+            onOpenChat={setChatContactId}
             isAdmin={currentUser?.role === "admin"}
           />
         )}
@@ -942,6 +949,21 @@ export default function AdminStudentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* MODAL DE CHAT RÁPIDO */}
+      <Dialog open={!!chatContactId} onOpenChange={(open) => !open && setChatContactId(null)}>
+        <DialogContent className="sm:max-w-4xl h-[85vh] p-0 overflow-hidden rounded-3xl border-slate-100 bg-white shadow-2xl flex flex-col">
+          <div className="flex-1 w-full h-full relative">
+            {chatContactId && (
+              <iframe
+                src={`/dashboard/chat?contactId=${chatContactId}&embedded=true`}
+                className="absolute inset-0 w-full h-full border-0"
+                title="Chat Rápido"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
