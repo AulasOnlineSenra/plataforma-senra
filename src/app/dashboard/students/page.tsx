@@ -153,9 +153,11 @@ function StudentList({
               <TableHead className="font-semibold text-slate-500">
                 Nome
               </TableHead>
-              <TableHead className="font-semibold text-slate-500">
-                Email
-              </TableHead>
+              {isAdmin && (
+                <TableHead className="font-semibold text-slate-500">
+                  Email
+                </TableHead>
+              )}
               <TableHead className="font-semibold text-slate-500">
                 Último Acesso
               </TableHead>
@@ -212,9 +214,11 @@ function StudentList({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-slate-500 font-medium py-4">
-                    {student.email}
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-slate-500 font-medium py-4">
+                      {student.email}
+                    </TableCell>
+                  )}
                   <TableCell className="text-slate-400 text-sm py-4">
                     {formatLastAccess(student)}
                   </TableCell>
@@ -225,22 +229,22 @@ function StudentList({
                     </span>
                   </TableCell>
                   <TableCell className="text-right px-6 py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Ações para ${student.name}`}
-                          className="h-10 w-10 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    {isAdmin ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Ações para ${student.name}`}
+                            className="h-10 w-10 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                          >
+                            <MoreHorizontal className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-56 rounded-2xl border border-slate-100 bg-white shadow-lg p-2 gap-1 flex flex-col"
                         >
-                          <MoreHorizontal className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="w-56 rounded-2xl border border-slate-100 bg-white shadow-lg p-2 gap-1 flex flex-col"
-                      >
-                        {isAdmin && (
                           <DropdownMenuItem
                             onSelect={() => onAddCredits(student)}
                             className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
@@ -248,19 +252,13 @@ function StudentList({
                             <Wallet className="mr-2 h-4 w-4 text-emerald-500" />
                             Adicionar créditos
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onSelect={() =>
-                            router.push(
-                              `/dashboard/chat?contactId=${student.id}`,
-                            )
-                          }
-                          className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
-                        >
-                          <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
-                          Chat Privado
-                        </DropdownMenuItem>
-                        {isAdmin && (
+                          <DropdownMenuItem
+                            onSelect={() => window.open(`/dashboard/chat?contactId=${student.id}`, '_blank')}
+                            className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
+                            Chat Privado
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={() => onToggleTagEnem(student)}
                             className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
@@ -270,17 +268,15 @@ function StudentList({
                               ? "Remover Foco ENEM"
                               : "Adicionar Foco ENEM"}
                           </DropdownMenuItem>
-                        )}
-                        {isAdmin && (student.failedLoginAttempts ?? 0) >= 5 && (
-                          <DropdownMenuItem
-                            onSelect={() => onUnlockStudent(student)}
-                            className="cursor-pointer rounded-xl py-2.5 font-medium text-amber-700 focus:bg-amber-50 focus:text-amber-800 border-t border-slate-50"
-                          >
-                            <span className="mr-2 h-4 w-4 text-amber-500 text-lg leading-none">🔓</span>
-                            Desbloquear Conta
-                          </DropdownMenuItem>
-                        )}
-                        {isAdmin && (
+                          {(student.failedLoginAttempts ?? 0) >= 5 && (
+                            <DropdownMenuItem
+                              onSelect={() => onUnlockStudent(student)}
+                              className="cursor-pointer rounded-xl py-2.5 font-medium text-amber-700 focus:bg-amber-50 focus:text-amber-800 border-t border-slate-50"
+                            >
+                              <span className="mr-2 h-4 w-4 text-amber-500 text-lg leading-none">🔓</span>
+                              Desbloquear Conta
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="cursor-pointer rounded-xl py-2.5 font-medium text-red-600 focus:bg-red-50 focus:text-red-700 mt-1 border-t border-slate-50"
                             onSelect={() => onDeleteStudent(student)}
@@ -288,15 +284,25 @@ function StudentList({
                             <Trash2 className="mr-2 h-4 w-4" />
                             Excluir perfil
                           </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(`/dashboard/chat?contactId=${student.id}`, '_blank')}
+                        className="h-10 w-10 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+                        title="Chat Privado"
+                      >
+                        <MessageSquare className="h-5 w-5" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
+                <TableCell colSpan={isAdmin ? 6 : 5} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-slate-400">
                     <Users className="h-8 w-8 mb-2 opacity-50" />
                     <p className="font-medium">Nenhum aluno encontrado.</p>

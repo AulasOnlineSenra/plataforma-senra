@@ -26,7 +26,8 @@ export async function getStudents() {
         createdAt: true, 
         phone: true,
         tags: true,
-        failedLoginAttempts: true
+        failedLoginAttempts: true,
+        updatedAt: true
       },
       orderBy: { createdAt: "desc" },
     });
@@ -62,7 +63,7 @@ export async function getMyStudents(teacherId: string) {
         role: "student",
         status: { not: "deleted" },
       },
-      select: { id: true, name: true, email: true, avatarUrl: true, phone: true, tags: true, failedLoginAttempts: true },
+      select: { id: true, name: true, email: true, avatarUrl: true, phone: true, tags: true, failedLoginAttempts: true, updatedAt: true },
       orderBy: { name: "asc" },
     });
 
