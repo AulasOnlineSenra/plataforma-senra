@@ -193,7 +193,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         <item.icon className="h-4 w-4 shrink-0" />
         <span className="font-semibold">{item.label}</span>
         {isChat && unreadMessagesCount > 0 && (
-          <span className="absolute right-3 top-1/2 flex h-5 min-w-[20px] -translate-y-1/2 items-center justify-center rounded-full bg-[#25d366] px-1.5 text-[11px] font-bold text-white shadow-sm">
+          <span className="absolute right-3 top-1/2 flex h-5 min-w-[20px] -translate-y-1/2 items-center justify-center rounded-full bg-[#f5b000] px-1.5 text-[11px] font-bold text-slate-900 shadow-sm">
             {unreadMessagesCount}
           </span>
         )}
