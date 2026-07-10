@@ -229,6 +229,7 @@ export async function getTeachers(showAll = false) {
         videoUrl: true,
         Availability: true,
         createdAt: true,
+        failedLoginAttempts: true,
         updatedAt: true
       },
       orderBy: { name: "asc" },
