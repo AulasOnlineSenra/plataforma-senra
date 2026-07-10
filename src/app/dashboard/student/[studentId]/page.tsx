@@ -40,6 +40,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // MOTOR DO BANCO PARA BUSCAR O ALUNO/PROFESSOR
 import { getUserById } from '@/app/actions/users';
 import { getLessonsForUser, updateLesson } from '@/app/actions/bookings';
+import { formatExternalUrl } from "@/lib/utils";
 
 const SIMULADOS_STORAGE_KEY = 'simuladosList';
 
@@ -586,7 +587,7 @@ function StudentDetailPageComponent() {
                         {student.role === 'teacher' && student.videoUrl && (
                             <div className="flex justify-start mt-4">
                                 <Button asChild variant="outline" className="h-12 rounded-xl border-slate-200 font-bold text-slate-700 hover:bg-slate-50">
-                                    <a href={student.videoUrl} target="_blank" rel="noopener noreferrer">
+                                    <a href={formatExternalUrl(student.videoUrl)} target="_blank" rel="noopener noreferrer">
                                         <Video className="mr-2 h-5 w-5 text-blue-500" />
                                         Ver vídeo de apresentação
                                     </a>

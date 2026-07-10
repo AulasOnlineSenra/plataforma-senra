@@ -8,6 +8,7 @@ import { getLessonsForUser } from "@/app/actions/bookings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatExternalUrl } from "@/lib/utils";
 
 type LessonItem = {
   id: string;
@@ -126,7 +127,7 @@ export default function HistoricoPage() {
                       className="rounded-2xl bg-slate-900 text-slate-50 hover:bg-slate-800"
                     >
                       <a
-                        href={lesson.meetingLink}
+                        href={formatExternalUrl(lesson.meetingLink)}
                         target="_blank"
                         rel="noreferrer"
                       >

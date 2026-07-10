@@ -57,6 +57,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatExternalUrl } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -905,13 +906,13 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {user.role === "student" ? (
               <>
-<Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-md cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCreditHistoryOpen(true)}>
+                <Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-md cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCreditHistoryOpen(true)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-slate-200">
                       Créditos Disponíveis
                     </CardTitle>
                   </CardHeader>
-<CardContent>
+                  <CardContent>
                     <p className="text-4xl font-extrabold text-[#FFC107]">
                       {Math.max(0, user.credits)}
                     </p>
@@ -1062,9 +1063,14 @@ export default function DashboardPage() {
                                       <Video className="h-4 w-4" />
                                     </Button>
                                   ) : (
-                                    <Button asChild title="Acessar Sala de Aula" className="h-8 px-2 rounded-xl bg-slate-900 text-slate-50 hover:bg-slate-800">
-                                      <a href={lesson.teacher?.videoUrl} target="_blank" rel="noreferrer">
-                                        <Video className="h-4 w-4" />
+                                    <Button
+                                      asChild
+                                      title="Acessar Sala de Aula"
+                                      className="rounded-2xl bg-slate-900 px-4 text-slate-50 hover:bg-slate-800 h-8"
+                                    >
+                                      <a href={formatExternalUrl(lesson.teacher?.videoUrl)} target="_blank" rel="noreferrer">
+                                        Entrar na Sala
+                                        <Video className="ml-2 h-4 w-4" />
                                       </a>
                                     </Button>
                                   );

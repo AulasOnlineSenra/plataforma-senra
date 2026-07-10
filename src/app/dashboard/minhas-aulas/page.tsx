@@ -29,6 +29,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStudents } from "@/app/actions/users";
+import { formatExternalUrl } from "@/lib/utils";
 
 const subjectMap: Record<string, string> = {
   'default-subj-1': 'Matemática',
@@ -946,7 +947,7 @@ export default function MinhasAulasPage() {
                               className="rounded-2xl bg-slate-900 px-4 text-slate-50 hover:bg-slate-800 h-8"
                             >
                               <a
-                                href={lesson.teacher?.videoUrl}
+                                href={formatExternalUrl(lesson.teacher?.videoUrl)}
                                 target="_blank"
                                 rel="noreferrer"
                               >
@@ -1417,7 +1418,7 @@ export default function MinhasAulasPage() {
                 </button>
               ) : (
                 <a
-                  href={openMenuLesson.teacher.videoUrl}
+                  href={formatExternalUrl(openMenuLesson.teacher.videoUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
