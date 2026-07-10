@@ -524,7 +524,7 @@ function ChatContent() {
           </p>
         </div>
         {(unreadCountByContact[contact.id] || 0) > 0 && (
-          <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-medium text-white">
+          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#25d366] px-1.5 text-[11px] font-bold text-white shadow-sm">
             {unreadCountByContact[contact.id]}
           </span>
         )}

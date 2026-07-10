@@ -25,7 +25,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
 
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<any | null>(null);
-  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -124,14 +124,22 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
     const pollUnread = async () => {
       const result = await getChatMessagesForUser(user.id);
       if (!result.success || !result.data) return;
-      const unread = result.data.some((message: any) => message.receiverId === user.id && !message.readAt);
-      setHasNewMessages(unread);
+      const unreadCount = result.data.filter((message: any) => message.receiverId === user.id && !message.readAt).length;
+      setUnreadMessagesCount(unreadCount);
     };
 
     pollUnread();
     const interval = setInterval(pollUnread, 5000);
     return () => clearInterval(interval);
   }, [user?.id]);
+
+  useEffect(() => {
+    if (unreadMessagesCount > 0) {
+      document.title = `(${unreadMessagesCount}) Aulas Online`;
+    } else {
+      document.title = `Aulas Online`;
+    }
+  }, [unreadMessagesCount]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -184,8 +192,10 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
       >
         <item.icon className="h-4 w-4 shrink-0" />
         <span className="font-semibold">{item.label}</span>
-        {isChat && hasNewMessages && (
-          <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-brand-yellow" />
+        {isChat && unreadMessagesCount > 0 && (
+          <span className="absolute right-3 top-1/2 flex h-5 min-w-[20px] -translate-y-1/2 items-center justify-center rounded-full bg-[#25d366] px-1.5 text-[11px] font-bold text-white shadow-sm">
+            {unreadMessagesCount}
+          </span>
         )}
         {isNotifications && hasNewNotifications && (
           <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-brand-yellow" />
