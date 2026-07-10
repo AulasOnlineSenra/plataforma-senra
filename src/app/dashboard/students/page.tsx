@@ -952,12 +952,16 @@ export default function AdminStudentsPage() {
 
       {/* MODAL DE CHAT RÁPIDO */}
       <Dialog open={!!chatContactId} onOpenChange={(open) => !open && setChatContactId(null)}>
-        <DialogContent className="sm:max-w-4xl h-[85vh] p-0 overflow-hidden rounded-xl border-slate-100 bg-white shadow-2xl flex flex-col">
-          <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden">
+        <DialogContent 
+          className="sm:max-w-4xl h-[85vh] p-0 overflow-hidden rounded-xl sm:rounded-xl border-slate-100 bg-white shadow-2xl flex flex-col"
+          style={{ borderRadius: '12px' }}
+        >
+          <div className="flex-1 w-full h-full relative rounded-xl sm:rounded-xl overflow-hidden" style={{ borderRadius: '12px' }}>
             {chatContactId && (
               <iframe
                 src={`/dashboard/chat?contactId=${chatContactId}&embedded=true`}
-                className="absolute inset-0 w-full h-full border-0 rounded-xl"
+                className="absolute inset-0 w-full h-full border-0 rounded-xl sm:rounded-xl"
+                style={{ borderRadius: '12px' }}
                 title="Chat Rápido"
               />
             )}
