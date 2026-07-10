@@ -148,6 +148,11 @@ export default function MinhasAulasPage() {
   };
 
   useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const currentRole = localStorage.getItem("userRole");
     const currentUserId = localStorage.getItem("userId");
     setRole(currentRole);
@@ -777,6 +782,8 @@ export default function MinhasAulasPage() {
                           const isFutureScheduled = new Date(lesson.date) >= now &&
                             ['PENDING', 'CONFIRMED', 'scheduled'].includes(lesson.status);
 
+                          const isOngoing = currentTime >= start && currentTime < end;
+
                           return (
                             <div
                               key={lesson.id}
@@ -786,8 +793,8 @@ export default function MinhasAulasPage() {
                                 width: 'calc(100% - 4px)',
                                 left: '2px',
                               }}
-                              className={`absolute overflow-visible rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm ${
-                                getStatusColor(lesson.status)
+                              className={`absolute overflow-visible rounded-lg border-l-4 px-1.5 py-0.5 text-[11px] leading-tight shadow-sm transition-all ${
+                                isOngoing ? "bg-amber-100 border-[#f5b000] relative after:absolute after:inset-0 after:rounded-lg after:border-2 after:border-[#f5b000] after:animate-pulse-border after:pointer-events-none" : getStatusColor(lesson.status)
                               }`}
                             >
                               <div className="flex items-start justify-between gap-0.5">
