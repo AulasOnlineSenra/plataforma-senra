@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { BookOpen, UserPlus, Edit, Trash2, Check, Star, MoreVertical, Eye, EyeOff } from "lucide-react";
+import { BookOpen, UserPlus, Edit, Trash2, Check, Star, MoreVertical, Eye, EyeOff, Lock, Unlock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
@@ -72,6 +72,7 @@ import {
   updateTeacher,
   deleteTeacher,
   approveTeacher,
+  unlockUserAccount,
 } from "@/app/actions/users";
 import { getTeacherAverageRating } from "@/app/actions/ratings";
 
@@ -95,6 +96,7 @@ function TeacherCard({
   onApprove,
   onOpenDetails,
   onToggleVisibility,
+  onUnlock,
 }: {
   teacher: any;
   currentUser: any;
@@ -103,6 +105,7 @@ function TeacherCard({
   onApprove: (id: string) => void;
   onOpenDetails: (id: string) => void;
   onToggleVisibility: (id: string, isHidden: boolean) => void;
+  onUnlock?: (id: string) => void;
 }) {
   const isAdmin = currentUser?.role === "admin";
   const isPending = teacher.status === "pending";
@@ -240,8 +243,11 @@ function TeacherCard({
           </Badge>
         )}
         {!isPending && !isInactive && (
-          <Badge className="border-none bg-emerald-50 font-bold text-emerald-600 px-3 py-1 rounded-full shadow-none">
+          <Badge className="border-none bg-emerald-50 font-bold text-emerald-600 px-3 py-1 rounded-full shadow-none flex items-center gap-1.5">
             Ativo
+            {teacher.failedLoginAttempts >= 5 && (
+              <Lock className="h-3 w-3 text-red-500" title="Conta bloqueada por segurança" />
+            )}
           </Badge>
         )}
       </div>
@@ -291,6 +297,14 @@ function TeacherCard({
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                {teacher.failedLoginAttempts >= 5 && onUnlock && (
+                  <>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onUnlock(teacher.id); }}>
+                      <Unlock className="mr-2 h-4 w-4" /> Desbloquear Acesso
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem 
                   onClick={() => {
                     if (confirm("Excluir este professor permanentemente?"))
@@ -564,6 +578,24 @@ export default function TeachersPage() {
         variant: "destructive",
         title: "Erro",
         description: result.error || "Falha ao alterar visibilidade do professor.",
+      });
+    }
+  };
+
+  const handleUnlock = async (id: string) => {
+    const result = await unlockUserAccount(id);
+    if (result.success) {
+      toast({
+        title: "Sucesso!",
+        description: "Conta desbloqueada com sucesso.",
+        className: "bg-emerald-600 text-white border-none",
+      });
+      fetchDBTeachers();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error || "Falha ao desbloquear conta.",
       });
     }
   };
@@ -964,6 +996,7 @@ export default function TeachersPage() {
                     router.push(`/dashboard/teacher/${teacherId}`)
                   }
                   onToggleVisibility={handleToggleVisibility}
+                  onUnlock={handleUnlock}
                 />
               ));
             })()}
