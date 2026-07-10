@@ -16,8 +16,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ArrowLeft, GraduationCap, File } from 'lucide-react';
-import { getLessonsForUser } from '@/app/actions/bookings';
+import { getLessonsForUser, updateLesson } from '@/app/actions/bookings';
 import { getCachedLessons, setCachedLessons } from '@/lib/lessons-cache';
+import { useToast } from '@/hooks/use-toast';
 
 const subjectMap: Record<string, string> = {
   'default-subj-1': 'Matemática',
@@ -40,6 +41,10 @@ type Material = {
   type: string;
   url: string;
   uploadedAt: string;
+  isExercise?: boolean;
+  responseUrl?: string;
+  responseName?: string;
+  responseDate?: string;
 };
 
 type LessonData = {
@@ -76,6 +81,8 @@ export default function NotebookPage() {
 
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingResponseId, setUploadingResponseId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const loadLessons = async (userId: string) => {
     const cached = getCachedLessons(userId);
@@ -106,6 +113,57 @@ export default function NotebookPage() {
       }
     }
   }, []);
+
+  const handleUploadResponse = async (lessonId: string, materialId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'Erro', description: 'Arquivo excede 5MB.', className: 'bg-red-600 text-white border-none' });
+        return;
+    }
+
+    setUploadingResponseId(materialId);
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+        
+        if (!result.success) throw new Error(result.error || 'Erro no upload.');
+
+        const lesson = lessons.find(l => l.id === lessonId);
+        if (!lesson) return;
+
+        const currentMaterials = parseMaterials(lesson.materials as string);
+        const updatedMaterials = currentMaterials.map((m: any) => 
+            m.id === materialId 
+                ? { ...m, responseUrl: result.data.url, responseName: file.name, responseDate: new Date().toISOString() } 
+                : m
+        );
+
+        const updateRes = await updateLesson(lessonId, { materials: JSON.stringify(updatedMaterials) });
+        if (updateRes.success) {
+            setLessons(lessons.map(l => l.id === lessonId ? { ...l, materials: JSON.stringify(updatedMaterials) } : l));
+            // Update cache
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                const cached = getCachedLessons(user.id);
+                if (cached) {
+                    const newCache = (cached as LessonData[]).map(l => l.id === lessonId ? { ...l, materials: JSON.stringify(updatedMaterials) } : l);
+                    setCachedLessons(user.id, newCache);
+                }
+            }
+            toast({ title: 'Resposta Enviada!', description: 'Seu arquivo foi salvo com sucesso.', className: 'bg-emerald-600 text-white border-none' });
+        }
+    } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao enviar resposta.', className: 'bg-red-600 text-white border-none' });
+    } finally {
+        setUploadingResponseId(null);
+        if (e.target) e.target.value = '';
+    }
+  };
 
   const completedLessons = useMemo(() => {
     return lessons
@@ -186,30 +244,53 @@ export default function NotebookPage() {
                         <span className="text-muted-foreground"> - </span>
                         <span className="text-muted-foreground text-xs">{formatDateTime(lesson)}</span>
                         {lesson.materials && parseMaterials(lesson.materials).length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
+                          <div className="mt-2 flex flex-col gap-2">
                             {parseMaterials(lesson.materials).map((material) => (
-                              <button 
-                                key={material.id}
-                                onClick={() => {
-                                  if (material.url.startsWith('data:')) {
-                                    const byteCharacters = atob(material.url.split(',')[1]);
-                                    const byteNumbers = new Array(byteCharacters.length);
-                                    for (let i = 0; i < byteCharacters.length; i++) {
-                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                              <div key={material.id} className="flex flex-col items-start gap-1 p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                                <button 
+                                  onClick={() => {
+                                    if (material.url.startsWith('data:')) {
+                                      const byteCharacters = atob(material.url.split(',')[1]);
+                                      const byteNumbers = new Array(byteCharacters.length);
+                                      for (let i = 0; i < byteCharacters.length; i++) {
+                                          byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                      }
+                                      const byteArray = new Uint8Array(byteNumbers);
+                                      const blob = new Blob([byteArray], { type: material.type });
+                                      const url = URL.createObjectURL(blob);
+                                      window.open(url, '_blank');
+                                    } else {
+                                      window.open(material.url, '_blank');
                                     }
-                                    const byteArray = new Uint8Array(byteNumbers);
-                                    const blob = new Blob([byteArray], { type: material.type });
-                                    const url = URL.createObjectURL(blob);
-                                    window.open(url, '_blank');
-                                  } else {
-                                    window.open(material.url, '_blank');
-                                  }
-                                }}
-                                className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 cursor-pointer"
-                              >
-                                <File className="h-3 w-3" />
-                                {material.name}
-                              </button>
+                                  }}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 ${material.isExercise ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'} rounded-lg text-sm font-medium cursor-pointer w-full text-left`}
+                                >
+                                  <File className="h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{material.name}</span>
+                                  {material.isExercise && <span className="ml-auto bg-amber-200/50 text-amber-800 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded">Exercício</span>}
+                                </button>
+                                {material.isExercise && (
+                                  <div className="w-full mt-1 ml-2 border-l-2 border-slate-200 pl-3 py-1 flex items-center justify-between">
+                                    {!material.responseUrl ? (
+                                      <div className="relative">
+                                          <input 
+                                              type="file" 
+                                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                              onChange={(e) => handleUploadResponse(lesson.id, material.id, e)}
+                                              disabled={uploadingResponseId === material.id}
+                                          />
+                                          <Button size="sm" variant="outline" className="rounded-lg bg-white h-7 text-xs border-dashed border-slate-300 hover:border-brand-yellow hover:text-brand-yellow hover:bg-amber-50" disabled={uploadingResponseId === material.id}>
+                                              {uploadingResponseId === material.id ? 'Enviando...' : 'Enviar Resposta'}
+                                          </Button>
+                                      </div>
+                                    ) : (
+                                      <button onClick={() => window.open(material.responseUrl, '_blank')} className="flex items-center gap-1.5 text-xs text-emerald-700 font-medium hover:underline bg-emerald-50 px-2 py-1 rounded-md">
+                                        Resposta enviada: {material.responseName}
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             ))}
                           </div>
                         )}

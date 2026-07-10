@@ -123,6 +123,8 @@ function StudentDetailPageComponent() {
     const [uploadingFile, setUploadingFile] = useState(false);
     const [selectedSubject, setSelectedSubject] = useState<string>('all');
     const [lessonForMaterialView, setLessonForMaterialView] = useState<any | null>(null);
+    const [isExercise, setIsExercise] = useState(false);
+    const [uploadingResponseId, setUploadingResponseId] = useState<string | null>(null);
 
     const subjectMap: Record<string, string> = {
         'default-subj-1': 'Matemática',
@@ -194,7 +196,8 @@ function StudentDetailPageComponent() {
                     name: file.name,
                     type: file.type,
                     url: result.data.url,
-                    uploadedAt: new Date().toISOString()
+                    uploadedAt: new Date().toISOString(),
+                    isExercise: isExercise
                 }];
             }
 
@@ -255,6 +258,49 @@ function StudentDetailPageComponent() {
                 description: 'O material foi excluído da aula.',
                 className: 'bg-slate-600 text-white border-none'
             });
+        }
+    };
+
+    // Upload response to exercise
+    const handleUploadResponse = async (lessonId: string, materialId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: 'Erro', description: 'Arquivo excede 5MB.', className: 'bg-red-600 text-white border-none' });
+            return;
+        }
+
+        setUploadingResponseId(materialId);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await fetch('/api/upload', { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if (!result.success) throw new Error(result.error || 'Erro no upload.');
+
+            const lesson = lessons.find(l => l.id === lessonId);
+            if (!lesson) return;
+
+            const currentMaterials = parseMaterials(lesson.materials);
+            const updatedMaterials = currentMaterials.map((m: any) => 
+                m.id === materialId 
+                    ? { ...m, responseUrl: result.data.url, responseName: file.name, responseDate: new Date().toISOString() } 
+                    : m
+            );
+
+            const updateRes = await updateLesson(lessonId, { materials: JSON.stringify(updatedMaterials) });
+            if (updateRes.success) {
+                setLessons(lessons.map(l => l.id === lessonId ? { ...l, materials: JSON.stringify(updatedMaterials) } : l));
+                setLessonForMaterialView((prev: any) => prev && prev.id === lessonId ? { ...prev, materials: JSON.stringify(updatedMaterials) } : prev);
+                toast({ title: 'Resposta Enviada!', description: 'Seu arquivo foi salvo com sucesso.', className: 'bg-emerald-600 text-white border-none' });
+            }
+        } catch (error) {
+            toast({ title: 'Erro', description: 'Falha ao enviar resposta.', className: 'bg-red-600 text-white border-none' });
+        } finally {
+            setUploadingResponseId(null);
+            if (e.target) e.target.value = ''; // Reset input
         }
     };
 
@@ -983,58 +1029,101 @@ function StudentDetailPageComponent() {
                             const formatInfo = getFileFormatInfo(material.name, material.type);
                             const Icon = formatInfo.icon;
                             return (
-                                <div 
-                                    key={material.id} 
-                                    onClick={() => {
-                                        if (material.url.startsWith('data:')) {
-                                            const byteCharacters = atob(material.url.split(',')[1]);
-                                            const byteNumbers = new Array(byteCharacters.length);
-                                            for (let i = 0; i < byteCharacters.length; i++) {
-                                                byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                <div key={material.id} className="flex flex-col w-full gap-2">
+                                    <div 
+                                        onClick={() => {
+                                            if (material.url.startsWith('data:')) {
+                                                const byteCharacters = atob(material.url.split(',')[1]);
+                                                const byteNumbers = new Array(byteCharacters.length);
+                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                }
+                                                const byteArray = new Uint8Array(byteNumbers);
+                                                const blob = new Blob([byteArray], { type: material.type });
+                                                const url = URL.createObjectURL(blob);
+                                                window.open(url, '_blank');
+                                            } else {
+                                                window.open(material.url, '_blank');
                                             }
-                                            const byteArray = new Uint8Array(byteNumbers);
-                                            const blob = new Blob([byteArray], { type: material.type });
-                                            const url = URL.createObjectURL(blob);
-                                            window.open(url, '_blank');
-                                        } else {
-                                            window.open(material.url, '_blank');
-                                        }
-                                    }}
-                                    className={`flex items-center justify-between p-4 rounded-2xl border border-${formatInfo.colorName}-100 bg-${formatInfo.colorName}-50 shadow-sm cursor-pointer transition-all duration-300 hover:border-[#f5b000] hover:shadow-[0_4px_12px_rgba(245,176,0,0.3)] group`}
-                                >
-                                    <div className="flex items-center gap-4 overflow-hidden flex-1">
-                                        <div className={`p-3 rounded-xl bg-white shadow-sm flex-shrink-0 text-${formatInfo.colorName}-600 group-hover:text-[#f5b000] transition-colors`}>
-                                            <Icon className="h-6 w-6" />
+                                        }}
+                                        className={`flex items-center justify-between p-4 rounded-2xl border border-${formatInfo.colorName}-100 bg-${formatInfo.colorName}-50 shadow-sm cursor-pointer transition-all duration-300 hover:border-[#f5b000] hover:shadow-[0_4px_12px_rgba(245,176,0,0.3)] group`}
+                                    >
+                                        <div className="flex items-center gap-4 overflow-hidden flex-1">
+                                            <div className={`p-3 rounded-xl bg-white shadow-sm flex-shrink-0 text-${formatInfo.colorName}-600 group-hover:text-[#f5b000] transition-colors`}>
+                                                <Icon className="h-6 w-6" />
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className={`font-bold text-${formatInfo.colorName}-900 truncate group-hover:text-[#f5b000] transition-colors`}>{cleanFileName(material.name)}</span>
+                                                <span className={`text-xs font-medium text-${formatInfo.colorName}-600/70 mt-0.5 uppercase tracking-wider`}>
+                                                    {material.name.split('.').pop() || 'Arquivo'}
+                                                    {material.isExercise && <span className="ml-2 bg-brand-yellow/20 text-brand-yellow px-1.5 py-0.5 rounded-md font-bold">EXERCÍCIO</span>}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col min-w-0">
-                                            <span className={`font-bold text-${formatInfo.colorName}-900 truncate group-hover:text-[#f5b000] transition-colors`}>{cleanFileName(material.name)}</span>
-                                            <span className={`text-xs font-medium text-${formatInfo.colorName}-600/70 mt-0.5 uppercase tracking-wider`}>
-                                                {material.name.split('.').pop() || 'Arquivo'}
-                                            </span>
+                                        
+                                        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                                            {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Previne abrir o arquivo ao clicar em excluir
+                                                        handleDeleteMaterial(lessonForMaterialView.id, material.id);
+                                                        // Update local state for modal immediately to prevent UI jump
+                                                        setLessonForMaterialView((prev: any) => {
+                                                            if (!prev) return null;
+                                                            const current = parseMaterials(prev.materials);
+                                                            const updated = current.filter((m: any) => m.id !== material.id);
+                                                            return { ...prev, materials: JSON.stringify(updated) };
+                                                        });
+                                                    }}
+                                                    className={`p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors border border-transparent hover:border-red-600 opacity-0 group-hover:opacity-100 focus:opacity-100`}
+                                                    title="Remover material"
+                                                >
+                                                    <X className="h-5 w-5" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
-                                    
-                                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                                        {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Previne abrir o arquivo ao clicar em excluir
-                                                    handleDeleteMaterial(lessonForMaterialView.id, material.id);
-                                                    // Update local state for modal immediately to prevent UI jump
-                                                    setLessonForMaterialView((prev: any) => {
-                                                        if (!prev) return null;
-                                                        const current = parseMaterials(prev.materials);
-                                                        const updated = current.filter((m: any) => m.id !== material.id);
-                                                        return { ...prev, materials: JSON.stringify(updated) };
-                                                    });
-                                                }}
-                                                className={`p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors border border-transparent hover:border-red-600 opacity-0 group-hover:opacity-100 focus:opacity-100`}
-                                                title="Remover material"
-                                            >
-                                                <X className="h-5 w-5" />
-                                            </button>
-                                        )}
-                                    </div>
+                                    {material.isExercise && (
+                                        <div className="ml-8 mr-2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col gap-3 relative before:content-[''] before:absolute before:left-[-16px] before:top-[-8px] before:w-4 before:h-8 before:border-l-2 before:border-b-2 before:border-slate-300 before:rounded-bl-xl">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-bold text-slate-700">Resposta do Aluno:</span>
+                                                {!material.responseUrl && currentUser?.role === 'student' && (
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="file" 
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                            onChange={(e) => handleUploadResponse(lessonForMaterialView.id, material.id, e)}
+                                                            disabled={uploadingResponseId === material.id}
+                                                        />
+                                                        <Button size="sm" variant="outline" className="rounded-lg bg-white h-8 border-dashed border-slate-300 hover:border-brand-yellow hover:text-brand-yellow hover:bg-amber-50" disabled={uploadingResponseId === material.id}>
+                                                            {uploadingResponseId === material.id ? 'Enviando...' : (
+                                                                <>
+                                                                    <UploadCloud className="h-4 w-4 mr-1.5" />
+                                                                    Enviar Resposta
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {!material.responseUrl && currentUser?.role !== 'student' && (
+                                                    <span className="text-xs font-medium text-slate-400 italic">Aguardando envio...</span>
+                                                )}
+                                            </div>
+                                            {material.responseUrl && (
+                                                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 transition-colors group/response">
+                                                    <div className="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onClick={() => window.open(material.responseUrl, '_blank')}>
+                                                        <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 flex-shrink-0">
+                                                            <Check className="h-4 w-4" />
+                                                        </div>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-sm font-bold text-emerald-700 truncate group-hover/response:text-emerald-800">{cleanFileName(material.responseName)}</span>
+                                                            <span className="text-xs font-medium text-emerald-600/70">{format(new Date(material.responseDate), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -1091,7 +1180,21 @@ function StudentDetailPageComponent() {
                                      ))}
                                  </div>
                              )}
-                             <p className="text-xs font-medium text-slate-400">Tamanho máx por arquivo: 2MB</p>
+                             <p className="text-xs font-medium text-slate-400">Tamanho máx por arquivo: 5MB</p>
+                             {(currentUser?.role === 'teacher' || currentUser?.role === 'admin') && (
+                                 <div className="flex items-center space-x-2 mt-2">
+                                     <input
+                                         type="checkbox"
+                                         id="is-exercise"
+                                         checked={isExercise}
+                                         onChange={(e) => setIsExercise(e.target.checked)}
+                                         className="h-4 w-4 rounded border-slate-300 text-brand-yellow focus:ring-brand-yellow cursor-pointer"
+                                     />
+                                     <Label htmlFor="is-exercise" className="text-sm font-medium text-slate-700 cursor-pointer">
+                                         Marcar como Exercício (Permite envio de resposta pelo aluno)
+                                     </Label>
+                                 </div>
+                             )}
                          </div>
                      </div>
                      <DialogFooter className="mt-4 gap-3 sm:gap-0">
