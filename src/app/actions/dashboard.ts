@@ -32,7 +32,10 @@ export async function getDashboardStats() {
       prisma.lesson.findMany({
         where: { 
           status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
-          date: { gte: new Date() } // Apenas aulas de hoje para frente
+          OR: [
+            { endDate: { gt: new Date() } },
+            { date: { gte: new Date(Date.now() - 90 * 60 * 1000) } }
+          ]
         },
         orderBy: { date: 'asc' },
         take: 5,
