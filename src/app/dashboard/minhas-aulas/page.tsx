@@ -1233,8 +1233,8 @@ export default function MinhasAulasPage() {
                               />
                             </TableHead>
                           )}
-                          <TableHead>Aluno</TableHead>
-                          <TableHead>Professor</TableHead>
+                          {(role === "admin" || role === "teacher") && <TableHead>Aluno</TableHead>}
+                          {(role === "admin" || role === "student") && <TableHead>Professor</TableHead>}
                           <TableHead>Matéria</TableHead>
                           <TableHead>Tipo</TableHead>
                           <TableHead>Data/Hora</TableHead>
