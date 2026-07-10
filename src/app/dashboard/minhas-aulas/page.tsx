@@ -583,7 +583,7 @@ export default function MinhasAulasPage() {
         <TableCell>
           {format(new Date(lesson.date), "EEEE dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) + (lesson.endDate ? ' - ' + format(new Date(lesson.endDate), "HH:mm") : '')}
         </TableCell>
-        {type === 'cancelled' && (
+        {type === 'cancelled' && role === 'admin' && (
           <TableCell>
             {lesson.cancelReason ? (
               <span className="text-xs text-slate-600 italic">"{lesson.cancelReason}"</span>
@@ -1238,7 +1238,7 @@ export default function MinhasAulasPage() {
                           <TableHead>Matéria</TableHead>
                           <TableHead>Tipo</TableHead>
                           <TableHead>Data/Hora</TableHead>
-                          <TableHead>Observações</TableHead>
+                          {role === "admin" && <TableHead>Observações</TableHead>}
                           {role === "admin" && <TableHead className="text-right">Ações</TableHead>}
                         </TableRow>
                       </TableHeader>
