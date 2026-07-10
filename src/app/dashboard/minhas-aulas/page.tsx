@@ -243,7 +243,11 @@ export default function MinhasAulasPage() {
   const futureLessons = useMemo(() => {
     const now = new Date();
     return sortedLessons.filter(
-      (l) => new Date(l.date) >= now && ['PENDING', 'CONFIRMED', 'scheduled'].includes(l.status),
+      (l) => {
+        const lessonDate = new Date(l.date);
+        const endDateObj = l.endDate ? new Date(l.endDate) : new Date(lessonDate.getTime() + 90 * 60 * 1000);
+        return endDateObj > now && ['PENDING', 'CONFIRMED', 'scheduled'].includes(l.status);
+      }
     );
   }, [sortedLessons]);
 
@@ -327,7 +331,11 @@ export default function MinhasAulasPage() {
   const calendarMarkedDays = useMemo(() => {
     const now = new Date();
     return sortedLessons
-      .filter(l => new Date(l.date) >= now && ['PENDING', 'CONFIRMED', 'scheduled'].includes(l.status))
+      .filter(l => {
+        const lessonDate = new Date(l.date);
+        const endDateObj = l.endDate ? new Date(l.endDate) : new Date(lessonDate.getTime() + 90 * 60 * 1000);
+        return endDateObj > now && ['PENDING', 'CONFIRMED', 'scheduled'].includes(l.status);
+      })
       .map(lesson => new Date(lesson.date));
   }, [sortedLessons]);
 
