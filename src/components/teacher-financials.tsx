@@ -180,10 +180,9 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
     if (!currentUser || completedLessons.length === 0 || paymentPeriods.length === 0) return;
 
     const now = new Date();
-    const allPastPeriods = paymentPeriods.filter(p => now > p.end);
     const paymentsByPeriod: TeacherPaymentRecord[] = [];
 
-    allPastPeriods.forEach(period => {
+    paymentPeriods.forEach(period => {
       const classesInPeriod = completedLessons.filter(lesson =>
         isWithinInterval(new Date(lesson.date), { start: period.start, end: period.end })
       );
@@ -195,7 +194,7 @@ export default function TeacherFinancials({ selectedMonth }: TeacherFinancialsPr
           classesDone: classesInPeriod.length,
           paymentRate: paymentRate,
           amount: classesInPeriod.length * paymentRate,
-          status: 'Pago',
+          status: now > period.end ? 'Pago' : 'Pendente',
           paymentDate: format(period.end, 'yyyy-MM-dd'),
         });
       }
