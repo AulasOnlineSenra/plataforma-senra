@@ -255,7 +255,7 @@ function StudentList({
                             Adicionar créditos
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onSelect={() => window.open(`/dashboard/chat?contactId=${student.id}`, '_blank')}
+                            onSelect={() => onOpenChat(student.id)}
                             className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
                           >
                             <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
