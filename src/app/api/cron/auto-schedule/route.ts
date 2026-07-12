@@ -36,59 +36,96 @@ export async function GET(request: Request) {
 
     let totalLessonsCreated = 0;
     const now = new Date();
-    const currentWeekStart = startOfWeek(now, { weekStartsOn: 0 });
+    const currentWeekStart = startOfWeek(now, { weekStartsOn: 0 }); // Domingo
     
-    // Configurado para pegar a PRÓXIMA semana, conforme solicitado
+    // Agendar para a SEMANA ATUAL se o cron rodar no domingo de manhã,
+    // ou para a PRÓXIMA SEMANA se já houver aulas essa semana
     const nextWeekStart = addDays(currentWeekStart, 7);
 
     for (const student of studentsToSchedule) {
-      // 2. Busca o cronograma (ScheduleBlock) do aluno
-      const blocks = await prisma.scheduleBlock.findMany({
+      // 2. Busca o cronograma (ScheduleStructure) do aluno - modelo correto do banco
+      const blocks = await prisma.scheduleStructure.findMany({
         where: { userId: student.id }
       });
 
       // Filtra os blocos que possuem professor definido (necessário para agendamento)
       const validBlocks = blocks.filter(b => b.teacherId && b.teacherId !== "none");
       
-      if (validBlocks.length === 0) continue;
+      if (validBlocks.length === 0) {
+        console.log(`[CRON] Aluno ${student.email} não tem cronograma com professores definidos. Pulando.`);
+        continue;
+      }
 
-      // 3. Monta os "Pre-Bookings" projetando as datas para a PRÓXIMA SEMANA
+      console.log(`[CRON] Aluno ${student.email} tem ${validBlocks.length} bloco(s) válidos.`);
+
+      // 3. Verifica se já existem aulas agendadas para essa semana (evita duplicatas)
+      const weekStart = nextWeekStart;
+      const weekEnd = addDays(weekStart, 7);
+      
+      const existingLessons = await prisma.lesson.findMany({
+        where: {
+          studentId: student.id,
+          date: {
+            gte: weekStart,
+            lt: weekEnd
+          },
+          status: { not: "CANCELLED" }
+        }
+      });
+
+      // 4. Monta os agendamentos projetando as datas para a PRÓXIMA SEMANA
       const preBookings = validBlocks.map(b => {
-        let targetDate = addDays(nextWeekStart, b.dayOfWeek);
+        // dayOfWeek: 0=Domingo, 1=Segunda, ..., 6=Sábado
+        const targetDate = addDays(weekStart, b.dayOfWeek);
         const [h, m] = b.startTime.split(':').map(Number);
         targetDate.setHours(h, m, 0, 0);
 
+        const endDate = addDays(weekStart, b.dayOfWeek);
+        const [eh, em] = b.endTime.split(':').map(Number);
+        endDate.setHours(eh, em, 0, 0);
+
         return {
-          subjectId: b.subject,
+          subject: b.subject,
           teacherId: b.teacherId as string,
           date: targetDate,
-          start: b.startTime,
-          end: b.endTime,
+          endDate: endDate,
         };
       });
 
-      // 4. Regra de Créditos (Debitar no máximo o que o aluno tem de saldo)
+      // Remove bookings que já têm aula naquele horário (evita duplicatas)
+      const bookingsToCreate = preBookings.filter(booking => {
+        return !existingLessons.some(existing => {
+          const existingTime = new Date(existing.date).getTime();
+          const bookingTime = booking.date.getTime();
+          return Math.abs(existingTime - bookingTime) < 60 * 60 * 1000; // dentro de 1 hora
+        });
+      });
+
+      if (bookingsToCreate.length === 0) {
+        console.log(`[CRON] Aluno ${student.email} já tem todas as aulas agendadas para essa semana. Pulando.`);
+        continue;
+      }
+
+      // 5. Regra de Créditos (Debitar no máximo o que o aluno tem de saldo)
       const creditsAvailable = student.credits;
-      const lessonsToCreateCount = Math.min(preBookings.length, creditsAvailable);
+      const lessonsToCreateCount = Math.min(bookingsToCreate.length, creditsAvailable);
       
-      if (lessonsToCreateCount === 0) continue; // Por segurança (embora já filtramos > 0)
+      if (lessonsToCreateCount === 0) continue;
 
-      const finalBookingsToCreate = preBookings.slice(0, lessonsToCreateCount);
+      const finalBookingsToCreate = bookingsToCreate.slice(0, lessonsToCreateCount);
 
-      // 5. Injeta no banco (Agendamentos e Debita o Saldo) em uma Transação segura
+      // 6. Injeta no banco (Agendamentos e Debita o Saldo) em uma Transação segura
       await prisma.$transaction(async (tx) => {
-        // Cria as aulas
+        // Cria as aulas com os campos corretos do modelo Lesson
         for (const booking of finalBookingsToCreate) {
           await tx.lesson.create({
             data: {
               studentId: student.id,
               teacherId: booking.teacherId,
-              subjectId: booking.subjectId,
+              subject: booking.subject,
               date: booking.date,
-              startTime: booking.start,
-              endTime: booking.end,
-              status: "scheduled",
-              createdBy: "system-cron",
+              endDate: booking.endDate,
+              status: "CONFIRMED",
             }
           });
         }
