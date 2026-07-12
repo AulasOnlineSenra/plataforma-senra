@@ -74,15 +74,20 @@ export async function GET(request: Request) {
       });
 
       // 4. Monta os agendamentos projetando as datas para a PRÓXIMA SEMANA
+      // IMPORTANTE: Os horários no cronograma estão em BRT (UTC-3).
+      // O banco salva em UTC, então somamos 3h para converter corretamente.
+      const BRT_OFFSET_MS = 3 * 60 * 60 * 1000; // 3 horas em ms
+
       const preBookings = validBlocks.map(b => {
         // dayOfWeek: 0=Domingo, 1=Segunda, ..., 6=Sábado
         const targetDate = addDays(weekStart, b.dayOfWeek);
         const [h, m] = b.startTime.split(':').map(Number);
-        targetDate.setHours(h, m, 0, 0);
+        // Configura a hora em UTC como se fosse BRT (adiciona 3h offset)
+        targetDate.setUTCHours(h + 3, m, 0, 0);
 
         const endDate = addDays(weekStart, b.dayOfWeek);
         const [eh, em] = b.endTime.split(':').map(Number);
-        endDate.setHours(eh, em, 0, 0);
+        endDate.setUTCHours(eh + 3, em, 0, 0);
 
         return {
           subject: b.subject,
@@ -106,17 +111,14 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // 5. Regra de Créditos (Debitar no máximo o que o aluno tem de saldo)
-      const creditsAvailable = student.credits;
-      const lessonsToCreateCount = Math.min(bookingsToCreate.length, creditsAvailable);
-      
-      if (lessonsToCreateCount === 0) continue;
+      // 5. NÃO debitamos créditos aqui.
+      // O sistema de créditos já desconta automaticamente quando a aula é marcada como COMPLETED
+      // (via getLessonsForUser em bookings.ts e via updateLesson).
+      // O cron apenas AGENDA as aulas — o débito acontece após a conclusão.
+      const finalBookingsToCreate = bookingsToCreate;
 
-      const finalBookingsToCreate = bookingsToCreate.slice(0, lessonsToCreateCount);
-
-      // 6. Injeta no banco (Agendamentos e Debita o Saldo) em uma Transação segura
+      // 6. Cria as aulas no banco em uma Transação segura (sem débito de créditos)
       await prisma.$transaction(async (tx) => {
-        // Cria as aulas com os campos corretos do modelo Lesson
         for (const booking of finalBookingsToCreate) {
           await tx.lesson.create({
             data: {
@@ -129,16 +131,6 @@ export async function GET(request: Request) {
             }
           });
         }
-
-        // Debita os créditos
-        await tx.user.update({
-          where: { id: student.id },
-          data: {
-            credits: {
-              decrement: lessonsToCreateCount
-            }
-          }
-        });
       });
 
       totalLessonsCreated += lessonsToCreateCount;
