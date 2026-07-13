@@ -134,12 +134,18 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (unreadMessagesCount > 0) {
-      document.title = `(${unreadMessagesCount}) Aulas Online`;
-    } else {
-      document.title = `Aulas Online`;
-    }
-  }, [unreadMessagesCount]);
+    const timeout = setTimeout(() => {
+      // Remove any previous notification count from the base title
+      const baseTitle = document.title.replace(/^\(\d+\)\s/, '');
+      if (unreadMessagesCount > 0) {
+        document.title = `(${unreadMessagesCount}) ${baseTitle}`;
+      } else {
+        document.title = baseTitle;
+      }
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [unreadMessagesCount, pathname]);
 
   useEffect(() => {
     if (!user?.id) return;

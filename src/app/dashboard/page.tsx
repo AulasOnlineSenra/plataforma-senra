@@ -193,19 +193,8 @@ function StatCard({
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [user, setUser] = useState<DashboardUser | null>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("currentUser");
-      return saved ? JSON.parse(saved) : null;
-    }
-    return null;
-  });
-  const [role, setRole] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("userRole") || "student";
-    }
-    return "student";
-  });
+  const [user, setUser] = useState<DashboardUser | null>(null);
+  const [role, setRole] = useState<string>("student");
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [unratedPeople, setUnratedPeople] = useState<UnratedPerson[]>([]);

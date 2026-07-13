@@ -38,9 +38,10 @@ export async function GET(request: Request) {
     const now = new Date();
     const currentWeekStart = startOfWeek(now, { weekStartsOn: 0 }); // Domingo
     
-    // Agendar para a SEMANA ATUAL se o cron rodar no domingo de manhã,
-    // ou para a PRÓXIMA SEMANA se já houver aulas essa semana
-    const nextWeekStart = addDays(currentWeekStart, 7);
+    // Agendar para a SEMANA ATUAL se o cron rodar no domingo,
+    // ou para a PRÓXIMA SEMANA se rodar em outro dia
+    const isSunday = now.getDay() === 0;
+    const weekStartToUse = isSunday ? currentWeekStart : addDays(currentWeekStart, 7);
 
     for (const student of studentsToSchedule) {
       // 2. Busca o cronograma (ScheduleStructure) do aluno - modelo correto do banco
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
       console.log(`[CRON] Aluno ${student.email} tem ${validBlocks.length} bloco(s) válidos.`);
 
       // 3. Verifica se já existem aulas agendadas para essa semana (evita duplicatas)
-      const weekStart = nextWeekStart;
+      const weekStart = weekStartToUse;
       const weekEnd = addDays(weekStart, 7);
       
       const existingLessons = await prisma.lesson.findMany({
