@@ -134,18 +134,33 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   }, [user?.id]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      // Remove any previous notification count from the base title
-      const baseTitle = document.title.replace(/^\(\d+\)\s/, '');
-      if (unreadMessagesCount > 0) {
-        document.title = `(${unreadMessagesCount}) ${baseTitle}`;
-      } else {
-        document.title = baseTitle;
-      }
-    }, 100);
+    const updateTitle = () => {
+      const currentTitle = document.title;
+      if (!currentTitle) return;
 
-    return () => clearTimeout(timeout);
-  }, [unreadMessagesCount, pathname]);
+      const baseTitle = currentTitle.replace(/^\(\d+\)\s/, '');
+      const newTitle = unreadMessagesCount > 0 ? `(${unreadMessagesCount}) ${baseTitle}` : baseTitle;
+      
+      if (currentTitle !== newTitle) {
+        document.title = newTitle;
+      }
+    };
+
+    // Atualiza imediatamente
+    updateTitle();
+
+    // Observa mudanças no <head> para caso o Next.js sobrescreva o título (ex: ao navegar ou re-renderizar)
+    const observer = new MutationObserver(() => {
+      updateTitle();
+    });
+
+    const headNode = document.querySelector('head');
+    if (headNode) {
+      observer.observe(headNode, { subtree: true, characterData: true, childList: true });
+    }
+
+    return () => observer.disconnect();
+  }, [unreadMessagesCount]);
 
   useEffect(() => {
     if (!user?.id) return;
