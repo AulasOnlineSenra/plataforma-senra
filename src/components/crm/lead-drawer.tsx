@@ -96,7 +96,7 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
   const [loadingComments, setLoadingComments] = useState(false);
   const [isAddingChecklist, setIsAddingChecklist] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [showDateInput, setShowDateInput] = useState(false);
+  const [alarms, setAlarms] = useState<any[]>([]);
   const [editingChecklistItemId, setEditingChecklistItemId] = useState<string | null>(null);
   const [editingChecklistText, setEditingChecklistText] = useState('');
   const checklistEditInputRef = useRef<HTMLInputElement>(null);
@@ -229,9 +229,16 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
         temperature: lead.temperature || 'frio',
         dueDate: formattedDueDate,
       });
+      let parsedAlarms = [];
+      if (lead.alarms) {
+        try { parsedAlarms = JSON.parse(lead.alarms); } catch(e){}
+      } else if (lead.dueDate) {
+        parsedAlarms = [{ id: Math.random().toString(36).substr(2, 9), date: lead.dueDate, note: '', completed: false }];
+      }
+      setAlarms(parsedAlarms);
+
       setAttachments(lead.attachments ? JSON.parse(lead.attachments) : []);
       setChecklist(lead.checklist ? JSON.parse(lead.checklist) : []);
-      setShowDateInput(!!lead.dueDate);
       loadComments();
     }
   }, [lead]);
@@ -258,6 +265,12 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
         .map(t => t.trim())
         .filter(t => t.length > 0);
       
+      let newDueDate = undefined;
+      if (alarms.length > 0) {
+        const sorted = [...alarms].filter(a => a.date).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        if (sorted.length > 0) newDueDate = sorted[0].date;
+      }
+
       const updateData = {
         name: formData.name,
         email: formData.email || undefined,
@@ -265,7 +278,8 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
         source: formData.source || undefined,
         tags: JSON.stringify(tagsArray),
         temperature: formData.temperature,
-        dueDate: formData.dueDate || undefined,
+        dueDate: newDueDate,
+        alarms: JSON.stringify(alarms),
         description: formData.description,
         attachments: JSON.stringify(attachments),
         checklist: JSON.stringify(checklist),
@@ -433,25 +447,20 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* DATA: Toggle que mostra/esconde o input de data */}
+                  {/* DATA / ALARMES: Adiciona novo alarme */}
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className={cn("border-slate-200 hover:bg-slate-50 gap-2 h-9", showDateInput ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white")}
+                    className={cn("border-slate-200 hover:bg-slate-50 gap-2 h-9", alarms.length > 0 ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white")}
                     onClick={() => {
-                      setShowDateInput(true);
-                      setTimeout(() => dateInputRef.current?.showPicker?.(), 100);
+                      const newAlarm = { id: Math.random().toString(36).substr(2, 9), date: '', note: '', completed: false };
+                      const updated = [...alarms, newAlarm];
+                      setAlarms(updated);
+                      handleSave({ alarms: JSON.stringify(updated) });
                     }}
                   >
-                    <Calendar className="h-4 w-4" /> 
-                    {formData.dueDate 
-                      ? (!isNaN(new Date(formData.dueDate).getTime()) 
-                          ? (() => {
-                              try { return format(new Date(formData.dueDate), 'dd/MM/yyyy HH:mm'); }
-                              catch (e) { return 'Data Inválida'; }
-                            })()
-                          : 'Data Inválida') 
-                      : 'Datas'}
+                    <Clock className="h-4 w-4" /> 
+                    {alarms.length > 0 ? `${alarms.length} Alarme(s)` : 'Alarme'}
                   </Button>
 
                   <Button 
@@ -483,39 +492,58 @@ export default function LeadDrawer({ lead, isOpen, onClose, onSave }: LeadDrawer
                 </div>
               </div>
 
-              {/* Input de Data — visível quando ativado */}
-              {showDateInput && (
-                <div className="space-y-2 bg-blue-50/60 p-3 rounded-xl border border-blue-200">
+              {/* Lista de Alarmes */}
+              {alarms.map((alarm, index) => (
+                <div key={alarm.id} className="space-y-2 bg-blue-50/60 p-3 rounded-xl border border-blue-200">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-semibold text-blue-800 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" /> Data de Entrega / Alarme
+                      <Clock className="h-4 w-4" /> Alarme {index + 1}
                     </label>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-slate-400"
+                      className="h-6 w-6 text-slate-400 hover:text-red-500"
                       onClick={() => {
-                        setShowDateInput(false);
-                        handleChange('dueDate', '');
-                        handleSave({ dueDate: undefined });
+                        const updated = alarms.filter(a => a.id !== alarm.id);
+                        setAlarms(updated);
+                        handleSave({ alarms: JSON.stringify(updated) });
                       }}
                     >
-                      <X className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <input
-                    ref={dateInputRef}
-                    id="date-input"
-                    type="datetime-local"
-                    value={formData.dueDate}
-                    onChange={(e) => {
-                      handleChange('dueDate', e.target.value);
-                      handleSave({ dueDate: e.target.value });
-                    }}
-                    className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      type="datetime-local"
+                      value={alarm.date ? format(new Date(alarm.date), "yyyy-MM-dd'T'HH:mm") : ''}
+                      onChange={(e) => {
+                        let parsedDate = e.target.value;
+                        if (parsedDate) {
+                          // Converte a string local para Date e volta para ISO para o banco
+                          const d = new Date(parsedDate);
+                          if (!isNaN(d.getTime())) {
+                            parsedDate = d.toISOString();
+                          }
+                        }
+                        const updated = alarms.map(a => a.id === alarm.id ? { ...a, date: parsedDate } : a);
+                        setAlarms(updated);
+                        handleSave({ alarms: JSON.stringify(updated) });
+                      }}
+                      className="w-full sm:col-span-1 rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <Input
+                      placeholder="Observações do alarme..."
+                      value={alarm.note || ''}
+                      onChange={(e) => {
+                        const updated = alarms.map(a => a.id === alarm.id ? { ...a, note: e.target.value } : a);
+                        setAlarms(updated);
+                      }}
+                      onBlur={() => handleSave()}
+                      className="w-full sm:col-span-2 border-blue-300 focus-visible:ring-blue-400 bg-white"
+                    />
+                  </div>
                 </div>
-              )}
+              ))}
 
 
 

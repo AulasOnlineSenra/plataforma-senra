@@ -126,6 +126,7 @@ model CrmLead {
   temperature String       @default("frio") // frio, morno, quente, muito-quente
   description String?
   dueDate     DateTime?
+  alarms      String?      @default("[]") // JSON array of { id, date, note, completed }
   attachments String?      @default("[]") // JSON array of links/files
   checklist   String?      @default("[]") // JSON array of { id, text, completed }
   lastContact DateTime?

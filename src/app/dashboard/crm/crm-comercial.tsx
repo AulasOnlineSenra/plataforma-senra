@@ -175,10 +175,16 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
 
   useEffect(() => {
     if (initialBoardId) {
+      localStorage.setItem('lastCrmBoard', initialBoardId);
       loadBoardDetails(initialBoardId);
     } else {
-      setViewMode('boards');
-      setSelectedBoard(null);
+      const savedBoard = localStorage.getItem('lastCrmBoard');
+      if (savedBoard) {
+        router.replace(`/dashboard/crm/comercial/${savedBoard}`);
+      } else {
+        setViewMode('boards');
+        setSelectedBoard(null);
+      }
     }
   }, [initialBoardId]);
 
@@ -546,11 +552,17 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
         <div className="flex items-center gap-2">
           {viewMode === 'kanban' ? (
             <>
-              <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/crm/comercial')} className="shrink-0">
+              <Button variant="ghost" size="icon" onClick={() => {
+                localStorage.removeItem('lastCrmBoard');
+                router.push('/dashboard/crm/comercial');
+              }} className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center text-sm text-slate-500 gap-2 mb-1">
-                <span className="hover:text-slate-900 cursor-pointer" onClick={() => router.push('/dashboard/crm/comercial')}>CRM Comercial</span>
+                <span className="hover:text-slate-900 cursor-pointer" onClick={() => {
+                  localStorage.removeItem('lastCrmBoard');
+                  router.push('/dashboard/crm/comercial');
+                }}>CRM Comercial</span>
                 <ChevronRight className="h-4 w-4" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900 truncate max-w-[300px]">
@@ -570,7 +582,10 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
               <Star className={`h-4 w-4 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
             </Button>
           )}
-          <Button variant="outline" size="sm" className={viewMode === 'boards' ? 'bg-slate-100' : ''} onClick={() => router.push('/dashboard/crm/comercial')}>
+          <Button variant="outline" size="sm" className={viewMode === 'boards' ? 'bg-slate-100' : ''} onClick={() => {
+            localStorage.removeItem('lastCrmBoard');
+            router.push('/dashboard/crm/comercial');
+          }}>
             <LayoutGrid className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" className={viewMode === 'kanban' ? 'bg-slate-100' : ''} onClick={() => {

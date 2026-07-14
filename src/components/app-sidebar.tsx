@@ -10,6 +10,7 @@ import { navItems as defaultNavItems, adminNavItems as defaultAdminNavItems } fr
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getChatMessagesForUser } from '@/app/actions/chat';
 import { getUserById, getUserNotifications } from '@/app/actions/users';
+import { checkTodayAlarms } from '@/app/actions/crm';
 import { safeLocalStorage } from '@/lib/safe-storage';
 import { useUser } from '@/hooks/use-user';
 
@@ -27,6 +28,7 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const [user, setUser] = useState<any | null>(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const [hasCrmAlarm, setHasCrmAlarm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -177,6 +179,18 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
   }, [user?.id]);
 
   useEffect(() => {
+    if (userRole !== 'admin') return;
+    const pollAlarms = async () => {
+      const result = await checkTodayAlarms();
+      setHasCrmAlarm(result.hasTodayAlarm);
+    };
+
+    pollAlarms();
+    const interval = setInterval(pollAlarms, 60000); // Verify every 1 minute
+    return () => clearInterval(interval);
+  }, [userRole]);
+
+  useEffect(() => {
     if (!userRole) return;
     const allowed = [...filteredNavItems, ...filteredAdminNavItems, settingsLink].some((item) =>
       pathname.startsWith(item.href)
@@ -220,6 +234,9 @@ export function AppSidebar({ isMobile = false }: { isMobile?: boolean }) {
         )}
         {isNotifications && hasNewNotifications && (
           <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-brand-yellow" />
+        )}
+        {item.href === '/dashboard/crm' && hasCrmAlarm && (
+          <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-red-500 animate-pulse" />
         )}
       </div>
     );

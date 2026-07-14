@@ -212,13 +212,16 @@ export async function updateCrmLead(id: string, data: {
   tags?: string; 
   temperature?: string; 
   dueDate?: string;
+  alarms?: string;
   description?: string;
   attachments?: string;
   checklist?: string;
 }) {
   try {
     const updateData: any = { ...data };
-    if (data.dueDate) {
+    if (data.dueDate === null) {
+      updateData.dueDate = null;
+    } else if (data.dueDate) {
       updateData.dueDate = new Date(data.dueDate);
     }
     await prisma.crmLead.update({
@@ -319,5 +322,31 @@ export async function deleteCrmChecklistTemplate(id: string) {
   } catch (error) {
     console.error("Erro ao deletar template de checklist:", error);
     return { success: false, error: "Falha ao deletar template." };
+  }
+}
+
+// --- Alarms ---
+
+export async function checkTodayAlarms() {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const leadsWithTodayAlarm = await prisma.crmLead.findFirst({
+      where: {
+        dueDate: {
+          gte: todayStart,
+          lte: todayEnd
+        }
+      }
+    });
+
+    return { hasTodayAlarm: !!leadsWithTodayAlarm };
+  } catch (error) {
+    console.error("Erro ao verificar alarmes de hoje:", error);
+    return { hasTodayAlarm: false };
   }
 }
