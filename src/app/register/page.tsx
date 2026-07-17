@@ -49,10 +49,14 @@ function RegisterContent() {
       : 'student';
   }, [searchParams]);
 
+  const initialRef = useMemo(() => {
+    return searchParams.get('ref') || '';
+  }, [searchParams]);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
+  const [referralCode, setReferralCode] = useState(initialRef);
   const [role, setRole] = useState<PublicRole>(initialRole as PublicRole);
   const { toast } = useToast();
 

@@ -313,6 +313,84 @@ export async function approveTransaction(transactionId: string) {
 
     console.log('[ApproveTransaction] Transação principal concluída - créditos adicionados');
 
+    // =====================================================================
+    // GATILHO DE BÔNUS DE INDICAÇÃO
+    // Verifica se é a 1ª compra aprovada do aluno e se ele foi indicado
+    // =====================================================================
+    try {
+      const student = await prisma.user.findUnique({
+        where: { id: transactionCheck.studentId },
+        select: { referredById: true, name: true },
+      });
+
+      if (student?.referredById) {
+        // Verificar se esta é a PRIMEIRA transação aprovada (excluindo a atual)
+        const previousApprovedCount = await prisma.transaction.count({
+          where: {
+            studentId: transactionCheck.studentId,
+            status: 'COMPROVADO',
+            id: { not: transactionId },
+          },
+        });
+
+        if (previousApprovedCount === 0) {
+          // É a primeira compra aprovada! Calcular o bônus pela quantidade de créditos.
+          const credits = transactionCheck.creditsAdded;
+          const settings = await prisma.appSetting.findUnique({ where: { id: 'global' } });
+
+          let bonusAmount = 0;
+          let tierName = '';
+
+          if (credits >= 36) {
+            bonusAmount = parseFloat(settings?.referralBonusAprovacao || '378.00');
+            tierName = 'Aprovação (36+ aulas)';
+          } else if (credits >= 16) {
+            bonusAmount = parseFloat(settings?.referralBonusEvolucao || '252.00');
+            tierName = 'Evolução (16–35 aulas)';
+          } else {
+            bonusAmount = parseFloat(settings?.referralBonusAvulsa || '49.50');
+            tierName = 'Avulsa (1–15 aulas)';
+          }
+
+          // Notificar o dono do código de indicação sobre o bônus gerado
+          await prisma.notification.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId: student.referredById,
+              type: 'REFERRAL_BONUS',
+              title: '🎉 Bônus de Indicação Gerado!',
+              message: `Seu indicado ${student.name} fez a primeira compra (${tierName}). Bônus de R$ ${bonusAmount.toFixed(2)} gerado e aguarda repasse. Parabéns!`,
+              read: false,
+            },
+          });
+
+          // Notificar admin sobre o bônus a repassar
+          const admins = await prisma.user.findMany({
+            where: { role: 'admin', status: 'active' },
+            select: { id: true },
+          });
+          for (const admin of admins) {
+            await prisma.notification.create({
+              data: {
+                id: crypto.randomUUID(),
+                userId: admin.id,
+                type: 'REFERRAL_BONUS_ADMIN',
+                title: '💸 Bônus de Indicação a Repassar',
+                message: `O aluno ${student.name} fez a 1ª compra (${tierName}). Bônus de R$ ${bonusAmount.toFixed(2)} deve ser repassado ao indicador (ID: ${student.referredById}).`,
+                read: false,
+              },
+            });
+          }
+
+          console.log(`[ApproveTransaction] Bônus de indicação gerado: R$ ${bonusAmount} (${tierName}) para referrer ${student.referredById}`);
+        }
+      }
+    } catch (bonusError) {
+      // Não deixar falha no bônus quebrar a aprovação principal
+      console.error('[ApproveTransaction] Erro ao processar bônus de indicação:', bonusError);
+    }
+    // =====================================================================
+
     // Create bookings OUTSIDE the transaction (to avoid timeout)
     let bookingsCreated = false;
     if (hasBookings && bookingsData.length > 0) {

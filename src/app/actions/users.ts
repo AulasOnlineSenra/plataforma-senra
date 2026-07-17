@@ -725,7 +725,18 @@ export async function getReferralSummary(userId: string) {
         name: true,
         referralCode: true,
         referrals: {
-          select: { id: true, name: true, email: true, createdAt: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            Transaction: {
+              where: { status: 'COMPROVADO' },
+              orderBy: { createdAt: 'asc' },
+              take: 1,
+              select: { planName: true, creditsAdded: true, amountPaid: true, createdAt: true },
+            },
+          },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -738,6 +749,86 @@ export async function getReferralSummary(userId: string) {
     return { success: false, error: "Falha ao buscar indicações." };
   }
 }
+
+// Buscar todos os dados para o painel admin de indicações
+export async function getAdminReferralDashboard() {
+  try {
+    // Busca todos os usuários que têm pelo menos 1 indicado
+    const referrers = await prisma.user.findMany({
+      where: {
+        referrals: { some: {} },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        referralCode: true,
+        createdAt: true,
+        referrals: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            Transaction: {
+              where: { status: 'COMPROVADO' },
+              orderBy: { createdAt: 'asc' },
+              take: 1,
+              select: { planName: true, creditsAdded: true, amountPaid: true, createdAt: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { referrals: { _count: 'desc' } },
+    });
+
+    // Buscar configurações de bônus
+    const settings = await prisma.appSetting.findUnique({ where: { id: 'global' } });
+
+    return {
+      success: true,
+      data: {
+        referrers,
+        bonusSettings: {
+          avulsa: settings?.referralBonusAvulsa || '49.50',
+          evolucao: settings?.referralBonusEvolucao || '252.00',
+          aprovacao: settings?.referralBonusAprovacao || '378.00',
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Erro ao buscar dashboard de indicações:", error);
+    return { success: false, error: "Falha ao buscar dados de indicações." };
+  }
+}
+
+// Salvar novas configurações de bônus
+export async function updateReferralBonusSettings(bonusAvulsa: string, bonusEvolucao: string, bonusAprovacao: string) {
+  try {
+    await prisma.appSetting.upsert({
+      where: { id: 'global' },
+      update: {
+        referralBonusAvulsa: bonusAvulsa,
+        referralBonusEvolucao: bonusEvolucao,
+        referralBonusAprovacao: bonusAprovacao,
+      },
+      create: {
+        id: 'global',
+        referralBonusAvulsa: bonusAvulsa,
+        referralBonusEvolucao: bonusEvolucao,
+        referralBonusAprovacao: bonusAprovacao,
+      },
+    });
+    revalidatePath('/dashboard/indicacoes');
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao atualizar configurações de bônus:", error);
+    return { success: false, error: "Falha ao salvar configurações." };
+  }
+}
+
 
 export async function getReferralRanking() {
   try {

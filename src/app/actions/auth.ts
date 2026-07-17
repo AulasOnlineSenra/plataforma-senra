@@ -9,6 +9,27 @@ import { revalidatePath } from "next/cache";
 
 const ALLOWED_ROLES = new Set(["student", "teacher"]);
 
+// Helper para gerar código de indicação único
+async function generateUniqueReferralCode(name: string) {
+  const parts = name.trim().split(/\s+/);
+  const lastName = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : "ALUNO";
+  // Remove acentos e caracteres especiais
+  const cleanLastName = lastName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+  
+  let isUnique = false;
+  let code = "";
+  
+  while (!isUnique) {
+    const hash = crypto.randomBytes(3).toString("hex").substring(0, 5).toUpperCase();
+    code = `${cleanLastName}-${hash}`;
+    const existing = await prisma.user.findFirst({ where: { referralCode: code } });
+    if (!existing) {
+      isUnique = true;
+    }
+  }
+  return code;
+}
+
 // REGISTRAR USUÁRIO (Com Criptografia)
 export async function registerUser(data: {
   name: string;
@@ -45,6 +66,8 @@ export async function registerUser(data: {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     const normalizedRole = ALLOWED_ROLES.has(data.role) ? data.role : "student";
+    
+    const newReferralCode = await generateUniqueReferralCode(data.name);
 
     const newUser = await prisma.user.create({
       data: {
@@ -54,7 +77,7 @@ export async function registerUser(data: {
         password: hashedPassword, // Salva o hash (ex: $2a$10$wY... ), ninguém nunca saberá a senha real
         role: normalizedRole,
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
-        referralCode: crypto.randomUUID().split('-')[0].toUpperCase(),
+        referralCode: newReferralCode,
         updatedAt: new Date(),
         ...(normalizedRole === "teacher" ? { isValidated: false } : {}),
         status: normalizedRole === "teacher" ? "pending" : "active",
