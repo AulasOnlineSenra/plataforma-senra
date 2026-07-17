@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { triggerAiAutomation } from "@/lib/ai/automation-engine";
 import bcrypt from "bcryptjs";
+import { generateUniqueReferralCode } from "@/app/actions/auth";
 
 // Buscar todos os alunos
 export async function getStudents() {
@@ -395,6 +396,7 @@ export async function createTeacher(data: {
   try {
     const normalizedEmail = data.email.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    const newReferralCode = await generateUniqueReferralCode(data.name);
 
     const newTeacher = await prisma.user.create({
       data: {
@@ -406,6 +408,7 @@ export async function createTeacher(data: {
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=FFC107&textColor=000000`,
         credits: 0,
         subject: data.subject,
+        referralCode: newReferralCode,
       },
     });
     revalidatePath("/dashboard/teachers");
@@ -505,6 +508,7 @@ export async function createStudent(data: {
   try {
     const normalizedEmail = data.email.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    const newReferralCode = await generateUniqueReferralCode(data.name);
 
     const newStudent = await prisma.user.create({
       data: {
@@ -515,6 +519,7 @@ export async function createStudent(data: {
         status: "active",
         avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}&backgroundColor=03A9F4&textColor=000000`,
         credits: 0,
+        referralCode: newReferralCode,
       },
     });
     revalidatePath("/dashboard/students");

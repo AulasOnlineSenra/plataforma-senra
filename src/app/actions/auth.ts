@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 const ALLOWED_ROLES = new Set(["student", "teacher"]);
 
 // Helper para gerar código de indicação único
-async function generateUniqueReferralCode(name: string) {
+export async function generateUniqueReferralCode(name: string) {
   const parts = name.trim().split(/\s+/);
   const lastName = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : "ALUNO";
   // Remove acentos e caracteres especiais
