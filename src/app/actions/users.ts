@@ -724,7 +724,7 @@ export async function getReferralSummary(userId: string) {
         id: true,
         name: true,
         referralCode: true,
-        referrals: {
+        other_User: {
           select: {
             id: true,
             name: true,
@@ -743,7 +743,9 @@ export async function getReferralSummary(userId: string) {
     });
 
     if (!user) return { success: false, error: "Usuario não encontrado." };
-    return { success: true, data: user };
+    // Mapeia 'other_User' para 'referrals' para manter compatibilidade com a UI
+    const data = user ? { ...user, referrals: user.other_User } : null;
+    return { success: true, data };
   } catch (error) {
     console.error("Erro ao buscar resumo de indicacoes:", error);
     return { success: false, error: "Falha ao buscar indicações." };
@@ -756,7 +758,7 @@ export async function getAdminReferralDashboard() {
     // Busca todos os usuários que têm pelo menos 1 indicado
     const referrers = await prisma.user.findMany({
       where: {
-        referrals: { some: {} },
+        other_User: { some: {} },
       },
       select: {
         id: true,
@@ -765,7 +767,7 @@ export async function getAdminReferralDashboard() {
         role: true,
         referralCode: true,
         createdAt: true,
-        referrals: {
+        other_User: {
           select: {
             id: true,
             name: true,
@@ -781,16 +783,19 @@ export async function getAdminReferralDashboard() {
           orderBy: { createdAt: 'desc' },
         },
       },
-      orderBy: { referrals: { _count: 'desc' } },
+      orderBy: { other_User: { _count: 'desc' } },
     });
 
     // Buscar configurações de bônus
     const settings = await prisma.appSetting.findUnique({ where: { id: 'global' } });
 
+    // Mapeia 'other_User' para 'referrals' para manter compatibilidade com a UI
+    const referrersNormalized = referrers.map((r) => ({ ...r, referrals: r.other_User }));
+
     return {
       success: true,
       data: {
-        referrers,
+        referrers: referrersNormalized,
         bonusSettings: {
           avulsa: settings?.referralBonusAvulsa || '49.50',
           evolucao: settings?.referralBonusEvolucao || '252.00',
@@ -841,9 +846,9 @@ export async function getReferralRanking() {
         referralCode: true,
         credits: true,
         createdAt: true,
-        _count: { select: { referrals: true } },
+        _count: { select: { other_User: true } },
       },
-      orderBy: [{ referrals: { _count: "desc" } }, { createdAt: "asc" }],
+      orderBy: [{ other_User: { _count: "desc" } }, { createdAt: "asc" }],
       take: 50,
     });
 
