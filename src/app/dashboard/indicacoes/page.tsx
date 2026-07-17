@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { getReferralSummary, getAdminReferralDashboard, updateReferralBonusSettings } from '@/app/actions/users';
 import { format } from 'date-fns';
@@ -459,34 +460,52 @@ function UserIndicacoesPanel() {
           </CardTitle>
           <CardDescription>Lista de cadastros que usaram seu codigo.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 p-6">
-          {!summary?.referrals?.length && <p className="text-sm text-slate-500">Nenhuma indicacao registrada ainda.</p>}
-          {summary?.referrals?.map((item) => {
-            const firstPurchase = item.Transaction?.[0];
-            const tier = firstPurchase ? getTier(firstPurchase.creditsAdded) : null;
-            return (
-              <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-slate-900">{item.name}</p>
-                    <p className="text-sm text-slate-600">{item.email}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Cadastro em {format(new Date(item.createdAt), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}
-                    </p>
-                  </div>
-                  {tier && firstPurchase ? (
-                    <Badge variant="outline" className={`mt-1 shrink-0 rounded-full text-xs ${tier.color}`}>
-                      {tier.label} · {firstPurchase.creditsAdded} aulas
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="mt-1 shrink-0 rounded-full border-slate-200 bg-slate-100 text-xs text-slate-500">
-                      Sem compra
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <CardContent className="p-0">
+          {!summary?.referrals?.length ? (
+            <div className="p-6">
+              <p className="text-sm text-slate-500">Nenhuma indicacao registrada ainda.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow>
+                  <TableHead className="w-[50%]">Aluno</TableHead>
+                  <TableHead>Data de Cadastro</TableHead>
+                  <TableHead className="text-right">Situação / Pacote</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary.referrals.map((item) => {
+                  const firstPurchase = item.Transaction?.[0];
+                  const tier = firstPurchase ? getTier(firstPurchase.creditsAdded) : null;
+                  return (
+                    <TableRow key={item.id} className="hover:bg-slate-50/50">
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-slate-900">{item.name}</p>
+                          <p className="text-xs text-slate-500">{item.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {format(new Date(item.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {tier && firstPurchase ? (
+                          <Badge variant="outline" className={`rounded-full text-xs ${tier.color}`}>
+                            {tier.label} · {firstPurchase.creditsAdded} aulas
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-100 text-xs text-slate-500">
+                            Sem compra
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
