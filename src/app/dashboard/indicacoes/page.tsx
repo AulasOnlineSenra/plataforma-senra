@@ -442,7 +442,7 @@ function UserIndicacoesPanel() {
             Programa de Indicações
           </CardTitle>
           <CardDescription className="text-slate-300">
-            Cada novo aluno com seu codigo gera +1 credito na sua conta.
+            Indique alunos e receba bônus em dinheiro sempre que eles contratarem pacotes de aula.
           </CardDescription>
         </CardHeader>
         <CardContent>
