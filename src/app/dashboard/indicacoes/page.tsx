@@ -10,8 +10,21 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { getReferralSummary, getAdminReferralDashboard, updateReferralBonusSettings } from '@/app/actions/users';
-import { format } from 'date-fns';
+import { format, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+function getPayoutDate(transactionDate: Date) {
+  const paymentDay = typeof window !== 'undefined' ? localStorage.getItem('teacherPaymentDay') || 'friday' : 'friday';
+  const dayMap = {
+    monday: nextMonday,
+    tuesday: nextTuesday,
+    wednesday: nextWednesday,
+    thursday: nextThursday,
+    friday: nextFriday,
+  };
+  const getNext = dayMap[paymentDay as keyof typeof dayMap] || nextFriday;
+  return getNext(transactionDate);
+}
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 type FirstPurchase = {
@@ -473,10 +486,12 @@ function UserIndicacoesPanel() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="w-[40%]">Aluno</TableHead>
-                  <TableHead>Data de Cadastro</TableHead>
+                  <TableHead className="w-[30%]">Aluno</TableHead>
+                  <TableHead>Cadastro</TableHead>
                   <TableHead>Situação / Pacote</TableHead>
+                  <TableHead>Contratação</TableHead>
                   <TableHead className="text-right">Bônus</TableHead>
+                  <TableHead className="text-right">Pagamento</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -505,10 +520,22 @@ function UserIndicacoesPanel() {
                           </Badge>
                         )}
                       </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {firstPurchase ? format(new Date(firstPurchase.createdAt), "dd/MM/yyyy", { locale: ptBR }) : '—'}
+                      </TableCell>
                       <TableCell className="text-right">
                         {tier && firstPurchase ? (
                           <span className="font-bold text-amber-600">
                             {currencyFormatter.format(getBonusForTier(firstPurchase.creditsAdded, bonusSettings))}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-slate-400">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {firstPurchase ? (
+                          <span className="font-medium text-slate-600 text-sm">
+                            {format(getPayoutDate(new Date(firstPurchase.createdAt)), "dd/MM/yyyy", { locale: ptBR })}
                           </span>
                         ) : (
                           <span className="text-sm text-slate-400">—</span>
