@@ -748,9 +748,18 @@ export async function getReferralSummary(userId: string) {
     });
 
     if (!user) return { success: false, error: "Usuario não encontrado." };
+    
+    // Buscar configurações de bônus
+    const settings = await prisma.appSetting.findUnique({ where: { id: 'global' } });
+    const bonusSettings = {
+      avulsa: settings?.referralBonusAvulsa || '49.50',
+      evolucao: settings?.referralBonusEvolucao || '252.00',
+      aprovacao: settings?.referralBonusAprovacao || '378.00',
+    };
+
     // Mapeia 'other_User' para 'referrals' para manter compatibilidade com a UI
     const data = user ? { ...user, referrals: user.other_User } : null;
-    return { success: true, data };
+    return { success: true, data, bonusSettings };
   } catch (error) {
     console.error("Erro ao buscar resumo de indicacoes:", error);
     return { success: false, error: "Falha ao buscar indicações." };

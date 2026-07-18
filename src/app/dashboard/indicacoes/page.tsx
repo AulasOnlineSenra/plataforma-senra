@@ -388,6 +388,7 @@ function AdminIndicacoesPanel() {
 function UserIndicacoesPanel() {
   const { toast } = useToast();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
+  const [bonusSettings, setBonusSettings] = useState<BonusSettings>({ avulsa: '49.50', evolucao: '252.00', aprovacao: '378.00' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -397,6 +398,9 @@ function UserIndicacoesPanel() {
       const result = await getReferralSummary(userId);
       if (result.success && result.data) {
         setSummary(result.data as ReferralSummary);
+        if (result.bonusSettings) {
+          setBonusSettings(result.bonusSettings);
+        }
       }
       setLoading(false);
     };
@@ -469,9 +473,10 @@ function UserIndicacoesPanel() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="w-[50%]">Aluno</TableHead>
+                  <TableHead className="w-[40%]">Aluno</TableHead>
                   <TableHead>Data de Cadastro</TableHead>
-                  <TableHead className="text-right">Situação / Pacote</TableHead>
+                  <TableHead>Situação / Pacote</TableHead>
+                  <TableHead className="text-right">Bônus</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -489,7 +494,7 @@ function UserIndicacoesPanel() {
                       <TableCell className="text-sm text-slate-600">
                         {format(new Date(item.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>
                         {tier && firstPurchase ? (
                           <Badge variant="outline" className={`rounded-full text-xs ${tier.color}`}>
                             {tier.label} · {firstPurchase.creditsAdded} aulas
@@ -498,6 +503,15 @@ function UserIndicacoesPanel() {
                           <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-100 text-xs text-slate-500">
                             Sem compra
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {tier && firstPurchase ? (
+                          <span className="font-bold text-amber-600">
+                            {currencyFormatter.format(getBonusForTier(firstPurchase.creditsAdded, bonusSettings))}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-slate-400">—</span>
                         )}
                       </TableCell>
                     </TableRow>
