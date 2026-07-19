@@ -134,8 +134,8 @@ export async function GET(request: Request) {
         }
       });
 
-      totalLessonsCreated += lessonsToCreateCount;
-      console.log(`[CRON] Agendadas ${lessonsToCreateCount} aulas para ${student.email}`);
+      totalLessonsCreated += finalBookingsToCreate.length;
+      console.log(`[CRON] Agendadas ${finalBookingsToCreate.length} aulas para ${student.email}`);
     }
 
     return NextResponse.json({ 
