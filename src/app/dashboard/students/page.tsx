@@ -83,6 +83,7 @@ type StudentRow = {
   lastAccess?: string | Date | null;
   updatedAt?: string | Date | null;
   failedLoginAttempts?: number | null;
+  credits?: number | null;
 };
 
 type LessonRow = {
@@ -163,6 +164,11 @@ function StudentList({
               <TableHead className="font-semibold text-slate-500">
                 Último Acesso
               </TableHead>
+              {isAdmin && (
+                <TableHead className="text-center font-semibold text-slate-500">
+                  Créditos
+                </TableHead>
+              )}
               <TableHead className="text-center font-semibold text-slate-500">
                 Aulas Agendadas
               </TableHead>
@@ -224,6 +230,13 @@ function StudentList({
                   <TableCell className="text-slate-400 text-sm py-4">
                     {formatLastAccess(student)}
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-center py-4">
+                      <span className="inline-flex items-center justify-center rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 font-bold text-sm border border-emerald-100 min-w-[3rem]">
+                        {student.credits ?? 0}
+                      </span>
+                    </TableCell>
+                  )}
                   <TableCell className="text-center py-4">
                     <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-amber-50 px-4 py-1 text-amber-600 font-bold text-sm border border-amber-100">
                       <CalendarCheck className="h-4 w-4" />
@@ -304,7 +317,7 @@ function StudentList({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 6 : 5} className="h-32 text-center">
+                <TableCell colSpan={isAdmin ? 7 : 5} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-slate-400">
                     <Users className="h-8 w-8 mb-2 opacity-50" />
                     <p className="font-medium">Nenhum aluno encontrado.</p>
