@@ -806,71 +806,28 @@ export default function AdminStudentsPage() {
                 required
               />
             </div>
-          <DialogFooter className="mt-6 gap-3 sm:gap-0">
-            <Button
-              variant="ghost"
-              onClick={() => setChatContactId(null)}
-              className="rounded-xl font-bold text-slate-500 hover:text-slate-700"
-            >
-              Fechar
-            </Button>
-            <Button
-              className="h-11 rounded-xl bg-brand-yellow px-8 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90"
-              onClick={() => router.push(`/dashboard/chat?user=${chatContactId}`)}
-            >
-              Abrir no Chat
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL REDEFINIR SENHA */}
-      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl border border-slate-100 bg-white shadow-xl p-8">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <KeyRound className="h-6 w-6 text-amber-500" /> Redefinir Senha
-            </DialogTitle>
-            <DialogDescription className="text-slate-500">
-              Crie uma nova senha para o acesso de <strong className="text-slate-700">{studentToReset?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleResetPasswordSubmit} className="grid gap-5 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="reset-password" className="font-bold text-slate-700">
-                Nova Senha
-              </Label>
-              <Input
-                id="reset-password"
-                type="text"
-                value={resetPasswordValue}
-                onChange={(e) => setResetPasswordValue(e.target.value)}
-                placeholder="Digite a nova senha..."
-                className="h-12 rounded-xl border-slate-200 focus-visible:ring-brand-yellow"
-                required
-              />
-            </div>
             <DialogFooter className="mt-6 gap-3 sm:gap-0">
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setIsResetPasswordOpen(false)}
+                onClick={() => setIsCreateOpen(false)}
                 className="rounded-xl font-bold text-slate-500 hover:text-slate-700"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isResetting || !resetPasswordValue}
-                className="h-11 rounded-xl bg-amber-500 px-8 font-bold text-white shadow-sm hover:bg-amber-600"
+                disabled={isSubmitting}
+                className="h-11 rounded-xl bg-brand-yellow px-8 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90"
               >
-                {isResetting ? "Redefinindo..." : "Redefinir Senha"}
+                {isSubmitting ? "Salvando..." : "Cadastrar"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-          {/* MODAL ADICIONAR CRÉDITOS (CHECKOUT) */}
+
+      {/* MODAL ADICIONAR CRÉDITOS (CHECKOUT) */}
       <Dialog
         open={isAddCreditsOpen}
         onOpenChange={(open) => {
