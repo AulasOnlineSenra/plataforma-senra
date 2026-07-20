@@ -80,6 +80,7 @@ export default function PoliticaDePrivacidadePage() {
                   <li>Páginas visitadas</li>
                   <li>Tempo de navegação</li>
                   <li>Localização aproximada (Estado/UF)</li>
+                  <li>Origem do tráfego (links ou campanhas que trouxeram você ao site)</li>
                   <li>Cookies e tecnologias semelhantes</li>
                 </ul>
               </div>
@@ -101,6 +102,7 @@ export default function PoliticaDePrivacidadePage() {
                   <li>Emissão de documentos fiscais</li>
                   <li>Melhorias na plataforma</li>
                   <li>Análise estatística e de tráfego por região (Mapa de Calor)</li>
+                  <li>Mensuração de performance de campanhas de marketing e anúncios</li>
                   <li>Comunicação comercial e suporte</li>
                   <li>Cumprimento de obrigações legais</li>
                 </ul>

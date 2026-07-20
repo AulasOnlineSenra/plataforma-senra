@@ -30,6 +30,29 @@ export function AnalyticsTracker() {
         }
       } catch (e) {}
 
+      let source = 'Direto/Orgânico';
+      try {
+        let savedSource = sessionStorage.getItem('senra_traffic_source');
+        if (savedSource) {
+          source = savedSource;
+        } else {
+          const params = new URLSearchParams(window.location.search);
+          const utmSource = params.get('utm_source');
+          
+          if (utmSource) {
+            source = `utm_source=${utmSource}`;
+          } else if (document.referrer && !document.referrer.includes(window.location.hostname)) {
+            try {
+              const url = new URL(document.referrer);
+              source = url.hostname;
+            } catch (e) {
+              source = document.referrer;
+            }
+          }
+          sessionStorage.setItem('senra_traffic_source', source);
+        }
+      } catch (e) {}
+
       // Send the tracking data
       fetch('/api/analytics', {
         method: 'POST',
@@ -41,6 +64,7 @@ export function AnalyticsTracker() {
           userId,
           device: isMobile ? 'Mobile' : 'Desktop',
           timeSpent,
+          source,
         }),
         keepalive: true, // ensures the request fires even if page unloads
       }).catch(err => console.error('Error tracking page:', err));

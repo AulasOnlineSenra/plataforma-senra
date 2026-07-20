@@ -145,6 +145,7 @@ export async function getHeatmapData(periodDays: number) {
 
     // Aggregate data by URL
     const urlStats: Record<string, { views: number; totalTime: number }> = {};
+    const sourceCounts: Record<string, number> = {};
     let mobileCount = 0;
     let desktopCount = 0;
 
@@ -162,7 +163,16 @@ export async function getHeatmapData(periodDays: number) {
       } else {
         desktopCount += 1;
       }
+
+      // source stats
+      const src = v.source && v.source.trim() !== '' ? v.source : 'Direto/Orgânico';
+      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
     });
+
+    const sourcesDistribution = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
     const pagesData = Object.keys(urlStats).map((url) => {
       const stat = urlStats[url];
@@ -211,7 +221,7 @@ export async function getHeatmapData(periodDays: number) {
         .sort((a, b) => b.count - a.count);
     }
 
-    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits, uniqueUsers: uniqueUsers, states: statesDistribution } };
+    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits, uniqueUsers: uniqueUsers, states: statesDistribution, sources: sourcesDistribution } };
   } catch (error: any) {
     console.error('Error fetching heatmap data:', error);
     return { success: false, error: error.message || 'Falha ao carregar analytics' };

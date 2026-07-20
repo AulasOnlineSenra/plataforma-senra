@@ -30,6 +30,7 @@ export default function HeatmapContent() {
     devices: any[];
     monthly: any[];
     states: any[];
+    sources: any[];
     totalViews: number;
     uniqueUsers: number;
   }>({
@@ -40,6 +41,7 @@ export default function HeatmapContent() {
     ],
     monthly: [{ name: 'Atual', usuarios: 0, pageviews: 0 }],
     states: [],
+    sources: [],
     totalViews: 0,
     uniqueUsers: 0,
   });
@@ -249,8 +251,8 @@ export default function HeatmapContent() {
         </Card>
       </div>
 
-      {/* Ranking and States */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Ranking, States and Sources */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pages Ranking */}
         <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm overflow-hidden">
           <CardHeader className="border-b border-slate-100 bg-white">
@@ -353,6 +355,55 @@ export default function HeatmapContent() {
             ) : (
               <div className="p-8 text-center text-slate-400 text-sm">
                 Nenhum dado de estado encontrado.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sources Distribution */}
+        <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <CardHeader className="border-b border-slate-100 bg-white">
+            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              Origem do Tráfego
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 p-0 overflow-auto max-h-[400px]">
+            {loading ? (
+              <div className="p-8 text-center text-slate-400">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                Carregando dados...
+              </div>
+            ) : analyticsData.sources && analyticsData.sources.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {analyticsData.sources.map((src, index) => {
+                  const maxCount = analyticsData.sources[0].count;
+                  const percent = (src.count / maxCount) * 100;
+                  
+                  let displayName = src.source;
+                  if (displayName.startsWith('utm_source=')) {
+                    displayName = 'Campanha: ' + displayName.replace('utm_source=', '');
+                  }
+
+                  return (
+                    <div key={index} className="p-4 flex flex-col gap-2 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-700 text-sm truncate max-w-[200px]" title={src.source}>{displayName}</span>
+                        <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">{src.count} un.</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-400 rounded-full transition-all duration-700"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-400 text-sm">
+                Nenhum dado de origem encontrado.
               </div>
             )}
           </CardContent>

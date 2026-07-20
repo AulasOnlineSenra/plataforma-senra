@@ -409,6 +409,7 @@ model PageVisit {
   url       String
   userId    String?
   device    String   @default("Desktop")
+  source    String?
   timeSpent Int      @default(0)
   createdAt DateTime @default(now())
 
