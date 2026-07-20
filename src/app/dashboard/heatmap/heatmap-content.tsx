@@ -25,10 +25,10 @@ import { getHeatmapData } from '@/app/actions/analytics';
 export default function HeatmapContent() {
   const [periodo, setPeriodo] = useState('30d');
   const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<{
     pages: any[];
     devices: any[];
     monthly: any[];
+    states: any[];
     totalViews: number;
     uniqueUsers: number;
   }>({
@@ -38,6 +38,7 @@ export default function HeatmapContent() {
       { name: 'Desktop', value: 100, color: '#10b981' },
     ],
     monthly: [{ name: 'Atual', usuarios: 0, pageviews: 0 }],
+    states: [],
     totalViews: 0,
     uniqueUsers: 0,
   });
@@ -247,69 +248,115 @@ export default function HeatmapContent() {
         </Card>
       </div>
 
-      {/* Pages Ranking */}
-      <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-slate-100 bg-white">
-          <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <MousePointerClick className="h-5 w-5 text-indigo-500" />
-            Páginas Mais Acessadas
-          </CardTitle>
-        </CardHeader>
-        <div className="overflow-auto max-h-[400px] relative">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50">Página (URL)</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Visualizações</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Tempo Médio</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={3} className="p-8 text-center text-slate-400">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                    Carregando dados...
-                  </td>
+      {/* Ranking and States */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pages Ranking */}
+        <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 bg-white">
+            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <MousePointerClick className="h-5 w-5 text-indigo-500" />
+              Páginas Mais Acessadas
+            </CardTitle>
+          </CardHeader>
+          <div className="overflow-auto max-h-[400px] relative">
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50">Página (URL)</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Visualizações</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Tempo Médio</th>
                 </tr>
-              ) : analyticsData.pages.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="p-8 text-center text-slate-400">
-                    Ainda não há dados coletados para este período. Navegue pela plataforma para começar a registrar!
-                  </td>
-                </tr>
-              ) : (
-                analyticsData.pages.map((page, index) => {
-                  const maxViews = analyticsData.pages[0].views;
-                  const percent = (page.views / maxViews) * 100;
-                  return (
-                    <tr key={index} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="p-4 font-medium text-slate-800 text-sm">
-                        <div className="flex items-center gap-3">
-                          <span className="text-slate-400 w-5 font-mono text-xs">{index + 1}.</span>
-                          {page.url}
-                        </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <span className="font-bold text-slate-700">{page.views.toLocaleString()}</span>
-                          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-amber-400 rounded-full group-hover:bg-amber-500 transition-colors"
-                              style={{ width: `${percent}%` }}
-                            />
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-slate-400">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      Carregando dados...
+                    </td>
+                  </tr>
+                ) : analyticsData.pages.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-slate-400">
+                      Ainda não há dados coletados para este período. Navegue pela plataforma para começar a registrar!
+                    </td>
+                  </tr>
+                ) : (
+                  analyticsData.pages.map((page, index) => {
+                    const maxViews = analyticsData.pages[0].views;
+                    const percent = (page.views / maxViews) * 100;
+                    return (
+                      <tr key={index} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="p-4 font-medium text-slate-800 text-sm">
+                          <div className="flex items-center gap-3">
+                            <span className="text-slate-400 w-5 font-mono text-xs">{index + 1}.</span>
+                            {page.url}
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right font-medium text-slate-600 text-sm">{page.time}</td>
-                    </tr>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            <span className="font-bold text-slate-700">{page.views.toLocaleString()}</span>
+                            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                              <div
+                                className="h-full bg-amber-400 rounded-full group-hover:bg-amber-500 transition-colors"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right font-medium text-slate-600 text-sm">{page.time}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* States Distribution */}
+        <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <CardHeader className="border-b border-slate-100 bg-white">
+            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Map className="h-5 w-5 text-emerald-500" />
+              Acessos por Estado (UF)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 p-0 overflow-auto max-h-[400px]">
+            {loading ? (
+              <div className="p-8 text-center text-slate-400">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                Carregando dados...
+              </div>
+            ) : analyticsData.states && analyticsData.states.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {analyticsData.states.map((st, index) => {
+                  const maxCount = analyticsData.states[0].count;
+                  const percent = (st.count / maxCount) * 100;
+                  return (
+                    <div key={index} className="p-4 flex flex-col gap-2 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-700 text-sm">{st.state}</span>
+                        <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">{st.count} un.</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-400 rounded-full transition-all duration-700"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-400 text-sm">
+                Nenhum dado de estado encontrado.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
     </div>
   );

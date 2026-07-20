@@ -194,7 +194,24 @@ export async function getHeatmapData(periodDays: number) {
       { name: 'Atual', usuarios: uniqueUsers, pageviews: totalVisits }
     ];
 
-    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits, uniqueUsers: uniqueUsers } };
+    const uniqueUserIds = [...new Set(visits.map(v => v.userId).filter(Boolean))] as string[];
+    let statesDistribution: { state: string, count: number }[] = [];
+    if (uniqueUserIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { id: { in: uniqueUserIds } },
+        select: { state: true }
+      });
+      const stateCounts: Record<string, number> = {};
+      users.forEach(u => {
+        const state = u.state && u.state.trim() !== '' ? u.state : 'Não Informado';
+        stateCounts[state] = (stateCounts[state] || 0) + 1;
+      });
+      statesDistribution = Object.entries(stateCounts)
+        .map(([state, count]) => ({ state, count }))
+        .sort((a, b) => b.count - a.count);
+    }
+
+    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits, uniqueUsers: uniqueUsers, states: statesDistribution } };
   } catch (error: any) {
     console.error('Error fetching heatmap data:', error);
     return { success: false, error: error.message || 'Falha ao carregar analytics' };

@@ -19,7 +19,7 @@ export default function PoliticaDePrivacidadePage() {
             Política de Privacidade
           </h1>
           <p className="text-slate-300 text-lg">
-            Última atualização: 25 de abril de 2026
+            Última atualização: 20 de julho de 2026
           </p>
         </div>
       </div>
@@ -79,6 +79,7 @@ export default function PoliticaDePrivacidadePage() {
                   <li>Tipo de dispositivo</li>
                   <li>Páginas visitadas</li>
                   <li>Tempo de navegação</li>
+                  <li>Localização aproximada (Estado/UF)</li>
                   <li>Cookies e tecnologias semelhantes</li>
                 </ul>
               </div>
@@ -99,6 +100,7 @@ export default function PoliticaDePrivacidadePage() {
                   <li>Atendimento ao cliente</li>
                   <li>Emissão de documentos fiscais</li>
                   <li>Melhorias na plataforma</li>
+                  <li>Análise estatística e de tráfego por região (Mapa de Calor)</li>
                   <li>Comunicação comercial e suporte</li>
                   <li>Cumprimento de obrigações legais</li>
                 </ul>
