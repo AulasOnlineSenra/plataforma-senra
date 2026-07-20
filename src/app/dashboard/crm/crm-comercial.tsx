@@ -175,18 +175,12 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
 
   useEffect(() => {
     if (initialBoardId) {
-      localStorage.setItem('lastCrmBoard', initialBoardId);
       loadBoardDetails(initialBoardId);
     } else {
-      const savedBoard = localStorage.getItem('lastCrmBoard');
-      if (savedBoard) {
-        router.replace(`/dashboard/crm/comercial/${savedBoard}`);
-      } else {
-        setViewMode('boards');
-        setSelectedBoard(null);
-      }
+      setViewMode('boards');
+      setSelectedBoard(null);
     }
-  }, [initialBoardId]);
+  }, [initialBoardId, router]);
 
   useEffect(() => {
     if (addingLeadToColumn && newLeadInputRef.current) {
@@ -553,14 +547,12 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
           {viewMode === 'kanban' ? (
             <>
               <Button variant="ghost" size="icon" onClick={() => {
-                localStorage.removeItem('lastCrmBoard');
                 router.push('/dashboard/crm/comercial');
               }} className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center text-sm text-slate-500 gap-2 mb-1">
                 <span className="hover:text-slate-900 cursor-pointer" onClick={() => {
-                  localStorage.removeItem('lastCrmBoard');
                   router.push('/dashboard/crm/comercial');
                 }}>CRM Comercial</span>
                 <ChevronRight className="h-4 w-4" />
@@ -583,7 +575,6 @@ export default function CrmComercial({ initialBoardId }: { initialBoardId?: stri
             </Button>
           )}
           <Button variant="outline" size="sm" className={viewMode === 'boards' ? 'bg-slate-100' : ''} onClick={() => {
-            localStorage.removeItem('lastCrmBoard');
             router.push('/dashboard/crm/comercial');
           }}>
             <LayoutGrid className="h-4 w-4" />

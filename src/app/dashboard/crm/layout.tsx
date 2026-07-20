@@ -17,6 +17,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   const currentType = pathname.includes('/comercial') ? 'comercial' : 'administrativo';
 
   const handleTypeChange = (value: string) => {
+    localStorage.setItem('lastCrmType', value);
     if (value === 'comercial') {
       router.push('/dashboard/crm/comercial');
     } else {

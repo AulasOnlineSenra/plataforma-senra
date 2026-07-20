@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getCrmUsers } from '@/app/actions/users';
@@ -22,6 +23,8 @@ export default function CrmPage() {
   const [users, setUsers] = useState<CrmUser[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const router = useRouter();
+
   const loadUsers = async () => {
     const result = await getCrmUsers();
     if (result.success && result.data) {
@@ -31,8 +34,13 @@ export default function CrmPage() {
   };
 
   useEffect(() => {
+    const lastType = localStorage.getItem('lastCrmType');
+    if (lastType === 'comercial') {
+      router.replace('/dashboard/crm/comercial');
+      return;
+    }
     loadUsers();
-  }, []);
+  }, [router]);
 
   const alunos = users.filter((u) => u.role === 'aluno' || u.role === 'student' || u.role === 'STUDENT' || u.role === 'ALUNO');
   const professores = users.filter((u) => u.role === 'professor' || u.role === 'teacher' || u.role === 'TEACHER' || u.role === 'PROFESSOR');
