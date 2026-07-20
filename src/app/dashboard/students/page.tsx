@@ -122,6 +122,7 @@ function StudentList({
   onDeleteStudent,
   onToggleTagEnem,
   onUnlockStudent,
+  onResetPassword,
   onOpenChat,
   isAdmin,
 }: {
