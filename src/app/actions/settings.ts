@@ -7,6 +7,7 @@ type SettingsInput = {
   whatsapp: string;
   classValue: string;
   referralBonus: string;
+  referralDiscountPercent?: string;
   pixKey?: string;
   pixKeyType?: string;
   geminiApiKey?: string;
@@ -49,8 +50,9 @@ export async function updateSettings(data: SettingsInput) {
     const classValue = data.classValue?.trim() ? data.classValue.trim() : '50.00';
     const whatsapp = data.whatsapp?.trim() ? data.whatsapp.trim() : '';
     const referralBonus = data.referralBonus?.trim() ? data.referralBonus.trim() : '1';
+    const referralDiscountPercent = data.referralDiscountPercent?.trim() ? data.referralDiscountPercent.trim() : '0';
     
-    console.log('[updateSettings] Valores a serem salvos:', { classValue, whatsapp, referralBonus });
+    console.log('[updateSettings] Valores a serem salvos:', { classValue, whatsapp, referralBonus, referralDiscountPercent });
     
     const now = new Date();
     
@@ -61,6 +63,7 @@ export async function updateSettings(data: SettingsInput) {
         whatsapp: whatsapp,
         classValue: classValue,
         referralBonus: referralBonus,
+        referralDiscountPercent: referralDiscountPercent,
         pixKey: data.pixKey?.trim() || '',
         pixKeyType: data.pixKeyType?.trim() || 'cnpj',
         geminiApiKey: data.geminiApiKey?.trim() || null,
@@ -81,6 +84,7 @@ export async function updateSettings(data: SettingsInput) {
         whatsapp: whatsapp,
         classValue: classValue,
         referralBonus: referralBonus,
+        referralDiscountPercent: referralDiscountPercent,
         pixKey: data.pixKey?.trim() || '',
         pixKeyType: data.pixKeyType?.trim() || 'cnpj',
         geminiApiKey: data.geminiApiKey?.trim() || null,

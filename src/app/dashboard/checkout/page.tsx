@@ -58,6 +58,8 @@ type StudentInfo = {
   credits: number;
   cpf: string | null;
   state: string | null;
+  referredById: string | null;
+  usedReferralDiscount: boolean;
 };
 
 function CheckoutContent() {
@@ -84,6 +86,7 @@ function CheckoutContent() {
   const [isProofDialogOpen, setIsProofDialogOpen] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [referralDiscountPercent, setReferralDiscountPercent] = useState(0);
 
   // Transaction view mode
   const [viewTx, setViewTx] = useState<any>(null);
@@ -128,6 +131,7 @@ function CheckoutContent() {
         setPixKey((settingsResult.data as any).pixKey || '27394788000114');
         setPixKeyType((settingsResult.data as any).pixKeyType || 'cnpj');
         setWhatsappNumber((settingsResult.data.whatsapp || '').replace(/\D/g, ''));
+        setReferralDiscountPercent(parseFloat((settingsResult.data as any).referralDiscountPercent || '0'));
       }
 
       if (storedUserId) {
@@ -140,6 +144,8 @@ function CheckoutContent() {
             credits: userResult.data.credits,
             cpf: userResult.data.cpf || null,
             state: userResult.data.state || null,
+            referredById: (userResult.data as any).referredById || null,
+            usedReferralDiscount: (userResult.data as any).usedReferralDiscount || false,
           });
         }
       }
@@ -182,17 +188,29 @@ function CheckoutContent() {
 
   const priceCalc = useMemo(() => {
     if (missingCredits <= 0 || tiers.length === 0) {
-      return { total: 0, pricePerClass: 0, credits: 0, tierName: '' };
+      return { total: 0, pricePerClass: 0, credits: 0, tierName: '', originalTotal: 0, discountAmount: 0 };
     }
     const tier = getPriceTier(missingCredits);
     const pricePerClass = tier?.pricePerClass ?? tiers[0]?.pricePerClass ?? 0;
+    
+    let originalTotal = missingCredits * pricePerClass;
+    let finalTotal = originalTotal;
+    let discountAmount = 0;
+
+    if (student?.referredById && !student.usedReferralDiscount && referralDiscountPercent > 0) {
+      discountAmount = originalTotal * (referralDiscountPercent / 100);
+      finalTotal = originalTotal - discountAmount;
+    }
+
     return {
-      total: missingCredits * pricePerClass,
+      total: finalTotal,
+      originalTotal,
+      discountAmount,
       pricePerClass,
       credits: missingCredits,
       tierName: tier?.name ?? '',
     };
-  }, [missingCredits, tiers]);
+  }, [missingCredits, tiers, student, referralDiscountPercent]);
 
   const handleWhatsAppClick = () => {
     const text = `Olá! Gostaria de pagar *${missingCredits} crédito(s)* no valor de R$ ${priceCalc.total.toFixed(2).replace('.', ',')} (R$ ${priceCalc.pricePerClass.toFixed(2).replace('.', ',')}/aula) para finalizar meus agendamentos na plataforma. Como faço para realizar o pagamento?`;
@@ -827,6 +845,12 @@ function CheckoutContent() {
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <span>Tabela aplicada</span>
                   <span className="font-medium">{priceCalc.tierName}</span>
+                </div>
+              )}
+              {priceCalc.discountAmount > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600 font-semibold mt-2 pt-2 border-t border-slate-100">
+                  <span>Desconto de Indicação ({referralDiscountPercent}%)</span>
+                  <span>- R$ {priceCalc.discountAmount.toFixed(2).replace('.', ',')}</span>
                 </div>
               )}
             </div>

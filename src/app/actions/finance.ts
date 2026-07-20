@@ -383,6 +383,12 @@ export async function approveTransaction(transactionId: string) {
           }
 
           console.log(`[ApproveTransaction] Bônus de indicação gerado: R$ ${bonusAmount} (${tierName}) para referrer ${student.referredById}`);
+          
+          // Marcar que o aluno usou o desconto de primeira compra (para não aplicar de novo no checkout)
+          await prisma.user.update({
+            where: { id: transactionCheck.studentId },
+            data: { usedReferralDiscount: true },
+          });
         }
       }
     } catch (bonusError) {

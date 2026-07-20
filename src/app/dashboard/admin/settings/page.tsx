@@ -25,6 +25,7 @@ const DEFAULT_SETTINGS = {
   whatsapp: '5583999999999',
   teacherClassValue: '50.00',
   referralBonus: '1',
+  referralDiscountPercent: '0',
   pixKey: '27394788000114',
   pixKeyType: 'cnpj',
 };
@@ -35,6 +36,7 @@ export default function SettingsPage() {
   const [whatsapp, setWhatsapp] = useState(DEFAULT_SETTINGS.whatsapp);
   const [teacherClassValue, setTeacherClassValue] = useState(DEFAULT_SETTINGS.teacherClassValue);
   const [referralBonus, setReferralBonus] = useState(DEFAULT_SETTINGS.referralBonus);
+  const [referralDiscountPercent, setReferralDiscountPercent] = useState(DEFAULT_SETTINGS.referralDiscountPercent);
   const [availabilityType, setAvailabilityType] = useState('weekly');
   const [pixKey, setPixKey] = useState('');
   const [pixKeyType, setPixKeyType] = useState(DEFAULT_SETTINGS.pixKeyType);
@@ -91,6 +93,7 @@ export default function SettingsPage() {
       setWhatsapp(result.data.whatsapp || DEFAULT_SETTINGS.whatsapp);
       setTeacherClassValue(result.data.classValue || DEFAULT_SETTINGS.teacherClassValue);
       setReferralBonus(result.data.referralBonus || DEFAULT_SETTINGS.referralBonus);
+      setReferralDiscountPercent((result.data as any).referralDiscountPercent || DEFAULT_SETTINGS.referralDiscountPercent);
       setAvailabilityType(result.data.availabilityType || 'weekly');
       setPixKey((result.data as any).pixKey || DEFAULT_SETTINGS.pixKey);
       setPixKeyType((result.data as any).pixKeyType || DEFAULT_SETTINGS.pixKeyType);
@@ -172,20 +175,23 @@ export default function SettingsPage() {
     setIsLoading(true);
     
     const referralBonusValue = String(referralBonus).trim() || '1';
+    const referralDiscountPercentValue = String(referralDiscountPercent).trim() || '0';
     const teacherClassValueValue = String(teacherClassValue).trim() || '50.00';
     
-    console.log('[handleSave] Valores processados:', { teacherClassValueValue, referralBonusValue });
+    console.log('[handleSave] Valores processados:', { teacherClassValueValue, referralBonusValue, referralDiscountPercentValue });
     
     const nextSettings = {
       whatsapp: whatsapp.trim() || '',
       teacherClassValue: teacherClassValueValue,
       referralBonus: referralBonusValue,
+      referralDiscountPercent: referralDiscountPercentValue,
     };
 
     const result = await updateSettings({
       whatsapp: nextSettings.whatsapp,
       classValue: nextSettings.teacherClassValue,
       referralBonus: nextSettings.referralBonus,
+      referralDiscountPercent: nextSettings.referralDiscountPercent,
       pixKey: pixKey.trim(),
       pixKeyType: pixKeyType.trim(),
       geminiApiKey: geminiApiKey.trim(),
@@ -314,21 +320,39 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
-            <div className="space-y-2">
-              <Label htmlFor="referral" className="font-medium text-slate-700">
-                Créditos por Indicacao Bem-sucedida
-              </Label>
-              <Input
-                id="referral"
-                type="number"
-                value={referralBonus}
-                onChange={(e) => setReferralBonus(e.target.value)}
-                className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                placeholder="Ex: 1"
-              />
-              <p className="mt-2 text-sm text-slate-500">
-                Quantidade de aulas gratis que o aluno recebe quando um amigo se cadastra e compra um plano usando o codigo dele.
-              </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="referral" className="font-medium text-slate-700">
+                  Créditos por Indicação
+                </Label>
+                <Input
+                  id="referral"
+                  type="number"
+                  value={referralBonus}
+                  onChange={(e) => setReferralBonus(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="Ex: 1"
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  Aulas grátis para quem indicou.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="referral-discount" className="font-medium text-slate-700">
+                  Desconto para o Indicado (%)
+                </Label>
+                <Input
+                  id="referral-discount"
+                  type="number"
+                  value={referralDiscountPercent}
+                  onChange={(e) => setReferralDiscountPercent(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="Ex: 10"
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  Desconto % na 1ª compra de quem usou o link.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -666,6 +666,30 @@ export async function updateUserPassword(
   }
 }
 
+export async function adminResetUserPassword(
+  userId: string,
+  newPassword: string,
+) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return { success: false, error: "Usuário não encontrado." };
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao redefinir senha (admin):", error);
+    return { success: false, error: "Falha ao redefinir senha do usuário." };
+  }
+}
+
 export async function toggleAutoSchedule(userId: string, isEnabled: boolean) {
   try {
     const updatedUser = await prisma.user.update({
@@ -755,6 +779,7 @@ export async function getReferralSummary(userId: string) {
       avulsa: settings?.referralBonusAvulsa || '49.50',
       evolucao: settings?.referralBonusEvolucao || '252.00',
       aprovacao: settings?.referralBonusAprovacao || '378.00',
+      referralDiscountPercent: settings?.referralDiscountPercent || '0',
     };
 
     // Mapeia 'other_User' para 'referrals' para manter compatibilidade com a UI

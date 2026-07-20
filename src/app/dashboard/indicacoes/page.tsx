@@ -59,7 +59,7 @@ type Referrer = {
   referrals: Referral[];
 };
 
-type BonusSettings = { avulsa: string; evolucao: string; aprovacao: string };
+type BonusSettings = { avulsa: string; evolucao: string; aprovacao: string; referralDiscountPercent?: string };
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -243,7 +243,7 @@ function ReferrerRow({ referrer, bonusSettings }: { referrer: Referrer; bonusSet
 // ─── Painel Admin ─────────────────────────────────────────────────────────────
 function AdminIndicacoesPanel() {
   const [referrers, setReferrers] = useState<Referrer[]>([]);
-  const [bonusSettings, setBonusSettings] = useState<BonusSettings>({ avulsa: '49.50', evolucao: '252.00', aprovacao: '378.00' });
+  const [bonusSettings, setBonusSettings] = useState<BonusSettings>({ avulsa: '49.50', evolucao: '252.00', aprovacao: '378.00', referralDiscountPercent: '0' });
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -401,7 +401,7 @@ function AdminIndicacoesPanel() {
 function UserIndicacoesPanel() {
   const { toast } = useToast();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
-  const [bonusSettings, setBonusSettings] = useState<BonusSettings>({ avulsa: '49.50', evolucao: '252.00', aprovacao: '378.00' });
+  const [bonusSettings, setBonusSettings] = useState<BonusSettings>({ avulsa: '49.50', evolucao: '252.00', aprovacao: '378.00', referralDiscountPercent: '0' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -454,7 +454,7 @@ function UserIndicacoesPanel() {
                 <p className="text-xs uppercase tracking-wide text-slate-500">Seu codigo</p>
                 <p className="text-3xl font-bold text-slate-900">{summary?.referralCode || '-'}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-4 md:mt-0">
                 <Button onClick={copyCode} variant="outline" className="rounded-2xl border-amber-300 text-amber-700 hover:bg-amber-50">
                   <Copy className="mr-2 h-4 w-4" />
                   Copiar Codigo
@@ -464,6 +464,15 @@ function UserIndicacoesPanel() {
                   Copiar Link
                 </Button>
               </div>
+            </div>
+          )}
+          
+          {/* Banner de Oferta */}
+          {!loading && bonusSettings?.referralDiscountPercent && parseFloat(bonusSettings.referralDiscountPercent) > 0 && (
+            <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4">
+              <p className="text-amber-800 text-sm font-medium">
+                🎁 <strong className="font-bold">Sua oferta exclusiva:</strong> Ao usar seu link, seu amigo ganha <strong className="font-bold">{bonusSettings.referralDiscountPercent}% de desconto</strong> na primeira compra!
+              </p>
             </div>
           )}
         </CardContent>

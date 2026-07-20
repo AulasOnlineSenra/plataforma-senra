@@ -14,6 +14,7 @@ import {
   Wallet,
   Users,
   Tag,
+  KeyRound,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,6 +69,7 @@ import {
   getStudents,
   getMyStudents,
   unlockUserAccount,
+  adminResetUserPassword,
 } from "@/app/actions/users";
 import { addTransactionAndCredits } from "@/app/actions/finance";
 import { getLessons } from "@/app/actions/bookings";
@@ -131,6 +133,7 @@ function StudentList({
   onDeleteStudent: (student: StudentRow) => void;
   onToggleTagEnem: (student: StudentRow) => void;
   onUnlockStudent: (student: StudentRow) => void;
+  onResetPassword: (student: StudentRow) => void;
   onOpenChat: (studentId: string) => void;
   isAdmin: boolean;
 }) {
@@ -283,6 +286,13 @@ function StudentList({
                               ? "Remover Foco ENEM"
                               : "Adicionar Foco ENEM"}
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => onResetPassword(student)}
+                            className="cursor-pointer rounded-xl py-2.5 font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900"
+                          >
+                            <KeyRound className="mr-2 h-4 w-4 text-amber-600" />
+                            Redefinir Senha
+                          </DropdownMenuItem>
                           {(student.failedLoginAttempts ?? 0) >= 5 && (
                             <DropdownMenuItem
                               onSelect={() => onUnlockStudent(student)}
@@ -364,6 +374,11 @@ export default function AdminStudentsPage() {
     paymentMethod: "PIX",
     credits: "1",
   });
+
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [studentToReset, setStudentToReset] = useState<StudentRow | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const { toast } = useToast();
 
@@ -630,6 +645,32 @@ export default function AdminStudentsPage() {
     }
   };
 
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentToReset || !resetPasswordValue) return;
+
+    setIsResetting(true);
+    const result = await adminResetUserPassword(studentToReset.id, resetPasswordValue);
+
+    if (result.success) {
+      toast({
+        title: "Senha atualizada!",
+        description: `A senha de ${studentToReset.name} foi redefinida com sucesso.`,
+        className: "bg-emerald-600 text-white border-none",
+      });
+      setIsResetPasswordOpen(false);
+      setStudentToReset(null);
+      setResetPasswordValue("");
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: result.error,
+      });
+    }
+    setIsResetting(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center text-slate-400 font-medium animate-pulse">
@@ -672,6 +713,11 @@ export default function AdminStudentsPage() {
           onDeleteStudent={setStudentToDelete}
           onToggleTagEnem={handleToggleTagEnem}
           onUnlockStudent={handleUnlockStudent}
+          onResetPassword={(student) => {
+            setStudentToReset(student);
+            setResetPasswordValue("");
+            setIsResetPasswordOpen(true);
+          }}
           onOpenChat={setChatContactId}
           isAdmin={currentUser?.role === "admin"}
         />
@@ -684,6 +730,11 @@ export default function AdminStudentsPage() {
             onDeleteStudent={setStudentToDelete}
             onToggleTagEnem={handleToggleTagEnem}
             onUnlockStudent={handleUnlockStudent}
+            onResetPassword={(student) => {
+              setStudentToReset(student);
+              setResetPasswordValue("");
+              setIsResetPasswordOpen(true);
+            }}
             onOpenChat={setChatContactId}
             isAdmin={currentUser?.role === "admin"}
           />
@@ -755,28 +806,71 @@ export default function AdminStudentsPage() {
                 required
               />
             </div>
+          <DialogFooter className="mt-6 gap-3 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setChatContactId(null)}
+              className="rounded-xl font-bold text-slate-500 hover:text-slate-700"
+            >
+              Fechar
+            </Button>
+            <Button
+              className="h-11 rounded-xl bg-brand-yellow px-8 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90"
+              onClick={() => router.push(`/dashboard/chat?user=${chatContactId}`)}
+            >
+              Abrir no Chat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL REDEFINIR SENHA */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl border border-slate-100 bg-white shadow-xl p-8">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <KeyRound className="h-6 w-6 text-amber-500" /> Redefinir Senha
+            </DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Crie uma nova senha para o acesso de <strong className="text-slate-700">{studentToReset?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleResetPasswordSubmit} className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="reset-password" className="font-bold text-slate-700">
+                Nova Senha
+              </Label>
+              <Input
+                id="reset-password"
+                type="text"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                placeholder="Digite a nova senha..."
+                className="h-12 rounded-xl border-slate-200 focus-visible:ring-brand-yellow"
+                required
+              />
+            </div>
             <DialogFooter className="mt-6 gap-3 sm:gap-0">
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setIsCreateOpen(false)}
+                onClick={() => setIsResetPasswordOpen(false)}
                 className="rounded-xl font-bold text-slate-500 hover:text-slate-700"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="h-11 rounded-xl bg-brand-yellow px-8 font-bold text-slate-900 shadow-sm hover:bg-brand-yellow/90"
+                disabled={isResetting || !resetPasswordValue}
+                className="h-11 rounded-xl bg-amber-500 px-8 font-bold text-white shadow-sm hover:bg-amber-600"
               >
-                {isSubmitting ? "Salvando..." : "Cadastrar"}
+                {isResetting ? "Redefinindo..." : "Redefinir Senha"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* MODAL ADICIONAR CRÉDITOS (CHECKOUT) */}
+          {/* MODAL ADICIONAR CRÉDITOS (CHECKOUT) */}
       <Dialog
         open={isAddCreditsOpen}
         onOpenChange={(open) => {

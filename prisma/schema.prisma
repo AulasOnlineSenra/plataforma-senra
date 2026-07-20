@@ -17,6 +17,7 @@ model AppSetting {
   referralBonusAvulsa     String   @default("49.50")
   referralBonusEvolucao   String   @default("252.00")
   referralBonusAprovacao  String   @default("378.00")
+  referralDiscountPercent String   @default("0")
   availabilityType        String   @default("weekly")
   pixKey                  String   @default("")
   pixKeyType              String   @default("cnpj")
@@ -360,6 +361,7 @@ model User {
   googleCalendarTokenExpiry                          DateTime?
   failedLoginAttempts                                Int                @default(0)
   lastFailedLogin                                    DateTime?
+  usedReferralDiscount                               Boolean            @default(false)
   Availability                                       Availability[]
   ChatMessage_ChatMessage_receiverIdToUser           ChatMessage[]      @relation("ChatMessage_receiverIdToUser")
   ChatMessage_ChatMessage_senderIdToUser             ChatMessage[]      @relation("ChatMessage_senderIdToUser")
