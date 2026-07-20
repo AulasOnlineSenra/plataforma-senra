@@ -25,6 +25,7 @@ import { getHeatmapData } from '@/app/actions/analytics';
 export default function HeatmapContent() {
   const [periodo, setPeriodo] = useState('30d');
   const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState<{
     pages: any[];
     devices: any[];
     monthly: any[];
