@@ -27,7 +27,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // Arquivos estáticos do Next.js: podem ser cacheados pelo navegador
+        // (cada build gera nomes únicos com hash, então nunca há conflito)
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Todas as demais rotas (páginas, APIs): nunca cachear
+        source: '/((?!_next/static).*)',
         headers: [
           {
             key: 'Cache-Control',
