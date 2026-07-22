@@ -449,30 +449,36 @@ function UserIndicacoesPanel() {
           {loading ? (
             <p className="text-sm text-slate-300">Carregando...</p>
           ) : (
-            <div className="flex flex-col gap-4 rounded-3xl bg-slate-50 p-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Seu codigo</p>
-                <p className="text-3xl font-bold text-slate-900">{summary?.referralCode || '-'}</p>
+            <div className="flex flex-col rounded-3xl bg-slate-50 p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Seu codigo</p>
+                  <p className="text-3xl font-bold text-slate-900">{summary?.referralCode || '-'}</p>
+                </div>
+                <div className="flex gap-2 mt-4 md:mt-0">
+                  <Button onClick={copyCode} variant="outline" className="rounded-2xl border-amber-300 text-amber-700 hover:bg-amber-50">
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar Codigo
+                  </Button>
+                  <Button onClick={copyLink} className="rounded-2xl bg-[#FFC107] text-slate-900 hover:bg-amber-300">
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar Link
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2 mt-4 md:mt-0">
-                <Button onClick={copyCode} variant="outline" className="rounded-2xl border-amber-300 text-amber-700 hover:bg-amber-50">
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copiar Codigo
-                </Button>
-                <Button onClick={copyLink} className="rounded-2xl bg-[#FFC107] text-slate-900 hover:bg-amber-300">
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copiar Link
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {/* Banner de Oferta */}
-          {!loading && bonusSettings?.referralDiscountPercent && parseFloat(bonusSettings.referralDiscountPercent) > 0 && (
-            <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4">
-              <p className="text-amber-800 text-sm font-medium">
-                🎁 <strong className="font-bold">Sua oferta exclusiva:</strong> Ao usar seu link, seu amigo ganha <strong className="font-bold">{bonusSettings.referralDiscountPercent}% de desconto</strong> na primeira compra!
-              </p>
+              
+              {/* Banner de Oferta Integrado */}
+              {bonusSettings?.referralDiscountPercent && parseFloat(bonusSettings.referralDiscountPercent) > 0 && (
+                <>
+                  <div className="my-5 h-px w-full bg-slate-200"></div>
+                  <div>
+                    <p className="text-amber-800 text-[17px] font-medium leading-relaxed">
+                      ⏰ <strong className="font-bold">Promoção por tempo limitado!</strong><br />
+                      Use seu link para indicar um amigo: ele ganha <strong className="font-bold">{bonusSettings.referralDiscountPercent}% OFF</strong> na primeira compra e você pode ganhar até <strong className="font-bold">R$380</strong> no pix. Compartilhe agora e aproveite!
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </CardContent>
