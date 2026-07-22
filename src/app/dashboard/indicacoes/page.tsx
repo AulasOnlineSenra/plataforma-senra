@@ -450,6 +450,15 @@ function UserIndicacoesPanel() {
             <p className="text-sm text-slate-300">Carregando...</p>
           ) : (
             <div className="flex flex-col rounded-3xl bg-slate-50 p-6">
+              {/* Título Promocional no Topo */}
+              {!loading && bonusSettings?.referralDiscountPercent && parseFloat(bonusSettings.referralDiscountPercent) > 0 && (
+                <div className="mb-4">
+                  <p className="text-amber-800 text-[17px] font-medium leading-relaxed">
+                    ⏰ <strong className="font-bold">Promoção por tempo limitado!</strong>
+                  </p>
+                </div>
+              )}
+
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">Seu codigo</p>
@@ -467,13 +476,12 @@ function UserIndicacoesPanel() {
                 </div>
               </div>
               
-              {/* Banner de Oferta Integrado */}
-              {bonusSettings?.referralDiscountPercent && parseFloat(bonusSettings.referralDiscountPercent) > 0 && (
+              {/* Detalhes da Oferta na Base */}
+              {!loading && bonusSettings?.referralDiscountPercent && parseFloat(bonusSettings.referralDiscountPercent) > 0 && (
                 <>
                   <div className="my-5 h-px w-full bg-slate-200"></div>
                   <div>
                     <p className="text-amber-800 text-[17px] font-medium leading-relaxed">
-                      ⏰ <strong className="font-bold">Promoção por tempo limitado!</strong><br />
                       Use seu link para indicar um amigo: ele ganha <strong className="font-bold">{bonusSettings.referralDiscountPercent}% OFF</strong> na primeira compra e você pode ganhar até <strong className="font-bold">R$380</strong> no pix. Compartilhe agora e aproveite!
                     </p>
                   </div>
