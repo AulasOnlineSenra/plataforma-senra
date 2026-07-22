@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getReferralSummary, getAdminReferralDashboard, updateReferralBonusSettings } from '@/app/actions/users';
 import { format, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ReferralModalClient from './ReferralModalClient';
 
 function getPayoutDate(transactionDate: Date) {
   const paymentDay = typeof window !== 'undefined' ? localStorage.getItem('teacherPaymentDay') || 'friday' : 'friday';
@@ -402,6 +403,7 @@ function UserIndicacoesPanel() {
   const { toast } = useToast();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [bonusSettings, setBonusSettings] = useState<BonusSettings>({ avulsa: '49.50', evolucao: '252.00', aprovacao: '378.00', referralDiscountPercent: '0' });
+  const [modalSettings, setModalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -413,6 +415,9 @@ function UserIndicacoesPanel() {
         setSummary(result.data as ReferralSummary);
         if (result.bonusSettings) {
           setBonusSettings(result.bonusSettings);
+        }
+        if (result.modalSettings) {
+          setModalSettings(result.modalSettings);
         }
       }
       setLoading(false);
@@ -435,6 +440,7 @@ function UserIndicacoesPanel() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
+      <ReferralModalClient settings={modalSettings} />
       <Card className="rounded-3xl border-slate-200 bg-slate-900 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-slate-50">

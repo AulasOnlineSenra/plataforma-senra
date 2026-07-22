@@ -59,6 +59,12 @@ export default function SettingsPage() {
   // Backup Files
   const [backupFiles, setBackupFiles] = useState<any[]>([]);
   const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+
+  // Modal de Indicações
+  const [referralModalEnabled, setReferralModalEnabled] = useState(true);
+  const [referralModalFrequency, setReferralModalFrequency] = useState('always');
+  const [referralModalMaxVisits, setReferralModalMaxVisits] = useState('8');
+  const [referralModalMaxDays, setReferralModalMaxDays] = useState('45');
   
   // Restore State
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
@@ -111,6 +117,11 @@ export default function SettingsPage() {
       setBackupRetention(String((result.data as any).backupRetention || 5));
       setBackupEmail((result.data as any).backupEmail || '');
       setBackupDrive((result.data as any).backupDrive || '');
+
+      setReferralModalEnabled((result.data as any).referralModalEnabled ?? true);
+      setReferralModalFrequency((result.data as any).referralModalFrequency || 'always');
+      setReferralModalMaxVisits(String((result.data as any).referralModalMaxVisits || 8));
+      setReferralModalMaxDays(String((result.data as any).referralModalMaxDays || 45));
 
 
     };
@@ -205,6 +216,10 @@ export default function SettingsPage() {
       backupRetention: parseInt(backupRetention) || 5,
       backupEmail: backupEmail.trim(),
       backupDrive: backupDrive.trim(),
+      referralModalEnabled,
+      referralModalFrequency,
+      referralModalMaxVisits: parseInt(referralModalMaxVisits) || 8,
+      referralModalMaxDays: parseInt(referralModalMaxDays) || 45,
     });
     console.log('[handleSave] Resultado:', result);
     setIsLoading(false);
@@ -355,6 +370,70 @@ export default function SettingsPage() {
               </div>
             </div>
           </CardContent>
+        </Card>
+
+        {/* Modal Promocional de Indicações */}
+        <Card className="rounded-3xl border-slate-200 shadow-sm transition-shadow hover:shadow-md md:col-span-2 lg:col-span-1">
+          <CardHeader className="border-b border-slate-100 pb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-orange-100 p-3 text-orange-600">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-slate-900">Modal de Indicações</CardTitle>
+                  <CardDescription>Gerencie o pop-up promocional</CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={referralModalEnabled} onCheckedChange={setReferralModalEnabled} />
+              </div>
+            </div>
+          </CardHeader>
+          {referralModalEnabled && (
+            <CardContent className="space-y-4 pt-6">
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-700">Frequência de Exibição</Label>
+                <Select value={referralModalFrequency} onValueChange={setReferralModalFrequency}>
+                  <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="always">Sempre (Toda vez que acessar)</SelectItem>
+                    <SelectItem value="once_per_day">1 vez por dia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-700">Mudar a cada (Visitas)</Label>
+                  <Input
+                    type="number"
+                    value={referralModalMaxVisits}
+                    onChange={(e) => setReferralModalMaxVisits(e.target.value)}
+                    className="h-12 rounded-xl border-slate-200"
+                    placeholder="Ex: 8"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-700">Ou a cada (Dias)</Label>
+                  <Input
+                    type="number"
+                    value={referralModalMaxDays}
+                    onChange={(e) => setReferralModalMaxDays(e.target.value)}
+                    className="h-12 rounded-xl border-slate-200"
+                    placeholder="Ex: 45"
+                  />
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <p className="text-xs text-slate-500">
+                  As imagens rotativas são carregadas automaticamente da pasta <code>public/images/indicacoes/</code> do servidor.
+                </p>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <Card className="rounded-3xl border-slate-200 shadow-sm transition-shadow hover:shadow-md md:col-span-2">

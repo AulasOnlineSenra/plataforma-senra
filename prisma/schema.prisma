@@ -42,6 +42,13 @@ model AppSetting {
   enemReleaseHour         Int      @default(13) // Hora de liberação (padrão 13:00)
   enemReleaseMinute       Int      @default(0)
   enemOnlyTaggedStudents  Boolean  @default(true) // Enviar apenas para alunos com tag Foco ENEM
+
+  // Modal de Indicações
+  referralModalEnabled    Boolean  @default(true)
+  referralModalFrequency  String   @default("always") // "always" ou "once_per_day"
+  referralModalMaxVisits  Int      @default(8)
+  referralModalMaxDays    Int      @default(45)
+  referralModalImages     String   @default("[]") // Lista de URLs das imagens
 }
 
 model Availability {

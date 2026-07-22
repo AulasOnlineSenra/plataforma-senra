@@ -22,6 +22,11 @@ type SettingsInput = {
   backupRetention?: number;
   backupEmail?: string;
   backupDrive?: string;
+  referralModalEnabled?: boolean;
+  referralModalFrequency?: string;
+  referralModalMaxVisits?: number;
+  referralModalMaxDays?: number;
+  referralModalImages?: string;
 };
 
 export async function getSettings() {
@@ -78,6 +83,11 @@ export async function updateSettings(data: SettingsInput) {
         backupRetention: data.backupRetention || 5,
         backupEmail: data.backupEmail?.trim() || null,
         backupDrive: data.backupDrive?.trim() || null,
+        referralModalEnabled: data.referralModalEnabled ?? true,
+        referralModalFrequency: data.referralModalFrequency || 'always',
+        referralModalMaxVisits: data.referralModalMaxVisits || 8,
+        referralModalMaxDays: data.referralModalMaxDays || 45,
+        referralModalImages: data.referralModalImages || '[]',
         updatedAt: now,
       },
       update: {
@@ -99,6 +109,11 @@ export async function updateSettings(data: SettingsInput) {
         backupRetention: data.backupRetention || 5,
         backupEmail: data.backupEmail?.trim() || null,
         backupDrive: data.backupDrive?.trim() || null,
+        referralModalEnabled: data.referralModalEnabled ?? true,
+        referralModalFrequency: data.referralModalFrequency || 'always',
+        referralModalMaxVisits: data.referralModalMaxVisits || 8,
+        referralModalMaxDays: data.referralModalMaxDays || 45,
+        referralModalImages: data.referralModalImages || '[]',
         updatedAt: now,
       },
     });

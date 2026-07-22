@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import fs from 'fs';
+import path from 'path';
 import { Prisma } from "@prisma/client";
 import { triggerAiAutomation } from "@/lib/ai/automation-engine";
 import bcrypt from "bcryptjs";
@@ -782,9 +784,27 @@ export async function getReferralSummary(userId: string) {
       referralDiscountPercent: settings?.referralDiscountPercent || '0',
     };
 
+    let images: string[] = [];
+    try {
+      const dirPath = path.join(process.cwd(), 'public', 'images', 'indicacoes');
+      if (fs.existsSync(dirPath)) {
+        images = fs.readdirSync(dirPath).filter(file => /\.(png|jpe?g|gif|webp)$/i.test(file));
+      }
+    } catch (e) {
+      console.error('Erro ao ler imagens de indicacoes:', e);
+    }
+    
+    const modalSettings = {
+      enabled: (settings as any)?.referralModalEnabled ?? true,
+      frequency: (settings as any)?.referralModalFrequency || 'always',
+      maxVisits: (settings as any)?.referralModalMaxVisits || 8,
+      maxDays: (settings as any)?.referralModalMaxDays || 45,
+      images
+    };
+
     // Mapeia 'other_User' para 'referrals' para manter compatibilidade com a UI
     const data = user ? { ...user, referrals: user.other_User } : null;
-    return { success: true, data, bonusSettings };
+    return { success: true, data, bonusSettings, modalSettings };
   } catch (error) {
     console.error("Erro ao buscar resumo de indicacoes:", error);
     return { success: false, error: "Falha ao buscar indicações." };
