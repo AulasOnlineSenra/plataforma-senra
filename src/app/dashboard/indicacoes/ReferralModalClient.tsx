@@ -75,18 +75,18 @@ export default function ReferralModalClient({ settings }: { settings: ModalSetti
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative animate-in fade-in zoom-in-95 duration-300 w-full max-w-[500px] rounded-3xl overflow-hidden shadow-2xl bg-slate-900 border border-slate-800">
+      <div className="relative animate-in fade-in zoom-in-95 duration-300 w-auto max-w-[90vw] max-h-[85vh] rounded-[15px] shadow-2xl bg-slate-900 border border-slate-800 flex flex-col">
         <button 
           onClick={() => setIsOpen(false)}
           className="absolute right-3 top-3 z-10 rounded-full bg-black/40 p-1.5 text-white backdrop-blur-md hover:bg-black/60 transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
-        <div className="w-full h-auto flex items-center justify-center">
+        <div className="flex-1 overflow-hidden rounded-[15px] flex items-center justify-center">
           <img 
             src={`/images/indicacoes/${currentImage}`} 
             alt="Programa de Indicações"
-            className="w-full h-auto object-cover"
+            className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-[15px]"
           />
         </div>
       </div>
