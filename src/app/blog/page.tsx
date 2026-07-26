@@ -33,7 +33,7 @@ export default async function BlogPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-[150px] pt-[100px] pb-[25px]">
+      <div className="container mx-auto px-4 md:px-[150px] pt-[100px] pb-[25px]">
         <BlogSearchBar posts={posts} />
         <div className="bg-white rounded-[12px] p-[3px]">
           {posts && posts.length > 0 ? (

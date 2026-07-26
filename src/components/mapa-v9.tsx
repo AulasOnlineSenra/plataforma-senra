@@ -107,7 +107,7 @@ export default function MapaCircle() {
           </div>
         </div>
 
-        <div className="text-center -mt-12 ml-[600px]">
+        <div className="text-center -mt-12 lg:ml-[600px]">
           <p className="text-slate-400 mb-8 text-lg">
             Você repete o ciclo até alcançar a <span className="text-amber-500 font-bold">maestria</span>
           </p>

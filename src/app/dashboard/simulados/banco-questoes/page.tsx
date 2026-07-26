@@ -945,7 +945,7 @@ export default function BancoQuestoesPage() {
           <span className="font-semibold text-base">Buscando questões...</span>
         </div>
       ) : filteredQuestions.length === 0 ? (
-        <div className="bg-slate-50 border-2 border-dashed rounded-3xl p-16 text-center max-w-2xl mx-auto w-full">
+        <div className="bg-slate-50 border-2 border-dashed rounded-3xl p-6 md:p-16 text-center max-w-2xl mx-auto w-full">
           <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-3" />
           <h3 className="font-bold text-lg text-slate-700">Nenhuma questão encontrada</h3>
           <p className="text-slate-400 text-sm mt-1">

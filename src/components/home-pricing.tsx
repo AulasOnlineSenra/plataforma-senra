@@ -176,7 +176,7 @@ export default function HomePricing() {
             )}
 
             <CardHeader className="items-center pt-10 text-center pb-6">
-              <CardTitle className="font-headline text-xl text-slate-900 flex items-center gap-2 -ml-[25px]">
+              <CardTitle className="font-headline text-xl text-slate-900 flex items-center gap-2 md:-ml-[25px]">
                 <IconComponent className="w-[34px] h-[34px] text-amber-400" />
                 {pkg.name}
               </CardTitle>

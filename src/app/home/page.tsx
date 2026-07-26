@@ -564,7 +564,7 @@ export default function HomePage() {
               
               {/* Cabeçalho da Seção */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-                <div className="max-w-2xl ml-10">
+                <div className="max-w-2xl lg:ml-10">
                   <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight lg:whitespace-nowrap">
                     Monte seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">cronograma</span> de aulas
                   </h2>
@@ -574,7 +574,7 @@ export default function HomePage() {
                 </div>
                 
                 {/* Botão de Checkout */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 mr-[30px]">
+                <div className="flex flex-col sm:flex-row items-center gap-4 lg:mr-[30px]">
                   <Card className="rounded-2xl border-slate-200 bg-white/50 backdrop-blur-md px-6 py-2 shadow-sm">
                     <div className="flex items-center gap-3">
                       <CalendarRange className="h-5 w-5 text-amber-500" />
@@ -600,7 +600,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 
                 {/* Painel Lateral de Instruções / Ajuda */}
-                <div className="lg:col-span-1 space-y-6 ml-10">
+                <div className="lg:col-span-1 space-y-6 lg:ml-10">
                   <Card className="rounded-3xl border-slate-200 shadow-sm bg-white p-6 space-y-6">
                     <div className="space-y-4">
                       <h3 className="font-bold text-lg text-slate-800">Como funciona?</h3>
@@ -636,7 +636,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Grade Principal do Cronograma */}
-                <div className="lg:col-span-3 mr-[30px]">
+                <div className="lg:col-span-3 lg:mr-[30px]">
                   <Card className="rounded-3xl border-2 border-[#f5b000] shadow-[0_0_35px_rgba(245,176,0,0.8)] overflow-hidden bg-white">
                     <div className="overflow-auto max-h-[70vh]">
                       <div className="min-w-[800px] relative">
@@ -842,7 +842,7 @@ export default function HomePage() {
         {/* SEÇÃO CORPO DOCENTE */}
         <section className="py-16 pt-[94px] bg-white">
           <div className="container mx-auto px-4">
-            <div className="text-left mb-12 ml-10">
+            <div className="text-left mb-12 lg:ml-10 text-center lg:text-left">
               <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Corpo</span> Docente
               </h2>
@@ -968,7 +968,7 @@ export default function HomePage() {
                     setShowQuiz(false);
                     setQuizCompleted(false);
                   }}
-                  className="mt-4 pb-[45px] text-white hover:bg-transparent hover:text-amber-400 -ml-[800px]"
+                  className="mt-4 pb-[45px] text-white hover:bg-transparent hover:text-amber-400 lg:-ml-[800px]"
                 >
                   Voltar ao início
                 </Button>
@@ -992,10 +992,10 @@ export default function HomePage() {
       </main>
 
       <footer id="contato" className="bg-slate-950 text-slate-300 pt-0 pb-0 border-t border-slate-800">
-        <div className="container mx-auto px-[61px]">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[26px] mt-5 mb-3">
-            <div className="space-y-4">
-              <div className="w-24 ml-[65px]">
+        <div className="container mx-auto px-6 md:px-[61px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[26px] mt-5 mb-3 text-center md:text-left">
+            <div className="space-y-4 flex flex-col items-center md:items-start">
+              <div className="w-24 md:ml-[65px]">
                 <img src="/logo.png" alt="Aulas Online Senra" className="w-full h-auto rounded-full border-2 border-[#f5b000] shadow-[0_0_10px_#f5b000]" />
               </div>
               <p className="text-xs leading-relaxed text-slate-400 max-w-xs">
@@ -1055,7 +1055,7 @@ export default function HomePage() {
               </ul>
             </div>
 
-            <div className="ml-[-10px]">
+            <div className="md:ml-[-10px]">
               <h4 className="font-bold text-white mb-6 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-security-title">Segurança & Pagamentos</EditableText>
               </h4>

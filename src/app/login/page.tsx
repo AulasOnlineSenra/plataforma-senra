@@ -300,7 +300,7 @@ export default function LoginPage() {
       </div>
 
         <div className="w-full max-w-md">
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 py-[11px] md:py-[15px] px-8 md:px-10 relative overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 py-[11px] md:py-[15px] px-4 md:px-10 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>
                 <div className="flex justify-center mt-6 mb-6">
                     <SenraLogo />
