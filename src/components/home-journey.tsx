@@ -85,9 +85,9 @@ export default function HomeJourney() {
           
           <div className="order-1 lg:order-2 perspective-1000 w-full flex justify-center lg:justify-end">
             <div 
-              className="relative w-full lg:w-[650px] lg:max-w-none lg:-mr-[100px] xl:-mr-[150px] rounded-2xl overflow-hidden bg-white border border-slate-200"
+              className="relative w-full lg:w-[750px] lg:max-w-none lg:-mr-[150px] xl:-mr-[250px] rounded-2xl overflow-hidden bg-white border border-slate-200"
               style={{ 
-                transform: 'perspective(1200px) translateX(-80px) rotateY(-12deg) rotateX(4deg) scale(0.9)',
+                transform: 'perspective(1200px) translateX(-120px) rotateY(-12deg) rotateX(4deg) scale(1)',
                 boxShadow: '-20px 30px 60px rgba(0,0,0,0.25), -1px 1px 0px rgba(255,255,255,0.5) inset'
               }}
             >
@@ -135,7 +135,7 @@ export default function HomeJourney() {
                   <div className="w-16 h-16 rounded-full flex items-center justify-center mb-5 mt-2">
                     <Icon className={`w-10 h-10 ${step.highlighted ? 'text-amber-500' : 'text-slate-800 stroke-[1.5]'}`} />
                   </div>
-                  <h4 className="font-bold text-slate-900 mb-3 text-base leading-tight">{step.title}</h4>
+                  <h4 className="font-bold text-slate-900 mb-3 text-sm leading-tight">{step.title}</h4>
                   <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
                     {step.desc}
                   </p>
