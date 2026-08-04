@@ -66,6 +66,7 @@ type Student = {
   id: string;
   name: string;
   credits: number;
+  role?: string;
 };
 
 type Subject = {
@@ -207,6 +208,27 @@ function BookingPageComponent() {
     );
   }, [preBookings, currentUser?.id, hasLoadedInitialBookings]);
 
+  // Recalcula o status experimental caso o histórico mostre que o aluno nunca teve aula
+  useEffect(() => {
+    if (isLoading || !currentUser || preBookings.length === 0) return;
+    
+    setPreBookings(prev => {
+      let changed = false;
+      const updated = prev.map((b, index) => {
+        const hasPreviousLesson = lessons.some(l => l.studentId === currentUser.id && l.teacherId === b.teacherId && ["PENDING", "CONFIRMED", "scheduled", "COMPLETED"].includes(l.status));
+        const hasPreBookingWithSameTeacher = prev.slice(0, index).some(prevB => prevB.teacherId === b.teacherId);
+        const isExp = currentUser.role === 'student' && !hasPreviousLesson && !hasPreBookingWithSameTeacher;
+        
+        if (b.isExperimental !== isExp) {
+          changed = true;
+          return { ...b, isExperimental: isExp };
+        }
+        return b;
+      });
+      return changed ? updated : prev;
+    });
+  }, [isLoading, lessons, currentUser]);
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -255,12 +277,12 @@ function BookingPageComponent() {
       const loadedLessons =
         lessonsResult.success && lessonsResult.data
           ? lessonsResult.data.map((lesson) => ({
-              studentId: lesson.studentId,
-              teacherId: lesson.teacherId,
-              date: new Date(lesson.date),
-              endDate: new Date(lesson.endDate),
-              status: lesson.status,
-            }))
+            studentId: lesson.studentId,
+            teacherId: lesson.teacherId,
+            date: new Date(lesson.date),
+            endDate: new Date(lesson.endDate),
+            status: lesson.status,
+          }))
           : [];
       const loadedStudents =
         studentsResult.success && studentsResult.data
@@ -287,13 +309,13 @@ function BookingPageComponent() {
       setTeacherRatings(ratingsMap);
 
       const loggedUserId = localStorage.getItem("userId");
-      
+
       if (loggedUserId) {
         const userResult = await getUserById(loggedUserId);
         if (userResult.success && userResult.data) {
           const userRole = userResult.data.role;
           const userIsAdmin = userRole === "admin" || userRole === "manager";
-          
+
           if (userIsAdmin) {
             setIsAdmin(true);
           }
@@ -311,7 +333,7 @@ function BookingPageComponent() {
               studentIdParam && loadedStudents.length > 0
                 ? loadedStudents.find((student) => student.id === studentIdParam)
                 : userResult.data;
-  
+
             setCurrentUser((targetStudent || userResult.data) as Student);
           }
         }
@@ -342,7 +364,7 @@ function BookingPageComponent() {
 
   useEffect(() => {
     const teachersToLoad = Array.from(new Set([selectedTeacherId, editingTeacher].filter(Boolean)));
-    
+
     teachersToLoad.forEach(async (id) => {
       if (!id || teacherAvailability.has(id)) return;
       const result = await getTeacherAvailability(id);
@@ -669,7 +691,7 @@ function BookingPageComponent() {
 
     const scheduledLessonsCount = lessons.filter(l => l.studentId === currentUser.id && ["PENDING", "CONFIRMED", "scheduled"].includes(l.status)).length;
     const creditsAvailableForUse = Math.max(0, currentUser.credits - scheduledLessonsCount);
-    
+
     const requiredCredits = preBookings.filter(b => !b.isExperimental).length;
 
     if (creditsAvailableForUse < requiredCredits) {
@@ -694,7 +716,7 @@ function BookingPageComponent() {
       const [h, m] = b.start.split(":").map(Number);
       start.setHours(h, m, 0, 0);
       const end = addMinutes(start, CLASS_DURATION_MINUTES);
-      return { subjectId: b.subjectId, teacherId: b.teacherId, start, end, isExperimental: b.isExperimental || false };
+      return { subjectId: b.subjectId, teacherId: b.teacherId, start, end, isExperimental: b.isExperimental ?? false };
     });
 
     const result = await createBookings(currentUser.id, bookingsToCreate);
@@ -702,9 +724,9 @@ function BookingPageComponent() {
 
     if (!result.success) {
       const isConflictError = result.error?.includes("já tem uma aula") || result.error?.includes("professor já tem");
-      toast({ 
-        variant: "destructive", 
-        title: isConflictError ? "Horário Indisponível" : "Erro ao confirmar", 
+      toast({
+        variant: "destructive",
+        title: isConflictError ? "Horário Indisponível" : "Erro ao confirmar",
         description: result.error || "Não foi possível concluir os agendamentos."
       });
       setPreBookings([]);
@@ -725,8 +747,8 @@ function BookingPageComponent() {
   const pageTitle = isAdmin && currentUser
     ? `Agendamento de Aulas (para ${currentUser.name})`
     : studentName
-    ? `Agendamento de Aulas - ${studentName}`
-    : "Agendamento de Aulas";
+      ? `Agendamento de Aulas - ${studentName}`
+      : "Agendamento de Aulas";
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 bg-slate-50 p-4 md:p-6">
@@ -739,406 +761,406 @@ function BookingPageComponent() {
         </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-slate-900">Novo agendamento</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {isAdmin && (
-                <div className="space-y-2 mb-4">
-                  <Label className="text-sm font-semibold text-slate-700">Aluno Selecionado (Apenas Administrador)</Label>
-                  <Select
-                    value={selectedAdminStudentId}
-                    onValueChange={(value) => {
-                      setSelectedAdminStudentId(value);
-                      const target = students.find((s) => s.id === value);
-                      if (target) {
-                        setCurrentUser(target);
-                        setPreBookings([]);
-                        setSelectedSubjectId("");
-                        setSelectedTeacherId("");
-                        setSelectedDate(undefined);
-                        setSelectedTimes([]);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0">
-                      <SelectValue placeholder="Selecione um aluno para agendar" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-200">
-                      {students.map((student) => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.name} ({student.credits} créditos)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="subject"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    Disciplina
-                  </Label>
-                  <Select
-                    value={selectedSubjectId}
-                    onValueChange={(value) => {
-                      setSelectedSubjectId(value);
+        <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-slate-900">Novo agendamento</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {isAdmin && (
+              <div className="space-y-2 mb-4">
+                <Label className="text-sm font-semibold text-slate-700">Aluno Selecionado (Apenas Administrador)</Label>
+                <Select
+                  value={selectedAdminStudentId}
+                  onValueChange={(value) => {
+                    setSelectedAdminStudentId(value);
+                    const target = students.find((s) => s.id === value);
+                    if (target) {
+                      setCurrentUser(target);
+                      setPreBookings([]);
+                      setSelectedSubjectId("");
                       setSelectedTeacherId("");
+                      setSelectedDate(undefined);
                       setSelectedTimes([]);
-                    }}
-                  >
-                    <SelectTrigger
-                      id="subject"
-                      className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0"
-                    >
-                      <SelectValue
-                        placeholder={
-                          isLoading
-                            ? "Carregando disciplinas..."
-                            : "Selecione uma disciplina"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-200">
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="teacher"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    Professor
-                  </Label>
-                  <Select
-                    value={selectedTeacherId}
-                    onValueChange={(value) => {
-                      setSelectedTeacherId(value);
-                      setSelectedTimes([]);
-                    }}
-                    disabled={!selectedSubjectId}
-                  >
-                    <SelectTrigger
-                      id="teacher"
-                      className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0"
-                    >
-                      <SelectValue placeholder="Selecione um professor" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-200">
-                      {availableTeachers.map((teacher) => (
-                        <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0">
+                    <SelectValue placeholder="Selecione um aluno para agendar" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200">
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name} ({student.credits} créditos)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">
-                    Data
-                  </Label>
-                  <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
-                    <Calendar
-                      mode="single"
-                      locale={ptBR}
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        setSelectedDate(date);
-                        setSelectedTimes([]);
-                      }}
-                      disabled={(date) => {
-                        if (isBefore(date, startOfToday())) return true;
-                        if (!selectedTeacherId) return false;
-                        const dayOfWeek = getDay(date);
-                        const slots = teacherAvailability.get(selectedTeacherId) || [];
-                        return !slots.some((s) => s.dayOfWeek === dayOfWeek);
-                      }}
-                      className="w-full"
-                      classNames={{ day_today: "bg-accent text-slate-950" }}
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="subject"
+                  className="text-sm font-semibold text-slate-700"
+                >
+                  Disciplina
+                </Label>
+                <Select
+                  value={selectedSubjectId}
+                  onValueChange={(value) => {
+                    setSelectedSubjectId(value);
+                    setSelectedTeacherId("");
+                    setSelectedTimes([]);
+                  }}
+                >
+                  <SelectTrigger
+                    id="subject"
+                    className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0"
+                  >
+                    <SelectValue
+                      placeholder={
+                        isLoading
+                          ? "Carregando disciplinas..."
+                          : "Selecione uma disciplina"
+                      }
                     />
-                  </div>
-                </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200">
+                    {subjects.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">
-                    Horários disponíveis {selectedTimes.length > 0 && <span className="text-xs text-amber-600">({selectedTimes.length} selecionado(s))</span>}
-                  </Label>
-                  <div className="grid max-h-[340px] grid-cols-1 gap-2 overflow-auto rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-2">
-                    {availableTimes.length > 0 ? (
-                      availableTimes.map((time) => (
-                        <button
-                          key={time.start}
-                          type="button"
-                          onClick={() => setSelectedTimes(prev => 
-                            prev.includes(time.start) 
-                              ? prev.filter(t => t !== time.start)
-                              : [...prev, time.start]
-                          )}
-                          className={cn(
-                            "h-12 rounded-xl border text-sm font-semibold transition",
-                            selectedTimes.includes(time.start)
-                              ? "border-[#FFC107] bg-[#FFC107] text-slate-900"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-slate-900",
-                          )}
-                        >
-                          {time.start} - {time.end}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-                        {!selectedTeacherId
-                          ? "Selecione um professor para ver os horários."
-                          : !selectedDate
-                            ? "Selecione uma data para ver os horários."
-                            : !(teacherAvailability.get(selectedTeacherId)?.some((s) => s.dayOfWeek === getDay(selectedDate)))
-                              ? "Este professor não possui disponibilidade para este dia da semana."
-                              : "Não há horários disponíveis para esta data."}
-                      </div>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="teacher"
+                  className="text-sm font-semibold text-slate-700"
+                >
+                  Professor
+                </Label>
+                <Select
+                  value={selectedTeacherId}
+                  onValueChange={(value) => {
+                    setSelectedTeacherId(value);
+                    setSelectedTimes([]);
+                  }}
+                  disabled={!selectedSubjectId}
+                >
+                  <SelectTrigger
+                    id="teacher"
+                    className="h-12 rounded-2xl border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-amber-400 focus:ring-offset-0"
+                  >
+                    <SelectValue placeholder="Selecione um professor" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200">
+                    {availableTeachers.map((teacher) => (
+                      <SelectItem key={teacher.id} value={teacher.id}>
+                        {teacher.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">
+                  Data
+                </Label>
+                <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+                  <Calendar
+                    mode="single"
+                    locale={ptBR}
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      setSelectedDate(date);
+                      setSelectedTimes([]);
+                    }}
+                    disabled={(date) => {
+                      if (isBefore(date, startOfToday())) return true;
+                      if (!selectedTeacherId) return false;
+                      const dayOfWeek = getDay(date);
+                      const slots = teacherAvailability.get(selectedTeacherId) || [];
+                      return !slots.some((s) => s.dayOfWeek === dayOfWeek);
+                    }}
+                    className="w-full"
+                    classNames={{ day_today: "bg-accent text-slate-950" }}
+                  />
                 </div>
               </div>
 
-              <Button
-                onClick={handleAddPreBooking}
-                disabled={
-                  !selectedSubjectId ||
-                  !selectedTeacherId ||
-                  !selectedDate ||
-                  selectedTimes.length === 0
-                }
-                className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60"
-              >
-                Adicionar ao Resumo ({selectedTimes.length > 0 ? `${selectedTimes.length} horário(s)` : "0"})
-              </Button>
-            </CardContent>
-          </Card>
-
-           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
-             <CardHeader>
-               <CardTitle className="text-slate-900">
-                 Professores disponíveis
-               </CardTitle>
-             </CardHeader>
-              <CardContent className="max-h-[500px] overflow-y-auto">
-               {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
-                {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
-                  <div className="space-y-1">
-                   {teachers.map((teacher) => {
-                     const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
-                     const fullStars = Math.floor(rating.average);
-                     const hasHalf = rating.average - fullStars >= 0.5;
-                     const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-
-                     const teacherEducation = (() => {
-                       if (!teacher.education) return [];
-                       let eduList: any = teacher.education;
-                       if (typeof eduList === "string") {
-                         try { eduList = JSON.parse(eduList); } catch { return []; }
-                       }
-                       if (!Array.isArray(eduList) || eduList.length === 0) return [];
-
-                       if (eduList.length === 1) {
-                         const first = eduList[0];
-                         if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
-                         if (first.course) return [{ text: first.course }];
-                         return [];
-                       }
-
-                       const remaining = eduList.length - 2;
-                       const result: { text: string }[] = [];
-                       const first = eduList[0];
-                       if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
-                       else if (first.course) result.push({ text: first.course });
-                       const second = eduList[1];
-                       const indicator = remaining > 0 ? ` (+${remaining})` : '';
-                       if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
-                       else if (second.course) result.push({ text: `${second.course}${indicator}` });
-                       return result;
-                     })();
-
-                     return (
-                       <button
-                         key={teacher.id}
-                         type="button"
-                         onClick={() => setSelectedTeacherId(teacher.id)}
-                         className={cn(
-                           "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
-                           selectedTeacherId === teacher.id
-                             ? "ring-2 ring-amber-400"
-                             : "hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/50",
-                         )}
-                       >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
-                            <AvatarImage
-                              src={teacher.avatarUrl || ""}
-                              alt={teacher.name}
-                            />
-                            <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
-                              {teacher.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-bold text-slate-900">
-                                {teacher.name}
-                              </p>
-                              {/* Removed Experimental tag from teacher name per request */}
-                            </div>
-                            {teacherEducation.length > 0 && (
-                              <div className="space-y-0.5">
-                                {teacherEducation.map((edu, idx) => (
-                                  <p key={idx} className="text-sm font-medium text-slate-400 truncate">
-                                    {edu.text}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                            <div className="mt-2 flex items-center gap-1 text-amber-500">
-                              {Array.from({ length: fullStars }).map((_, i) => (
-                                <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
-                              ))}
-                              {hasHalf && (
-                                <Star className="h-4 w-4 fill-current opacity-50" />
-                              )}
-                              {Array.from({ length: emptyStars }).map((_, i) => (
-                                <Star key={`empty-${i}`} className="h-4 w-4" />
-                              ))}
-                              <span className="ml-1 text-xs font-semibold text-slate-600">
-                                {rating.average.toFixed(1)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">
+                  Horários disponíveis {selectedTimes.length > 0 && <span className="text-xs text-amber-600">({selectedTimes.length} selecionado(s))</span>}
+                </Label>
+                <div className="grid max-h-[340px] grid-cols-1 gap-2 overflow-auto rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-2">
+                  {availableTimes.length > 0 ? (
+                    availableTimes.map((time) => (
+                      <button
+                        key={time.start}
+                        type="button"
+                        onClick={() => setSelectedTimes(prev =>
+                          prev.includes(time.start)
+                            ? prev.filter(t => t !== time.start)
+                            : [...prev, time.start]
+                        )}
+                        className={cn(
+                          "h-12 rounded-xl border text-sm font-semibold transition",
+                          selectedTimes.includes(time.start)
+                            ? "border-[#FFC107] bg-[#FFC107] text-slate-900"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-slate-900",
+                        )}
+                      >
+                        {time.start} - {time.end}
                       </button>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+                      {!selectedTeacherId
+                        ? "Selecione um professor para ver os horários."
+                        : !selectedDate
+                          ? "Selecione uma data para ver os horários."
+                          : !(teacherAvailability.get(selectedTeacherId)?.some((s) => s.dayOfWeek === getDay(selectedDate)))
+                            ? "Este professor não possui disponibilidade para este dia da semana."
+                            : "Não há horários disponíveis para esta data."}
+                    </div>
+                  )}
                 </div>
-              ) : !selectedSubjectId ? (
-                <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
-                  Selecione uma disciplina para visualizar os professores.
-                </p>
-              ) : availableTeachers.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
-                  <SearchX className="mx-auto mb-3 h-8 w-8 text-slate-400" />
-                  <p className="font-semibold text-slate-700">
-                    Nenhum professor encontrado para esta disciplina.
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Tente selecionar outra matéria para continuar.
-                  </p>
-                </div>
-               ) : (
-                 <div className="space-y-1">
-                  {availableTeachers.map((teacher) => {
-                    const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
-                    const fullStars = Math.floor(rating.average);
-                    const hasHalf = rating.average - fullStars >= 0.5;
-                    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+              </div>
+            </div>
 
-                    const teacherEducation = (() => {
-                      if (!teacher.education) return [];
-                      let eduList: any = teacher.education;
-                      if (typeof eduList === "string") {
-                        try { eduList = JSON.parse(eduList); } catch { return []; }
-                      }
-                      if (!Array.isArray(eduList) || eduList.length === 0) return [];
+            <Button
+              onClick={handleAddPreBooking}
+              disabled={
+                !selectedSubjectId ||
+                !selectedTeacherId ||
+                !selectedDate ||
+                selectedTimes.length === 0
+              }
+              className="h-12 w-full rounded-2xl bg-[#FFC107] text-base font-bold text-slate-900 transition hover:scale-105 hover:bg-[#FFC107] disabled:opacity-60"
+            >
+              Adicionar ao Resumo ({selectedTimes.length > 0 ? `${selectedTimes.length} horário(s)` : "0"})
+            </Button>
+          </CardContent>
+        </Card>
 
-                      if (eduList.length === 1) {
-                        const first = eduList[0];
-                        if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
-                        if (first.course) return [{ text: first.course }];
-                        return [];
-                      }
+        <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-slate-900">
+              Professores disponíveis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-[500px] overflow-y-auto">
+            {/* Quando "Novo Agendamento" vazio, mostrar todos os professores */}
+            {!selectedSubjectId && !selectedDate && !selectedTeacherId && selectedTimes.length === 0 ? (
+              <div className="space-y-1">
+                {teachers.map((teacher) => {
+                  const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
+                  const fullStars = Math.floor(rating.average);
+                  const hasHalf = rating.average - fullStars >= 0.5;
+                  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
-                      const remaining = eduList.length - 2;
-                      const result: { text: string }[] = [];
+                  const teacherEducation = (() => {
+                    if (!teacher.education) return [];
+                    let eduList: any = teacher.education;
+                    if (typeof eduList === "string") {
+                      try { eduList = JSON.parse(eduList); } catch { return []; }
+                    }
+                    if (!Array.isArray(eduList) || eduList.length === 0) return [];
+
+                    if (eduList.length === 1) {
                       const first = eduList[0];
-                      if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
-                      else if (first.course) result.push({ text: first.course });
-                      const second = eduList[1];
-                      const indicator = remaining > 0 ? ` (+${remaining})` : '';
-                      if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
-                      else if (second.course) result.push({ text: `${second.course}${indicator}` });
-                      return result;
-                    })();
+                      if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
+                      if (first.course) return [{ text: first.course }];
+                      return [];
+                    }
 
-                     return (
-                       <button
-                         key={teacher.id}
-                         type="button"
-                         onClick={() => setSelectedTeacherId(teacher.id)}
-                         className={cn(
-                           "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
-                           selectedTeacherId === teacher.id
-                             ? "ring-2 ring-amber-400"
-                             : "hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/50",
-                         )}
-                       >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
-                            <AvatarImage
-                              src={teacher.avatarUrl || ""}
-                              alt={teacher.name}
-                            />
-                            <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
-                              {teacher.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-bold text-slate-900">
-                                {teacher.name}
-                              </p>
-                              {/* Removed Experimental tag from teacher name per request */}
+                    const remaining = eduList.length - 2;
+                    const result: { text: string }[] = [];
+                    const first = eduList[0];
+                    if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
+                    else if (first.course) result.push({ text: first.course });
+                    const second = eduList[1];
+                    const indicator = remaining > 0 ? ` (+${remaining})` : '';
+                    if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
+                    else if (second.course) result.push({ text: `${second.course}${indicator}` });
+                    return result;
+                  })();
+
+                  return (
+                    <button
+                      key={teacher.id}
+                      type="button"
+                      onClick={() => setSelectedTeacherId(teacher.id)}
+                      className={cn(
+                        "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                        selectedTeacherId === teacher.id
+                          ? "ring-2 ring-amber-400"
+                          : "hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/50",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
+                          <AvatarImage
+                            src={teacher.avatarUrl || ""}
+                            alt={teacher.name}
+                          />
+                          <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
+                            {teacher.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-bold text-slate-900">
+                              {teacher.name}
+                            </p>
+                            {/* Removed Experimental tag from teacher name per request */}
+                          </div>
+                          {teacherEducation.length > 0 && (
+                            <div className="space-y-0.5">
+                              {teacherEducation.map((edu, idx) => (
+                                <p key={idx} className="text-sm font-medium text-slate-400 truncate">
+                                  {edu.text}
+                                </p>
+                              ))}
                             </div>
-                            {teacherEducation.length > 0 && (
-                              <div className="space-y-0.5">
-                                {teacherEducation.map((edu, idx) => (
-                                  <p key={idx} className="text-sm font-medium text-slate-400 truncate">
-                                    {edu.text}
-                                  </p>
-                                ))}
-                              </div>
+                          )}
+                          <div className="mt-2 flex items-center gap-1 text-amber-500">
+                            {Array.from({ length: fullStars }).map((_, i) => (
+                              <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
+                            ))}
+                            {hasHalf && (
+                              <Star className="h-4 w-4 fill-current opacity-50" />
                             )}
-                            <div className="mt-2 flex items-center gap-1 text-amber-500">
-                              {Array.from({ length: fullStars }).map((_, i) => (
-                                <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
-                              ))}
-                              {hasHalf && (
-                                <Star className="h-4 w-4 fill-current opacity-50" />
-                              )}
-                              {Array.from({ length: emptyStars }).map((_, i) => (
-                                <Star key={`empty-${i}`} className="h-4 w-4" />
-                              ))}
-                              <span className="ml-1 text-xs font-semibold text-slate-600">
-                                {rating.average.toFixed(1)}
-                              </span>
-                            </div>
+                            {Array.from({ length: emptyStars }).map((_, i) => (
+                              <Star key={`empty-${i}`} className="h-4 w-4" />
+                            ))}
+                            <span className="ml-1 text-xs font-semibold text-slate-600">
+                              {rating.average.toFixed(1)}
+                            </span>
                           </div>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : !selectedSubjectId ? (
+              <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+                Selecione uma disciplina para visualizar os professores.
+              </p>
+            ) : availableTeachers.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+                <SearchX className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+                <p className="font-semibold text-slate-700">
+                  Nenhum professor encontrado para esta disciplina.
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Tente selecionar outra matéria para continuar.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {availableTeachers.map((teacher) => {
+                  const rating = teacherRatings.get(teacher.id) || { average: 5.0, count: 0 };
+                  const fullStars = Math.floor(rating.average);
+                  const hasHalf = rating.average - fullStars >= 0.5;
+                  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+                  const teacherEducation = (() => {
+                    if (!teacher.education) return [];
+                    let eduList: any = teacher.education;
+                    if (typeof eduList === "string") {
+                      try { eduList = JSON.parse(eduList); } catch { return []; }
+                    }
+                    if (!Array.isArray(eduList) || eduList.length === 0) return [];
+
+                    if (eduList.length === 1) {
+                      const first = eduList[0];
+                      if (first.course && first.university) return [{ text: `${first.course} - ${first.university}` }];
+                      if (first.course) return [{ text: first.course }];
+                      return [];
+                    }
+
+                    const remaining = eduList.length - 2;
+                    const result: { text: string }[] = [];
+                    const first = eduList[0];
+                    if (first.course && first.university) result.push({ text: `${first.course} - ${first.university}` });
+                    else if (first.course) result.push({ text: first.course });
+                    const second = eduList[1];
+                    const indicator = remaining > 0 ? ` (+${remaining})` : '';
+                    if (second.course && second.university) result.push({ text: `${second.course} - ${second.university}${indicator}` });
+                    else if (second.course) result.push({ text: `${second.course}${indicator}` });
+                    return result;
+                  })();
+
+                  return (
+                    <button
+                      key={teacher.id}
+                      type="button"
+                      onClick={() => setSelectedTeacherId(teacher.id)}
+                      className={cn(
+                        "w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition",
+                        selectedTeacherId === teacher.id
+                          ? "ring-2 ring-amber-400"
+                          : "hover:border-[#f5b000] hover:ring-2 hover:ring-[#f5b000]/50",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border border-slate-100 shrink-0">
+                          <AvatarImage
+                            src={teacher.avatarUrl || ""}
+                            alt={teacher.name}
+                          />
+                          <AvatarFallback className="bg-amber-100 font-bold text-amber-700">
+                            {teacher.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-bold text-slate-900">
+                              {teacher.name}
+                            </p>
+                            {/* Removed Experimental tag from teacher name per request */}
+                          </div>
+                          {teacherEducation.length > 0 && (
+                            <div className="space-y-0.5">
+                              {teacherEducation.map((edu, idx) => (
+                                <p key={idx} className="text-sm font-medium text-slate-400 truncate">
+                                  {edu.text}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-center gap-1 text-amber-500">
+                            {Array.from({ length: fullStars }).map((_, i) => (
+                              <Star key={`full-${i}`} className="h-4 w-4 fill-current" />
+                            ))}
+                            {hasHalf && (
+                              <Star className="h-4 w-4 fill-current opacity-50" />
+                            )}
+                            {Array.from({ length: emptyStars }).map((_, i) => (
+                              <Star key={`empty-${i}`} className="h-4 w-4" />
+                            ))}
+                            <span className="ml-1 text-xs font-semibold text-slate-600">
+                              {rating.average.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
       {preBookings.length > 0 && (
         <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">

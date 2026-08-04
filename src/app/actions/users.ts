@@ -17,20 +17,21 @@ export async function getStudents() {
         role: "student",
         status: { not: "deleted" },
       },
-      select: { 
-        id: true, 
-        name: true, 
-        email: true, 
-        cpf: true, 
-        state: true, 
-        avatarUrl: true, 
-        credits: true, 
-        status: true, 
-        createdAt: true, 
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        cpf: true,
+        state: true,
+        avatarUrl: true,
+        credits: true,
+        status: true,
+        createdAt: true,
         phone: true,
         tags: true,
         failedLoginAttempts: true,
-        updatedAt: true
+        updatedAt: true,
+        role: true
       },
       orderBy: { createdAt: "desc" },
     });
@@ -214,13 +215,13 @@ export async function getTeachers(showAll = false) {
 
     const teachers = await prisma.user.findMany({
       where: whereCondition,
-      select: { 
-        id: true, 
-        name: true, 
-        email: true, 
-        avatarUrl: true, 
-        status: true, 
-        subject: true, 
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        status: true,
+        subject: true,
         subjects: true,
         education: true,
         phone: true,
@@ -228,7 +229,7 @@ export async function getTeachers(showAll = false) {
         state: true,
         pixKeyType: true,
         pixKey: true,
-        isValidated: true, 
+        isValidated: true,
         videoUrl: true,
         Availability: true,
         createdAt: true,
@@ -414,7 +415,7 @@ export async function createTeacher(data: {
       },
     });
     revalidatePath("/dashboard/teachers");
-    
+
     // Automação de IA para novo professor
     triggerAiAutomation('USER_REGISTERED', newTeacher).catch(console.error);
 
@@ -525,7 +526,7 @@ export async function createStudent(data: {
       },
     });
     revalidatePath("/dashboard/students");
-    
+
     // Automação de IA para novo aluno
     triggerAiAutomation('USER_REGISTERED', newStudent).catch(console.error);
 
@@ -774,7 +775,7 @@ export async function getReferralSummary(userId: string) {
     });
 
     if (!user) return { success: false, error: "Usuario não encontrado." };
-    
+
     // Buscar configurações de bônus
     const settings = await prisma.appSetting.findUnique({ where: { id: 'global' } });
     const bonusSettings = {
@@ -793,7 +794,7 @@ export async function getReferralSummary(userId: string) {
     } catch (e) {
       console.error('Erro ao ler imagens de indicacoes:', e);
     }
-    
+
     const modalSettings = {
       enabled: (settings as any)?.referralModalEnabled ?? true,
       frequency: (settings as any)?.referralModalFrequency || 'always',
@@ -1084,7 +1085,7 @@ export async function updateTeacherProfile(
 
     // Build update data - only update fields that were explicitly provided
     const updateData: Record<string, any> = {};
-    
+
     if ('bio' in data) {
       updateData.bio = data.bio?.trim() || null;
     }

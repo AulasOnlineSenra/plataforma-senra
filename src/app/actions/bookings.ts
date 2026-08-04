@@ -70,6 +70,10 @@ export async function createBookings(
         const newStart = new Date(booking.start);
         const newEnd = new Date(booking.end || new Date(new Date(booking.start).getTime() + 90 * 60 * 1000));
 
+        // Criar margem de 2 minutos para evitar falso conflito em aulas coladas (back-to-back)
+        const validationStart = new Date(newStart.getTime() + 2 * 60 * 1000);
+        const validationEnd = new Date(newEnd.getTime() - 2 * 60 * 1000);
+
         // Verificar conflito de horário para o ALUNO
         const studentConflict = await transactionClient.lesson.findFirst({
           where: {
@@ -77,8 +81,8 @@ export async function createBookings(
             status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
             OR: [
               {
-                date: { lt: newEnd },
-                endDate: { gt: newStart }
+                date: { lt: validationEnd },
+                endDate: { gt: validationStart }
               }
             ]
           }
@@ -99,11 +103,8 @@ export async function createBookings(
             status: { in: ['PENDING', 'CONFIRMED', 'scheduled'] },
             OR: [
               {
-                date: { lte: newEnd },
-                endDate: { gte: newStart }
-              },
-              {
-                date: { gte: newStart, lt: newEnd }
+                date: { lt: validationEnd },
+                endDate: { gt: validationStart }
               }
             ]
           }
