@@ -73,8 +73,9 @@ export async function checkScheduleAvailability(
 ) {
   try {
     const timeToMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    const reqStart = timeToMin(startTime);
-    const reqEnd = timeToMin(endTime);
+    // Tolerância silenciosa de 2 minutos para bordas coladas
+    const reqStart = timeToMin(startTime) + 2;
+    const reqEnd = timeToMin(endTime) - 2;
 
     // 1. Check teacher's configured availability
     const availabilities = await prisma.availability.findMany({
