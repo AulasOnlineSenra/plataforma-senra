@@ -32,6 +32,9 @@ export default function HomeFinalCTA() {
     <section className="relative overflow-hidden bg-[#020817] pt-[70px] pb-[30px] font-sans border-t border-slate-900">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* White glow / Embaçado */}
+        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-white/[0.04] rounded-full blur-[120px]" />
+        
         {/* Orbital lines */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-blue-500/10 -translate-x-[50%]" />
         <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full border border-blue-500/10 translate-x-[50%]" />
@@ -56,7 +59,7 @@ export default function HomeFinalCTA() {
 
       <div className="container relative z-10 mx-auto px-4 max-w-6xl flex flex-col items-center justify-center text-center">
         {/* Headings */}
-        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 md:mb-8 font-headline tracking-tight max-w-[1000px] mx-auto">
+        <h2 className="mt-[15px] text-3xl md:text-5xl font-bold text-white mb-[9px] md:mb-[17px] font-headline tracking-tight max-w-[1000px] mx-auto">
           Pare de tentar organizar tudo sozinho<br />
           Deixe a Senra montar um plano <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">feito para você</span>
         </h2>
