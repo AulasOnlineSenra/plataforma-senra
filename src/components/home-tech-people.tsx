@@ -124,11 +124,17 @@ export default function HomeTechPeople() {
             </div>
             
             {/* Shield & Text outside */}
-            <div className="flex flex-row items-center gap-2 max-w-[180px] pt-[40px]">
-              <ShieldCheck className="w-6 h-6 text-slate-400 shrink-0" strokeWidth={1.5} />
-              <span className="text-[12px] font-medium text-slate-500 text-left leading-tight">
-                Segurança, privacidade<br/>e dados protegidos.
-              </span>
+            <div className="relative flex flex-col items-center justify-start pt-[40px] w-full max-w-[260px]">
+              {/* Connector */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[40px] bg-slate-300">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-400"></div>
+              </div>
+              <div className="flex flex-row items-center gap-3 bg-white border border-slate-200 shadow-sm rounded-full px-5 py-2.5 z-10">
+                <ShieldCheck className="w-5 h-5 text-slate-500 shrink-0" strokeWidth={1.8} />
+                <span className="text-[11px] font-medium text-slate-500 text-left leading-tight">
+                  Segurança, privacidade<br/>e dados protegidos
+                </span>
+              </div>
             </div>
           </div>
 
@@ -193,7 +199,7 @@ export default function HomeTechPeople() {
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
             <button 
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[4.5px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[6px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
@@ -203,7 +209,7 @@ export default function HomeTechPeople() {
                   <span className="font-bold text-white text-base md:text-lg leading-tight">
                     Conheça a plataforma na prática
                   </span>
-                  <span className="flex items-center gap-1.5 text-slate-300 text-[11px] font-medium mt-0.5">
+                  <span className="flex items-center gap-1.5 text-slate-300 text-[11px] font-medium mt-[1px]">
                     <Lock className="w-3 h-3" />
                     Ambiente seguro e confiável
                   </span>
