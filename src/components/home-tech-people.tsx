@@ -93,7 +93,7 @@ export default function HomeTechPeople() {
               <div className="absolute inset-[-18px] rounded-full border-[2px] border-dashed border-slate-300/80 pointer-events-none" />
               
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
-                <User className="w-12 h-12 text-[#2563eb] mb-2" strokeWidth={1.2} />
+                <User className="w-16 h-16 text-[#2563eb] mb-2" strokeWidth={1.2} />
                 <h4 className="font-black text-slate-900 text-2xl mb-1">Você</h4>
                 <p className="text-[13px] font-medium text-slate-500 text-center leading-tight">
                   No centro de<br />toda a jornada.
@@ -102,16 +102,16 @@ export default function HomeTechPeople() {
             </div>
             
             {/* Shield & Text outside */}
-            <div className="flex flex-col items-center gap-2 max-w-[150px]">
-              <ShieldCheck className="w-6 h-6 text-slate-400" strokeWidth={1.5} />
-              <span className="text-[12px] font-medium text-slate-500 text-center leading-tight">
+            <div className="flex flex-row items-center gap-2 max-w-[180px]">
+              <ShieldCheck className="w-6 h-6 text-slate-400 shrink-0" strokeWidth={1.5} />
+              <span className="text-[12px] font-medium text-slate-500 text-left leading-tight">
                 Segurança, privacidade<br/>e dados protegidos.
               </span>
             </div>
           </div>
 
           {/* RIGHT CONNECTOR */}
-          <div className="hidden lg:flex flex-col justify-start pt-[60px] w-12 xl:w-20 relative shrink-0 z-0 -mx-8 xl:-mx-12 -translate-x-[30px] -translate-y-[30px]">
+          <div className="hidden lg:flex flex-col justify-start pt-[60px] w-12 xl:w-20 relative shrink-0 z-20 -mx-8 xl:-mx-12 -translate-x-[30px] -translate-y-[30px]">
              <svg className="w-full h-32" preserveAspectRatio="none" viewBox="0 0 100 100" style={{ overflow: 'visible' }}>
                 {/* Solid dot on the left (at the edge of center circle) */}
                 <circle cx="15" cy="75" r="5" fill="#f59e0b" />
@@ -167,7 +167,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Bottom Authority Box */}
-        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 p-6 md:p-8 flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[85px]">
+        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[14px] md:px-8 md:py-[22px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[85px]">
           <div className="flex flex-col md:flex-row items-center gap-6 xl:w-1/2 text-center md:text-left">
             <div className="w-16 h-16 rounded-full bg-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-slate-900/20">
               <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
