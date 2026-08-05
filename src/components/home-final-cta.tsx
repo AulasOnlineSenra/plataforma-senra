@@ -66,7 +66,7 @@ export default function HomeFinalCTA() {
         </p>
 
         {/* Features Grid */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-0 w-full mb-16 md:mb-20">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-0 w-full mb-[25px]">
           {/* Feature 1 */}
           <div className="flex flex-col items-center flex-1 w-full md:border-r md:border-slate-800/80 px-4">
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
