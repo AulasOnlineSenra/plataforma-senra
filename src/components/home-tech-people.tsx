@@ -86,14 +86,14 @@ export default function HomeTechPeople() {
           </div>
 
           {/* CENTER COMPONENT */}
-          <div className="flex flex-col items-center justify-start pt-10 shrink-0 relative z-10 w-full lg:w-auto translate-y-[95px]">
+          <div className="flex flex-col items-center justify-start pt-10 shrink-0 relative z-10 w-full lg:w-auto translate-y-[85px]">
             {/* The Main Circle */}
             <div className="relative z-10 mb-8 flex items-center justify-center">
               {/* Outer dashed orbit */}
               <div className="absolute inset-[-18px] rounded-full border-[2px] border-dashed border-slate-300/80 pointer-events-none" />
               
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
-                <User className="w-16 h-16 text-[#2563eb] mb-2" strokeWidth={1.2} />
+                <User className="w-[83px] h-[83px] text-[#2563eb] mb-2" strokeWidth={1.2} />
                 <h4 className="font-black text-slate-900 text-2xl mb-1">Você</h4>
                 <p className="text-[13px] font-medium text-slate-500 text-center leading-tight">
                   No centro de<br />toda a jornada.
@@ -167,7 +167,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Bottom Authority Box */}
-        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[14px] md:px-8 md:py-[22px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[85px]">
+        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[10px] md:px-8 md:py-[18px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
           <div className="flex flex-col md:flex-row items-center gap-6 xl:w-1/2 text-center md:text-left">
             <div className="w-16 h-16 rounded-full bg-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-slate-900/20">
               <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
@@ -195,7 +195,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Final CTA */}
-        <div className="flex flex-col items-center -translate-y-[60px]">
+        <div className="flex flex-col items-center -translate-y-[90px]">
           <Link href="#planos">
             <Button className="h-14 px-10 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-lg shadow-lg shadow-blue-600/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
               Conheça a plataforma na prática
