@@ -87,7 +87,7 @@ export default function HomeJourney() {
             <div 
               className="relative w-full lg:w-[750px] lg:max-w-none lg:-mr-[150px] xl:-mr-[250px] rounded-2xl overflow-hidden bg-white border border-slate-200"
               style={{ 
-                transform: 'perspective(1200px) translateX(-120px) rotateY(-12deg) rotateX(4deg) scale(0.98)',
+                transform: 'perspective(1200px) translateX(-120px) rotateY(-12deg) rotateX(4deg) scale(0.96)',
                 boxShadow: '-20px 30px 60px rgba(0,0,0,0.25), -1px 1px 0px rgba(255,255,255,0.5) inset'
               }}
             >
