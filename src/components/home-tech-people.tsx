@@ -102,8 +102,6 @@ export default function HomeTechPeople() {
                 <circle cx="4" cy="20" r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
                 {/* Line going right then curving down to left edge of center circle */}
                 <path d="M 8,20 L 60,20 Q 85,20 85,45 L 85,75" fill="none" stroke="#3b82f6" strokeWidth="2" />
-                {/* Solid dot at the end */}
-                <circle cx="85" cy="75" r="5" fill="#3b82f6" />
              </svg>
           </div>
 
@@ -114,6 +112,10 @@ export default function HomeTechPeople() {
               {/* Outer dashed orbit */}
               <div className="absolute inset-[-18px] rounded-full border-[2px] border-dashed border-slate-300/80 pointer-events-none" />
               
+              {/* Orbit Dots */}
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '31px', left: '-10px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '31px', right: '-10px' }} />
+
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
                 <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />
                 <h4 className="font-black text-slate-900 text-2xl mb-1">Você</h4>
@@ -126,8 +128,8 @@ export default function HomeTechPeople() {
             {/* Shield & Text outside */}
             <div className="relative flex flex-col items-center justify-start pt-[40px] w-full max-w-[260px]">
               {/* Connector */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[40px] bg-slate-300">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-400"></div>
+              <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 w-px h-[54px] bg-slate-300">
+                <div className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-[10px] h-[10px] rounded-full bg-slate-400 shadow-[0_0_0_2px_rgba(255,255,255,1)]"></div>
               </div>
               <div className="flex flex-row items-center gap-3 bg-white border border-slate-200 shadow-sm rounded-full px-5 py-2.5 z-10">
                 <ShieldCheck className="w-5 h-5 text-slate-500 shrink-0" strokeWidth={1.8} />
@@ -141,8 +143,6 @@ export default function HomeTechPeople() {
           {/* RIGHT CONNECTOR */}
           <div className="hidden lg:flex flex-col justify-start pt-[60px] w-12 xl:w-20 relative shrink-0 z-20 -mx-8 xl:-mx-12 -translate-x-[30px] -translate-y-[30px]">
              <svg className="w-full h-32" preserveAspectRatio="none" viewBox="0 0 100 100" style={{ overflow: 'visible' }}>
-                {/* Solid dot on the left (at the edge of center circle) */}
-                <circle cx="15" cy="75" r="5" fill="#f59e0b" />
                 {/* Line going up then curving right to right panel */}
                 <path d="M 15,75 L 15,45 Q 15,20 40,20 L 96,20" fill="none" stroke="#f59e0b" strokeWidth="2" />
                 {/* Arrow head at the end */}
