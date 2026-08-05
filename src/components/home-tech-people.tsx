@@ -102,7 +102,7 @@ export default function HomeTechPeople() {
             </div>
             
             {/* Shield & Text outside */}
-            <div className="flex flex-row items-center gap-2 max-w-[180px]">
+            <div className="flex flex-row items-center gap-2 max-w-[180px] pt-[15px]">
               <ShieldCheck className="w-6 h-6 text-slate-400 shrink-0" strokeWidth={1.5} />
               <span className="text-[12px] font-medium text-slate-500 text-left leading-tight">
                 Segurança, privacidade<br/>e dados protegidos.
@@ -168,17 +168,17 @@ export default function HomeTechPeople() {
 
         {/* Bottom Authority Box */}
         <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[10px] md:px-8 md:py-[18px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
-          <div className="flex flex-col md:flex-row items-center gap-6 xl:w-1/2 text-center md:text-left">
-            <div className="w-16 h-16 rounded-full bg-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-slate-900/20">
-              <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
-            </div>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
             <Link href="#planos" className="w-full md:w-auto">
-              <Button className="w-full md:w-auto h-auto py-3 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center gap-1">
-                <div className="flex items-center gap-2 font-bold text-base md:text-lg">
-                  Conheça a plataforma na prática
-                  <ArrowRight className="w-5 h-5" />
+              <Button className="w-full md:w-auto h-auto py-3 px-8 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center gap-3 font-bold text-base md:text-lg">
+                  <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+                  <span className="flex items-center gap-2">
+                    Conheça a plataforma na prática
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-blue-100 text-[11px] font-medium">
+                <div className="flex items-center gap-1.5 text-slate-300 text-[11px] font-medium">
                   <Lock className="w-3.5 h-3.5" />
                   Ambiente seguro e confiável
                 </div>
