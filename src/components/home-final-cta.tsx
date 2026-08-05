@@ -29,7 +29,7 @@ export default function HomeFinalCTA() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#020817] py-9 md:py-[68px] font-sans border-t border-slate-900">
+    <section className="relative overflow-hidden bg-[#020817] py-4 md:py-[18px] font-sans border-t border-slate-900">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Orbital lines */}
@@ -38,30 +38,30 @@ export default function HomeFinalCTA() {
         
         {/* Floating Icons (Faint) */}
         <div className="absolute top-[15%] left-[10%] opacity-[0.03]">
-          <Calendar className="w-32 h-32 text-white" />
+          <Calendar className="w-24 h-24 text-white" />
         </div>
         <div className="absolute top-[20%] right-[12%] opacity-[0.03]">
-          <MessageSquare className="w-24 h-24 text-white" />
+          <MessageSquare className="w-16 h-16 text-white" />
         </div>
         <div className="absolute bottom-[20%] left-[8%] opacity-[0.03]">
-          <FileCheck className="w-28 h-28 text-white" />
+          <FileCheck className="w-20 h-20 text-white" />
         </div>
         <div className="absolute top-[45%] right-[5%] opacity-[0.03]">
-          <GraduationCap className="w-32 h-32 text-white" />
+          <GraduationCap className="w-24 h-24 text-white" />
         </div>
         <div className="absolute bottom-[10%] right-[15%] opacity-[0.03]">
-          <BarChart className="w-24 h-24 text-white" />
+          <BarChart className="w-16 h-16 text-white" />
         </div>
       </div>
 
       <div className="container relative z-10 mx-auto px-4 max-w-6xl flex flex-col items-center justify-center text-center">
         {/* Headings */}
         <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-6 tracking-tight">
-          Pare de estudar sozinho.<br />
-          Comece a <span className="text-amber-500">evoluir todos os dias.</span>
+          Pare de estudar sozinho<br />
+          Comece a <span className="text-amber-500">evoluir todos os dias</span>
         </h2>
         
-        <p className="text-base md:text-lg text-slate-300 max-w-[1000px] mx-auto leading-relaxed mb-16 md:mb-24">
+        <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-16 md:mb-24">
           A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
 
