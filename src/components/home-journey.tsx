@@ -48,7 +48,7 @@ export default function HomeJourney() {
   };
 
   return (
-    <section className="pt-[81px] pb-24 bg-white overflow-hidden">
+    <section className="pt-[81px] pb-[66px] bg-white overflow-hidden">
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Bloco Superior: Copy + Mockup 3D */}

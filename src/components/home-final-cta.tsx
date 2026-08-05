@@ -56,7 +56,7 @@ export default function HomeFinalCTA() {
 
       <div className="container relative z-10 mx-auto px-4 max-w-6xl flex flex-col items-center justify-center text-center">
         {/* Headings */}
-        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 md:mb-8 font-headline tracking-tight max-w-3xl mx-auto">
+        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 md:mb-8 font-headline tracking-tight max-w-[1000px] mx-auto">
           Pare de tentar organizar tudo sozinho<br />
           Deixe a Senra montar um plano <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">feito para você</span>
         </h2>
