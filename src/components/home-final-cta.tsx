@@ -29,7 +29,7 @@ export default function HomeFinalCTA() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#020817] py-24 md:py-32 font-sans border-t border-slate-900">
+    <section className="relative overflow-hidden bg-[#020817] py-9 md:py-[68px] font-sans border-t border-slate-900">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Orbital lines */}
@@ -61,10 +61,8 @@ export default function HomeFinalCTA() {
           Comece a <span className="text-amber-500">evoluir todos os dias.</span>
         </h2>
         
-        <p className="text-base md:text-lg text-slate-300 max-w-[800px] mx-auto leading-relaxed mb-16 md:mb-24">
-          A Senra reúne organização, professores especialistas e<br className="hidden md:block" />
-          acompanhamento humano para que você estude com mais<br className="hidden md:block" />
-          <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
+        <p className="text-base md:text-lg text-slate-300 max-w-[1000px] mx-auto leading-relaxed mb-16 md:mb-24">
+          A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
 
         {/* Features Grid */}
