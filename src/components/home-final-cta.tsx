@@ -29,7 +29,7 @@ export default function HomeFinalCTA() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#020817] pt-[50px] pb-[30px] font-sans border-t border-slate-900">
+    <section className="relative overflow-hidden bg-[#020817] pt-[70px] pb-[30px] font-sans border-t border-slate-900">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Orbital lines */}
@@ -57,16 +57,16 @@ export default function HomeFinalCTA() {
       <div className="container relative z-10 mx-auto px-4 max-w-6xl flex flex-col items-center justify-center text-center">
         {/* Headings */}
         <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-6 tracking-tight">
-          Pare de estudar sozinho<br />
-          Comece a <span className="text-amber-500">evoluir todos os dias</span>
+          Pare de tentar organizar tudo sozinho<br />
+          Deixe a Senra montar um plano <span className="text-amber-500">feito para você</span>
         </h2>
         
-        <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-[50px]">
+        <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-[65px]">
           A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
 
         {/* Features Grid */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-0 w-full mb-[25px]">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-0 w-full mb-[40px]">
           {/* Feature 1 */}
           <div className="flex flex-col items-center flex-1 w-full md:border-r md:border-slate-800/80 px-4">
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
@@ -113,7 +113,7 @@ export default function HomeFinalCTA() {
             className="relative z-10 w-full h-[53px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
           >
             <ExternalLink className="w-[22px] h-[22px] stroke-[2.5]" />
-            <span className="font-bold text-lg md:text-[20px] tracking-tight">Quero conhecer a plataforma</span>
+            <span className="font-bold text-lg md:text-[20px] tracking-tight">Quero organizar meus estudos</span>
             <ChevronRight className="w-6 h-6 stroke-[3] group-hover:translate-x-1 transition-transform" />
           </button>
           
