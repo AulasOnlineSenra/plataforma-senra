@@ -29,7 +29,7 @@ export default function HomeFinalCTA() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#020817] py-4 md:py-[18px] font-sans border-t border-slate-900">
+    <section className="relative overflow-hidden bg-[#020817] pt-[30px] pb-[18px] font-sans border-t border-slate-900">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Orbital lines */}
@@ -61,7 +61,7 @@ export default function HomeFinalCTA() {
           Comece a <span className="text-amber-500">evoluir todos os dias</span>
         </h2>
         
-        <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-16 md:mb-24">
+        <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-[35px]">
           A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
 
@@ -110,14 +110,14 @@ export default function HomeFinalCTA() {
           
           <button 
             onClick={handleWhatsAppClick}
-            className="relative z-10 w-full h-[60px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
+            className="relative z-10 w-full h-[53px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
           >
             <ExternalLink className="w-[22px] h-[22px] stroke-[2.5]" />
             <span className="font-bold text-lg md:text-[20px] tracking-tight">Quero conhecer a plataforma</span>
             <ChevronRight className="w-6 h-6 stroke-[3] group-hover:translate-x-1 transition-transform" />
           </button>
           
-          <div className="flex items-center gap-2 mt-6 text-[13px] font-medium text-slate-400">
+          <div className="flex items-center gap-2 mt-[7px] text-[13px] font-medium text-slate-400">
             <Lock className="w-3.5 h-3.5 opacity-70" />
             <span>Sem cartão de crédito</span>
             <span className="w-1 h-1 rounded-full bg-slate-600 mx-1.5" />
