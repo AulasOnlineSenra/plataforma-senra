@@ -46,6 +46,7 @@ import HomeFaq from '@/components/home-faq';
 import HomeTestimonials from '@/components/home-testimonials';
 import TestimonialsCarousel from '@/components/testimonials-carousel';
 import HomePricing from '@/components/home-pricing';
+import HomeFinalCTA from '@/components/home-final-cta';
 import MapaCircle from '@/components/mapa-v9';
 import SubjectCarousel from '@/components/subject-carousel-hero';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -683,55 +684,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className={`py-${showQuiz ? '[12rem]' : '[13rem]'} relative overflow-hidden bg-slate-950`}>
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 z-0" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-3xl bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 min-h-[500px]">
-            {!showQuiz && (
-              <>
-                <h2 className="text-2xl md:text-4xl font-bold font-headline text-white mb-[11px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                  <EditableText storageKey="home-finalcta-title">Pronto para Transformar Sua Jornada de Aprendizado?</EditableText>
-                </h2>
-                <p className="text-base md:text-lg text-blue-100 max-w-[900px] mx-auto mb-10 leading-relaxed">
-                  <EditableText storageKey="home-finalcta-subtitle">A primeira aula é experimental e sem compromisso. Sem cartão de crédito. Sem letras miúdas.</EditableText>
-                </p>
-              </>
-            )}
-
-            {showQuiz || quizCompleted ? (
-              <div className="w-full max-w-lg mt-[60px]">
-                <QuizCarousel
-                  questions={quizQuestions}
-                  onComplete={() => setQuizCompleted(true)}
-                />
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowQuiz(false);
-                    setQuizCompleted(false);
-                  }}
-                  className="mt-4 pb-[45px] text-white hover:bg-transparent hover:text-amber-400 lg:-ml-[800px]"
-                >
-                  Voltar ao início
-                </Button>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                onClick={() => setShowQuiz(true)}
-                className="h-14 sm:h-12 rounded-2xl sm:rounded-full px-8 bg-[#FFC107] hover:bg-[#FFD54F] text-slate-900 font-bold transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(245,176,0,0.9)] disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                <EditableText storageKey="home-finalcta-button">Quero minha aula experimental grátis</EditableText>
-              </Button>
-            )}
-
-            <p className="mt-6 text-sm text-blue-200/80 flex items-center justify-center gap-2 hidden">
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              <EditableText storageKey="home-finalcta-guarantee">Seu e-mail está 100% seguro. Não fazemos spam.</EditableText>
-            </p>
-          </div>
-        </section>
+        <HomeFinalCTA />
       </main>
 
       <footer id="contato" className="bg-slate-950 text-slate-300 pt-0 pb-0 border-t border-slate-800">
