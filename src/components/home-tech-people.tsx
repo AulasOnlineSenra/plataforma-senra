@@ -1,14 +1,36 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { getSettings } from '@/app/actions/settings';
 import { 
   Users, Monitor, Calendar, LayoutGrid, Folder, CheckSquare, BarChart2, 
   GraduationCap, MessageCircle, User, Headphones, Heart, 
-  ShieldCheck, Star, Trophy, ArrowRight, Lock, Target
+  ShieldCheck, Star, Trophy, ArrowRight, Lock, Target, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
+const DEFAULT_WHATSAPP_NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '').replace(/\D/g, '');
+
 export default function HomeTechPeople() {
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const res = await getSettings();
+      if (res.success && res.data?.whatsapp) {
+        setWhatsappNumber(res.data.whatsapp.replace(/\D/g, ''));
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleWhatsAppClick = () => {
+    const target = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
+    const url = `https://wa.me/${target}?text=${encodeURIComponent('Olá! Gostaria de organizar minha jornada de estudos.')}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="w-full bg-[#fcfcfd] py-20 overflow-hidden font-sans">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -169,21 +191,26 @@ export default function HomeTechPeople() {
         {/* Bottom Authority Box */}
         <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
-            <Link href="#planos" className="w-full md:w-auto">
-              <Button className="w-full md:w-auto h-auto py-[4.5px] px-8 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center gap-1">
-                <div className="flex items-center gap-3 font-bold text-base md:text-lg">
-                  <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-                  <span className="flex items-center gap-2">
+            <button 
+              onClick={handleWhatsAppClick}
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[4.5px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-10 h-10 text-amber-400 fill-amber-400" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-white text-base md:text-lg leading-tight">
                     Conheça a plataforma na prática
-                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                  <span className="flex items-center gap-1.5 text-slate-300 text-[11px] font-medium mt-0.5">
+                    <Lock className="w-3 h-3" />
+                    Ambiente seguro e confiável
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-300 text-[11px] font-medium">
-                  <Lock className="w-3.5 h-3.5" />
-                  Ambiente seguro e confiável
-                </div>
-              </Button>
-            </Link>
+              </div>
+              <ChevronRight className="w-6 h-6 text-white ml-2 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
 
           <div className="flex flex-wrap md:flex-nowrap justify-center gap-6 md:gap-10 xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-10">
