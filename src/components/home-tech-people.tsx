@@ -86,14 +86,14 @@ export default function HomeTechPeople() {
           </div>
 
           {/* CENTER COMPONENT */}
-          <div className="flex flex-col items-center justify-start pt-10 shrink-0 relative z-10 w-full lg:w-auto translate-y-[85px]">
+          <div className="flex flex-col items-center justify-start pt-10 shrink-0 relative z-10 w-full lg:w-auto translate-y-[90px]">
             {/* The Main Circle */}
             <div className="relative z-10 mb-8 flex items-center justify-center">
               {/* Outer dashed orbit */}
               <div className="absolute inset-[-18px] rounded-full border-[2px] border-dashed border-slate-300/80 pointer-events-none" />
               
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
-                <User className="w-[83px] h-[83px] text-[#2563eb] mb-2" strokeWidth={1.2} />
+                <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />
                 <h4 className="font-black text-slate-900 text-2xl mb-1">Você</h4>
                 <p className="text-[13px] font-medium text-slate-500 text-center leading-tight">
                   No centro de<br />toda a jornada.
@@ -172,9 +172,18 @@ export default function HomeTechPeople() {
             <div className="w-16 h-16 rounded-full bg-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-slate-900/20">
               <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
             </div>
-            <p className="text-[11px] md:text-[13px] text-slate-700 leading-relaxed font-medium">
-              Enquanto outras plataformas entregam apenas ferramentas, a Senra combina <strong className="text-blue-600">tecnologia</strong> e <strong className="text-amber-500">acompanhamento humano</strong> para que você mantenha a consistência até alcançar seu objetivo.
-            </p>
+            <Link href="#planos" className="w-full md:w-auto">
+              <Button className="w-full md:w-auto h-auto py-3 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center gap-2 font-bold text-base md:text-lg">
+                  Conheça a plataforma na prática
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+                <div className="flex items-center gap-1.5 text-blue-100 text-[11px] font-medium">
+                  <Lock className="w-3.5 h-3.5" />
+                  Ambiente seguro e confiável
+                </div>
+              </Button>
+            </Link>
           </div>
 
           <div className="flex flex-wrap md:flex-nowrap justify-center gap-6 md:gap-10 xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-10">
@@ -191,20 +200,6 @@ export default function HomeTechPeople() {
                 <span className="text-[7px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider">{stat.label}</span>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div className="flex flex-col items-center -translate-y-[90px]">
-          <Link href="#planos">
-            <Button className="h-14 px-10 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-lg shadow-lg shadow-blue-600/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
-              Conheça a plataforma na prática
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-1.5 mt-4 text-slate-400 text-xs font-medium">
-            <Lock className="w-3.5 h-3.5" />
-            Ambiente seguro e confiável
           </div>
         </div>
 
