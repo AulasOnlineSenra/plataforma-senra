@@ -162,9 +162,9 @@ export default function HomeCorpo() {
         <div className="bg-slate-50 py-8 border-y border-slate-100 hidden">
           <div className="container mx-auto px-4 max-w-[90%]">
             <div className="text-center mb-8">
-              <h3 className="text-2xl md:text-3xl font-bold font-headline text-slate-900">
+              <div className="text-2xl md:text-3xl font-bold font-headline text-slate-900">
                 Disciplinas que ensinamos
-              </h3>
+              </div>
               <p className="mt-2 text-slate-600">
                 Tire suas dúvidas com especialistas em qualquer matéria
               </p>

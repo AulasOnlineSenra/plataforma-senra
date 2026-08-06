@@ -75,7 +75,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <Gift className="w-7 h-7 text-amber-500" />
             </div>
-            <h4 className="text-sm font-bold text-white mb-1">Aula experimental</h4>
+            <h3 className="text-sm font-bold text-white mb-1">Aula experimental</h3>
             <p className="text-sm text-slate-400">gratuita</p>
           </div>
 
@@ -84,7 +84,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <ShieldCheck className="w-7 h-7 text-amber-500" />
             </div>
-            <h4 className="text-sm font-bold text-white mb-1">Sem fidelidade</h4>
+            <h3 className="text-sm font-bold text-white mb-1">Sem fidelidade</h3>
             <p className="text-sm text-slate-400">cancele quando quiser</p>
           </div>
 
@@ -93,7 +93,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <Headset className="w-7 h-7 text-amber-500" />
             </div>
-            <h4 className="text-sm font-bold text-white mb-1">Atendimento humano</h4>
+            <h3 className="text-sm font-bold text-white mb-1">Atendimento humano</h3>
             <p className="text-sm text-slate-400">pelo WhatsApp</p>
           </div>
 
@@ -102,7 +102,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <Clock className="w-7 h-7 text-amber-500" />
             </div>
-            <h4 className="text-sm font-bold text-white mb-1">Horários flexíveis</h4>
+            <h3 className="text-sm font-bold text-white mb-1">Horários flexíveis</h3>
             <p className="text-sm text-slate-400">você escolhe</p>
           </div>
         </div>

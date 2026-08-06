@@ -21,9 +21,9 @@ export default function MapaCircle() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-left mb-5 -mt-10 ml-10 pt-16">
-          <h3 className="text-5xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h2 className="text-5xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             O Método <span className="text-amber-500">MAPA</span>
-          </h3>
+          </h2>
           <p className="text-slate-400 text-lg max-w-xl whitespace-nowrap">
             Quatro etapas que se repetem até você dominar qualquer assunto
           </p>

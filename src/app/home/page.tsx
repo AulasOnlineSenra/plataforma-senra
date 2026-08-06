@@ -700,9 +700,9 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-bold text-white mb-4 text-lg tracking-tight">
+              <h3 className="font-bold text-white mb-4 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-nav-title">Navegação & Institucional</EditableText>
-              </h4>
+              </h3>
               <ul className="space-y-1 text-xs">
                 <li>
                   <Link href="#como-funciona" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
@@ -732,9 +732,9 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-bold text-white mb-4 text-lg tracking-tight">
+              <h3 className="font-bold text-white mb-4 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-specialties-title">Especialidades</EditableText>
-              </h4>
+              </h3>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li>
                   <EditableText storageKey="home-footer-specialty-1">Ensino Fundamental</EditableText>
@@ -752,9 +752,9 @@ export default function HomePage() {
             </div>
 
             <div className="md:ml-[-10px]">
-              <h4 className="font-bold text-white mb-6 text-lg tracking-tight">
+              <h3 className="font-bold text-white mb-6 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-security-title">Segurança & Pagamentos</EditableText>
-              </h4>
+              </h3>
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3 text-sm text-slate-300">
