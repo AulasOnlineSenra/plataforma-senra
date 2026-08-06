@@ -593,7 +593,7 @@ function ChatContent() {
         const timeDiff = Math.abs(toDate(msg.createdAt).getTime() - toDate(prevMsg.createdAt).getTime());
         
         // Se ambos são imagens do mesmo rementente com intervalo curto e a mensagem atual não tem texto extra
-        if (isSameSender && isImage && prevIsImage && timeDiff < 60000 && !msg.content) {
+        if (isSameSender && isImage && prevIsImage && timeDiff < 300000 && !msg.content) {
           currentGroup.push(msg);
         } else {
           groups.push(currentGroup);
