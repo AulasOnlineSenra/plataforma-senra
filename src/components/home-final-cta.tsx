@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getSettings } from '@/app/actions/settings';
-import { 
+import {
   Calendar, MessageSquare, FileCheck, GraduationCap, BarChart,
   Gift, ShieldCheck, Headset, Clock, ExternalLink, ChevronRight, Lock
 } from 'lucide-react';
@@ -34,11 +34,11 @@ export default function HomeFinalCTA() {
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* White glow / Embaçado */}
         <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-white/[0.04] rounded-full blur-[120px]" />
-        
+
         {/* Orbital lines */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-blue-500/10 -translate-x-[50%]" />
         <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full border border-blue-500/10 translate-x-[50%]" />
-        
+
         {/* Floating Icons (Faint) */}
         <div className="absolute top-[15%] left-[10%] opacity-[0.03]">
           <Calendar className="w-24 h-24 text-white" />
@@ -63,7 +63,7 @@ export default function HomeFinalCTA() {
           Pare de tentar organizar tudo sozinho<br />
           Deixe a Senra montar um plano <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">feito para você</span>
         </h2>
-        
+
         <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-[65px]">
           A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
@@ -75,7 +75,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <Gift className="w-7 h-7 text-amber-500" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Aula experimental</h3>
+            <h4 className="text-sm font-bold text-white mb-1">Aula experimental</h4>
             <p className="text-sm text-slate-400">gratuita</p>
           </div>
 
@@ -84,7 +84,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <ShieldCheck className="w-7 h-7 text-amber-500" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Sem fidelidade</h3>
+            <h4 className="text-sm font-bold text-white mb-1">Sem fidelidade</h4>
             <p className="text-sm text-slate-400">cancele quando quiser</p>
           </div>
 
@@ -93,7 +93,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <Headset className="w-7 h-7 text-amber-500" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Atendimento humano</h3>
+            <h4 className="text-sm font-bold text-white mb-1">Atendimento humano</h4>
             <p className="text-sm text-slate-400">pelo WhatsApp</p>
           </div>
 
@@ -102,7 +102,7 @@ export default function HomeFinalCTA() {
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
               <Clock className="w-7 h-7 text-amber-500" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Horários flexíveis</h3>
+            <h4 className="text-sm font-bold text-white mb-1">Horários flexíveis</h4>
             <p className="text-sm text-slate-400">você escolhe</p>
           </div>
         </div>
@@ -110,8 +110,8 @@ export default function HomeFinalCTA() {
         {/* CTA Button */}
         <div className="flex flex-col items-center w-full max-w-md mx-auto relative group">
           <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-          
-          <button 
+
+          <button
             onClick={handleWhatsAppClick}
             className="relative z-10 w-full h-[53px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
           >
@@ -119,7 +119,7 @@ export default function HomeFinalCTA() {
             <span className="font-bold text-lg md:text-[20px] tracking-tight">Quero organizar meus estudos</span>
             <ChevronRight className="w-6 h-6 stroke-[3] group-hover:translate-x-1 transition-transform" />
           </button>
-          
+
           <div className="flex items-center gap-2 mt-[4px] text-[13px] font-medium text-slate-400">
             <Lock className="w-3.5 h-3.5 opacity-70" />
             <span>Sem cartão de crédito</span>

@@ -569,7 +569,7 @@ export default function BlogPostPage() {
                 {gridPosts && gridPosts.length > 0 && (
                     <div className="my-12">
                     <div className="mb-4 text-center">
-                      <span className="text-xs uppercase tracking-widest text-muted-foreground">Continue explorando</span>
+                      <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Continue explorando</h2>
                     </div>
                     <div className="max-h-[840px] overflow-hidden -mx-4 sm:-mx-8">
                       <BlogGrid posts={gridPosts} />

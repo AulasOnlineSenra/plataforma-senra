@@ -21,9 +21,9 @@ export default function MapaCircle() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-left mb-5 -mt-10 ml-10 pt-16">
-          <h2 className="text-5xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h3 className="text-5xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             O Método <span className="text-amber-500">MAPA</span>
-          </h2>
+          </h3>
           <p className="text-slate-400 text-lg max-w-xl whitespace-nowrap">
             Quatro etapas que se repetem até você dominar qualquer assunto
           </p>
@@ -43,13 +43,13 @@ export default function MapaCircle() {
                   ${index === 0 ? 'md:mt-20' : index === 1 ? 'md:mt-0' : index === 2 ? 'md:-mt-20' : 'md:-mt-40'}
                 `}>
                   {/* Background gradient sutil */}
-                  <div 
+                  <div
                     className="absolute inset-0 rounded-3xl opacity-5"
                     style={{ background: `linear-gradient(135deg, ${step.color}20 0%, transparent 100%)` }}
                   />
 
                   {/* Barra lateral colorida */}
-                  <div 
+                  <div
                     className="absolute left-0 top-0 bottom-0 w-1 rounded-l-3xl"
                     style={{ backgroundColor: step.color }}
                   />
@@ -57,13 +57,13 @@ export default function MapaCircle() {
                   <div className="relative z-10 flex flex-col h-full">
                     {/* Header com número */}
                     <div className="flex items-center justify-between mb-6">
-                      <div 
+                      <div
                         className="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest"
                         style={{ backgroundColor: `${step.color}20`, color: step.color }}
                       >
                         Etapa {index + 1}
                       </div>
-                      <div 
+                      <div
                         className="w-10 h-10 rounded-full flex items-center justify-center"
                         style={{ backgroundColor: step.color }}
                       >
@@ -73,7 +73,7 @@ export default function MapaCircle() {
 
                     {/* Ícone grande */}
                     <div className="mb-6">
-                      <div 
+                      <div
                         className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl"
                         style={{ backgroundColor: step.color }}
                       >
@@ -83,7 +83,7 @@ export default function MapaCircle() {
 
                     {/* Letra e palavra */}
                     <div className="mb-3">
-                      <span 
+                      <span
                         className="text-5xl font-black"
                         style={{ color: step.color }}
                       >{step.letter}</span>
@@ -97,7 +97,7 @@ export default function MapaCircle() {
                   </div>
 
                   {/* Borda glow no hover */}
-                  <div 
+                  <div
                     className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                     style={{ boxShadow: `0 0 30px ${step.color}40` }}
                   />

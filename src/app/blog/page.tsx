@@ -24,14 +24,17 @@ export default async function BlogPage() {
       {/* Header minimalista */}
       <div className="hidden border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold font-headline text-foreground tracking-tight">
+          <div className="text-3xl font-bold font-headline text-foreground tracking-tight">
             Blog
-          </h1>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             Artigos, tutoriais e novidades
           </p>
         </div>
       </div>
+
+      <h1 className="sr-only">Blog Senra - Dicas de estudos, notícias sobre vestibulares e concursos</h1>
+      <h2 className="sr-only">Últimos Artigos</h2>
 
       <div className="container mx-auto px-4 md:px-[150px] pt-[100px] pb-[25px]">
         <BlogSearchBar posts={posts} />

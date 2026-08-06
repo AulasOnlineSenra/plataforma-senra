@@ -207,9 +207,9 @@ function HeroPost({ post }: { post: Post }) {
           <span className="text-white/40 text-[10px]">• {timeLabel}</span>
         </div>
         
-        <h2 className="text-xl sm:text-3xl font-bold text-white font-headline leading-tight mb-3 group-hover:text-amber-400 transition-colors drop-shadow-[0_4px_8px_rgba(0,0,0,1)] [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">
+        <h3 className="text-xl sm:text-3xl font-bold text-white font-headline leading-tight mb-3 group-hover:text-amber-400 transition-colors drop-shadow-[0_4px_8px_rgba(0,0,0,1)] [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">
           {post.title}
-        </h2>
+        </h3>
         
         <p className="text-white/70 text-sm line-clamp-2 mb-6 hidden sm:block">
           {post.excerpt}
@@ -258,9 +258,9 @@ function BlogCard({ post }: { post: Post }) {
           <span className="text-muted-foreground/60 text-[10px]">• {timeLabel}</span>
         </div>
 
-        <h2 className="text-[15px] font-bold text-foreground leading-snug line-clamp-3 mb-2 group-hover:text-amber-600 transition-colors">
+        <h3 className="text-[15px] font-bold text-foreground leading-snug line-clamp-3 mb-2 group-hover:text-amber-600 transition-colors">
           {post.title}
-        </h2>
+        </h3>
         
         <p className="text-xs text-muted-foreground line-clamp-2 mt-auto mb-4">
           {post.excerpt}

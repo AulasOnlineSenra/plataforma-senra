@@ -67,12 +67,12 @@ function SubjectCarousel({ subjects }: { subjects: Subject[] }) {
       `}</style>
       <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 to-transparent z-10" />
       <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 to-transparent z-10" />
-      
+
       <div className="flex gap-4 carousel-scroll">
         {duplicatedSubjects.map((subject, index) => {
           const Icon = getSubjectIcon(subject.name);
           return (
-            <div 
+            <div
               key={`${subject.id}-${index}`}
               className="flex-shrink-0 flex flex-col items-center gap-2"
             >
@@ -150,9 +150,9 @@ export default function HomeCorpo() {
 
         {/* Imagem como funciona */}
         <div className="flex justify-center mb-12 -mt-[39px]">
-          <img 
-            src="/resolvemos1.png" 
-            alt="Resolvemos" 
+          <img
+            src="/resolvemos1.png"
+            alt="Resolvemos"
             className="max-w-[90%] md:max-w-[80%] lg:max-w-5xl h-auto rounded-2xl shadow-xl shadow-amber-500/10"
           />
         </div>
@@ -162,17 +162,17 @@ export default function HomeCorpo() {
         <div className="bg-slate-50 py-8 border-y border-slate-100 hidden">
           <div className="container mx-auto px-4 max-w-[90%]">
             <div className="text-center mb-8">
-              <div className="text-2xl md:text-3xl font-bold font-headline text-slate-900">
+              <h3 className="text-2xl md:text-3xl font-bold font-headline text-slate-900">
                 Disciplinas que ensinamos
-              </div>
+              </h3>
               <p className="mt-2 text-slate-600">
                 Tire suas dúvidas com especialistas em qualquer matéria
               </p>
             </div>
             <SubjectCarousel subjects={subjects} />
             <div className="text-center mt-8 hidden">
-              <Link 
-                href="#planos" 
+              <Link
+                href="#planos"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-full shadow-lg shadow-amber-500/30 hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 Ver Planos e Preços
@@ -185,8 +185,8 @@ export default function HomeCorpo() {
 
       <div className="container mx-auto px-4 text-center pb-8">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-0">
-          <Link 
-            href="#planos" 
+          <Link
+            href="#planos"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 min-w-[500px] -translate-y-[90px] bg-[#0f172a] text-white font-bold text-lg rounded-full hover:scale-105 transition-all duration-300 z-20 relative"
           >
             Ver Planos e Preços

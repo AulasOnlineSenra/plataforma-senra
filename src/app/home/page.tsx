@@ -159,7 +159,7 @@ export default function HomePage() {
         setTeachersList(result.data as any[]);
         const teachersData = result.data.slice(0, 6);
         setTeachers(teachersData);
-        
+
         const ratings: Record<string, { average: number; count: number }> = {};
         for (const teacher of teachersData) {
           const ratingResult = await getTeacherAverageRating(teacher.id);
@@ -295,10 +295,10 @@ export default function HomePage() {
 
     const blocksWithoutTeacher = cronogramaBlocks.filter(b => !b.teacherId || b.teacherId === "none");
     if (blocksWithoutTeacher.length > 0) {
-      toast({ 
-        title: "Professores obrigatórios", 
-        description: "Selecione professores para todas as disciplinas para prosseguir.", 
-        variant: "destructive" 
+      toast({
+        title: "Professores obrigatórios",
+        description: "Selecione professores para todas as disciplinas para prosseguir.",
+        variant: "destructive"
       });
       return;
     }
@@ -309,11 +309,11 @@ export default function HomePage() {
     const preBookings = cronogramaBlocks.map(b => {
       const teacher = teachersList.find(t => t.id === b.teacherId);
       const subject = subjectsList.find(s => s.id === b.subject);
-      
+
       let targetDate = addDays(currentWeekStart, b.dayOfWeek);
       const [h, m] = b.startTime.split(':').map(Number);
       targetDate.setHours(h, m, 0, 0);
-      
+
       if (isBefore(targetDate, now)) {
         targetDate = addDays(targetDate, 7);
       }
@@ -342,10 +342,10 @@ export default function HomePage() {
     const selectedSubject = subjectsList.find(s => s.id === cronogramaBlock.subject);
     const subjectName = selectedSubject?.name || cronogramaBlock.subject;
 
-    return t.subject === cronogramaBlock.subject || 
-           t.subject === subjectName ||
-           (t.subjects && t.subjects.includes(cronogramaBlock.subject)) ||
-           (t.subjects && t.subjects.includes(subjectName));
+    return t.subject === cronogramaBlock.subject ||
+      t.subject === subjectName ||
+      (t.subjects && t.subjects.includes(cronogramaBlock.subject)) ||
+      (t.subjects && t.subjects.includes(subjectName));
   });
 
   const handleCronogramaCellClick = (dayOfWeek: number, startHour: number, isHalfHour: boolean) => {
@@ -385,7 +385,7 @@ export default function HomePage() {
     const eh = Math.floor(totalMin / 60) % 24;
     const em = totalMin % 60;
     const newEndTime = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
-    
+
     setCronogramaBlock(prev => ({
       ...prev,
       startTime: newStartTime,
@@ -450,8 +450,8 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-card">
-<header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:px-4 lg:py-[2px] bg-card border-b h-[47px] sm:h-[47px]">
-          <SenraLogo className="h-8 sm:h-10" />
+      <header className="sticky top-0 z-50 flex items-center justify-between p-2 lg:px-4 lg:py-[2px] bg-card border-b h-[47px] sm:h-[47px]">
+        <SenraLogo className="h-8 sm:h-10" />
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
@@ -589,7 +589,7 @@ export default function HomePage() {
               {teachers.map((teacher: any) => {
                 const rating = teacherRatings[teacher.id] || { average: 5.0, count: 0 };
                 const avatarUrl = teacher.avatarUrl || teacher.avatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&h=400&fit=crop';
-                
+
                 const education = (() => {
                   if (!teacher.education) return null;
                   let eduList = teacher.education;
@@ -646,12 +646,12 @@ export default function HomePage() {
         </section>
 
         {/* SEÇÃO DEPOIMENTOS */}
-        <section 
-          id="depoimentos" 
+        <section
+          id="depoimentos"
           className="py-44 md:py-[88px] -mt-[298px] relative"
-          style={{ 
-            backgroundImage: 'url(/depoimentos_pano_de_fundo_site.png)', 
-            backgroundSize: 'cover', 
+          style={{
+            backgroundImage: 'url(/depoimentos_pano_de_fundo_site.png)',
+            backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
           }}
@@ -700,9 +700,9 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h3 className="font-bold text-white mb-4 text-lg tracking-tight">
+              <h4 className="font-bold text-white mb-4 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-nav-title">Navegação & Institucional</EditableText>
-              </h3>
+              </h4>
               <ul className="space-y-1 text-xs">
                 <li>
                   <Link href="#como-funciona" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
@@ -717,10 +717,10 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-<Link href="/blog" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
-  <ArrowRight className="h-4 w-4" />
-  <EditableText storageKey="home-footer-nav-blog">Blog</EditableText>
-</Link>
+                  <Link href="/blog" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
+                    <ArrowRight className="h-4 w-4" />
+                    <EditableText storageKey="home-footer-nav-blog">Blog</EditableText>
+                  </Link>
                 </li>
                 <li>
                   <Link href="#" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
@@ -732,9 +732,9 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h3 className="font-bold text-white mb-4 text-lg tracking-tight">
+              <h4 className="font-bold text-white mb-4 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-specialties-title">Especialidades</EditableText>
-              </h3>
+              </h4>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li>
                   <EditableText storageKey="home-footer-specialty-1">Ensino Fundamental</EditableText>
@@ -752,9 +752,9 @@ export default function HomePage() {
             </div>
 
             <div className="md:ml-[-10px]">
-              <h3 className="font-bold text-white mb-6 text-lg tracking-tight">
+              <h4 className="font-bold text-white mb-6 text-lg tracking-tight">
                 <EditableText storageKey="home-footer-security-title">Segurança & Pagamentos</EditableText>
-              </h3>
+              </h4>
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3 text-sm text-slate-300">
@@ -798,7 +798,7 @@ export default function HomePage() {
                 <Youtube className="h-5 w-5" />
               </Link>
             </div>
-<div className="flex flex-col md:flex-row justify-between items-center w-full gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-center w-full gap-4">
               <p className="-mt-[45px]">
                 &copy; {new Date().getFullYear()} <EditableText storageKey="home-footer-copyright">Plataforma Senra. Todos os direitos reservados.</EditableText>
               </p>
