@@ -230,7 +230,7 @@ function ChatContent() {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isContactTyping, setIsContactTyping] = useState(false);
   const [typingContactIds, setTypingContactIds] = useState<Set<string>>(new Set());
@@ -578,6 +578,35 @@ function ChatContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.length, activeContactId]);
 
+  const groupedMessages = useMemo(() => {
+    const groups: ChatMessage[][] = [];
+    let currentGroup: ChatMessage[] = [];
+
+    conversation.forEach((msg, idx) => {
+      if (idx === 0) {
+        currentGroup = [msg];
+      } else {
+        const prevMsg = currentGroup[currentGroup.length - 1];
+        const isSameSender = msg.senderId === prevMsg.senderId;
+        const isImage = msg.attachmentType?.startsWith("image/");
+        const prevIsImage = prevMsg.attachmentType?.startsWith("image/");
+        const timeDiff = Math.abs(toDate(msg.createdAt).getTime() - toDate(prevMsg.createdAt).getTime());
+        
+        // Se ambos são imagens do mesmo rementente com intervalo curto e a mensagem atual não tem texto extra
+        if (isSameSender && isImage && prevIsImage && timeDiff < 60000 && !msg.content) {
+          currentGroup.push(msg);
+        } else {
+          groups.push(currentGroup);
+          currentGroup = [msg];
+        }
+      }
+    });
+    if (currentGroup.length > 0) {
+      groups.push(currentGroup);
+    }
+    return groups;
+  }, [conversation]);
+
   // Typing indicator - check if contact is typing
   useEffect(() => {
     if (!currentUser?.id || !activeContact?.id) return;
@@ -719,9 +748,9 @@ function ChatContent() {
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        setPendingFile(file);
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        setPendingFiles((prev) => [...prev, ...files]);
       }
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
@@ -795,73 +824,53 @@ function ChatContent() {
   const handleSend = async (e: FormEvent) => {
     e.preventDefault();
     const content = inputValue.trim();
-    if ((!content && !pendingFile) || !currentUser?.id || !activeContact?.id || isSending) return;
+    if ((!content && pendingFiles.length === 0) || !currentUser?.id || !activeContact?.id || isSending) return;
 
     setIsSending(true);
-    let attachmentUrl: string | null = null;
-    let attachmentName: string | null = null;
-    let attachmentType: string | null = null;
 
-    if (pendingFile) {
-      setIsUploading(true);
-      try {
-        const formData = new FormData();
-        formData.append("file", pendingFile);
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) {
-          toast({
-            variant: "destructive",
-            title: "Erro no upload",
-            description: uploadData.error || "Falha ao enviar arquivo.",
-          });
-          setIsSending(false);
-          setIsUploading(false);
-          return;
-        }
-        attachmentUrl = uploadData.data.url;
-        attachmentName = uploadData.data.name;
-        attachmentType = uploadData.data.type;
-      } catch {
-        toast({
-          variant: "destructive",
-          title: "Erro no upload",
-          description: "Falha ao enviar arquivo.",
-        });
-        setIsSending(false);
-        setIsUploading(false);
-        return;
+    if (pendingFiles.length === 0) {
+      const result = await sendChatMessage({
+        senderId: currentUser.id,
+        receiverId: activeContact.id,
+        content,
+      });
+
+      if (!result.success) {
+        toast({ variant: "destructive", title: "Erro ao enviar", description: result.error });
       }
+    } else {
+      setIsUploading(true);
+      const uploadPromises = pendingFiles.map(async (file, index) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+          const uploadData = await uploadRes.json();
+          if (uploadData.success) {
+            await sendChatMessage({
+              senderId: currentUser.id!,
+              receiverId: activeContact.id!,
+              content: index === 0 ? content : "", // O texto digitado acompanha apenas o 1º arquivo
+              attachmentUrl: uploadData.data.url,
+              attachmentName: uploadData.data.name,
+              attachmentType: uploadData.data.type,
+            });
+          } else {
+            toast({ variant: "destructive", title: "Erro", description: `Falha no upload de ${file.name}` });
+          }
+        } catch {
+          toast({ variant: "destructive", title: "Erro", description: `Erro no upload de ${file.name}` });
+        }
+      });
+      await Promise.all(uploadPromises);
       setIsUploading(false);
     }
 
-    const result = await sendChatMessage({
-      senderId: currentUser.id,
-      receiverId: activeContact.id,
-      content: content || (pendingFile ? pendingFile.name : ""),
-      attachmentUrl,
-      attachmentName,
-      attachmentType,
-    });
-
-    if (!result.success) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao enviar",
-        description: result.error || "Não foi possivel enviar a mensagem.",
-      });
-      setIsSending(false);
-      return;
-    }
-
     setInputValue("");
-    setPendingFile(null);
+    setPendingFiles([]);
     sendTypingStatus(false);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    await loadMessages(currentUser.id, false);
+    await loadMessages(currentUser.id, false, isAuditMode);
     setIsSending(false);
   };
 
@@ -1113,82 +1122,120 @@ function ChatContent() {
 
             <ScrollArea className="max-h-[90vh] flex-1 bg-background">
               <div className="space-y-2 p-4">
-                {conversation.length === 0 ? (
+                {groupedMessages.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Nenhuma mensagem ainda.
                   </p>
                 ) : (
-                  conversation.map((message, msgIndex) => {
-                    const prevDate = msgIndex > 0 ? toDate(conversation[msgIndex - 1].createdAt).toDateString() : null;
-                    const currDate = toDate(message.createdAt).toDateString();
+                  groupedMessages.map((group, groupIndex) => {
+                    const firstMsg = group[0];
+                    const prevDate = groupIndex > 0 ? toDate(groupedMessages[groupIndex - 1][0].createdAt).toDateString() : null;
+                    const currDate = toDate(firstMsg.createdAt).toDateString();
                     const showDateSeparator = prevDate !== currDate;
-                    const isMine = message.senderId === currentUser.id;
-                    const isHighlighted =
-                      searchTerm.trim() &&
-                      searchResultIndices.includes(msgIndex);
-                    const isAudioOnly = message.attachmentType?.startsWith("audio/") && !message.content;
+                    const isMine = firstMsg.senderId === currentUser.id;
+
                     return (
-                      <React.Fragment key={message.id}>
+                      <React.Fragment key={`group-${firstMsg.id}`}>
                         {showDateSeparator && (
                           <div className="flex items-center justify-center my-4">
                             <div className="bg-muted/70 text-muted-foreground text-xs font-medium px-3 py-1 rounded-full">
-                              {formatDateSeparator(message.createdAt)}
+                              {formatDateSeparator(firstMsg.createdAt)}
                             </div>
                           </div>
                         )}
-                      <div
-                        ref={(el) => {
-                          if (el) messageRefs.current.set(msgIndex, el);
-                          else messageRefs.current.delete(msgIndex);
-                        }}
-                        className={`mb-2 flex ${isMine ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[82%] px-3 ${isAudioOnly ? "py-0" : "py-2"} text-sm shadow-md ${
-                            isMine
-                              ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground"
-                              : "rounded-2xl rounded-bl-sm bg-[#0f172a] text-white"
-                          } ${isHighlighted ? "ring-2 ring-yellow-400 ring-offset-1" : ""}`}
-                        >
-                          {message.attachmentUrl && (
-                            <div className={`${message.content ? "mb-2" : ""} ${isAudioOnly ? "pt-2.5" : ""}`}>
-                              <ChatAttachmentPreview
-                                url={message.attachmentUrl}
-                                name={message.attachmentName || "Arquivo"}
-                                type={message.attachmentType || ""}
-                                isMine={isMine}
-                              />
+                        <div className={`mb-2 flex ${isMine ? "justify-end" : "justify-start"}`}>
+                          {group.length === 1 ? (
+                            (() => {
+                              const message = firstMsg;
+                              const msgIndex = conversation.indexOf(message);
+                              const isHighlighted = searchTerm.trim() && searchResultIndices.includes(msgIndex);
+                              const isAudioOnly = message.attachmentType?.startsWith("audio/") && !message.content;
+                              return (
+                                <div
+                                  ref={(el) => {
+                                    if (el) messageRefs.current.set(msgIndex, el);
+                                    else messageRefs.current.delete(msgIndex);
+                                  }}
+                                  className={`max-w-[82%] px-3 ${isAudioOnly ? "py-0" : "py-2"} text-sm shadow-md ${
+                                    isMine
+                                      ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground"
+                                      : "rounded-2xl rounded-bl-sm bg-[#0f172a] text-white"
+                                  } ${isHighlighted ? "ring-2 ring-yellow-400 ring-offset-1" : ""}`}
+                                >
+                                  {message.attachmentUrl && (
+                                    <div className={`${message.content ? "mb-2" : ""} ${isAudioOnly ? "pt-2.5" : ""}`}>
+                                      <ChatAttachmentPreview
+                                        url={message.attachmentUrl}
+                                        name={message.attachmentName || "Arquivo"}
+                                        type={message.attachmentType || ""}
+                                        isMine={isMine}
+                                      />
+                                    </div>
+                                  )}
+                                  {message.content && (
+                                    <p className="whitespace-pre-wrap break-words">
+                                      {searchTerm ? (
+                                        <HighlightText text={message.content} searchTerm={searchTerm} />
+                                      ) : (
+                                        formatMessageContent(message.content, isMine)
+                                      )}
+                                    </p>
+                                  )}
+                                  <div className={`mt-1 flex items-center justify-end gap-1 text-[11px] ${
+                                    isMine ? "text-primary-foreground/80" : "text-muted-foreground"
+                                  }`}>
+                                    <span>{formatTime(message.createdAt)}</span>
+                                    {isMine && (message.readAt ? <CheckCheck className="h-3 w-3 text-blue-500" /> : <Check className="h-3 w-3 text-muted-foreground" />)}
+                                  </div>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <div className={`max-w-[82%] sm:max-w-[320px] p-1.5 shadow-md ${
+                              isMine ? "rounded-2xl rounded-br-sm bg-primary" : "rounded-2xl rounded-bl-sm bg-[#0f172a]"
+                            }`}>
+                              <div className={`grid gap-1 ${group.length === 2 ? 'grid-cols-2' : group.length >= 3 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                {group.slice(0, 4).map((message, i) => {
+                                  const isLastVisible = i === 3 && group.length > 4;
+                                  const msgIndex = conversation.indexOf(message);
+                                  return (
+                                    <div 
+                                      key={message.id} 
+                                      className="relative aspect-square overflow-hidden rounded-md cursor-pointer group/img"
+                                      ref={(el) => {
+                                        if (el) messageRefs.current.set(msgIndex, el);
+                                        else messageRefs.current.delete(msgIndex);
+                                      }}
+                                      onClick={() => window.open(message.attachmentUrl!, '_blank')}
+                                    >
+                                      <img 
+                                        src={message.attachmentUrl!} 
+                                        alt="Imagem agrupada" 
+                                        className={`w-full h-full object-cover transition-transform group-hover/img:scale-105 ${isLastVisible ? 'brightness-50' : ''}`}
+                                      />
+                                      {isLastVisible && (
+                                        <div className="absolute inset-0 flex items-center justify-center text-white text-2xl font-bold bg-black/40">
+                                          +{group.length - 4}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {firstMsg.content && (
+                                <p className={`mt-2 px-1 text-sm whitespace-pre-wrap break-words ${isMine ? "text-primary-foreground" : "text-white"}`}>
+                                  {formatMessageContent(firstMsg.content, isMine)}
+                                </p>
+                              )}
+                              <div className={`mt-1 flex items-center justify-end gap-1 text-[11px] px-1 ${
+                                isMine ? "text-primary-foreground/80" : "text-muted-foreground"
+                              }`}>
+                                <span>{formatTime(group[group.length - 1].createdAt)}</span>
+                                {isMine && (group[group.length - 1].readAt ? <CheckCheck className="h-3 w-3 text-blue-500" /> : <Check className="h-3 w-3 text-muted-foreground" />)}
+                              </div>
                             </div>
                           )}
-                          {message.content && (
-                            <p className="whitespace-pre-wrap break-words">
-                              {searchTerm ? (
-                                <HighlightText
-                                  text={message.content}
-                                  searchTerm={searchTerm}
-                                />
-                              ) : (
-                                formatMessageContent(message.content, isMine)
-                              )}
-                            </p>
-                          )}
-                          <div
-                            className={`mt-1 flex items-center justify-end gap-1 text-[11px] ${
-                              isMine
-                                ? "text-primary-foreground/80"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            <span>{formatTime(message.createdAt)}</span>
-                            {isMine &&
-                              (message.readAt ? (
-                                <CheckCheck className="h-3 w-3 text-blue-500" />
-                              ) : (
-                                <Check className="h-3 w-3 text-muted-foreground" />
-                              ))}
-                          </div>
                         </div>
-                      </div>
                       </React.Fragment>
                     );
                   })
@@ -1201,24 +1248,28 @@ function ChatContent() {
               onSubmit={handleSend}
               className="border-t border-border/70 bg-card"
             >
-              {pendingFile && (
-                <div className="flex items-center gap-2 border-b border-border/40 bg-muted/20 px-3 py-2">
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate flex-1">
-                    {pendingFile.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {(pendingFile.size / 1024).toFixed(0)}KB
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setPendingFile(null)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+              {pendingFiles.length > 0 && (
+                <div className="flex flex-col gap-1 border-b border-border/40 bg-muted/20 px-3 py-2 max-h-[140px] overflow-y-auto">
+                  {pendingFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-background/50 rounded-md p-1.5">
+                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {(file.size / 1024).toFixed(0)}KB
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
               {isRecording ? (
@@ -1230,6 +1281,7 @@ function ChatContent() {
                   <input
                     ref={fileInputRef}
                     type="file"
+                    multiple
                     className="hidden"
                     accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.doc,.docx,.xlsx,text/plain,audio/mpeg,audio/ogg,audio/webm,audio/mp4"
                     onChange={handleFileChange}
@@ -1262,7 +1314,7 @@ function ChatContent() {
                   >
                     <Clock className="h-5 w-5" />
                   </Button>
-                  {inputValue.trim() || pendingFile ? (
+                  {inputValue.trim() || pendingFiles.length > 0 ? (
                     <Button
                       type="submit"
                       size="icon"
