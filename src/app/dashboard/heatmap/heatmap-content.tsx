@@ -19,11 +19,13 @@ import {
   Smartphone,
   Monitor,
   Loader2,
+  Filter,
 } from 'lucide-react';
 import { getHeatmapData } from '@/app/actions/analytics';
 
 export default function HeatmapContent() {
-  const [periodo, setPeriodo] = useState('30d');
+  const [periodo, setPeriodo] = useState('20d');
+  const [selectedPageUrl, setSelectedPageUrl] = useState('all');
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<{
     pages: any[];
@@ -48,11 +50,12 @@ export default function HeatmapContent() {
 
   const fetchAnalytics = async () => {
     setLoading(true);
-    let days = 30;
+    let days = 20;
     if (periodo === '7d') days = 7;
+    else if (periodo === '30d') days = 30;
     else if (periodo === '12m') days = 365;
 
-    const result = await getHeatmapData(days);
+    const result = await getHeatmapData(days, selectedPageUrl);
     if (result.success && result.data) {
       setAnalyticsData({
         ...result.data,
@@ -64,11 +67,10 @@ export default function HeatmapContent() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [periodo]);
+  }, [periodo, selectedPageUrl]);
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto pb-10">
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
         <div>
@@ -97,7 +99,7 @@ export default function HeatmapContent() {
           </button>
           
           <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner w-max">
-            {['7d', '30d', '12m'].map((p) => (
+            {['7d', '20d', '30d', '12m'].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriodo(p)}
@@ -107,7 +109,7 @@ export default function HeatmapContent() {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '12 meses'}
+                {p === '7d' ? '7 dias' : p === '20d' ? '20 dias' : p === '30d' ? '30 dias' : '12 meses'}
               </button>
             ))}
           </div>
@@ -147,7 +149,7 @@ export default function HeatmapContent() {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <span className="text-slate-400">Página mais acessada</span>
+              <span className="text-slate-400">Página principal</span>
             </div>
           </CardContent>
         </Card>
@@ -172,41 +174,43 @@ export default function HeatmapContent() {
 
       {/* Chart + Devices */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {/* Area Chart */}
         <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm">
           <CardHeader className="border-b border-slate-100 pb-4">
             <CardTitle className="text-lg font-bold text-slate-800">Crescimento de Tráfego</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={analyticsData.monthly} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="pageviews"
-                    name="Pageviews"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorViews)"
-                    activeDot={{ r: 6, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            {/* Adicionado overflow-x-auto para scroll horizontal se necessário */}
+            <div className="h-[300px] w-full overflow-x-auto">
+              <div className="min-w-[600px] h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analyticsData.monthly} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="pageviews"
+                      name="Pageviews"
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorViews)"
+                      activeDot={{ r: 6, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -253,70 +257,7 @@ export default function HeatmapContent() {
 
       {/* Ranking, States and Sources */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pages Ranking */}
-        <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-white">
-            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <MousePointerClick className="h-5 w-5 text-indigo-500" />
-              Páginas Mais Acessadas
-            </CardTitle>
-          </CardHeader>
-          <div className="overflow-auto max-h-[400px] relative">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50">Página (URL)</th>
-                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Visualizações</th>
-                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Tempo Médio</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={3} className="p-8 text-center text-slate-400">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      Carregando dados...
-                    </td>
-                  </tr>
-                ) : analyticsData.pages.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="p-8 text-center text-slate-400">
-                      Ainda não há dados coletados para este período. Navegue pela plataforma para começar a registrar!
-                    </td>
-                  </tr>
-                ) : (
-                  analyticsData.pages.map((page, index) => {
-                    const maxViews = analyticsData.pages[0].views;
-                    const percent = (page.views / maxViews) * 100;
-                    return (
-                      <tr key={index} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="p-4 font-medium text-slate-800 text-sm">
-                          <div className="flex items-center gap-3">
-                            <span className="text-slate-400 w-5 font-mono text-xs">{index + 1}.</span>
-                            {page.url}
-                          </div>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-3">
-                            <span className="font-bold text-slate-700">{page.views.toLocaleString()}</span>
-                            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                              <div
-                                className="h-full bg-amber-400 rounded-full group-hover:bg-amber-500 transition-colors"
-                                style={{ width: `${percent}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-right font-medium text-slate-600 text-sm">{page.time}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
+        
         {/* States Distribution */}
         <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <CardHeader className="border-b border-slate-100 bg-white">
@@ -354,7 +295,7 @@ export default function HeatmapContent() {
               </div>
             ) : (
               <div className="p-8 text-center text-slate-400 text-sm">
-                Nenhum dado de estado encontrado.
+                Nenhum dado de estado encontrado para esta página.
               </div>
             )}
           </CardContent>
@@ -403,13 +344,91 @@ export default function HeatmapContent() {
               </div>
             ) : (
               <div className="p-8 text-center text-slate-400 text-sm">
-                Nenhum dado de origem encontrado.
+                Nenhum dado de origem encontrado para esta página.
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
 
+        {/* Pages Ranking (Moved below States and Sources) */}
+        <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm overflow-hidden mt-2">
+          <CardHeader className="border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <MousePointerClick className="h-5 w-5 text-indigo-500" />
+              Páginas Mais Acessadas
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <select
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-[300px]"
+                value={selectedPageUrl}
+                onChange={(e) => setSelectedPageUrl(e.target.value)}
+              >
+                <option value="all">Todas as páginas (Visão Geral)</option>
+                {analyticsData.pages.map((page, idx) => (
+                  <option key={idx} value={page.url}>
+                    {page.url}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </CardHeader>
+          <div className="overflow-auto max-h-[400px] relative">
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50">Página (URL)</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Visualizações</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right bg-slate-50">Tempo Médio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-slate-400">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      Carregando dados...
+                    </td>
+                  </tr>
+                ) : analyticsData.pages.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-slate-400">
+                      Ainda não há dados coletados para este período.
+                    </td>
+                  </tr>
+                ) : (
+                  analyticsData.pages.map((page, index) => {
+                    const maxViews = analyticsData.pages[0].views;
+                    const percent = (page.views / maxViews) * 100;
+                    return (
+                      <tr key={index} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="p-4 font-medium text-slate-800 text-sm">
+                          <div className="flex items-center gap-3">
+                            <span className="text-slate-400 w-5 font-mono text-xs">{index + 1}.</span>
+                            {page.url}
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            <span className="font-bold text-slate-700">{page.views.toLocaleString()}</span>
+                            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                              <div
+                                className="h-full bg-amber-400 rounded-full group-hover:bg-amber-500 transition-colors"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right font-medium text-slate-600 text-sm">{page.time}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

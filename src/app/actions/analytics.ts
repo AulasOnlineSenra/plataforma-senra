@@ -130,12 +130,12 @@ export async function getCrmAnalytics(boardId?: string): Promise<{ success: bool
   }
 }
 
-export async function getHeatmapData(periodDays: number) {
+export async function getHeatmapData(periodDays: number, pageUrl?: string) {
   try {
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - periodDays);
 
-    const visits = await prisma.pageVisit.findMany({
+    const allVisits = await prisma.pageVisit.findMany({
       where: {
         createdAt: {
           gte: fromDate,
@@ -143,36 +143,12 @@ export async function getHeatmapData(periodDays: number) {
       },
     });
 
-    // Aggregate data by URL
     const urlStats: Record<string, { views: number; totalTime: number }> = {};
-    const sourceCounts: Record<string, number> = {};
-    let mobileCount = 0;
-    let desktopCount = 0;
-
-    visits.forEach((v) => {
-      // url stats
-      if (!urlStats[v.url]) {
-        urlStats[v.url] = { views: 0, totalTime: 0 };
-      }
+    allVisits.forEach((v) => {
+      if (!urlStats[v.url]) urlStats[v.url] = { views: 0, totalTime: 0 };
       urlStats[v.url].views += 1;
       urlStats[v.url].totalTime += v.timeSpent;
-
-      // device stats
-      if (v.device === 'Mobile') {
-        mobileCount += 1;
-      } else {
-        desktopCount += 1;
-      }
-
-      // source stats
-      const src = v.source && v.source.trim() !== '' ? v.source : 'Direto/Orgânico';
-      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
     });
-
-    const sourcesDistribution = Object.entries(sourceCounts)
-      .map(([source, count]) => ({ source, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
 
     const pagesData = Object.keys(urlStats).map((url) => {
       const stat = urlStats[url];
@@ -187,7 +163,43 @@ export async function getHeatmapData(periodDays: number) {
         time: timeFormatted,
         bounce: '0%', 
       };
-    }).sort((a, b) => b.views - a.views).slice(0, 10);
+    }).sort((a, b) => b.views - a.views).slice(0, 50);
+
+    const visits = pageUrl && pageUrl !== 'all' ? allVisits.filter(v => v.url === pageUrl) : allVisits;
+
+    const sourceCounts: Record<string, number> = {};
+    let mobileCount = 0;
+    let desktopCount = 0;
+    const dailyData: Record<string, { pageviews: number }> = {};
+
+    for (let i = periodDays; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      dailyData[dateStr] = { pageviews: 0 };
+    }
+
+    visits.forEach((v) => {
+      if (v.device === 'Mobile') {
+        mobileCount += 1;
+      } else {
+        desktopCount += 1;
+      }
+
+      const src = v.source && v.source.trim() !== '' ? v.source : 'Direto/Orgânico';
+      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+
+      const vDate = new Date(v.createdAt);
+      const dateStr = `${vDate.getDate().toString().padStart(2, '0')}/${(vDate.getMonth() + 1).toString().padStart(2, '0')}`;
+      if (dailyData[dateStr]) {
+        dailyData[dateStr].pageviews += 1;
+      }
+    });
+
+    const sourcesDistribution = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
     const totalVisits = mobileCount + desktopCount;
     const uniqueUsers = new Set(visits.map(v => v.userId).filter(Boolean)).size;
@@ -200,9 +212,7 @@ export async function getHeatmapData(periodDays: number) {
       { name: 'Desktop', value: desktopPercent, color: '#10b981' },
     ];
 
-    const monthlyData = [
-      { name: 'Atual', usuarios: uniqueUsers, pageviews: totalVisits }
-    ];
+    const monthlyData = Object.keys(dailyData).map(k => ({ name: k, pageviews: dailyData[k].pageviews }));
 
     const uniqueUserIds = [...new Set(visits.map(v => v.userId).filter(Boolean))] as string[];
     let statesDistribution: { state: string, count: number }[] = [];
@@ -221,7 +231,18 @@ export async function getHeatmapData(periodDays: number) {
         .sort((a, b) => b.count - a.count);
     }
 
-    return { success: true, data: { pages: pagesData, devices: devicesData, monthly: monthlyData, totalViews: totalVisits, uniqueUsers: uniqueUsers, states: statesDistribution, sources: sourcesDistribution } };
+    return { 
+      success: true, 
+      data: { 
+        pages: pagesData, 
+        devices: devicesData, 
+        monthly: monthlyData, 
+        totalViews: totalVisits, 
+        uniqueUsers: uniqueUsers, 
+        states: statesDistribution, 
+        sources: sourcesDistribution 
+      } 
+    };
   } catch (error: any) {
     console.error('Error fetching heatmap data:', error);
     return { success: false, error: error.message || 'Falha ao carregar analytics' };
