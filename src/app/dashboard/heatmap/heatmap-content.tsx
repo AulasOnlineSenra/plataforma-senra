@@ -24,7 +24,7 @@ import {
 import { getHeatmapData } from '@/app/actions/analytics';
 
 export default function HeatmapContent() {
-  const [periodo, setPeriodo] = useState('20d');
+  const [periodo, setPeriodo] = useState('30d');
   const [selectedPageUrl, setSelectedPageUrl] = useState('all');
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<{
@@ -48,9 +48,9 @@ export default function HeatmapContent() {
     uniqueUsers: 0,
   });
 
-  const fetchAnalytics = async () => {
-    setLoading(true);
-    let days = 20;
+  const fetchAnalytics = async (isAutoRefresh = false) => {
+    if (!isAutoRefresh) setLoading(true);
+    let days = 30;
     if (periodo === '7d') days = 7;
     else if (periodo === '30d') days = 30;
     else if (periodo === '12m') days = 365;
@@ -62,11 +62,17 @@ export default function HeatmapContent() {
         uniqueUsers: result.data.uniqueUsers || 0,
       });
     }
-    setLoading(false);
+    if (!isAutoRefresh) setLoading(false);
   };
 
   useEffect(() => {
     fetchAnalytics();
+
+    const interval = setInterval(() => {
+      fetchAnalytics(true);
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, [periodo, selectedPageUrl]);
 
   return (
@@ -99,7 +105,7 @@ export default function HeatmapContent() {
           </button>
           
           <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner w-max">
-            {['7d', '20d', '30d', '12m'].map((p) => (
+            {['7d', '30d', '12m'].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriodo(p)}
@@ -109,7 +115,7 @@ export default function HeatmapContent() {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {p === '7d' ? '7 dias' : p === '20d' ? '20 dias' : p === '30d' ? '30 dias' : '12 meses'}
+                {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '12 meses'}
               </button>
             ))}
           </div>
@@ -176,8 +182,23 @@ export default function HeatmapContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Area Chart */}
         <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm">
-          <CardHeader className="border-b border-slate-100 pb-4">
+          <CardHeader className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle className="text-lg font-bold text-slate-800">Crescimento de Tráfego</CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <select
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-[250px]"
+                value={selectedPageUrl}
+                onChange={(e) => setSelectedPageUrl(e.target.value)}
+              >
+                <option value="all">Todas as páginas (Visão Geral)</option>
+                {analyticsData.pages.map((page, idx) => (
+                  <option key={idx} value={page.url}>
+                    {page.url}
+                  </option>
+                ))}
+              </select>
+            </div>
           </CardHeader>
           <CardContent className="p-6">
             {/* Adicionado overflow-x-auto para scroll horizontal se necessário */}
@@ -352,26 +373,11 @@ export default function HeatmapContent() {
 
         {/* Pages Ranking (Moved below States and Sources) */}
         <Card className="col-span-1 lg:col-span-2 rounded-3xl border-slate-200 shadow-sm overflow-hidden mt-2">
-          <CardHeader className="border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardHeader className="border-b border-slate-100 bg-white">
             <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <MousePointerClick className="h-5 w-5 text-indigo-500" />
               Páginas Mais Acessadas
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400" />
-              <select
-                className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-[300px]"
-                value={selectedPageUrl}
-                onChange={(e) => setSelectedPageUrl(e.target.value)}
-              >
-                <option value="all">Todas as páginas (Visão Geral)</option>
-                {analyticsData.pages.map((page, idx) => (
-                  <option key={idx} value={page.url}>
-                    {page.url}
-                  </option>
-                ))}
-              </select>
-            </div>
           </CardHeader>
           <div className="overflow-auto max-h-[400px] relative">
             <table className="w-full text-left border-collapse">
