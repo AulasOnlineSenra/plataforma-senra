@@ -235,7 +235,7 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[45%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[600px] mx-auto lg:translate-x-[40px]">
+              <div className="w-full lg:w-[50%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[40px]">
                 <div className="relative w-full aspect-[16/8] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
                   {/* O Notebook / Câmera da Interface */}
                   
@@ -310,7 +310,7 @@ export default function PlatformJourney() {
               </div>
 
               {/* Lado Direito - Progresso (Desktop) */}
-              <div className="hidden lg:flex w-[25%] flex-col justify-center h-full relative order-3 -translate-y-[35px] lg:translate-x-[40px]">
+              <div className="hidden lg:flex w-[20%] flex-col justify-center h-full relative order-3 -translate-y-[35px] lg:translate-x-[40px]">
                 <div className="absolute top-[10%] bottom-[10%] left-6 w-[2px] bg-slate-800/50" />
                 
                 {/* Linha de progresso preenchida */}
