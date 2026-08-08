@@ -166,7 +166,7 @@ export default function PlatformJourney() {
           <div className="container mx-auto px-4 lg:px-8 h-full max-h-[900px] flex flex-col justify-center py-10 relative">
             
             {/* Cabeçalho da Seção */}
-            <div className="absolute top-8 left-4 lg:left-8 z-20">
+            <div className="absolute top-[57px] left-4 lg:left-8 z-20">
               <h2 className="text-4xl lg:text-5xl font-black font-headline tracking-tight">
                 Conheça a <span className="text-amber-500">plataforma</span>
               </h2>
@@ -175,7 +175,7 @@ export default function PlatformJourney() {
               </p>
             </div>
 
-            <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10">
+            <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10 lg:pl-[60px] lg:-mr-[60px]">
               
               {/* Lado Esquerdo - Textos */}
               <div className="w-full lg:w-[30%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
@@ -210,7 +210,7 @@ export default function PlatformJourney() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center -translate-y-[40px]"
+                      className="flex flex-col h-full justify-center -translate-y-[80px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         Tudo conectado.
@@ -275,7 +275,7 @@ export default function PlatformJourney() {
                 </div>
 
                 {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
-                <div className="w-[calc(100%+100px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
+                <div className="w-[calc(100%+130px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
                   <div className="flex items-center gap-4 text-slate-300 text-sm">
                     <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
                       <MonitorPlay className="w-6 h-6 text-amber-500" />
