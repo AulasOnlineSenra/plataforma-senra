@@ -166,7 +166,7 @@ export default function PlatformJourney() {
           <div className="container mx-auto px-4 lg:px-8 h-full max-h-[900px] flex flex-col justify-center py-10 relative">
             
             {/* Cabeçalho da Seção */}
-            <div className="absolute top-[57px] left-4 lg:left-8 z-20">
+            <div className="absolute top-[57px] left-4 lg:left-[92px] z-20">
               <h2 className="text-4xl lg:text-5xl font-black font-headline tracking-tight">
                 Conheça a <span className="text-amber-500">plataforma</span>
               </h2>
@@ -275,7 +275,7 @@ export default function PlatformJourney() {
                 </div>
 
                 {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
-                <div className="w-[calc(100%+130px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
+                <div className="w-[calc(100%+160px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
                   <div className="flex items-center gap-4 text-slate-300 text-sm">
                     <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
                       <MonitorPlay className="w-6 h-6 text-amber-500" />
