@@ -145,7 +145,7 @@ export default function PlatformJourney() {
               <MonitorPlay className="w-8 h-8 text-amber-500" />
             </div>
             <h3 className="text-2xl font-bold font-headline leading-tight mb-3 text-white">
-              Tudo conectado.
+              Tudo conectado
             </h3>
             <p className="text-slate-400 mb-8 text-sm">
               Tudo conectado para você estudar com mais organização e direção.
@@ -210,12 +210,12 @@ export default function PlatformJourney() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center -translate-y-[80px]"
+                      className="flex flex-col h-full justify-center -translate-y-[130px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
-                        Tudo conectado.
+                        Tudo conectado
                       </h3>
-                      <p className="text-slate-400 mb-8 leading-relaxed">
+                      <p className="text-slate-400 mb-4 leading-relaxed">
                         A plataforma organiza todo o seu processo para que você foque no que realmente importa: estudar com direção e consistência.
                       </p>
                       <Button asChild className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl py-6 px-8 text-lg w-max shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all">
