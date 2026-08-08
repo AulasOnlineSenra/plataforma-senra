@@ -100,7 +100,6 @@ export default function PlatformJourney() {
       {/* MOBILE EXPERIENCE (Fluxo Vertical) */}
       <div className="block lg:hidden pt-20 pb-24 px-4">
         <div className="text-center mb-12">
-          <p className="text-amber-500 font-bold uppercase tracking-wider text-xs mb-2">Seção 5</p>
           <h2 className="text-3xl font-black font-headline tracking-tight mb-4">
             Conheça a <span className="text-amber-500">plataforma</span>
           </h2>
@@ -121,11 +120,7 @@ export default function PlatformJourney() {
             <div key={step.id} className="relative pl-6 border-l-2 border-slate-800">
               {/* Ponto no eixo */}
               <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-[#0A0F1C] border-2 border-slate-700 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-              </div>
-              
-              <div className="text-amber-500 font-mono font-bold tracking-widest mb-3 text-xs">
-                0{idx + 1} / 06
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
               </div>
               <h3 className="text-2xl font-bold font-headline leading-tight mb-3">
                 {step.title}
@@ -172,11 +167,10 @@ export default function PlatformJourney() {
             
             {/* Cabeçalho da Seção */}
             <div className="absolute top-8 left-4 lg:left-8 z-20">
-              <p className="text-amber-500 font-bold uppercase tracking-wider text-sm mb-1">Seção 5</p>
               <h2 className="text-4xl lg:text-5xl font-black font-headline tracking-tight">
                 Conheça a <span className="text-amber-500">plataforma</span>
               </h2>
-              <p className="text-slate-400 mt-2 max-w-md text-sm lg:text-base">
+              <p className="text-slate-400 mt-2 text-sm lg:text-base lg:whitespace-nowrap">
                 Cada recurso foi pensado para organizar seus estudos, mostrar o próximo passo e acompanhar sua evolução.
               </p>
             </div>
@@ -184,7 +178,7 @@ export default function PlatformJourney() {
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10">
               
               {/* Lado Esquerdo - Textos */}
-              <div className="w-full lg:w-[35%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1">
+              <div className="w-full lg:w-[30%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1">
                 <AnimatePresence mode="wait">
                   {!isClosing ? (
                     <motion.div
@@ -195,15 +189,6 @@ export default function PlatformJourney() {
                       transition={{ duration: 0.4, ease: "easeOut" }}
                       className="flex flex-col h-full justify-center"
                     >
-                      <div className="text-amber-500 font-mono font-bold tracking-widest mb-4">
-                        0{activeStep + 1} / 06
-                      </div>
-                      <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
-                        {STEPS[activeStep].title}
-                      </h3>
-                      <p className="text-slate-400 mb-8 leading-relaxed">
-                        {STEPS[activeStep].description}
-                      </p>
                       <ul className="space-y-4 mb-auto">
                         {STEPS[activeStep].benefits.map((benefit, i) => (
                           <li key={i} className="flex items-center gap-3 text-slate-300">
@@ -212,23 +197,6 @@ export default function PlatformJourney() {
                           </li>
                         ))}
                       </ul>
-
-                      {/* Controles Opcionais */}
-                      <div className="flex gap-4 mt-8">
-                        <button 
-                          onClick={() => handleNav('prev')}
-                          className="w-12 h-12 flex items-center justify-center rounded-xl border border-slate-700/50 hover:border-amber-500/50 hover:bg-amber-500/10 transition-colors text-slate-400 hover:text-amber-500"
-                          disabled={activeStep === 0}
-                        >
-                          <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => handleNav('next')}
-                          className="w-12 h-12 flex items-center justify-center rounded-xl border border-slate-700/50 hover:border-amber-500/50 hover:bg-amber-500/10 transition-colors text-slate-400 hover:text-amber-500"
-                        >
-                          <ArrowRight className="w-5 h-5" />
-                        </button>
-                      </div>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -238,9 +206,6 @@ export default function PlatformJourney() {
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="flex flex-col h-full justify-center"
                     >
-                      <div className="text-amber-500 font-mono font-bold tracking-widest mb-4">
-                        SÍNTESE
-                      </div>
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         Tudo conectado.
                       </h3>
@@ -257,8 +222,8 @@ export default function PlatformJourney() {
                 </AnimatePresence>
               </div>
 
-              {/* Centro - Laptop Mockup */}
-              <div className="w-full lg:w-[50%] flex items-center justify-center relative order-1 lg:order-2 perspective-1000">
+              {/* Centro - Laptop Mockup e CTA */}
+              <div className="w-full lg:w-[50%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-8">
                 <div className="relative w-full max-w-[800px] aspect-[16/10] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center">
                   {/* O Notebook / Câmera da Interface */}
                   
@@ -302,17 +267,32 @@ export default function PlatformJourney() {
                   {/* Base do Laptop */}
                   <div className="absolute -bottom-4 left-[-5%] right-[-5%] h-8 bg-[#2a3143] rounded-b-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 hidden lg:block" />
                 </div>
+
+                {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
+                <div className="w-full max-w-[800px] bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
+                  <div className="flex items-center gap-4 text-slate-300 text-sm">
+                    <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
+                      <MonitorPlay className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <p>Tudo conectado para você estudar com <strong className="text-white">mais organização e direção.</strong></p>
+                  </div>
+                  <Button asChild className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl mt-4 xl:mt-0 w-full xl:w-auto shrink-0">
+                    <Link href="/register">
+                      Quero conhecer a plataforma <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
 
               {/* Lado Direito - Progresso (Desktop) */}
-              <div className="hidden lg:flex w-[15%] flex-col items-center justify-center h-full relative order-3">
-                <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-slate-800/50 -translate-x-1/2" />
+              <div className="hidden lg:flex w-[20%] flex-col justify-center h-full relative order-3">
+                <div className="absolute top-[10%] bottom-[10%] left-6 w-[2px] bg-slate-800/50" />
                 
                 {/* Linha de progresso preenchida */}
                 <motion.div 
-                  className="absolute top-0 left-1/2 w-[2px] bg-amber-500 -translate-x-1/2 origin-top"
+                  className="absolute top-[10%] left-6 w-[2px] bg-amber-500 origin-top"
                   style={{ 
-                    height: '100%', 
+                    height: '80%', 
                     scaleY: scrollYProgress,
                     opacity: isClosing ? 0 : 1
                   }}
@@ -323,8 +303,8 @@ export default function PlatformJourney() {
                     const isActive = activeStep === i && !isClosing;
                     const isPast = activeStep > i || isClosing;
                     return (
-                      <div key={step.id} className="flex flex-col items-center gap-2 group cursor-default">
-                        <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#0A0F1C] ${
+                      <div key={step.id} className="flex flex-row items-center gap-4 group cursor-default">
+                        <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#0A0F1C] shrink-0 ${
                           isActive 
                             ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' 
                             : isPast 
@@ -333,7 +313,7 @@ export default function PlatformJourney() {
                         }`}>
                           <step.icon className={`w-5 h-5 ${isActive ? 'text-amber-500' : ''}`} />
                         </div>
-                        <span className={`text-sm font-medium transition-colors ${
+                        <span className={`text-sm font-medium transition-colors whitespace-nowrap ${
                           isActive ? 'text-amber-500' : 'text-slate-500'
                         }`}>
                           {step.label}
@@ -345,26 +325,7 @@ export default function PlatformJourney() {
               </div>
               
             </div>
-            
-            {/* Rodapé CTA Inferior (Fixo) */}
-            <motion.div 
-              className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between z-30"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div className="flex items-center gap-4 text-slate-300 text-sm md:text-base">
-                <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
-                  <MonitorPlay className="w-6 h-6 text-amber-500" />
-                </div>
-                <p>Tudo conectado para você estudar com <strong className="text-white">mais organização e direção.</strong></p>
-              </div>
-              <Button asChild className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl mt-4 sm:mt-0 w-full sm:w-auto shrink-0">
-                <Link href="/register">
-                  Quero conhecer a plataforma <ArrowRight className="ml-2 w-4 h-4" />
-                </Link>
-              </Button>
-            </motion.div>
+
 
           </div>
         </div>
