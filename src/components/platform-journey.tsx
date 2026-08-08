@@ -187,7 +187,7 @@ export default function PlatformJourney() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -15 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center"
+                      className="flex flex-col h-full justify-center pt-[50px]"
                     >
                       <ul className="space-y-4 mb-auto">
                         {STEPS[activeStep].benefits.map((benefit, i) => (
@@ -223,8 +223,8 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[50%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-8">
-                <div className="relative w-full max-w-[800px] aspect-[16/10] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center">
+              <div className="w-full lg:w-[50%] flex flex-col items-end justify-center relative order-1 lg:order-2 perspective-1000 gap-8 max-w-[650px] mx-auto">
+                <div className="relative w-full aspect-[16/10] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center">
                   {/* O Notebook / Câmera da Interface */}
                   
                   <AnimatePresence mode="crossfade">
@@ -269,7 +269,7 @@ export default function PlatformJourney() {
                 </div>
 
                 {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
-                <div className="w-full max-w-[800px] bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
+                <div className="w-[calc(100%+30px)] bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
                   <div className="flex items-center gap-4 text-slate-300 text-sm">
                     <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
                       <MonitorPlay className="w-6 h-6 text-amber-500" />
