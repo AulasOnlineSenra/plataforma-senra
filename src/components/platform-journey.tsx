@@ -116,7 +116,7 @@ export default function PlatformJourney() {
 
         {/* Notebook Fixo no topo do mobile (Opcional, aqui deixamos ele fluir junto ou ser sticky) */}
         <div className="sticky top-20 z-40 bg-[#0A0F1C] pb-6 pt-2 mb-10 border-b border-slate-800">
-          <div className="w-full aspect-video bg-[#1a1f2e] rounded-xl shadow-2xl border-4 border-[#2a3143] overflow-hidden flex items-center justify-center relative">
+          <div className="w-full aspect-[16/8] bg-[#1a1f2e] rounded-xl shadow-2xl border-4 border-[#2a3143] overflow-hidden flex items-center justify-center relative mx-auto">
             <span className="text-slate-500 text-sm">Interface do Sistema</span>
           </div>
         </div>
@@ -235,8 +235,8 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[45%] flex flex-col items-end justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[500px] mx-auto lg:translate-x-[40px]">
-                <div className="relative w-full aspect-video bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
+              <div className="w-full lg:w-[45%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[500px] mx-auto lg:translate-x-[40px]">
+                <div className="relative w-full aspect-[16/8] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
                   {/* O Notebook / Câmera da Interface */}
                   
                   <AnimatePresence mode="crossfade">
