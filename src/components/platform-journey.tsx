@@ -178,7 +178,7 @@ export default function PlatformJourney() {
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10">
               
               {/* Lado Esquerdo - Textos */}
-              <div className="w-full lg:w-[35%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1">
+              <div className="w-full lg:w-[30%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
                 <AnimatePresence mode="wait">
                   {!isClosing ? (
                     <motion.div
@@ -187,7 +187,7 @@ export default function PlatformJourney() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -15 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center pt-[10px]"
+                      className="flex flex-col h-full justify-center -translate-y-[10px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         {STEPS[activeStep].title}
@@ -210,7 +210,7 @@ export default function PlatformJourney() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center"
+                      className="flex flex-col h-full justify-center -translate-y-[40px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         Tudo conectado.
@@ -229,7 +229,7 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[40%] flex flex-col items-end justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[500px] mx-auto">
+              <div className="w-full lg:w-[45%] flex flex-col items-end justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[500px] mx-auto">
                 <div className="relative w-full aspect-[16/10] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
                   {/* O Notebook / Câmera da Interface */}
                   
@@ -275,7 +275,7 @@ export default function PlatformJourney() {
                 </div>
 
                 {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
-                <div className="w-[calc(100%+60px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
+                <div className="w-[calc(100%+100px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
                   <div className="flex items-center gap-4 text-slate-300 text-sm">
                     <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
                       <MonitorPlay className="w-6 h-6 text-amber-500" />
