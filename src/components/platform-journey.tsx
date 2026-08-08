@@ -370,4 +370,5 @@ export default function PlatformJourney() {
         </div>
       </div>
     </section>
+  );
 }
