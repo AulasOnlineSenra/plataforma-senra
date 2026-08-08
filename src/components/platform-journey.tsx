@@ -10,7 +10,7 @@ import Link from 'next/link';
 const STEPS = [
   {
     id: 'cronograma',
-    title: 'Saiba exatamente o que estudar hoje.',
+    title: 'Saiba exatamente o que estudar hoje',
     description: 'Seu cronograma organiza sua rotina para que você não perca tempo decidindo por onde começar.',
     benefits: ['Prioridades claras', 'Organização automática', 'Mais consistência'],
     label: 'Cronograma',
@@ -19,7 +19,7 @@ const STEPS = [
   },
   {
     id: 'agenda',
-    title: 'Nunca mais perca o horário de uma aula.',
+    title: 'Nunca mais perca o horário de uma aula',
     description: 'Veja todos os seus horários em um único lugar. Receba lembretes e mantenha sua rotina perfeitamente alinhada.',
     benefits: ['Agenda organizada', 'Professores', 'Datas e horários'],
     label: 'Agenda',
@@ -28,7 +28,7 @@ const STEPS = [
   },
   {
     id: 'materiais',
-    title: 'Tudo organizado em um só lugar.',
+    title: 'Tudo organizado em um só lugar',
     description: 'Chega de procurar PDFs perdidos ou links espalhados. Todo o conteúdo fica disponível sempre que você precisar.',
     benefits: ['Materiais', 'Exercícios', 'Arquivos organizados'],
     label: 'Materiais',
@@ -37,7 +37,7 @@ const STEPS = [
   },
   {
     id: 'professor',
-    title: 'Aprenda com quem acompanha sua evolução.',
+    title: 'Aprenda com quem acompanha sua evolução',
     description: 'Todas as aulas são individuais e ao vivo. Você aprende no seu ritmo e tira dúvidas na hora.',
     benefits: ['Aulas ao vivo', 'Foco 100% em você', 'Aprendizado no seu ritmo'],
     label: 'Professor',
@@ -46,7 +46,7 @@ const STEPS = [
   },
   {
     id: 'simulados',
-    title: 'Descubra exatamente onde precisa evoluir.',
+    title: 'Descubra exatamente onde precisa evoluir',
     description: 'Veja seu desempenho por disciplina e direcione seus estudos de forma inteligente baseada em dados reais.',
     benefits: ['Análise de desempenho', 'Pontos fortes e fracos', 'Direcionamento inteligente'],
     label: 'Simulados',
@@ -55,7 +55,7 @@ const STEPS = [
   },
   {
     id: 'evolucao',
-    title: 'Acompanhe sua evolução ao longo do tempo.',
+    title: 'Acompanhe sua evolução ao longo do tempo',
     description: 'Pequenos avanços diários se transformam em grandes resultados. Veja o seu progresso tomando forma.',
     benefits: ['Horas estudadas', 'Aulas concluídas', 'Histórico completo'],
     label: 'Evolução',
@@ -128,7 +128,7 @@ export default function PlatformJourney() {
               <p className="text-slate-400 mb-6 text-sm">
                 {step.description}
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-[15px]">
                 {step.benefits.map((benefit, i) => (
                   <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
@@ -195,7 +195,7 @@ export default function PlatformJourney() {
                       <p className="text-slate-400 mb-8 leading-relaxed">
                         {STEPS[activeStep].description}
                       </p>
-                      <ul className="space-y-4 mb-auto">
+                      <ul className="space-y-[15px] mb-auto">
                         {STEPS[activeStep].benefits.map((benefit, i) => (
                           <li key={i} className="flex items-center gap-3 text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" />
@@ -210,7 +210,7 @@ export default function PlatformJourney() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center -translate-y-[130px]"
+                      className="flex flex-col h-full justify-center relative -top-[130px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         Tudo conectado
@@ -275,7 +275,7 @@ export default function PlatformJourney() {
                 </div>
 
                 {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
-                <div className="w-[calc(100%+160px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg">
+                <div className="w-[calc(100%+160px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg relative left-[20px]">
                   <div className="flex items-center gap-4 text-slate-300 text-sm">
                     <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
                       <MonitorPlay className="w-6 h-6 text-amber-500" />
