@@ -184,7 +184,7 @@ export default function PlatformJourney() {
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10 lg:pl-[60px] lg:-mr-[60px]">
               
               {/* Lado Esquerdo - Textos */}
-              <div className="w-full lg:w-[25%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
+              <div className="w-full lg:w-[25%] min-w-[280px] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
                 <AnimatePresence mode="wait">
                   {!isClosing ? (
                     <motion.div
@@ -294,7 +294,7 @@ export default function PlatformJourney() {
                 </div>
 
                 {/* Rodapé CTA Inferior (Abaixo do Laptop) */}
-                <div className="w-[calc(100%+160px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg relative -left-[55px]">
+                <div className="w-[calc(100%+130px)] max-w-none shrink-0 bg-[#111727] border border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between shadow-lg relative -left-[25px]">
                   <div className="flex items-center gap-4 text-slate-300 text-sm">
                     <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
                       <MonitorPlay className="w-6 h-6 text-amber-500" />
