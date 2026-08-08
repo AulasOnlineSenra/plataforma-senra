@@ -184,7 +184,7 @@ export default function PlatformJourney() {
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10 lg:pl-[60px] lg:-mr-[60px]">
               
               {/* Lado Esquerdo - Textos */}
-              <div className="w-full lg:w-[30%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
+              <div className="w-full lg:w-[25%] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
                 <AnimatePresence mode="wait">
                   {!isClosing ? (
                     <motion.div
@@ -235,7 +235,7 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[50%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[40px]">
+              <div className="w-full lg:w-[55%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[40px]">
                 <div className="relative w-full aspect-[16/8] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
                   {/* O Notebook / Câmera da Interface */}
                   
