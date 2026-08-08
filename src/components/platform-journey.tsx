@@ -184,7 +184,7 @@ export default function PlatformJourney() {
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10 lg:pl-[60px] lg:-mr-[60px]">
               
               {/* Lado Esquerdo - Textos */}
-              <div className="w-full lg:w-[25%] min-w-[280px] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4 lg:-mr-[100px]">
+              <div className="w-full lg:w-[25%] min-w-[280px] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4 lg:-mr-[50px]">
                 <AnimatePresence mode="wait">
                   {!isClosing ? (
                     <motion.div
