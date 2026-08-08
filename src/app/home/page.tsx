@@ -39,6 +39,7 @@ import { Input } from '@/components/ui/input';
 import { EditableText } from '@/components/editable-text';
 import HomeCorpo from '@/components/home-corpo';
 import HomeTechPeople from '@/components/home-tech-people';
+import PlatformJourney from '@/components/platform-journey';
 import HomeStats from '@/components/home-stats';
 import HomePainPoints from '@/components/home-pain-points';
 import HomeJourney from '@/components/home-journey';
@@ -572,6 +573,9 @@ export default function HomePage() {
 
         {/* TECNOLOGIA + PESSOAS */}
         <HomeTechPeople />
+
+        {/* NOVA SEÇÃO: JORNADA DA PLATAFORMA */}
+        <PlatformJourney />
 
         {/* MAPA CIRCLE - Escada */}
         <MapaCircle />

@@ -51,6 +51,7 @@
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.9.1",
     "firebase-admin": "^13.0.0",
+    "framer-motion": "^13.0.0",
     "genkit": "^1.20.0",
     "genkitx-anthropic": "^0.30.0",
     "genkitx-openai": "^0.30.0",
