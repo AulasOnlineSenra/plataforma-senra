@@ -15,7 +15,8 @@ const STEPS = [
     benefits: ['Prioridades claras', 'Organização automática', 'Mais consistência'],
     label: 'Cronograma',
     icon: Calendar,
-    imgClass: 'bg-slate-800' // Placeholder para imagens reais depois
+    videoSrc: '/videos/cronograma.mp4',
+    imgClass: 'bg-slate-800'
   },
   {
     id: 'agenda',
@@ -24,6 +25,7 @@ const STEPS = [
     benefits: ['Agenda organizada', 'Professores', 'Datas e horários'],
     label: 'Agenda',
     icon: CalendarDays,
+    videoSrc: '/videos/agenda.mp4',
     imgClass: 'bg-slate-700'
   },
   {
@@ -33,6 +35,7 @@ const STEPS = [
     benefits: ['Materiais', 'Exercícios', 'Arquivos organizados'],
     label: 'Materiais',
     icon: FolderOpen,
+    videoSrc: '/videos/materiais.mp4',
     imgClass: 'bg-slate-600'
   },
   {
@@ -42,6 +45,7 @@ const STEPS = [
     benefits: ['Aulas ao vivo', 'Foco 100% em você', 'Aprendizado no seu ritmo'],
     label: 'Professor',
     icon: User,
+    videoSrc: '', // Pendente
     imgClass: 'bg-slate-700'
   },
   {
@@ -51,6 +55,7 @@ const STEPS = [
     benefits: ['Análise de desempenho', 'Pontos fortes e fracos', 'Direcionamento inteligente'],
     label: 'Simulados',
     icon: Target,
+    videoSrc: '/videos/simulados.mp4',
     imgClass: 'bg-slate-800'
   },
   {
@@ -60,6 +65,7 @@ const STEPS = [
     benefits: ['Horas estudadas', 'Aulas concluídas', 'Histórico completo'],
     label: 'Evolução',
     icon: TrendingUp,
+    videoSrc: '/videos/evolucao.mp4',
     imgClass: 'bg-slate-900'
   },
 ];
@@ -128,7 +134,7 @@ export default function PlatformJourney() {
               <p className="text-slate-400 mb-6 text-sm">
                 {step.description}
               </p>
-              <ul className="space-y-[15px]">
+              <ul className="space-y-[10px]">
                 {step.benefits.map((benefit, i) => (
                   <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
@@ -195,7 +201,7 @@ export default function PlatformJourney() {
                       <p className="text-slate-400 mb-8 leading-relaxed">
                         {STEPS[activeStep].description}
                       </p>
-                      <ul className="space-y-[15px] mb-auto">
+                      <ul className="space-y-[10px] mb-auto">
                         {STEPS[activeStep].benefits.map((benefit, i) => (
                           <li key={i} className="flex items-center gap-3 text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" />
@@ -210,7 +216,7 @@ export default function PlatformJourney() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center relative -top-[130px]"
+                      className="flex flex-col h-full justify-center relative -top-[80px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         Tudo conectado
@@ -241,9 +247,22 @@ export default function PlatformJourney() {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
                         transition={{ duration: 0.5 }}
-                        className={`absolute inset-0 w-full h-full flex items-center justify-center ${STEPS[activeStep].imgClass}`}
+                        className={`absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C] overflow-hidden`}
                       >
-                        <span className="text-slate-400 text-lg opacity-50">Imagem Real: {STEPS[activeStep].label}</span>
+                        {STEPS[activeStep].videoSrc ? (
+                          <video 
+                            src={STEPS[activeStep].videoSrc}
+                            autoPlay 
+                            loop 
+                            muted 
+                            playsInline
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center ${STEPS[activeStep].imgClass}`}>
+                            <span className="text-slate-400 text-lg opacity-50">Vídeo Pendente: {STEPS[activeStep].label}</span>
+                          </div>
+                        )}
                       </motion.div>
                     ) : (
                       <motion.div
