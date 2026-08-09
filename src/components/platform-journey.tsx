@@ -235,7 +235,7 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[55%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[55px]">
+              <div className="w-full lg:w-[55%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[65px]">
                 <div className="relative w-full aspect-[16/8] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
                   {/* O Notebook / Câmera da Interface */}
 
