@@ -73,7 +73,7 @@ const STEPS = [
 export default function PlatformJourney() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
-  
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
@@ -102,7 +102,7 @@ export default function PlatformJourney() {
 
   return (
     <section className="bg-[#0A0F1C] text-white">
-      
+
       {/* MOBILE EXPERIENCE (Fluxo Vertical) */}
       <div className="block lg:hidden pt-20 pb-24 px-4">
         <div className="text-center mb-12">
@@ -126,7 +126,7 @@ export default function PlatformJourney() {
             <div key={step.id} className="relative pl-6 border-l-2 border-slate-800">
               {/* Ponto no eixo */}
               <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-[#0A0F1C] border-2 border-slate-700 flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
+                <div className="w-2 h-2 rounded-full bg-amber-500" />
               </div>
               <h3 className="text-2xl font-bold font-headline leading-tight mb-3">
                 {step.title}
@@ -168,9 +168,9 @@ export default function PlatformJourney() {
       {/* DESKTOP EXPERIENCE (Sticky Scroll-Driven Journey) */}
       <div ref={containerRef} className="hidden lg:block relative h-[650vh]">
         <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
-          
+
           <div className="container mx-auto px-4 lg:px-8 h-full max-h-[900px] flex flex-col justify-center py-10 relative">
-            
+
             {/* Cabeçalho da Seção */}
             <div className="absolute top-[57px] left-4 lg:left-[92px] z-20">
               <h2 className="text-4xl lg:text-5xl font-black font-headline tracking-tight">
@@ -182,7 +182,7 @@ export default function PlatformJourney() {
             </div>
 
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10 lg:pl-[60px] lg:-mr-[60px]">
-              
+
               {/* Lado Esquerdo - Textos */}
               <div className="w-full lg:w-[25%] min-w-[280px] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
                 <AnimatePresence mode="wait">
@@ -235,10 +235,10 @@ export default function PlatformJourney() {
               </div>
 
               {/* Centro - Laptop Mockup e CTA */}
-              <div className="w-full lg:w-[55%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[40px]">
+              <div className="w-full lg:w-[55%] flex flex-col items-center justify-center relative order-1 lg:order-2 perspective-1000 gap-5 max-w-[750px] mx-auto lg:translate-x-[55px]">
                 <div className="relative w-full aspect-[16/8] bg-[#1a1f2e] rounded-t-2xl rounded-b-lg shadow-2xl border-[8px] border-[#2a3143] overflow-hidden flex items-center justify-center shrink-0">
                   {/* O Notebook / Câmera da Interface */}
-                  
+
                   <AnimatePresence mode="crossfade">
                     {!isClosing ? (
                       <motion.div
@@ -250,11 +250,11 @@ export default function PlatformJourney() {
                         className={`absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C] overflow-hidden`}
                       >
                         {STEPS[activeStep].videoSrc ? (
-                          <video 
+                          <video
                             src={STEPS[activeStep].videoSrc}
-                            autoPlay 
-                            loop 
-                            muted 
+                            autoPlay
+                            loop
+                            muted
                             playsInline
                             className="w-full h-full object-contain"
                           />
@@ -274,7 +274,7 @@ export default function PlatformJourney() {
                       >
                         {/* Efeito Teia (Todos os módulos conectados) */}
                         {STEPS.map((s, i) => (
-                          <motion.div 
+                          <motion.div
                             key={s.id}
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -312,12 +312,12 @@ export default function PlatformJourney() {
               {/* Lado Direito - Progresso (Desktop) */}
               <div className="hidden lg:flex w-[20%] flex-col justify-center h-full relative order-3 -translate-y-[35px] lg:translate-x-[40px]">
                 <div className="absolute top-[10%] bottom-[10%] left-6 w-[2px] bg-slate-800/50" />
-                
+
                 {/* Linha de progresso preenchida */}
-                <motion.div 
+                <motion.div
                   className="absolute top-[10%] left-6 w-[2px] bg-amber-500 origin-top"
-                  style={{ 
-                    height: '80%', 
+                  style={{
+                    height: '80%',
                     scaleY: scrollYProgress,
                     opacity: isClosing ? 0 : 1
                   }}
@@ -329,18 +329,16 @@ export default function PlatformJourney() {
                     const isPast = activeStep > i || isClosing;
                     return (
                       <div key={step.id} className="flex flex-row items-center gap-4 group cursor-default">
-                        <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#0A0F1C] shrink-0 ${
-                          isActive 
-                            ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' 
-                            : isPast 
-                              ? 'border-amber-500/40 text-amber-500/40' 
+                        <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#0A0F1C] shrink-0 ${isActive
+                            ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                            : isPast
+                              ? 'border-amber-500/40 text-amber-500/40'
                               : 'border-slate-700 text-slate-500'
-                        }`}>
+                          }`}>
                           <step.icon className={`w-5 h-5 ${isActive ? 'text-amber-500' : ''}`} />
                         </div>
-                        <span className={`text-sm font-medium transition-colors whitespace-nowrap ${
-                          isActive ? 'text-amber-500' : 'text-slate-500'
-                        }`}>
+                        <span className={`text-sm font-medium transition-colors whitespace-nowrap ${isActive ? 'text-amber-500' : 'text-slate-500'
+                          }`}>
                           {step.label}
                         </span>
                       </div>
@@ -348,7 +346,7 @@ export default function PlatformJourney() {
                   })}
                 </div>
               </div>
-              
+
             </div>
 
 
