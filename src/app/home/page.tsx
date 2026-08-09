@@ -577,9 +577,6 @@ export default function HomePage() {
         {/* NOVA SEÇÃO: JORNADA DA PLATAFORMA */}
         <PlatformJourney />
 
-        {/* MAPA CIRCLE - Escada */}
-        <MapaCircle />
-
         {/* SEÇÃO CORPO DOCENTE */}
         <section className="py-16 pt-[94px] bg-white">
           <div className="container mx-auto px-4">
@@ -641,6 +638,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* MAPA CIRCLE - Escada */}
+        <MapaCircle />
 
         {/* SEÇÃO CORPO: Problema e Solução */}
         <section className="py-16 md:py-24 bg-white">
