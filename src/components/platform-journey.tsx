@@ -184,7 +184,7 @@ export default function PlatformJourney() {
             <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full mt-24 lg:mt-32 gap-8 lg:gap-12 relative z-10 lg:pl-[60px] lg:-mr-[60px]">
               
               {/* Lado Esquerdo - Textos */}
-              <div className="w-full lg:w-[25%] min-w-[280px] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4 lg:-mr-[50px]">
+              <div className="w-full lg:w-[25%] min-w-[280px] flex flex-col h-[350px] lg:h-[400px] relative order-2 lg:order-1 pr-4">
                 <AnimatePresence mode="wait">
                   {!isClosing ? (
                     <motion.div
@@ -193,7 +193,7 @@ export default function PlatformJourney() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -15 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center -translate-y-[10px]"
+                      className="flex flex-col h-full justify-center -translate-y-[10px] min-w-[380px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         {STEPS[activeStep].title}
@@ -216,7 +216,7 @@ export default function PlatformJourney() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="flex flex-col h-full justify-center relative -top-[80px]"
+                      className="flex flex-col h-full justify-center relative -top-[80px] min-w-[380px]"
                     >
                       <h3 className="text-3xl lg:text-4xl font-bold font-headline leading-tight mb-4 text-white">
                         Tudo conectado
