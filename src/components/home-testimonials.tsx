@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, X, Star, MessageCircle, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Play, Star, MessageCircle, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
 const whatsappTestimonials = [
@@ -47,7 +47,7 @@ export default function HomeTestimonials() {
         <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           Quem já passou por aqui <span className="text-amber-500">recomenda</span>.
         </h2>
-        <p className="text-lg text-white/80 max-w-2xl mx-auto font-medium drop-shadow-md">
+        <p className="text-lg text-white/80 max-w-2xl mx-auto font-medium drop-shadow-md whitespace-nowrap">
           Histórias reais de quem encontrou na Senra uma forma mais organizada de estudar.
         </p>
       </div>
@@ -79,7 +79,7 @@ export default function HomeTestimonials() {
                   {msg.source}
                 </div>
               </div>
-              <p className="text-slate-800 text-[15px] leading-relaxed mb-3">
+              <p className="text-slate-800 text-[12px] leading-relaxed mb-3">
                 "{msg.text}"
               </p>
               <div className="text-right text-[10px] font-medium text-slate-500 uppercase tracking-wide">
@@ -99,27 +99,41 @@ export default function HomeTestimonials() {
             transition={{ duration: 0.6 }}
             className="w-full"
           >
-            {/* Video Thumbnail Box */}
+            {/* Video Box */}
             <div 
-              onClick={() => setIsVideoOpen(true)}
-              className="relative w-full aspect-video rounded-3xl overflow-hidden cursor-pointer group shadow-2xl ring-1 ring-white/10 bg-slate-900"
+              className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 group"
             >
-              <Image 
-                src={videoTestimonial.thumbnail} 
-                alt="Depoimento em vídeo" 
-                fill 
-                className="object-cover opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"></div>
-              
-              {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.4)] group-hover:scale-110 group-hover:bg-amber-400 transition-all duration-300 mb-4">
-                  <Play className="w-7 h-7 md:w-8 md:h-8 text-slate-900 ml-1 fill-current" />
-                </div>
-                <span className="font-bold text-white text-lg drop-shadow-md">Assistir depoimento</span>
-                <span className="text-white/80 text-sm font-medium mt-1">{videoTestimonial.name} · {videoTestimonial.profile}</span>
-              </div>
+              {isVideoOpen ? (
+                <video 
+                  src={videoTestimonial.videoUrl} 
+                  controls 
+                  autoPlay 
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <>
+                  <Image 
+                    src={videoTestimonial.thumbnail} 
+                    alt="Depoimento em vídeo" 
+                    fill 
+                    onClick={() => setIsVideoOpen(true)}
+                    className="cursor-pointer object-cover opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"></div>
+                  
+                  {/* Play Button Overlay */}
+                  <div 
+                    onClick={() => setIsVideoOpen(true)}
+                    className="cursor-pointer absolute inset-0 flex flex-col items-center justify-center"
+                  >
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.4)] group-hover:scale-110 group-hover:bg-amber-400 transition-all duration-300 mb-4">
+                      <Play className="w-7 h-7 md:w-8 md:h-8 text-slate-900 ml-1 fill-current" />
+                    </div>
+                    <span className="font-bold text-white text-lg drop-shadow-md">Assistir depoimento</span>
+                    <span className="text-white/80 text-sm font-medium mt-1">{videoTestimonial.name} · {videoTestimonial.profile}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Microproofs */}
@@ -169,41 +183,6 @@ export default function HomeTestimonials() {
           </a>
         </div>
       </motion.div>
-
-      {/* Video Modal */}
-      <AnimatePresence>
-        {isVideoOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsVideoOpen(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/20"
-            >
-              <button 
-                onClick={() => setIsVideoOpen(false)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-amber-500 hover:text-slate-900 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-md"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <video 
-                src={videoTestimonial.videoUrl} 
-                controls 
-                autoPlay 
-                className="w-full h-full object-contain"
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
     </div>
   );
