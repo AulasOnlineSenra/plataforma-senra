@@ -652,7 +652,7 @@ export default function HomePage() {
         {/* SEÇÃO DEPOIMENTOS */}
         <section
           id="depoimentos"
-          className="py-44 md:py-[88px] -mt-[298px] relative"
+          className="py-16 md:py-24 relative overflow-hidden"
           style={{
             backgroundImage: 'url(/depoimentos_pano_de_fundo_site.png)',
             backgroundSize: 'cover',
@@ -660,18 +660,9 @@ export default function HomePage() {
             backgroundRepeat: 'no-repeat'
           }}
         >
-          <div className="absolute inset-0 bg-black/65"></div>
+          <div className="absolute inset-0 bg-slate-950/80"></div>
           <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center max-w-3xl mx-auto mb-17 -mt-10">
-              <h2 className="text-4xl md:text-5xl font-black font-headline text-white tracking-tight mt-[168px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                O Que Nossos Alunos Dizem
-              </h2>
-              <p className="text-lg text-white/90 mt-[11px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                A satisfação de quem já evoluiu com a gente
-              </p>
-            </div>
             <HomeTestimonials />
-            <TestimonialsCarousel className="mt-[20px]" />
           </div>
         </section>
 

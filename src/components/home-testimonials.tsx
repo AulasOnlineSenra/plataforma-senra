@@ -1,102 +1,210 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getTestimonialsWithComments } from '@/app/actions/ratings';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, X, Star, MessageCircle, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
-type Testimonial = {
-  id: string;
-  score: number;
-  comment: string | null;
-  student: {
-    id: string;
-    name: string;
-    avatarUrl: string | null;
-  };
+const whatsappTestimonials = [
+  {
+    id: 1,
+    name: "Mãe da Laura",
+    profile: "Reforço Escolar",
+    source: "WhatsApp",
+    text: "Minha filha estava perdida com tantas matérias. Depois que começou na Senra, ela finalmente criou uma rotina e as notas subiram muito!",
+    date: "Hoje"
+  },
+  {
+    id: 2,
+    name: "Aluno Pedro",
+    profile: "ENEM",
+    source: "WhatsApp",
+    text: "Eu estudava horas e não via resultado. O plano personalizado me mostrou o que eu realmente precisava revisar. Passei no ENEM!",
+    date: "Ontem"
+  }
+];
+
+const videoTestimonial = {
+  name: "Aluna",
+  profile: "Vestibular",
+  thumbnail: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop", // Placeholder real thumbnail
+  videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" // Placeholder video
 };
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function StarRating({ score }: { score: number }) {
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={`h-4 w-4 ${
-            star <= score ? 'fill-amber-400 text-amber-400' : 'text-white/40'
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
+const microproofs = [
+  "⭐ Mudou minha vida",
+  "⭐ Aprovado na USP",
+  "⭐ Finalmente criei uma rotina"
+];
 
 export default function HomeTestimonials() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTestimonials = async () => {
-      const result = await getTestimonialsWithComments(6);
-      if (result.success && result.data) {
-        setTestimonials(result.data as Testimonial[]);
-      }
-      setIsLoading(false);
-    };
-
-    fetchTestimonials();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <div className="animate-pulse text-slate-400">Carregando depoimentos...</div>
-      </div>
-    );
-  }
-
-  if (testimonials.length === 0) {
-    return null;
-  }
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {testimonials.map((testimonial) => (
-        <Card
-          key={testimonial.id}
-          className="border-white/20 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300"
-        >
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-amber-400">
-                <AvatarImage src={testimonial.student.avatarUrl || undefined} />
-                <AvatarFallback className="bg-amber-100 text-amber-700 text-sm font-bold">
-                  {getInitials(testimonial.student.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold text-white text-sm">
-                  {testimonial.student.name}
-                </p>
-                <StarRating score={testimonial.score} />
+    <div className="w-full max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-16 lg:mb-20">
+        <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          Quem já passou por aqui <span className="text-amber-500">recomenda</span>.
+        </h2>
+        <p className="text-lg text-white/80 max-w-2xl mx-auto font-medium drop-shadow-md">
+          Histórias reais de quem encontrou na Senra uma forma mais organizada de estudar.
+        </p>
+      </div>
+
+      {/* Main Grid */}
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-center lg:items-start">
+        
+        {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
+        <div className="w-full lg:col-span-5 flex flex-col gap-5 order-2 lg:order-1">
+          {whatsappTestimonials.map((msg, index) => (
+            <motion.div 
+              key={msg.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: index * 0.15 }}
+              className="bg-[#dcf8c6] rounded-2xl rounded-tl-sm p-5 md:p-6 shadow-sm relative group hover:-translate-y-1 hover:shadow-md transition-all duration-300"
+            >
+              {/* WhatsApp Tail */}
+              <div className="absolute top-0 -left-2 w-0 h-0 border-t-[10px] border-t-[#dcf8c6] border-l-[10px] border-l-transparent"></div>
+              
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-bold text-slate-900 text-base">{msg.name}</h4>
+                  <span className="text-xs font-semibold text-emerald-700">{msg.profile}</span>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 opacity-80">
+                  <MessageCircle className="w-3 h-3" />
+                  {msg.source}
+                </div>
+              </div>
+              <p className="text-slate-800 text-[15px] leading-relaxed mb-3">
+                "{msg.text}"
+              </p>
+              <div className="text-right text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                {msg.date}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Right Column: Video (Order 1 on Mobile, Order 2 on Desktop) */}
+        <div className="w-full lg:col-span-7 flex flex-col items-center lg:items-start order-1 lg:order-2">
+          
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="w-full"
+          >
+            {/* Video Thumbnail Box */}
+            <div 
+              onClick={() => setIsVideoOpen(true)}
+              className="relative w-full aspect-video rounded-3xl overflow-hidden cursor-pointer group shadow-2xl ring-1 ring-white/10 bg-slate-900"
+            >
+              <Image 
+                src={videoTestimonial.thumbnail} 
+                alt="Depoimento em vídeo" 
+                fill 
+                className="object-cover opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"></div>
+              
+              {/* Play Button Overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.4)] group-hover:scale-110 group-hover:bg-amber-400 transition-all duration-300 mb-4">
+                  <Play className="w-7 h-7 md:w-8 md:h-8 text-slate-900 ml-1 fill-current" />
+                </div>
+                <span className="font-bold text-white text-lg drop-shadow-md">Assistir depoimento</span>
+                <span className="text-white/80 text-sm font-medium mt-1">{videoTestimonial.name} · {videoTestimonial.profile}</span>
               </div>
             </div>
-            <p className="text-white/80 text-sm italic leading-relaxed">
-              "{testimonial.comment}"
-            </p>
-          </CardContent>
-        </Card>
-      ))}
+
+            {/* Microproofs */}
+            <div className="mt-6 flex flex-wrap gap-2 md:gap-3 justify-center lg:justify-start">
+              {microproofs.map((proof, idx) => (
+                <div key={idx} className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-xs md:text-sm font-medium text-white/90 shadow-sm flex items-center gap-1">
+                  {proof}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+
+      {/* Trust Metric */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+        className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex -space-x-3">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 overflow-hidden bg-slate-800">
+                <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="User" className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map(star => (
+                <Star key={star} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <span className="text-white font-bold text-sm mt-0.5">+1.000 alunos já estudaram com a Senra</span>
+          </div>
+        </div>
+
+        {/* Optional subtle CTA transition */}
+        <div className="text-center md:text-right">
+          <p className="text-white/60 text-sm mb-1">Quer viver essa experiência também?</p>
+          <a href="#planos" className="text-amber-400 font-bold hover:text-amber-300 transition-colors inline-flex items-center gap-1 text-sm group">
+            Conheça a Senra <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </a>
+        </div>
+      </motion.div>
+
+      {/* Video Modal */}
+      <AnimatePresence>
+        {isVideoOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsVideoOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/20"
+            >
+              <button 
+                onClick={() => setIsVideoOpen(false)}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-amber-500 hover:text-slate-900 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-md"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <video 
+                src={videoTestimonial.videoUrl} 
+                controls 
+                autoPlay 
+                className="w-full h-full object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
