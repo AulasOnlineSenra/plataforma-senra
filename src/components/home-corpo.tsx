@@ -41,12 +41,11 @@ export default function HomeCorpo() {
     <div className="w-full bg-[#f8fafc] py-20 font-sans">
       <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <div className="text-center mb-16">
-          <p className="text-amber-500 font-bold tracking-widest uppercase text-sm mb-4">Para quem é</p>
-          <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
+          <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             Pra quem é a Senra?
           </h2>
-          <p className="text-[18px] text-slate-600 font-body max-w-2xl mx-auto leading-relaxed">
-            Cada aluno tem um objetivo. A plataforma se adapta à jornada que você precisa.
+          <p className="text-[18px] text-slate-600 font-body max-w-[702px] mx-auto leading-relaxed">
+            Cada aluno tem um objetivo. A plataforma se adapta à jornada que você precisa
           </p>
         </div>
 

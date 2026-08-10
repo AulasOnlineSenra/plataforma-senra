@@ -32,7 +32,7 @@ export default function HomeTechPeople() {
   };
 
   return (
-    <div className="w-full bg-[#fcfcfd] pt-20 pb-[50px] overflow-hidden font-sans">
+    <div className="w-full bg-[#fcfcfd] pt-20 pb-[10px] overflow-hidden font-sans">
       <div className="container mx-auto px-4 max-w-7xl">
         
         {/* Header Section */}
