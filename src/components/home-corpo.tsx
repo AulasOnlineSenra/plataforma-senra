@@ -45,7 +45,7 @@ export default function HomeCorpo() {
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
             Pra quem é a Senra?
           </h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-[18px] text-slate-600 font-body max-w-2xl mx-auto leading-relaxed">
             Cada aluno tem um objetivo. A plataforma se adapta à jornada que você precisa.
           </p>
         </div>

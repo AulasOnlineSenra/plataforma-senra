@@ -12,7 +12,7 @@ const steps = [
 
 export default function MapaCircle() {
   return (
-    <div className="relative w-full overflow-hidden py-24 md:py-[120px] bg-slate-950 -mt-28 z-0 translate-y-8">
+    <div className="relative w-full overflow-hidden py-24 md:py-[120px] bg-slate-950 mt-0 z-0">
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px]" />

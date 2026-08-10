@@ -64,7 +64,7 @@ export default function HomeFinalCTA() {
           Deixe a Senra montar um plano <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">feito para você</span>
         </h2>
 
-        <p className="text-base md:text-lg text-slate-300 max-w-[960px] mx-auto leading-relaxed mb-[65px]">
+        <p className="text-[18px] text-slate-600 font-body max-w-[960px] mx-auto leading-relaxed mb-[65px]">
           A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
 
