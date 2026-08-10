@@ -108,7 +108,7 @@ export default function HomeFinalCTA() {
         </div>
 
         {/* CTA Button */}
-        <div className="flex flex-col items-center w-full max-w-md mx-auto relative group">
+        <div className="flex flex-col items-center w-full max-w-md mx-auto relative group mt-[15px]">
           <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
           <button

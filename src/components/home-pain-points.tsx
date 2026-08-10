@@ -105,7 +105,7 @@ export default function HomePainPoints() {
                     )}>
                       {isChecked && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
                     </div>
-                    <p className="text-slate-700 font-medium text-sm select-none flex-1">
+                    <p className="text-slate-700 font-medium text-[12px] select-none flex-1">
                       {item.text}
                     </p>
                   </div>

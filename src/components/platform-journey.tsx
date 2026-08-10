@@ -270,7 +270,7 @@ export default function PlatformJourney() {
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.8 }}
-                        className="absolute inset-0 w-full h-full bg-slate-900 flex flex-wrap items-center justify-center p-4 gap-4"
+                        className="absolute inset-0 w-full h-full bg-slate-900 grid grid-cols-3 grid-rows-2 gap-4 p-4"
                       >
                         {/* Efeito Teia (Todos os módulos conectados) */}
                         {STEPS.map((s, i) => (
@@ -279,7 +279,7 @@ export default function PlatformJourney() {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.1, duration: 0.3 }}
-                            className="w-[30%] h-[30%] bg-slate-800 rounded-lg flex flex-col items-center justify-center border border-amber-500/20"
+                            className="w-full h-full bg-slate-800 rounded-lg flex flex-col items-center justify-center border border-amber-500/20"
                           >
                             <s.icon className="w-6 h-6 text-amber-500 mb-2" />
                             <span className="text-xs text-slate-300">{s.label}</span>

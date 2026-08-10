@@ -81,7 +81,7 @@ export default function HomeTechPeople() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-[15px] mb-0.5">{item.title}</h4>
+                    <h4 className="font-bold text-slate-900 text-[15px] mb-[5px]">{item.title}</h4>
                     <p className="text-slate-500 text-[13px] leading-tight">{item.desc}</p>
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export default function HomeTechPeople() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-[15px] mb-0.5">{item.title}</h4>
+                    <h4 className="font-bold text-slate-900 text-[15px] mb-[5px]">{item.title}</h4>
                     <p className="text-slate-500 text-[13px] leading-tight">{item.desc}</p>
                   </div>
                 </div>
