@@ -145,7 +145,7 @@ export default function HomePricing() {
   return (
     <div className="flex flex-col gap-12">
       <div className="text-center max-w-2xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+        <h2 className="text-5xl md:text-6xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           Invista no seu futuro
         </h2>
         <p className="mt-2 text-lg text-slate-500">

@@ -42,14 +42,14 @@ export default function HomeCorpo() {
       <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            Para quem é a <span className="text-amber-500">Senra</span>?
+            Para quem é a <span className="text-amber-500">Senra?</span>
           </h2>
           <p className="text-[18px] text-slate-600 font-body leading-relaxed whitespace-nowrap">
             Cada aluno tem um objetivo. A plataforma se adapta à jornada que você precisa
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 mb-[15px]">
           {/* Card 1 */}
           <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
             <div className="relative h-48 w-full bg-slate-100">

@@ -41,7 +41,7 @@ export default function HomeTestimonials() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col items-center text-center mb-16 lg:mb-20">
         <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center">
