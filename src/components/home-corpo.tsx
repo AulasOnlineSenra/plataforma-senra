@@ -42,7 +42,7 @@ export default function HomeCorpo() {
       <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            Pra quem é a Senra?
+            Pra quem é a <span className="text-amber-500">Senra</span>?
           </h2>
           <p className="text-[18px] text-slate-600 font-body leading-relaxed whitespace-nowrap">
             Cada aluno tem um objetivo. A plataforma se adapta à jornada que você precisa
@@ -140,7 +140,7 @@ export default function HomeCorpo() {
         </div>
 
         {/* Banner Final */}
-        <div className="bg-slate-50 rounded-3xl border border-slate-200 py-3 px-6 md:py-3 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden max-h-max md:max-h-[80px]">
+        <div className="bg-slate-50 rounded-3xl border border-slate-200 py-3 px-6 md:py-3 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden max-h-max md:max-h-[90px]">
           <div className="flex items-center gap-5 text-center md:text-left">
             <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mx-auto md:mx-0">
               <MessageSquare className="w-6 h-6 text-amber-600" />

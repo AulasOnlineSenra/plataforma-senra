@@ -643,11 +643,7 @@ export default function HomePage() {
         <MapaCircle />
 
         {/* SEÇÃO CORPO: Problema e Solução */}
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <HomeCorpo />
-          </div>
-        </section>
+        <HomeCorpo />
 
         {/* SEÇÃO DEPOIMENTOS */}
         <section
