@@ -20,7 +20,8 @@ import {
   User,
   TrendingUp,
   ArrowRight,
-  Lock
+  Lock,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -103,7 +104,7 @@ export default function HomePainPoints() {
                       "flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
                       isChecked ? "border-amber-500 bg-amber-500" : "border-slate-300"
                     )}>
-                      {isChecked && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
+                      {isChecked && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
                     </div>
                     <p className="text-slate-700 font-medium text-[12px] select-none flex-1">
                       {item.text}

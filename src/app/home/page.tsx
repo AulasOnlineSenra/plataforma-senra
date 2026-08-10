@@ -516,41 +516,17 @@ export default function HomePage() {
             </div>
 
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <div className="relative w-full sm:w-auto mt-5">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder={inputFocused ? "" : "Buscar por disciplina:"}
-                  className="w-full sm:w-[500px] lg:w-[540px] h-12 pl-4 pr-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-amber-400 transition-all shadow-[0_0_15px_rgba(255,193,7,0.3)]"
-                  onFocus={handleInputFocus}
-                  onBlur={() => setInputFocused(false)}
-                />
-                {!inputFocused && (
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <span className="text-white/50">Buscar por disciplina: </span>
-                    <span key={indiceDisciplina} className="text-amber-400 inline-block animate-roll-up">
-                      {disciplinas[indiceDisciplina]}
-                    </span>
-                  </div>
-                )}
-                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-amber-400 z-10">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-                <style>{`
-                  @keyframes rollUp {
-                    0% { transform: translateY(10px); opacity: 0; }
-                    15% { transform: translateY(0); opacity: 1; }
-                    85% { transform: translateY(0); opacity: 1; }
-                    100% { transform: translateY(-10px); opacity: 0; }
-                  }
-                  .animate-roll-up {
-                    animation: rollUp 2.5s ease-in-out infinite;
-                  }
-                `}</style>
-              </div>
+            <div className="mt-[42px] flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button asChild className="h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
+                <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
+                  Quero organizar meus estudos
+                </a>
+              </Button>
+              <Button asChild className="h-14 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-full text-[17px] transition-all hover:scale-105">
+                <Link href="/register">
+                  Conheça a plataforma
+                </Link>
+              </Button>
             </div>
 
             {/* Botão Ver Depoimentos - ocultado */}
