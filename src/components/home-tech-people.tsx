@@ -113,8 +113,8 @@ export default function HomeTechPeople() {
               <div className="absolute inset-[-18px] rounded-full border-[2px] border-dashed border-slate-300/80 pointer-events-none" />
               
               {/* Orbit Dots */}
-              <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '11px', left: '14px' }} />
-              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '11px', right: '14px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '6px', left: '16px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '6px', right: '16px' }} />
 
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
                 <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />
