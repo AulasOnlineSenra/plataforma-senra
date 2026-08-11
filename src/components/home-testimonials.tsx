@@ -108,7 +108,7 @@ export default function HomeTestimonials() {
         
         {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
         <div className="w-full lg:col-span-5 order-2 lg:order-1 relative">
-          <div ref={containerRef} className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
+          <div ref={containerRef} className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 pt-4 px-4 -mx-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}
@@ -119,7 +119,7 @@ export default function HomeTestimonials() {
               className={cn(
                 "bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 relative group hover:-translate-y-1 transition-all duration-300 mr-[20px]",
                 activeIndex === index 
-                  ? "border-2 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-[1.02]" 
+                  ? "border-2 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.8)] scale-[1.02]" 
                   : "border-2 border-transparent shadow-sm opacity-80"
               )}
             >
