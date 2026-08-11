@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Star, MessageCircle, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 const WhatsappIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor">
@@ -53,6 +54,42 @@ const microproofs = [
 
 export default function HomeTestimonials() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      const container = containerRef.current;
+      const containerCenter = container.scrollTop + container.clientHeight / 2;
+      
+      let closestIndex = 0;
+      let minDistance = Infinity;
+      
+      Array.from(container.children).forEach((child, index) => {
+        const childElement = child as HTMLElement;
+        const childCenter = childElement.offsetTop + childElement.clientHeight / 2;
+        const distance = Math.abs(containerCenter - childCenter);
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = index;
+        }
+      });
+      
+      setActiveIndex(closestIndex);
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      handleScroll();
+    }
+    
+    return () => {
+      if (container) container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   return (
     <div className="w-full max-w-5xl mx-auto">
@@ -71,7 +108,7 @@ export default function HomeTestimonials() {
         
         {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
         <div className="w-full lg:col-span-5 order-2 lg:order-1 relative">
-          <div className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
+          <div ref={containerRef} className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}
@@ -79,7 +116,12 @@ export default function HomeTestimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
-              className="bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 shadow-sm relative group hover:-translate-y-1 hover:shadow-md transition-all duration-300 mr-[20px]"
+              className={cn(
+                "bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 relative group hover:-translate-y-1 transition-all duration-300 mr-[20px]",
+                activeIndex === index 
+                  ? "border-2 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-[1.02]" 
+                  : "border-2 border-transparent shadow-sm opacity-80"
+              )}
             >
               {/* WhatsApp Tail */}
               <div className="absolute top-0 -left-2 w-0 h-0 border-t-[10px] border-t-[#dcf8c6] border-l-[10px] border-l-transparent"></div>
