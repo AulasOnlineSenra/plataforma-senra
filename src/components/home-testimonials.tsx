@@ -70,8 +70,9 @@ export default function HomeTestimonials() {
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-center lg:items-start">
         
         {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
-        <div className="w-full lg:col-span-5 flex flex-col gap-5 order-2 lg:order-1">
-          {whatsappTestimonials.map((msg, index) => (
+        <div className="w-full lg:col-span-5 order-2 lg:order-1 relative">
+          <div className="flex flex-col gap-5 overflow-hidden max-h-[450px] lg:max-h-[386px] pb-10" style={{ WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
+            {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}
               initial={{ opacity: 0, y: 20 }}
@@ -100,6 +101,7 @@ export default function HomeTestimonials() {
               </div>
             </motion.div>
           ))}
+          </div>
         </div>
 
         {/* Right Column: Video (Order 1 on Mobile, Order 2 on Desktop) */}
