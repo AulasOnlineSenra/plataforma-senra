@@ -71,7 +71,7 @@ export default function HomeTestimonials() {
         
         {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
         <div className="w-full lg:col-span-5 order-2 lg:order-1 relative">
-          <div className="flex flex-col gap-5 overflow-hidden max-h-[450px] lg:max-h-[386px] pb-10" style={{ WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
+          <div className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}
