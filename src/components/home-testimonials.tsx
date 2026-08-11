@@ -27,6 +27,14 @@ const whatsappTestimonials = [
     source: "WhatsApp",
     text: "Eu estudava horas e não via resultado. O plano personalizado me mostrou o que eu realmente precisava revisar. Passei no ENEM!",
     date: "Ontem"
+  },
+  {
+    id: 3,
+    name: "Pai do Enzo",
+    profile: "Concurso",
+    source: "WhatsApp",
+    text: "Precisei trocar meu filho de escola e no começo do ano ele sentiu muita a diferença de ensino, ele estava no último ano do fundamental teve muita dificuldade com Física e Matemática. Além dos professores conseguirem ajudar ele a recuperar a notas, ele ainda passou em segundo lugar no CP2. Obrigado!!!",
+    date: "Ontem"
   }
 ];
 
@@ -70,7 +78,7 @@ export default function HomeTestimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
-              className="bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 shadow-sm relative group hover:-translate-y-1 hover:shadow-md transition-all duration-300"
+              className="bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 shadow-sm relative group hover:-translate-y-1 hover:shadow-md transition-all duration-300 mr-[20px]"
             >
               {/* WhatsApp Tail */}
               <div className="absolute top-0 -left-2 w-0 h-0 border-t-[10px] border-t-[#dcf8c6] border-l-[10px] border-l-transparent"></div>
@@ -84,7 +92,7 @@ export default function HomeTestimonials() {
                   <WhatsappIcon className="w-[18px] h-[18px]" />
                 </div>
               </div>
-              <p className="text-slate-800 text-[12px] leading-relaxed mb-2">
+              <p className="text-slate-800 text-[12px] leading-relaxed mb-2 pr-[20px]">
                 "{msg.text}"
               </p>
               <div className="text-right text-[10px] font-medium text-slate-500 uppercase tracking-wide">
