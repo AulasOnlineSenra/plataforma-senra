@@ -53,8 +53,9 @@ const microproofs = [
   "⭐ Finalmente criei uma rotina"
 ];
 
-const AudioPlayer = ({ src }: { src: string }) => {
+const BigAudioPlayer = ({ src }: { src: string }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const togglePlay = () => {
@@ -68,26 +69,54 @@ const AudioPlayer = ({ src }: { src: string }) => {
     }
   };
 
-  const waveHeights = [20, 30, 40, 60, 40, 80, 50, 30, 70, 90, 60, 40, 30, 50, 70, 40, 20, 40, 30, 20];
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      const duration = audioRef.current.duration;
+      if (duration > 0) {
+        setProgress((current / duration) * 100);
+      }
+    }
+  };
+
+  const waveHeights = [20,30,40,60,40,80,50,30,70,90,60,40,30,50,70,40,20,40,30,20,
+                       40,60,80,50,40,60,90,70,50,40,30,50,70,80,90,60,40,30,20,40,
+                       50,70,90,60,40,30,50,80,60,40,30,50,70,90,60,40,30,20,40,50];
 
   return (
-    <div className="flex items-center gap-2 bg-white/70 rounded-full py-1.5 px-3 mb-3 w-[240px]">
+    <div className="w-full flex flex-col md:flex-row items-center gap-6 mt-4">
       <button 
         onClick={togglePlay}
-        className="w-8 h-8 flex items-center justify-center bg-[#25D366] text-white rounded-full shrink-0 shadow-sm transition-transform hover:scale-105"
+        className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400"
       >
         {isPlaying ? (
-          <div className="w-3 h-3 bg-white rounded-sm" />
+          <div className="w-6 h-6 bg-slate-900 rounded-sm" />
         ) : (
-          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+          <Play className="w-8 h-8 ml-1" fill="currentColor" />
         )}
       </button>
-      <div className="flex-1 flex items-center gap-[2px] h-6 opacity-70">
-        {waveHeights.map((h, i) => (
-          <div key={i} className={cn("w-[3px] rounded-full transition-colors", isPlaying ? "bg-[#25D366]" : "bg-slate-500")} style={{ height: `${h}%` }} />
-        ))}
+      
+      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer">
+        {waveHeights.map((h, i) => {
+          const isPlayed = (i / waveHeights.length) * 100 <= progress;
+          return (
+            <div 
+              key={i} 
+              className={cn(
+                "flex-1 rounded-full transition-colors duration-200", 
+                isPlayed ? "bg-amber-500" : "bg-slate-700"
+              )} 
+              style={{ height: `${h}%`, minWidth: '3px', maxWidth: '4px' }} 
+            />
+          );
+        })}
       </div>
-      <audio ref={audioRef} src={src} onEnded={() => setIsPlaying(false)} />
+      <audio 
+        ref={audioRef} 
+        src={src} 
+        onEnded={() => { setIsPlaying(false); setProgress(0); }} 
+        onTimeUpdate={handleTimeUpdate}
+      />
     </div>
   );
 };
@@ -175,9 +204,6 @@ export default function HomeTestimonials() {
                   <WhatsappIcon className="w-[18px] h-[18px]" />
                 </div>
               </div>
-              {(msg as any).audioUrl && (
-                <AudioPlayer src={(msg as any).audioUrl} />
-              )}
               <p className="text-slate-800 text-[12px] leading-relaxed mb-2 pr-[20px]">
                 "{msg.text}"
               </p>
@@ -189,7 +215,7 @@ export default function HomeTestimonials() {
           </div>
         </div>
 
-        {/* Right Column: Video (Order 1 on Mobile, Order 2 on Desktop) */}
+        {/* Right Column: Audio (Order 1 on Mobile, Order 2 on Desktop) */}
         <div className="w-full lg:col-span-7 flex flex-col items-center lg:items-start order-1 lg:order-2">
           
           <motion.div 
@@ -199,41 +225,23 @@ export default function HomeTestimonials() {
             transition={{ duration: 0.6 }}
             className="w-full"
           >
-            {/* Video Box */}
+            {/* Audio Box */}
             <div 
-              className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 group"
+              className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 p-8 md:p-12 flex flex-col justify-center gap-6"
             >
-              {isVideoOpen ? (
-                <video 
-                  src={videoTestimonial.videoUrl} 
-                  controls 
-                  autoPlay 
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <>
-                  <Image 
-                    src={videoTestimonial.thumbnail} 
-                    alt="Depoimento em vídeo" 
-                    fill 
-                    onClick={() => setIsVideoOpen(true)}
-                    className="cursor-pointer object-cover opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"></div>
-                  
-                  {/* Play Button Overlay */}
-                  <div 
-                    onClick={() => setIsVideoOpen(true)}
-                    className="cursor-pointer absolute inset-0 flex flex-col items-center justify-center"
-                  >
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.4)] group-hover:scale-110 group-hover:bg-amber-400 transition-all duration-300 mb-4">
-                      <Play className="w-7 h-7 md:w-8 md:h-8 text-slate-900 ml-1 fill-current" />
-                    </div>
-                    <span className="font-bold text-white text-lg drop-shadow-md">Assistir depoimento</span>
-                    <span className="text-white/80 text-sm font-medium mt-1">{videoTestimonial.name} · {videoTestimonial.profile}</span>
-                  </div>
-                </>
-              )}
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
+                <div className="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center shrink-0 shadow-inner overflow-hidden ring-2 ring-amber-500/50">
+                  <Image src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop" alt="Alessandra F." width={80} height={80} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h3 className="text-white font-black text-2xl md:text-3xl drop-shadow-md">Ouça este depoimento</h3>
+                  <p className="text-amber-400 text-base md:text-lg font-semibold mt-1">Alessandra F. · ENEM</p>
+                </div>
+              </div>
+
+              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
+              
+              <BigAudioPlayer src="/audio/Alessandra.ogg" />
             </div>
 
             {/* Microproofs */}
