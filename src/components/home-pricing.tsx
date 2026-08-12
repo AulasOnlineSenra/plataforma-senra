@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, ArrowRight, MessageCircle, PackageOpen, CalendarClock, TrendingUp, Trophy, Medal, Rocket, ShoppingCart } from 'lucide-react';
+import { Check, ArrowRight, MessageCircle, PackageOpen, CalendarClock, TrendingUp, Trophy, Medal, Rocket, ShoppingCart, Star, SlidersHorizontal, BookOpen, Target, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -144,139 +144,101 @@ export default function HomePricing() {
 
   return (
     <div className="flex flex-col gap-12">
-      <div className="text-center max-w-2xl mx-auto">
-        <h2 className="text-5xl md:text-6xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-          Invista no seu futuro
+      <div className="text-center max-w-4xl mx-auto px-4">
+        <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          Invista no ritmo que <span className="text-amber-500">faz sentido para você.</span>
         </h2>
-        <p className="mt-2 text-lg text-slate-500">
-          Escolha o pacote ideal para seu objetivo
+        <p className="mt-4 text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-relaxed">
+          Aulas individuais ao vivo de 90 minutos, acompanhamento personalizado e uma plataforma completa para você estudar com mais direção e consistência.
         </p>
       </div>
 
       <div className="grid max-w-6xl gap-8 md:grid-cols-2 lg:grid-cols-3 items-center mx-auto w-full">
         {classPackages.map((pkg, index) => {
-          const icons = [CalendarClock, TrendingUp, Trophy];
+          const icons = [GraduationCap, BookOpen, Target];
           const IconComponent = icons[index] || PackageOpen;
-          const buttonTexts = ['Comprar Agora', 'Quero evoluir mais rápido', 'Quero minha aprovação'];
-          const buttonText = buttonTexts[index] || 'Comprar Agora';
           return (
           <Card
             key={pkg.id}
             className={cn(
-              'relative flex flex-col rounded-3xl bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(245,176,0,0.9)]',
+              'relative flex flex-col rounded-3xl bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(245,176,0,0.4)]',
               pkg.popular
-                ? 'z-10 border-2 border-amber-400 shadow-lg scale-100 lg:scale-105'
-                : 'border border-slate-200 shadow-sm'
+                ? 'z-10 border-2 border-amber-400 shadow-xl scale-100 lg:scale-105'
+                : 'border border-slate-200 shadow-md'
             )}
           >
             {pkg.popular && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-6 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-900 shadow-sm">
-                Mais Popular
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-6 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-900 shadow-sm flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 fill-current" /> MAIS ESCOLHIDO
               </div>
             )}
 
-            <CardHeader className="items-center pt-10 text-center pb-6">
-              <CardTitle className="font-headline text-xl text-slate-900 flex items-center gap-2 md:-ml-[25px]">
-                <IconComponent className="w-[34px] h-[34px] text-amber-400" />
+            <CardHeader className="pt-8 text-center pb-4">
+              <CardTitle className="font-headline text-xl text-slate-900 flex flex-col items-center gap-4">
+                <div className="bg-slate-50 p-4 rounded-full text-slate-700 ring-1 ring-slate-200">
+                  <IconComponent className="w-7 h-7" />
+                </div>
                 {pkg.name}
               </CardTitle>
-              <p className="mt-2 text-sm font-semibold text-green-600 flex items-center justify-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                Aulas ao vivo de 90 minutos
+              
+              <p className="mt-3 text-sm font-medium text-slate-600 px-6 h-10">
+                {index === 0 && 'Ideal para quem tem uma prova e precisa intensificar a preparação.'}
+                {index === 1 && 'Ideal para quem precisa de apoio e quer evoluir nas matérias.'}
+                {index >= 2 && 'Ideal para quem precisa de consistência e flexibilidade.'}
               </p>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-[13px] font-medium text-slate-500">R$</span>
-                <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                  {pkg.pricePerClass.toFixed(2).replace('.', ',')}
-                </span>
-                <span className="text-[13px] font-medium text-slate-500">/aula</span>
+              
+              <div className="mt-6 flex flex-row items-center justify-center gap-4 text-xs font-semibold text-slate-700 bg-slate-50 py-2.5 rounded-xl border border-slate-100 mx-6">
+                <span className="flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-indigo-500" /> {pkg.numClasses} aulas por mês</span>
+                <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-emerald-600" /> 90 min cada aula</span>
               </div>
-              {index === 1 && (
-                <p className="mt-2 text-[10px] font-bold text-white bg-green-600 px-[calc(0.75rem+10px)] py-1 rounded-full inline-block">
-                  Economize até <span className="text-[#f5b000]">R$180</span> em comparação à aula avulsa
-                </p>
-              )}
-              {index === 2 && (
-                <p className="mt-2 text-xs font-bold text-white bg-[#f5b000] px-[calc(0.75rem+45px)] py-1 rounded-full inline-block">
-                  Maior economia da plataforma
-                </p>
-              )}
             </CardHeader>
 
-            <CardContent className="mt-0 flex-1 px-3 pb-2 -mt-[15px]">
-              <ul className="grid gap-1 rounded-2xl bg-slate-50 p-5 text-sm border border-slate-100">
-                <li className="flex items-center font-medium text-slate-600">
-                  <div className="rounded-full bg-green-100 p-1 mr-2">
-                    <Check className="h-3 w-3 text-green-600" />
-                  </div>
-                  Pacote com <span className="font-bold text-slate-800 text-base mr-1 ml-1">{pkg.numClasses} aulas</span> +
-                </li>
-                {pkg.features.slice(0, 3).map((feature, featureIndex) => {
-                  const adjustedFeature = (index >= 1 && featureIndex === 0) ? 'Plano personalizado de estudos' : feature;
-                  return (
-                  <li key={feature} className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                    <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    {adjustedFeature}
+            <CardContent className="mt-0 flex-1 px-8 pb-2">
+              <p className="text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
+              <ul className="grid gap-3 text-sm">
+                {pkg.features.map((feature) => (
+                  <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
+                    <Check className="mr-3 h-4 w-4 text-blue-600 shrink-0 mt-0.5 bg-blue-100 rounded-full p-0.5" />
+                    {feature}
                   </li>
-                )})}
-                {index >= 1 && (
-                  <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                    <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    Aulas individuais
-                  </li>
-                )}
-                <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                  <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  Plataforma digital privada
-                </li>
-{index === 1 && (
-                  <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                    <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    Ideal para quem busca acompanhamento e evolução constante
-                  </li>
-                )}
-                {index === 2 && (
-                  <>
-                    <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                      <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                      Acompanhamento recorrente e estratégico
-                    </li>
-                    <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                      <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                      Melhor custo por aula
-                    </li>
-                    <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                      <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                      Mais consistência = Melhores resultados
-                    </li>
-                    <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                      <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                      Ideal para que tem metas altas: Enem/Vestibulares e concursos
-                    </li>
-                  </>
-                )}
-                <li className="flex items-start font-medium text-slate-600 text-xs pt-1">
-                  <ArrowRight className="mr-2 h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  Atendimento rápido e humanizado
-                </li>
+                ))}
               </ul>
+
+              <div className="mt-8 border-t border-slate-100 pt-6">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[14px] font-bold text-slate-900">R$</span>
+                  <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
+                    {pkg.pricePerClass.toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="text-[14px] font-bold text-slate-900">/aula</span>
+                </div>
+                <p className="mt-2 text-[13px] font-bold text-slate-600">
+                  Total: R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}/mês
+                </p>
+              </div>
             </CardContent>
 
-            <CardFooter className="flex-col gap-1 px-6 pb-5 pt-1">
+            <CardFooter className="flex-col gap-3 px-8 pb-8 pt-2">
               <Button 
-                className="h-10 w-full rounded-2xl text-sm font-bold text-white shadow-sm transition-transform bg-slate-900 hover:bg-slate-800 hover:scale-[1.02]"
+                className={cn(
+                  "h-12 w-full rounded-2xl text-sm font-bold shadow-md transition-transform hover:scale-[1.02]",
+                  index === 1 ? "bg-amber-500 hover:bg-amber-400 text-slate-900" : "bg-slate-900 hover:bg-slate-800 text-white"
+                )}
                 onClick={() => {
                   localStorage.removeItem('checkoutBookings');
                   router.push(`/dashboard/checkout?needed=${pkg.numClasses}&current=0`);
                 }}
               >
-                {index === 2 ? <><Medal className="mr-2 h-6 w-6" />Quero minha aprovação</> : index === 1 ? <><Rocket className="mr-2 h-6 w-6" />Quero evoluir mais rápido</> : <><ShoppingCart className="mr-2 h-6 w-6" />Comprar Agora</>}
+                {index === 0 && 'Quero acelerar →'}
+                {index === 1 && 'Quero evoluir →'}
+                {index >= 2 && 'Quero começar →'}
               </Button>
               <Button
-                className="h-10 w-full rounded-2xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1DA851]"
+                variant="outline"
+                className="h-12 w-full rounded-2xl text-sm font-bold text-slate-700 border-slate-200 hover:bg-slate-50"
                 onClick={() => handleWhatsAppClick(`Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento?`)}
               >
-                <MessageCircle className="mr-2 h-4 w-4" /> Comprar via WhatsApp
+                <MessageCircle className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
               </Button>
             </CardFooter>
           </Card>
@@ -284,85 +246,80 @@ export default function HomePricing() {
         })}
       </div>
 
-      <div className="mt-8">
-        <Card className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <CardHeader className="text-center pb-4 pt-8 px-8">
-            <CardTitle className="font-headline text-2xl font-bold text-slate-900 tracking-tight">
-              Calculadora de Pacotes
-            </CardTitle>
-            <CardDescription className="mt-2 text-base text-slate-500 max-w-xl mx-auto">
-              Não encontrou o pacote ideal? Monte seu plano personalizado.
-            </CardDescription>
-          </CardHeader>
+      <div className="mt-8 max-w-6xl mx-auto w-full px-4 md:px-0">
+        <div className="flex flex-col xl:flex-row items-center justify-between gap-6 bg-slate-50 border border-slate-200 rounded-[2rem] p-6 md:p-8 shadow-sm">
+          
+          <div className="flex flex-col md:flex-row items-center gap-5 xl:w-1/3 text-center md:text-left">
+            <div className="bg-white p-4 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100">
+              <SlidersHorizontal className="w-8 h-8 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-lg">Seu objetivo exige outro ritmo?</h4>
+              <p className="text-sm text-slate-600 font-medium mt-1">Monte um plano personalizado com a nossa equipe e estude no ritmo ideal para você.</p>
+            </div>
+          </div>
 
-          <CardContent className="grid lg:grid-cols-2 items-center justify-center gap-6 p-8 pt-4">
-            <div className="grid grid-cols-1 gap-6 rounded-3xl border border-slate-100 bg-slate-50/80 p-6">
-              <div className="grid gap-2 text-center">
-                <Label htmlFor="classes-per-week" className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Aulas por Semana
-                </Label>
-                <Input
-                  id="classes-per-week"
-                  type="number"
-                  value={classesPerWeek}
-                  onChange={(e) => setClassesPerWeek(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  className="mx-auto h-12 w-24 rounded-2xl border-slate-200 text-center text-2xl font-extrabold text-slate-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
-                  min="1"
-                />
+          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white p-5 md:px-8 rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center">
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aulas por semana</Label>
+                <Select value={String(classesPerWeek)} onValueChange={(value) => setClassesPerWeek(Number(value))}>
+                  <SelectTrigger className="h-12 w-32 rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {[1, 2, 3, 4, 5].map((w) => (
+                      <SelectItem key={w} value={String(w)} className="font-medium">{w} {w > 1 ? 'aulas' : 'aula'}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid gap-2 text-center">
-                <Label htmlFor="number-of-weeks" className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Duração
-                </Label>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Duração (semanas)</Label>
                 <Select value={String(numberOfWeeks)} onValueChange={(value) => setNumberOfWeeks(Number(value))}>
-                  <SelectTrigger className="mx-auto h-12 w-32 justify-center rounded-2xl border-slate-200 text-lg font-bold text-slate-900 focus:ring-2 focus:ring-amber-400/20">
-                    <SelectValue placeholder="Semanas" />
+                  <SelectTrigger className="h-12 w-40 rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
+                  <SelectContent className="rounded-xl">
                     {[1, 2, 3, 4, 8, 12, 16, 24].map((w) => (
-                      <SelectItem key={w} value={String(w)} className="text-base font-medium cursor-pointer">
-                        {w} {w > 1 ? 'semanas' : 'semana'}
-                      </SelectItem>
+                      <SelectItem key={w} value={String(w)} className="font-medium">{w} {w > 1 ? 'semanas' : 'semana'}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="flex min-h-full flex-col items-center justify-center rounded-3xl bg-amber-400 p-6 text-center shadow-inner">
-              <p className="mb-1 text-xs font-bold uppercase tracking-widest text-slate-800/70">
-                {calculatedPackage.totalClasses} aulas
-              </p>
-              <p className="my-2 text-5xl font-extrabold text-slate-900 tracking-tighter">
-                R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}
-              </p>
-              <p className="mt-2 rounded-full bg-white/50 backdrop-blur-sm px-3 py-1 text-sm font-bold text-slate-800">
-                R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} / aula
-              </p>
-            </div>
-          </CardContent>
+            <div className="hidden md:block w-px h-16 bg-slate-100"></div>
 
-          <CardFooter className="flex-col gap-2 pb-8 px-8 pt-0">
+            <div className="flex flex-col text-center md:text-right mt-4 md:mt-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-0.5">Estimativa</p>
+              <p className="text-2xl font-extrabold text-slate-900 tracking-tight">R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}<span className="text-sm font-bold text-slate-500">/mês</span></p>
+              <p className="text-xs font-bold text-slate-500 mt-1">R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula</p>
+              <p className="text-[10px] text-slate-400 mt-1">*Valores sujeitos a alteração</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 shrink-0 w-full xl:w-auto">
             <Button 
-              size="lg" 
-              className="mx-auto h-14 w-full max-w-md rounded-2xl text-lg font-bold text-white shadow-lg transition-transform bg-slate-900 hover:bg-slate-800 hover:scale-105"
+              className="h-12 px-8 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-transform hover:scale-[1.02] shadow-md w-full"
               onClick={() => {
                 localStorage.removeItem('checkoutBookings');
                 router.push(`/dashboard/checkout?needed=${calculatedPackage.totalClasses}&current=0`);
               }}
             >
-              Comprar Agora
+              Montar meu plano →
             </Button>
             <Button
-              size="lg"
-              className="mx-auto h-14 w-full max-w-md rounded-2xl text-lg font-bold text-white shadow-lg bg-[#25D366] hover:bg-[#1DA851]"
+              variant="outline"
+              className="h-12 px-8 rounded-xl text-sm font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 w-full"
               onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())}
             >
-              <MessageCircle className="mr-2 h-5 w-5" /> Contratar Personalizado
+              <MessageCircle className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
             </Button>
-          </CardFooter>
-        </Card>
+          </div>
+
+        </div>
       </div>
     </div>
   );
