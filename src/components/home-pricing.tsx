@@ -190,7 +190,7 @@ export default function HomePricing() {
                   )} />
                 </div>
                 <div>
-                  <CardTitle className="font-headline text-lg text-slate-900">
+                  <CardTitle className="font-headline text-lg text-slate-900 leading-[20px]">
                     {pkg.name}
                   </CardTitle>
                   <p className="mt-1 text-[11px] leading-tight font-medium text-slate-600 h-10 pr-2">
@@ -210,7 +210,7 @@ export default function HomePricing() {
             <CardContent className="mt-0 flex-1 px-8 pb-2">
               <p className="mt-[20px] text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
               <ul className="grid gap-1 text-sm">
-                {pkg.features.map((feature) => (
+                {['Acesso à plataforma', ...pkg.features, ...(pkg.name.toLowerCase().includes('enem') ? ['Simulados e exercícios direcionados'] : [])].map((feature) => (
                   <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
                     <Check className={cn(
                       "mr-3 h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5",
@@ -265,7 +265,7 @@ export default function HomePricing() {
         })}
       </div>
 
-      <div className="mt-0 max-w-6xl mx-auto w-full px-4 md:px-0">
+      <div className="mt-[-20px] max-w-6xl mx-auto w-full px-4 md:px-0">
         <div className="flex flex-col xl:flex-row items-center xl:justify-start gap-[10px] xl:gap-[8px] bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[9px] md:px-8 md:py-[17px] shadow-sm">
           
           <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[384px] shrink-0 text-center md:text-left">
@@ -278,7 +278,7 @@ export default function HomePricing() {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white px-5 py-[15px] md:px-[22px] rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center">
+          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white px-5 py-[15px] md:px-[22px] rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center xl:-ml-[20px]">
             <div className="flex items-center gap-6">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aulas por semana</Label>
