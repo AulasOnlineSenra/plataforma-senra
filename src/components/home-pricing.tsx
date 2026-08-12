@@ -218,7 +218,7 @@ export default function HomePricing() {
                       index === 1 ? "bg-amber-400 text-slate-900" : "",
                       index >= 2 ? "bg-emerald-500 text-white" : ""
                     )} />
-                    {feature}
+                    {feature === 'Aulas individuais e personalizadas' ? 'Aulas ao vivo e individuais' : feature}
                   </li>
                 ))}
               </ul>
@@ -265,7 +265,7 @@ export default function HomePricing() {
         })}
       </div>
 
-      <div className="mt-[-20px] max-w-6xl mx-auto w-full px-4 md:px-0">
+      <div className="mt-[-20px] mb-[-20px] max-w-6xl mx-auto w-full px-4 md:px-0">
         <div className="flex flex-col xl:flex-row items-center xl:justify-start gap-[10px] xl:gap-[8px] bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[9px] md:px-8 md:py-[17px] shadow-sm">
           
           <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[384px] shrink-0 text-center md:text-left">
@@ -278,7 +278,7 @@ export default function HomePricing() {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white px-5 py-[15px] md:px-[22px] rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center xl:-ml-[20px]">
+          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white px-5 py-[15px] md:px-[22px] rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center xl:-ml-[35px]">
             <div className="flex items-center gap-6">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aulas por semana</Label>
