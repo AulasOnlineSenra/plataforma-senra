@@ -126,6 +126,8 @@ export default function HomeTestimonials() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const activeTestimonial = whatsappTestimonials[activeIndex] || whatsappTestimonials[0];
+
   useEffect(() => {
     const handleScroll = () => {
       if (!containerRef.current) return;
@@ -230,18 +232,32 @@ export default function HomeTestimonials() {
               className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 p-8 md:p-12 flex flex-col justify-center gap-6"
             >
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-                <div className="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center shrink-0 shadow-inner overflow-hidden ring-2 ring-amber-500/50">
-                  <Image src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop" alt="Alessandra F." width={80} height={80} className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h3 className="text-white font-black text-2xl md:text-3xl drop-shadow-md">Ouça este depoimento</h3>
-                  <p className="text-amber-400 text-base md:text-lg font-semibold mt-1">Alessandra F. · ENEM</p>
+                <div className="flex flex-col justify-center">
+                  <h3 className="text-white font-black text-2xl md:text-3xl drop-shadow-md">
+                    {(activeTestimonial as any).audioUrl ? "Ouça este depoimento" : "Mensagem de texto"}
+                  </h3>
+                  <p className="text-amber-400 text-base md:text-lg font-semibold mt-1">
+                    {activeTestimonial.name} · {activeTestimonial.profile}
+                  </p>
                 </div>
               </div>
 
               <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
               
-              <BigAudioPlayer src="/audio/Alessandra.ogg" />
+              {(activeTestimonial as any).audioUrl ? (
+                <BigAudioPlayer key={activeTestimonial.id} src={(activeTestimonial as any).audioUrl} />
+              ) : (
+                <div className="w-full flex flex-col md:flex-row items-center gap-6 mt-4 opacity-50 grayscale pointer-events-none">
+                  <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-slate-700 text-slate-500 rounded-full shrink-0">
+                    <Play className="w-8 h-8 ml-1" fill="currentColor" />
+                  </div>
+                  <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full">
+                    {[...Array(60)].map((_, i) => (
+                      <div key={i} className="flex-1 bg-slate-700 rounded-full" style={{ height: `${20 + Math.random() * 40}%`, minWidth: '3px', maxWidth: '4px' }} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Microproofs */}
