@@ -181,8 +181,8 @@ export default function HomePricing() {
 
             <CardHeader className="pt-8 text-left pb-4">
               <div className="flex items-start gap-3 px-2">
-                <div className="bg-slate-50 p-3 rounded-full text-slate-700 ring-1 ring-slate-200 shrink-0">
-                  <IconComponent className="w-6 h-6" />
+                <div className="bg-slate-50 p-4 rounded-full text-slate-700 ring-1 ring-slate-200 shrink-0 flex items-center justify-center">
+                  <IconComponent className="w-10 h-10" />
                 </div>
                 <div>
                   <CardTitle className="font-headline text-lg text-slate-900">
@@ -207,13 +207,18 @@ export default function HomePricing() {
               <ul className="grid gap-3 text-sm">
                 {pkg.features.map((feature) => (
                   <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
-                    <Check className="mr-3 h-4 w-4 text-blue-600 shrink-0 mt-0.5 bg-blue-100 rounded-full p-0.5" />
+                    <Check className={cn(
+                      "mr-3 h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5",
+                      index === 0 ? "bg-blue-600 text-white" : "",
+                      index === 1 ? "bg-amber-400 text-slate-900" : "",
+                      index >= 2 ? "bg-emerald-500 text-white" : ""
+                    )} />
                     {feature}
                   </li>
                 ))}
               </ul>
 
-              <div className="mt-8 border-t border-slate-100 pt-6">
+              <div className="mt-[10px] border-t border-slate-100 pt-[10px]">
                 <div className="flex items-baseline gap-1">
                   <span className="text-[14px] font-bold text-slate-900">R$</span>
                   <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -221,7 +226,7 @@ export default function HomePricing() {
                   </span>
                   <span className="text-[14px] font-bold text-slate-900">/aula</span>
                 </div>
-                <p className="mt-2 text-[13px] font-bold text-slate-600">
+                <p className="mt-2 text-[13px] font-medium text-slate-500">
                   Total: R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}/mês
                 </p>
               </div>
@@ -230,7 +235,7 @@ export default function HomePricing() {
             <CardFooter className="flex-col gap-3 px-8 pb-8 pt-2">
               <Button 
                 className={cn(
-                  "h-12 w-full rounded-2xl text-sm font-bold shadow-md transition-transform hover:scale-[1.02]",
+                  "h-[38px] w-full rounded-2xl text-sm font-bold shadow-md transition-transform hover:scale-[1.02]",
                   index === 1 ? "bg-amber-500 hover:bg-amber-400 text-slate-900" : "bg-slate-900 hover:bg-slate-800 text-white"
                 )}
                 onClick={() => {
@@ -244,7 +249,7 @@ export default function HomePricing() {
               </Button>
               <Button
                 variant="outline"
-                className="h-12 w-full rounded-2xl text-sm font-bold text-slate-700 border-slate-200 hover:bg-slate-50"
+                className="h-[38px] w-full rounded-2xl text-sm font-bold text-slate-700 border-slate-200 hover:bg-slate-50"
                 onClick={() => handleWhatsAppClick(`Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento?`)}
               >
                 <WhatsappIcon className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
@@ -273,7 +278,7 @@ export default function HomePricing() {
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aulas por semana</Label>
                 <Select value={String(classesPerWeek)} onValueChange={(value) => setClassesPerWeek(Number(value))}>
-                  <SelectTrigger className="h-12 w-32 rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <SelectTrigger className="h-[38px] w-32 rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -287,7 +292,7 @@ export default function HomePricing() {
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Duração (semanas)</Label>
                 <Select value={String(numberOfWeeks)} onValueChange={(value) => setNumberOfWeeks(Number(value))}>
-                  <SelectTrigger className="h-12 w-40 rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <SelectTrigger className="h-[38px] w-[150px] rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -311,7 +316,7 @@ export default function HomePricing() {
 
           <div className="flex flex-col gap-3 shrink-0 w-full xl:w-auto">
             <Button 
-              className="h-12 px-8 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-transform hover:scale-[1.02] shadow-md w-full"
+              className="h-[38px] px-[27px] rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-transform hover:scale-[1.02] shadow-md w-full"
               onClick={() => {
                 localStorage.removeItem('checkoutBookings');
                 router.push(`/dashboard/checkout?needed=${calculatedPackage.totalClasses}&current=0`);
@@ -321,7 +326,7 @@ export default function HomePricing() {
             </Button>
             <Button
               variant="outline"
-              className="h-12 px-8 rounded-xl text-sm font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 w-full"
+              className="h-[38px] px-[27px] rounded-xl text-sm font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 w-full"
               onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())}
             >
               <WhatsappIcon className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
