@@ -266,10 +266,10 @@ export default function HomePricing() {
       </div>
 
       <div className="mt-0 max-w-6xl mx-auto w-full px-4 md:px-0">
-        <div className="flex flex-col xl:flex-row items-center justify-between gap-[10px] xl:gap-6 bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[14px] md:px-8 md:py-[22px] shadow-sm">
+        <div className="flex flex-col xl:flex-row items-center xl:justify-start gap-[10px] xl:gap-[8px] bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[9px] md:px-8 md:py-[17px] shadow-sm">
           
           <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[404px] shrink-0 text-center md:text-left">
-            <div className="bg-white p-4 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100 -ml-1">
+            <div className="bg-white p-4 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100 -ml-[19px] md:-ml-[27px]">
               <SlidersHorizontal className="w-8 h-8 text-blue-600" />
             </div>
             <div>
@@ -283,7 +283,7 @@ export default function HomePricing() {
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aulas por semana</Label>
                 <Select value={String(classesPerWeek)} onValueChange={(value) => setClassesPerWeek(Number(value))}>
-                  <SelectTrigger className="h-[38px] w-32 rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <SelectTrigger className="h-[38px] w-[113px] rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -297,7 +297,7 @@ export default function HomePricing() {
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Duração (semanas)</Label>
                 <Select value={String(numberOfWeeks)} onValueChange={(value) => setNumberOfWeeks(Number(value))}>
-                  <SelectTrigger className="h-[38px] w-[140px] rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <SelectTrigger className="h-[38px] w-[130px] rounded-xl border-slate-200 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -318,9 +318,9 @@ export default function HomePricing() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 shrink-0 w-full xl:w-auto">
+          <div className="flex flex-col gap-3 shrink-0 w-full xl:w-auto xl:ml-auto">
             <Button 
-              className="h-[38px] px-[27px] rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-transform hover:scale-[1.02] shadow-md w-full"
+              className="h-[38px] px-[19px] rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-transform hover:scale-[1.02] shadow-md w-full"
               onClick={() => {
                 localStorage.removeItem('checkoutBookings');
                 router.push(`/dashboard/checkout?needed=${calculatedPackage.totalClasses}&current=0`);
@@ -330,7 +330,7 @@ export default function HomePricing() {
             </Button>
             <Button
               variant="outline"
-              className="h-[38px] px-[27px] rounded-xl text-sm font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 w-full"
+              className="h-[38px] px-[19px] rounded-xl text-sm font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 w-full"
               onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())}
             >
               <WhatsappIcon className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
