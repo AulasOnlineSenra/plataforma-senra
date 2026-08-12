@@ -208,7 +208,7 @@ export default function HomePricing() {
             </CardHeader>
 
             <CardContent className="mt-0 flex-1 px-8 pb-2">
-              <p className="text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
+              <p className="mt-[10px] text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
               <ul className="grid gap-3 text-sm">
                 {pkg.features.map((feature) => (
                   <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
@@ -223,7 +223,7 @@ export default function HomePricing() {
                 ))}
               </ul>
 
-              <div className="mt-[10px] border-t border-slate-100 pt-[10px]">
+              <div className="mt-[20px] border-t border-slate-100 pt-[10px]">
                 <div className="flex items-baseline gap-1">
                   <span className="text-[14px] font-bold text-slate-900">R$</span>
                   <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -266,19 +266,19 @@ export default function HomePricing() {
       </div>
 
       <div className="mt-[20px] max-w-6xl mx-auto w-full px-4 md:px-0">
-        <div className="flex flex-col xl:flex-row items-center justify-between gap-[10px] xl:gap-6 bg-slate-50 border border-slate-200 rounded-[2rem] p-6 md:p-8 shadow-sm">
+        <div className="flex flex-col xl:flex-row items-center justify-between gap-[10px] xl:gap-6 bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[14px] md:px-8 md:py-[22px] shadow-sm">
           
-          <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[424px] shrink-0 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[404px] shrink-0 text-center md:text-left">
             <div className="bg-white p-4 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100 -ml-1">
               <SlidersHorizontal className="w-8 h-8 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-lg leading-tight">Seu objetivo exige outro ritmo?</h4>
-              <p className="text-sm text-slate-600 font-medium mt-1 leading-snug">Monte um plano personalizado com a nossa equipe e estude no ritmo ideal para você.</p>
+              <h4 className="font-bold text-slate-900 text-base leading-tight">Seu objetivo exige outro ritmo?</h4>
+              <p className="text-xs text-slate-600 font-medium mt-1 leading-snug">Monte um plano personalizado com a nossa equipe e estude no ritmo ideal para você.</p>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white p-5 md:px-[22px] rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center">
+          <div className="flex flex-col md:flex-row items-center gap-6 xl:gap-8 shrink-0 bg-white px-5 py-[15px] md:px-[22px] rounded-3xl border border-slate-100 shadow-sm w-full xl:w-auto justify-center">
             <div className="flex items-center gap-6">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aulas por semana</Label>
@@ -312,7 +312,6 @@ export default function HomePricing() {
             <div className="hidden md:block w-px h-16 bg-slate-100"></div>
 
             <div className="flex flex-col text-center md:text-right mt-4 md:mt-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-0.5">Estimativa</p>
               <p className="text-2xl font-extrabold text-slate-900 tracking-tight">R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}<span className="text-sm font-bold text-slate-500">/mês</span></p>
               <p className="text-xs font-bold text-slate-500 mt-1">R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula</p>
               <p className="text-[10px] text-slate-400 mt-1">*Valores sujeitos a alteração</p>
