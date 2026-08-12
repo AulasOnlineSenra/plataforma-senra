@@ -154,7 +154,7 @@ export default function HomePricing() {
         <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap">
           Invista no ritmo que <span className="text-amber-500">faz sentido para você</span>
         </h2>
-        <p className="mt-4 text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-relaxed">
+        <p className="mt-4 text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-tight">
           Aulas individuais ao vivo de 90 minutos, acompanhamento personalizado e uma plataforma completa para você estudar com mais direção e consistência.
         </p>
       </div>
@@ -208,8 +208,8 @@ export default function HomePricing() {
             </CardHeader>
 
             <CardContent className="mt-0 flex-1 px-8 pb-2">
-              <p className="mt-[10px] text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
-              <ul className="grid gap-3 text-sm">
+              <p className="mt-[20px] text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
+              <ul className="grid gap-1 text-sm">
                 {pkg.features.map((feature) => (
                   <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
                     <Check className={cn(
@@ -231,13 +231,13 @@ export default function HomePricing() {
                   </span>
                   <span className="text-[14px] font-bold text-slate-900">/aula</span>
                 </div>
-                <p className="mt-2 text-[13px] font-medium text-slate-500">
+                <p className="mt-[3px] text-[13px] font-medium text-slate-500">
                   Total: R$ {pkg.totalPrice.toFixed(2).replace('.', ',')}/mês
                 </p>
               </div>
             </CardContent>
 
-            <CardFooter className="flex-col gap-3 px-8 pb-8 pt-2">
+            <CardFooter className="flex-col gap-2 px-8 pb-[12px] pt-2">
               <Button 
                 className={cn(
                   "h-[38px] w-full rounded-2xl text-sm font-bold shadow-md transition-transform hover:scale-[1.02]",
@@ -265,7 +265,7 @@ export default function HomePricing() {
         })}
       </div>
 
-      <div className="mt-[20px] max-w-6xl mx-auto w-full px-4 md:px-0">
+      <div className="mt-0 max-w-6xl mx-auto w-full px-4 md:px-0">
         <div className="flex flex-col xl:flex-row items-center justify-between gap-[10px] xl:gap-6 bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[14px] md:px-8 md:py-[22px] shadow-sm">
           
           <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[404px] shrink-0 text-center md:text-left">
@@ -274,7 +274,7 @@ export default function HomePricing() {
             </div>
             <div>
               <h4 className="font-bold text-slate-900 text-base leading-tight">Seu objetivo exige outro ritmo?</h4>
-              <p className="text-xs text-slate-600 font-medium mt-1 leading-snug">Monte um plano personalizado com a nossa equipe e estude no ritmo ideal para você.</p>
+              <p className="text-xs text-slate-600 font-medium mt-1 leading-snug pr-5">Monte um plano personalizado com a nossa equipe e estude no ritmo ideal para você.</p>
             </div>
           </div>
 
