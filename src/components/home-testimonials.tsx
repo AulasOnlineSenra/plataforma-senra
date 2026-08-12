@@ -15,11 +15,12 @@ const WhatsappIcon = ({ className }: { className?: string }) => (
 const whatsappTestimonials = [
   {
     id: 1,
-    name: "Mãe da Laura",
-    profile: "Reforço Escolar",
+    name: "Jéssica C.",
+    profile: "Vestibular",
     source: "WhatsApp",
-    text: "Minha filha estava perdida com tantas matérias. Depois que começou na Senra, ela finalmente criou uma rotina e as notas subiram muito!",
-    date: "Hoje"
+    text: "A equipe Senra é maravilhosa! Amei o atendimento logo na nossa primeira conversa, explicou tudo direitinho e fez um direcionamento super legal. No começo eu estava bem perdida porque matemática e física eram matérias que eu não tinha aptidão, mas os professores foram incríveis. O Rodrigo era ótimo, sempre pausando para tirar dúvidas e passando exercícios fundamentais para colocar a teoria em prática, assim como o Pedro, o Rafael Kenji e o Leon. Fui firme nos estudos, focando em tudo o que precisava — especialmente em biologia, que era o meu grande foco. E o resultado dessa jornada toda e de todo o apoio dos professores foi incrível: consegui passar e já comecei a faculdade de Veterinária na Unisa!",
+    date: "Hoje",
+    audioUrl: "/audio/Jessica_C.ogg"
   },
   {
     id: 2,
