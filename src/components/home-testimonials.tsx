@@ -23,11 +23,12 @@ const whatsappTestimonials = [
   },
   {
     id: 2,
-    name: "Aluno Pedro",
+    name: "Alessandra F.",
     profile: "ENEM",
     source: "WhatsApp",
-    text: "Eu estudava horas e não via resultado. O plano personalizado me mostrou o que eu realmente precisava revisar. Passei no ENEM!",
-    date: "Ontem"
+    text: "Sou muito grata a Deus pela equipe do Senra, foram anjos na minha vida. Agora, depois de quase um ano, na reta final para prova, estou tranquila, porque fui bem instruída pelos melhores professores. Vinda de escola pública, tinha dificuldade em todas as matérias, e melhorei muito, não dá nem para acreditar. Enfim, obrigada por tudo.",
+    date: "Ontem",
+    audioUrl: "/audio/Alessandra.ogg"
   },
   {
     id: 3,
@@ -51,6 +52,45 @@ const microproofs = [
   "⭐ Aprovado na USP",
   "⭐ Finalmente criei uma rotina"
 ];
+
+const AudioPlayer = ({ src }: { src: string }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const waveHeights = [20, 30, 40, 60, 40, 80, 50, 30, 70, 90, 60, 40, 30, 50, 70, 40, 20, 40, 30, 20];
+
+  return (
+    <div className="flex items-center gap-2 bg-white/70 rounded-full py-1.5 px-3 mb-3 w-[240px]">
+      <button 
+        onClick={togglePlay}
+        className="w-8 h-8 flex items-center justify-center bg-[#25D366] text-white rounded-full shrink-0 shadow-sm transition-transform hover:scale-105"
+      >
+        {isPlaying ? (
+          <div className="w-3 h-3 bg-white rounded-sm" />
+        ) : (
+          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+        )}
+      </button>
+      <div className="flex-1 flex items-center gap-[2px] h-6 opacity-70">
+        {waveHeights.map((h, i) => (
+          <div key={i} className={cn("w-[3px] rounded-full transition-colors", isPlaying ? "bg-[#25D366]" : "bg-slate-500")} style={{ height: `${h}%` }} />
+        ))}
+      </div>
+      <audio ref={audioRef} src={src} onEnded={() => setIsPlaying(false)} />
+    </div>
+  );
+};
 
 export default function HomeTestimonials() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -135,6 +175,9 @@ export default function HomeTestimonials() {
                   <WhatsappIcon className="w-[18px] h-[18px]" />
                 </div>
               </div>
+              {(msg as any).audioUrl && (
+                <AudioPlayer src={(msg as any).audioUrl} />
+              )}
               <p className="text-slate-800 text-[12px] leading-relaxed mb-2 pr-[20px]">
                 "{msg.text}"
               </p>
