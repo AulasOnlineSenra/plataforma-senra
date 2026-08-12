@@ -257,7 +257,7 @@ export default function HomePricing() {
                 className="h-[38px] w-full rounded-2xl text-sm font-bold text-slate-700 border-slate-200 hover:bg-slate-50"
                 onClick={() => handleWhatsAppClick(`Olá! Gostaria de adquirir o *${pkg.name}* (${pkg.numClasses} aulas) no valor de R$ ${pkg.totalPrice.toFixed(2).replace('.', ',')}. Como faço para realizar o pagamento?`)}
               >
-                <WhatsappIcon className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
+                <WhatsappIcon className="h-4 w-4 text-[#25D366]" /> Falar com a equipe
               </Button>
             </CardFooter>
           </Card>
@@ -268,7 +268,7 @@ export default function HomePricing() {
       <div className="mt-0 max-w-6xl mx-auto w-full px-4 md:px-0">
         <div className="flex flex-col xl:flex-row items-center xl:justify-start gap-[10px] xl:gap-[8px] bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[9px] md:px-8 md:py-[17px] shadow-sm">
           
-          <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[404px] shrink-0 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[384px] shrink-0 text-center md:text-left">
             <div className="bg-white p-4 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100 -ml-[19px] md:-ml-[27px]">
               <SlidersHorizontal className="w-8 h-8 text-blue-600" />
             </div>
@@ -333,7 +333,7 @@ export default function HomePricing() {
               className="h-[38px] px-[19px] rounded-xl text-sm font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 w-full"
               onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())}
             >
-              <WhatsappIcon className="mr-2 h-4 w-4 text-[#25D366]" /> Falar com a equipe
+              <WhatsappIcon className="h-4 w-4 text-[#25D366]" /> Falar com a equipe
             </Button>
           </div>
 
