@@ -130,7 +130,7 @@ export async function getCrmAnalytics(boardId?: string): Promise<{ success: bool
   }
 }
 
-export async function getHeatmapData(periodDays: number, pageUrl?: string) {
+export async function getHeatmapData(periodDays: number, pageUrl?: string, _cacheBuster?: number) {
   try {
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - periodDays);
@@ -166,9 +166,9 @@ export async function getHeatmapData(periodDays: number, pageUrl?: string) {
       'dashboard/chat',
       'dashboard/minhas-aulas',
       'dashboard/profile'
-    ];
+    ].map(p => p.toLowerCase());
     
-    const allVisits = rawVisits.filter(v => !excludedPaths.some(path => v.url.includes(path)));
+    const allVisits = rawVisits.filter(v => !excludedPaths.some(path => v.url.toLowerCase().includes(path)));
 
     const urlStats: Record<string, { views: number; totalTime: number }> = {};
     allVisits.forEach((v) => {

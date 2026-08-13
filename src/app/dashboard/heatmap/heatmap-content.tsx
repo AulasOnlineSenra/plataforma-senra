@@ -55,7 +55,7 @@ export default function HeatmapContent() {
     else if (periodo === '30d') days = 30;
     else if (periodo === '12m') days = 365;
 
-    const result = await getHeatmapData(days, selectedPageUrl);
+    const result = await getHeatmapData(days, selectedPageUrl, Date.now());
     if (result.success && result.data) {
       const excludedPaths = [
         'dashboard/students',
@@ -80,9 +80,9 @@ export default function HeatmapContent() {
         'dashboard/chat',
         'dashboard/minhas-aulas',
         'dashboard/profile'
-      ];
+      ].map(p => p.toLowerCase());
       
-      const isExcluded = (target: string) => excludedPaths.some(path => target.includes(path));
+      const isExcluded = (target: string) => target && excludedPaths.some(path => target.toLowerCase().includes(path));
 
       const filteredPages = result.data.pages.filter(p => !isExcluded(p.url));
       const filteredSources = result.data.sources.filter(s => !isExcluded(s.source));
