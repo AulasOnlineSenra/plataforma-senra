@@ -177,7 +177,7 @@ export default function HomeTestimonials() {
         <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center">
           Quem já passou por aqui <span className="text-amber-500">recomenda</span>
         </h2>
-        <p className="text-base sm:text-lg text-white/80 mx-auto font-medium drop-shadow-md text-center max-w-xl">
+        <p className="text-base sm:text-lg text-white/80 mx-auto font-medium drop-shadow-md text-center max-w-xl md:max-w-[666px]">
           Histórias reais de quem encontrou na Senra uma forma mais organizada de estudar
         </p>
       </div>
