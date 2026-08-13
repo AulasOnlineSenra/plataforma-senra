@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, ArrowRight, MessageCircle, PackageOpen, CalendarClock, TrendingUp, Trophy, Medal, Rocket, ShoppingCart, Star, SlidersHorizontal, BookOpen, Target, GraduationCap } from 'lucide-react';
+import { Check, ArrowRight, MessageCircle, PackageOpen, CalendarClock, TrendingUp, Trophy, Medal, Rocket, ShoppingCart, Star, SlidersHorizontal, BookOpen, Target, GraduationCap, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -46,6 +46,7 @@ export default function HomePricing() {
   const router = useRouter();
   const [classesPerWeek, setClassesPerWeek] = useState<number>(1);
   const [numberOfWeeks, setNumberOfWeeks] = useState<number>(4);
+  const [calculatorStep, setCalculatorStep] = useState<number>(1);
   const [classPackages, setClassPackages] = useState<ClassPackage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
@@ -208,22 +209,44 @@ export default function HomePricing() {
             </CardHeader>
 
             <CardContent className="mt-0 flex-1 px-8 pb-2">
-              <p className="mt-[20px] text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
-              <ul className="grid gap-1 text-sm">
-                {['Acesso à plataforma', ...pkg.features, ...(pkg.name.toLowerCase().includes('enem') ? ['Simulados e exercícios direcionados'] : [])].map((feature) => (
-                  <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
-                    <Check className={cn(
-                      "mr-3 h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5",
-                      index === 0 ? "bg-blue-600 text-white" : "",
-                      index === 1 ? "bg-amber-400 text-slate-900" : "",
-                      index >= 2 ? "bg-emerald-500 text-white" : ""
-                    )} />
-                    {feature === 'Aulas individuais e personalizadas' ? 'Aulas ao vivo e individuais' : feature}
-                  </li>
-                ))}
-              </ul>
+              <details className="md:hidden group">
+                <summary className="text-[13px] font-bold text-amber-600 mb-2 cursor-pointer list-none flex items-center justify-between border-t border-slate-100 pt-4 hover:text-amber-700 transition-colors">
+                  Ver todos os benefícios
+                  <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+                </summary>
+                <ul className="grid gap-1.5 text-sm mb-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {['Acesso à plataforma', ...pkg.features, ...(pkg.name.toLowerCase().includes('enem') ? ['Simulados e exercícios direcionados'] : [])].map((feature) => (
+                    <li key={feature} className="flex items-start font-medium text-slate-600 text-[13px] leading-tight">
+                      <Check className={cn(
+                        "mr-2.5 h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5",
+                        index === 0 ? "bg-blue-600 text-white" : "",
+                        index === 1 ? "bg-amber-400 text-slate-900" : "",
+                        index >= 2 ? "bg-emerald-500 text-white" : ""
+                      )} />
+                      {feature === 'Aulas individuais e personalizadas' ? 'Aulas ao vivo e individuais' : feature}
+                    </li>
+                  ))}
+                </ul>
+              </details>
 
-              <div className="mt-[20px] border-t border-slate-100 pt-[10px]">
+              <div className="hidden md:block">
+                <p className="mt-[20px] text-xs font-bold text-slate-900 mb-4">Você recebe:</p>
+                <ul className="grid gap-1 text-sm">
+                  {['Acesso à plataforma', ...pkg.features, ...(pkg.name.toLowerCase().includes('enem') ? ['Simulados e exercícios direcionados'] : [])].map((feature) => (
+                    <li key={feature} className="flex items-start font-semibold text-slate-600 text-[13px] leading-tight">
+                      <Check className={cn(
+                        "mr-3 h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5",
+                        index === 0 ? "bg-blue-600 text-white" : "",
+                        index === 1 ? "bg-amber-400 text-slate-900" : "",
+                        index >= 2 ? "bg-emerald-500 text-white" : ""
+                      )} />
+                      {feature === 'Aulas individuais e personalizadas' ? 'Aulas ao vivo e individuais' : feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-2 md:mt-[20px] border-t border-slate-100 pt-[10px]">
                 <div className="flex items-baseline gap-1">
                   <span className="text-[14px] font-bold text-slate-900">R$</span>
                   <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -271,7 +294,8 @@ export default function HomePricing() {
       </div>
 
       <div className="mt-[-20px] mb-[-20px] max-w-6xl mx-auto w-full px-4 md:px-0">
-        <div className="flex flex-col xl:flex-row items-center xl:justify-start gap-[10px] xl:gap-[8px] bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[9px] md:px-8 md:py-[17px] shadow-sm">
+        {/* Desktop Calculator */}
+        <div className="hidden md:flex flex-col xl:flex-row items-center xl:justify-start gap-[10px] xl:gap-[8px] bg-slate-50 border border-slate-200 rounded-[2rem] px-6 py-[9px] md:px-8 md:py-[17px] shadow-sm">
           
           <div className="flex flex-col md:flex-row items-center gap-5 xl:w-[384px] shrink-0 text-center md:text-left">
             <div className="bg-white p-4 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100 -ml-[19px] md:-ml-[27px]">
@@ -342,6 +366,61 @@ export default function HomePricing() {
             </Button>
           </div>
 
+        </div>
+
+        {/* Mobile Calculator Step-by-Step */}
+        <div className="flex md:hidden flex-col gap-5 bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+          <div className="flex items-center gap-4 mb-2">
+             <div className="bg-white p-3 rounded-full shrink-0 shadow-sm ring-1 ring-slate-100">
+                <SlidersHorizontal className="w-6 h-6 text-blue-600" />
+             </div>
+             <div className="flex-1">
+               <h4 className="font-bold text-slate-900 text-[15px] leading-tight">Simule o seu ritmo</h4>
+               <div className="flex items-center gap-1.5 mt-2">
+                 <div className={cn("h-1 flex-1 rounded-full transition-colors duration-300", calculatorStep >= 1 ? "bg-amber-400" : "bg-slate-200")} />
+                 <div className={cn("h-1 flex-1 rounded-full transition-colors duration-300", calculatorStep >= 2 ? "bg-amber-400" : "bg-slate-200")} />
+                 <div className={cn("h-1 flex-1 rounded-full transition-colors duration-300", calculatorStep >= 3 ? "bg-amber-400" : "bg-slate-200")} />
+               </div>
+             </div>
+          </div>
+
+          {calculatorStep === 1 && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <Label className="text-[13px] font-bold text-slate-700">1. Quantas aulas por semana?</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map(w => (
+                  <button key={w} onClick={() => { setClassesPerWeek(w); setCalculatorStep(2); }} className={cn("h-12 rounded-xl font-bold border transition-all text-sm", classesPerWeek === w ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300")}>{w}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {calculatorStep === 2 && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <Label className="text-[13px] font-bold text-slate-700">2. Por quanto tempo?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[1, 2, 4, 8, 12, 16, 24].map(w => (
+                  <button key={w} onClick={() => { setNumberOfWeeks(w); setCalculatorStep(3); }} className={cn("h-10 rounded-xl font-bold border transition-all text-xs", numberOfWeeks === w ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300")}>{w} {w === 1 ? 'semana' : 'semanas'}</button>
+                ))}
+              </div>
+              <button onClick={() => setCalculatorStep(1)} className="text-xs text-slate-400 font-bold mt-1 text-center py-2">← Voltar etapa</button>
+            </div>
+          )}
+
+          {calculatorStep === 3 && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
+                <p className="text-xs font-bold text-slate-500 mb-2 bg-slate-50 px-3 py-1 rounded-full">{classesPerWeek} {classesPerWeek === 1 ? 'aula' : 'aulas'}/sem · {numberOfWeeks} {numberOfWeeks === 1 ? 'semana' : 'semanas'}</p>
+                <p className="text-3xl font-extrabold text-slate-900 tracking-tight">R$ {calculatedPackage.total.toFixed(2).replace('.', ',')}</p>
+                <p className="text-[13px] font-bold text-emerald-600 mt-1">R$ {calculatedPackage.pricePerClass.toFixed(2).replace('.', ',')} por aula</p>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                 <Button onClick={() => { localStorage.removeItem('checkoutBookings'); router.push(`/dashboard/checkout?needed=${calculatedPackage.totalClasses}&current=0`); }} className="h-[46px] w-full rounded-xl text-[15px] font-bold text-white bg-slate-900 shadow-md hover:bg-slate-800 transition-colors">Confirmar e Assinar</Button>
+                 <Button variant="outline" onClick={() => handleWhatsAppClick(getCalculatorWhatsAppText())} className="h-[46px] w-full rounded-xl text-[15px] font-bold text-slate-700 border-slate-200 bg-white hover:bg-slate-50"><WhatsappIcon className="h-5 w-5 text-[#25D366] mr-2" /> Tirar dúvidas</Button>
+              </div>
+              <button onClick={() => setCalculatorStep(1)} className="text-xs text-slate-400 font-bold mt-1 text-center py-2">⟲ Refazer simulação</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
