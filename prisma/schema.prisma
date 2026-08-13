@@ -64,7 +64,7 @@ model Availability {
 
 model BlogPost {
   id            String   @id @default(cuid())
-  slug          String   @unique @default(uuid())
+  slug          String?  @unique
   title         String
   excerpt       String
   content       String
