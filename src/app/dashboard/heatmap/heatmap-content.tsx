@@ -68,11 +68,18 @@ export default function HeatmapContent() {
         'dashboard/suggestions',
         'dashboard/my-subjects',
         'dashboard/admin/ai',
-        'dashboard/blog/new',
+        'blog/new',
         'dashboard/packages',
         'dashboard/teachers',
         'dashboard/checkout',
-        'dashboard/financeiro'
+        'dashboard/financeiro',
+        'dashboard/blog',
+        'dashboard/simulados',
+        'minha-conta',
+        'dashboard/cronograma',
+        'dashboard/chat',
+        'dashboard/minhas-aulas',
+        'dashboard/profile'
       ];
       
       const isExcluded = (target: string) => excludedPaths.some(path => target.includes(path));
