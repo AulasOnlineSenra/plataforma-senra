@@ -57,8 +57,27 @@ export default function HeatmapContent() {
 
     const result = await getHeatmapData(days, selectedPageUrl);
     if (result.success && result.data) {
+      const excludedPaths = [
+        'dashboard/students',
+        'dashboard/notifications',
+        'dashboard/crm',
+        'dashboard/heatmap',
+        'dashboard/admin/packages',
+        'dashboard/marketing',
+        'dashboard/admin/settings',
+        'dashboard/suggestions',
+        'dashboard/my-subjects'
+      ];
+      
+      const isExcluded = (target: string) => excludedPaths.some(path => target.includes(path));
+
+      const filteredPages = result.data.pages.filter(p => !isExcluded(p.url));
+      const filteredSources = result.data.sources.filter(s => !isExcluded(s.source));
+
       setAnalyticsData({
         ...result.data,
+        pages: filteredPages,
+        sources: filteredSources,
         uniqueUsers: result.data.uniqueUsers || 0,
       });
     }
@@ -350,7 +369,7 @@ export default function HeatmapContent() {
                   return (
                     <div key={index} className="p-4 flex flex-col gap-2 hover:bg-slate-50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-700 text-sm truncate max-w-[200px]" title={src.source}>{displayName}</span>
+                        <span className="font-bold text-slate-700 text-sm truncate max-w-[260px]" title={src.source}>{displayName}</span>
                         <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">{src.count} un.</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
