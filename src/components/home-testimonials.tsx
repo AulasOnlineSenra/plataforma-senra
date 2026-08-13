@@ -15,29 +15,30 @@ const WhatsappIcon = ({ className }: { className?: string }) => (
 const whatsappTestimonials = [
   {
     id: 1,
+    name: "Pai do Enzo",
+    profile: "Concurso",
+    source: "WhatsApp",
+    text: "Contratar o suporte das Aulas Online Senra foi fundamental para a preparação do Enzo. Estávamos com o tempo muito curto para a prova do Pedro II e uma rotina super corrida, mas o professor Luiz Fernando foi excelente, dominando totalmente o conteúdo do edital e focando nas provas anteriores. A plataforma facilitou muito a nossa rotina de agendamentos e o atendimento foi sempre impecável. O resultado de todo esse esforço e direcionamento não podia ser melhor: o Enzo passou no Pedro II e também no Santo Inácio!",
+    date: "Hoje",
+    audioUrl: "/audio/Pai_do_Enzo.mp3"
+  },
+  {
+    id: 2,
     name: "Jéssica C.",
     profile: "Vestibular",
     source: "WhatsApp",
     text: "A equipe Senra é maravilhosa! Amei o atendimento logo na nossa primeira conversa, explicou tudo direitinho e fez um direcionamento super legal. No começo eu estava bem perdida porque matemática e física eram matérias que eu não tinha aptidão, mas os professores foram incríveis. O Rodrigo era ótimo, sempre pausando para tirar dúvidas e passando exercícios fundamentais para colocar a teoria em prática, assim como o Pedro, o Rafael Kenji e o Leon. Fui firme nos estudos, focando em tudo o que precisava — especialmente em biologia, que era o meu grande foco. E o resultado dessa jornada toda e de todo o apoio dos professores foi incrível: consegui passar e já comecei a faculdade de Veterinária na Unisa!",
-    date: "Hoje",
+    date: "Ontem",
     audioUrl: "/audio/Jessica_C.ogg"
   },
   {
-    id: 2,
+    id: 3,
     name: "Alessandra F.",
     profile: "ENEM",
     source: "WhatsApp",
     text: "Sou muito grata a Deus pela equipe do Senra, foram anjos na minha vida. Agora, depois de quase um ano, na reta final para prova, estou tranquila, porque fui bem instruída pelos melhores professores. Vinda de escola pública, tinha dificuldade em todas as matérias, e melhorei muito, não dá nem para acreditar. Enfim, obrigada por tudo.",
     date: "Ontem",
     audioUrl: "/audio/Alessandra.ogg"
-  },
-  {
-    id: 3,
-    name: "Pai do Enzo",
-    profile: "Concurso",
-    source: "WhatsApp",
-    text: "Precisei trocar meu filho de escola e no começo do ano ele sentiu muita a diferença de ensino, ele estava no último ano do fundamental teve muita dificuldade com Física e Matemática. Além dos professores conseguirem ajudar ele a recuperar a notas, ele ainda passou em segundo lugar no CP2. Obrigado!!!",
-    date: "Ontem"
   }
 ];
 
