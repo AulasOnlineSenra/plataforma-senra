@@ -174,10 +174,10 @@ export default function HomeTestimonials() {
     <div className="w-full max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col items-center text-center mb-16 lg:mb-20">
-        <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center">
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center">
           Quem já passou por aqui <span className="text-amber-500">recomenda</span>
         </h2>
-        <p className="text-lg text-white/80 mx-auto font-medium drop-shadow-md whitespace-nowrap text-center">
+        <p className="text-base sm:text-lg text-white/80 mx-auto font-medium drop-shadow-md text-center max-w-xl">
           Histórias reais de quem encontrou na Senra uma forma mais organizada de estudar
         </p>
       </div>

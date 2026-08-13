@@ -151,7 +151,7 @@ export default function HomePricing() {
   return (
     <div className="flex flex-col gap-12">
       <div className="text-center max-w-4xl mx-auto px-4">
-        <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap">
+        <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           Invista no ritmo que <span className="text-amber-500">faz sentido para você</span>
         </h2>
         <p className="mt-4 text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-tight">

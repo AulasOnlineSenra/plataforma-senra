@@ -42,7 +42,7 @@ export default function HomeFaq() {
     <section className="py-[29px] md:py-[61px] bg-slate-50 border-y border-slate-100">
       <div className="container mx-auto px-4 max-w-[798px]">
         <div className="text-center mb-[83px] mt-[30px]">
-          <h2 className="text-5xl md:text-6xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             Perguntas frequentes
           </h2>
         </div>
