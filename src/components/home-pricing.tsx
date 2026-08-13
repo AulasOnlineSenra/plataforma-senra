@@ -248,9 +248,14 @@ export default function HomePricing() {
                   router.push(`/dashboard/checkout?needed=${pkg.numClasses}&current=0`);
                 }}
               >
-                {index === 0 && 'Quero acelerar →'}
-                {index === 1 && 'Quero evoluir →'}
-                {index >= 2 && 'Quero começar →'}
+                <div className="flex items-center gap-[8px]">
+                  <span>
+                    {index === 0 && 'Quero acelerar'}
+                    {index === 1 && 'Quero evoluir'}
+                    {index >= 2 && 'Quero começar'}
+                  </span>
+                  <span>→</span>
+                </div>
               </Button>
               <Button
                 variant="outline"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Star, MessageCircle, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
@@ -81,9 +81,15 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
     }
   };
 
-  const waveHeights = [20,30,40,60,40,80,50,30,70,90,60,40,30,50,70,40,20,40,30,20,
-                       40,60,80,50,40,60,90,70,50,40,30,50,70,80,90,60,40,30,20,40,
-                       50,70,90,60,40,30,50,80,60,40,30,50,70,90,60,40,30,20,40,50];
+  const waveHeights = useMemo(() => {
+    const patterns = [
+      [20,30,40,60,40,80,50,30,70,90,60,40,30,50,70,40,20,40,30,20,40,60,80,50,40,60,90,70,50,40,30,50,70,80,90,60,40,30,20,40,50,70,90,60,40,30,50,80,60,40,30,50,70,90,60,40,30,20,40,50],
+      [30,50,60,40,70,90,60,30,40,60,80,50,40,70,90,60,50,40,30,50,70,60,40,30,50,70,90,60,40,50,70,90,60,40,30,50,80,60,40,30,50,70,90,60,40,50,70,90,60,40,30,50,70,90,60,40,50,60,70,80],
+      [50,70,40,30,20,40,60,80,90,70,50,40,60,80,90,70,50,40,30,50,70,90,60,40,30,50,70,90,60,40,50,70,90,60,40,30,50,80,60,40,30,50,70,90,60,40,30,50,70,90,60,40,30,20,40,60,80,90,70,50]
+    ];
+    const hash = src.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return patterns[hash % patterns.length];
+  }, [src]);
 
   return (
     <div className="w-full flex flex-col md:flex-row items-center gap-6 mt-4">
@@ -181,7 +187,7 @@ export default function HomeTestimonials() {
         
         {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
         <div className="w-full lg:col-span-5 order-2 lg:order-1 relative">
-          <div ref={containerRef} className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 pt-4 px-4 -mx-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
+          <div ref={containerRef} className="flex flex-col gap-5 overflow-y-auto max-h-[450px] lg:max-h-[386px] pb-10 pt-4 px-8 -mx-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}

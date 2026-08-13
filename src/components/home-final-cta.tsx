@@ -113,14 +113,14 @@ export default function HomeFinalCTA() {
 
           <button
             onClick={handleWhatsAppClick}
-            className="relative z-10 w-full h-[53px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
+            className="relative z-10 w-full h-[45px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
           >
             <ExternalLink className="w-[22px] h-[22px] stroke-[2.5]" />
             <span className="font-bold text-lg md:text-[20px] tracking-tight">Quero organizar meus estudos</span>
             <ChevronRight className="w-6 h-6 stroke-[3] group-hover:translate-x-1 transition-transform" />
           </button>
 
-          <div className="flex items-center gap-2 mt-[4px] text-[13px] font-medium text-slate-400">
+          <div className="flex items-center gap-2 mt-[4px] mb-[20px] text-[13px] font-medium text-slate-400">
             <Lock className="w-3.5 h-3.5 opacity-70" />
             <span>Sem cartão de crédito</span>
             <span className="w-1 h-1 rounded-full bg-slate-600 mx-1.5" />
