@@ -451,7 +451,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-card">
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-2 lg:px-4 lg:py-[2px] bg-card border-b h-[60px] sm:h-[60px]">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-2 lg:px-4 lg:py-[2px] bg-card border-b h-[60px] lg:h-[47px]">
         <SenraLogo className="h-8 sm:h-10" />
 
         <nav className="hidden md:flex items-center gap-6">
