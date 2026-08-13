@@ -368,9 +368,9 @@ export default function HeatmapContent() {
 
                   return (
                     <div key={index} className="p-4 flex flex-col gap-2 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-700 text-sm truncate max-w-[260px]" title={src.source}>{displayName}</span>
-                        <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">{src.count} un.</span>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="font-bold text-slate-700 text-sm truncate flex-1" title={src.source}>{displayName}</span>
+                        <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">{src.count} un.</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div

@@ -152,7 +152,13 @@ export async function getHeatmapData(periodDays: number, pageUrl?: string) {
       'dashboard/marketing',
       'dashboard/admin/settings',
       'dashboard/suggestions',
-      'dashboard/my-subjects'
+      'dashboard/my-subjects',
+      'dashboard/admin/ai',
+      'dashboard/blog/new',
+      'dashboard/packages',
+      'dashboard/teachers',
+      'dashboard/checkout',
+      'dashboard/financeiro'
     ];
     
     const allVisits = rawVisits.filter(v => !excludedPaths.some(path => v.url.includes(path)));
