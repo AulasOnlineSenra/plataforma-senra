@@ -135,13 +135,27 @@ export async function getHeatmapData(periodDays: number, pageUrl?: string) {
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - periodDays);
 
-    const allVisits = await prisma.pageVisit.findMany({
+    const rawVisits = await prisma.pageVisit.findMany({
       where: {
         createdAt: {
           gte: fromDate,
         },
       },
     });
+
+    const excludedPaths = [
+      'dashboard/students',
+      'dashboard/notifications',
+      'dashboard/crm',
+      'dashboard/heatmap',
+      'dashboard/admin/packages',
+      'dashboard/marketing',
+      'dashboard/admin/settings',
+      'dashboard/suggestions',
+      'dashboard/my-subjects'
+    ];
+    
+    const allVisits = rawVisits.filter(v => !excludedPaths.some(path => v.url.includes(path)));
 
     const urlStats: Record<string, { views: number; totalTime: number }> = {};
     allVisits.forEach((v) => {
