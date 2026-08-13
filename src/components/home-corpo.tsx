@@ -49,9 +49,9 @@ export default function HomeCorpo() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 mb-[15px]">
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 xl:gap-8 mb-[15px] pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 md:mx-0 md:px-0">
           {/* Card 1 */}
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
+          <div className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
             <div className="relative h-48 w-full bg-slate-100">
               <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070&auto=format&fit=crop" alt="ENEM & Vestibulares" className="w-full h-full object-cover" />
               <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center shadow-lg">
@@ -73,7 +73,7 @@ export default function HomeCorpo() {
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
+          <div className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
             <div className="relative h-48 w-full bg-slate-100">
               <img src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?q=80&w=2070&auto=format&fit=crop" alt="Reforço Escolar" className="w-full h-full object-cover" />
               <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center shadow-lg">
@@ -95,7 +95,7 @@ export default function HomeCorpo() {
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
+          <div className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
             <div className="relative h-48 w-full bg-slate-100">
               <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop" alt="Concursos" className="w-full h-full object-cover" />
               <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center shadow-lg">
@@ -117,7 +117,7 @@ export default function HomeCorpo() {
           </div>
 
           {/* Card 4 */}
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
+          <div className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden transition-transform hover:-translate-y-1">
             <div className="relative h-48 w-full bg-slate-100">
               <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop" alt="Inglês & Idiomas" className="w-full h-full object-cover" />
               <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center shadow-lg">
