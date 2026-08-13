@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 type Post = {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   image?: string;
@@ -180,7 +181,7 @@ function HeroPost({ post }: { post: Post }) {
   
   return (
     <Link
-      href={`/blog/${post.id}`}
+      href={`/blog/${post.slug}`}
       target="_blank"
       rel="noopener noreferrer"
       className="group relative flex flex-col overflow-hidden rounded-xl bg-card border border-border/50 col-span-1 md:col-span-2 row-span-1 min-h-[300px] shadow-sm hover:shadow-md transition-all duration-300"
@@ -228,7 +229,7 @@ function BlogCard({ post }: { post: Post }) {
   
   return (
     <Link
-      href={`/blog/${post.id}`}
+      href={`/blog/${post.slug}`}
       target="_blank"
       rel="noopener noreferrer"
       className="group flex flex-col bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 min-h-[340px]"

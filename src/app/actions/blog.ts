@@ -3,6 +3,18 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .normalize('NFD') // separate accent from letter
+    .replace(/[\u0300-\u036f]/g, '') // remove all separated accents
+    .replace(/\s+/g, '-') // replace spaces with -
+    .replace(/[^\w\-]+/g, '') // remove all non-word chars
+    .replace(/\-\-+/g, '-'); // replace multiple - with single -
+}
+
 export async function getBlogPosts() {
   try {
     const posts = await prisma.blogPost.findMany({
@@ -48,6 +60,21 @@ export async function getBlogPostById(id: string) {
   }
 }
 
+export async function getBlogPostBySlug(slug: string) {
+  try {
+    const post = await prisma.blogPost.findUnique({
+      where: { slug },
+    });
+    if (!post) {
+      return { success: false, error: 'Post não encontrado.' };
+    }
+    return { success: true, data: post };
+  } catch (error) {
+    console.error('Erro ao buscar post por slug:', error);
+    return { success: false, error: 'Falha ao buscar post.' };
+  }
+}
+
 export async function createPost(data: {
   title: string;
   excerpt: string;
@@ -59,9 +86,20 @@ export async function createPost(data: {
   createdAt?: string;
 }) {
   try {
+    let baseSlug = slugify(data.title);
+    if (!baseSlug) baseSlug = 'post';
+    let slug = baseSlug;
+    
+    // Check if slug exists
+    let exists = await prisma.blogPost.findUnique({ where: { slug } });
+    if (exists) {
+      slug = `${baseSlug}-${Date.now().toString(36)}`;
+    }
+
     const post = await prisma.blogPost.create({
       data: {
         id: crypto.randomUUID(),
+        slug,
         title: data.title,
         excerpt: data.excerpt,
         content: data.content,
