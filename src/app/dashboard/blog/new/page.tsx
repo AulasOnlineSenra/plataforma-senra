@@ -45,6 +45,7 @@ export default function NewBlogPostPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const quillRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
@@ -223,6 +224,13 @@ export default function NewBlogPostPage() {
   useEffect(() => {
     adjustTextareaHeight();
   }, [formData.content]);
+
+  useEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.style.height = 'auto';
+      titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
+    }
+  }, [formData.title]);
 
   const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule') => {
     if (e) e.preventDefault();
@@ -624,11 +632,16 @@ export default function NewBlogPostPage() {
             </div>
           )}
 
-          <Input
+          <textarea
+            ref={titleRef}
             placeholder="Título do Artigo"
             value={formData.title}
-            onChange={(e) => handleChange('title', e.target.value)}
-            className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight"
+            onChange={(e) => {
+              handleChange('title', e.target.value);
+            }}
+            rows={1}
+            className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight resize-none bg-transparent overflow-hidden"
+            style={{ minHeight: '80px' }}
           />
 
           <div className="w-full h-px bg-slate-100 my-8"></div>

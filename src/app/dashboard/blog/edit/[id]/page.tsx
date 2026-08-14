@@ -31,6 +31,7 @@ export default function EditBlogPostPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const quillRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
@@ -94,6 +95,13 @@ export default function EditBlogPostPage() {
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  useEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.style.height = 'auto';
+      titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
+    }
+  }, [formData.title]);
 
   const imageHandler = useCallback(() => {
     const input = document.createElement('input');
@@ -266,11 +274,17 @@ export default function EditBlogPostPage() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
-              <Input
+              <textarea
                 id="title"
+                ref={titleRef}
                 placeholder="Título do artigo"
                 value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
+                onChange={(e) => {
+                  handleChange('title', e.target.value);
+                }}
+                rows={1}
+                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none overflow-hidden"
+                style={{ minHeight: '40px' }}
                 required
               />
             </div>
