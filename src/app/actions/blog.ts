@@ -62,8 +62,13 @@ export async function getBlogPostById(id: string) {
 
 export async function getBlogPostBySlug(slug: string) {
   try {
-    const post = await prisma.blogPost.findUnique({
-      where: { slug },
+    const post = await prisma.blogPost.findFirst({
+      where: {
+        OR: [
+          { slug: slug },
+          { id: slug }
+        ]
+      },
     });
     if (!post) {
       return { success: false, error: 'Post não encontrado.' };

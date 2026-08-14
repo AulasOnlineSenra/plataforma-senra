@@ -18,7 +18,7 @@ async function migrateSlugs() {
   const posts = await prisma.blogPost.findMany();
   for (const post of posts) {
     // Only migrate if slug is a standard uuid length (36 chars) or if you want to force all
-    if (post.slug && post.slug.length === 36 && post.slug.includes('-')) {
+    if (!post.slug || (post.slug.length === 36 && post.slug.includes('-'))) {
       let baseSlug = slugify(post.title);
       if (!baseSlug) baseSlug = 'post';
       let slug = baseSlug;
