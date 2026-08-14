@@ -221,7 +221,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
       )}
 
       <div 
-        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert ql-editor px-0"
+        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert ql-editor px-0 overflow-x-hidden"
         dangerouslySetInnerHTML={{ __html: parsedContent }}
       />
 
@@ -245,7 +245,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
           hyphens: none !important;
-          overflow-wrap: normal !important;
+          overflow-wrap: break-word !important;
           word-break: normal !important;
           white-space: normal !important;
         }
@@ -282,17 +282,33 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-editor h3 { font-size: 1.4em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.4; }
         .ql-editor h4 { font-size: 1.2em !important; font-weight: bold; margin-bottom: 0.5em; }
 
+        /* Images: scale down proportionally */
         .ql-editor img {
           border-radius: 15px;
           margin-top: 2rem;
           margin-bottom: 2rem;
-          max-width: 100%;
-          height: auto;
+          max-width: 100% !important;
+          height: auto !important;
           display: block;
         }
+
+        /* Tables: scroll horizontally if wider than container */
+        .ql-editor table {
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          display: block !important;
+          border-collapse: collapse;
+        }
+        .ql-editor td, .ql-editor th {
+          border: 1px solid #e2e8f0;
+          padding: 0.5rem 0.75rem;
+          min-width: 80px;
+        }
+
+        /* Text: break-word only for true overflow (long URLs, etc) */
         .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
           max-width: 100%;
-          overflow-wrap: normal !important;
+          overflow-wrap: break-word !important;
           word-break: normal !important;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
@@ -300,7 +316,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           white-space: normal !important;
         }
         .ql-editor strong, .ql-editor em, .ql-editor span, .ql-editor b, .ql-editor i, .ql-editor u, .ql-editor a {
-          overflow-wrap: normal !important;
+          overflow-wrap: break-word !important;
           word-break: normal !important;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
