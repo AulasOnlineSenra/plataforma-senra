@@ -221,7 +221,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
       )}
 
       <div 
-        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert ql-editor px-0 overflow-x-hidden"
+        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert blog-content px-0 overflow-x-hidden"
         dangerouslySetInnerHTML={{ __html: parsedContent }}
       />
 
@@ -239,15 +239,16 @@ function BlogPostContent({ post }: { post: BlogPost }) {
       )}
 
       <style dangerouslySetInnerHTML={{__html: `
-        .ql-editor {
+        .blog-content {
           padding-left: 0;
           padding-right: 0;
-          -webkit-hyphens: none !important;
-          -ms-hyphens: none !important;
-          hyphens: none !important;
-          overflow-wrap: break-word !important;
-          word-break: normal !important;
-          white-space: normal !important;
+          -webkit-hyphens: none;
+          -ms-hyphens: none;
+          hyphens: none;
+          overflow-wrap: break-word;
+          word-break: normal;
+          word-wrap: break-word;
+          white-space: normal;
         }
         /* Quill Alignment */
         .ql-align-center { text-align: center !important; }
@@ -277,51 +278,51 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .ql-size-small { font-size: 0.75em !important; }
         .ql-size-large { font-size: 1.5em !important; }
         .ql-size-huge { font-size: 2.5em !important; }
-        .ql-editor h1 { font-size: 2.2em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.2; }
-        .ql-editor h2 { font-size: 1.8em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.3; }
-        .ql-editor h3 { font-size: 1.4em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.4; }
-        .ql-editor h4 { font-size: 1.2em !important; font-weight: bold; margin-bottom: 0.5em; }
+        .blog-content h1 { font-size: 2.2em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.2; }
+        .blog-content h2 { font-size: 1.8em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.3; }
+        .blog-content h3 { font-size: 1.4em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.4; }
+        .blog-content h4 { font-size: 1.2em !important; font-weight: bold; margin-bottom: 0.5em; }
 
         /* Images: scale down proportionally */
-        .ql-editor img {
+        .blog-content img {
           border-radius: 15px;
           margin-top: 2rem;
           margin-bottom: 2rem;
-          max-width: 100% !important;
-          height: auto !important;
+          max-width: 100%;
+          height: auto;
           display: block;
         }
 
         /* Tables: scroll horizontally if wider than container */
-        .ql-editor table {
-          max-width: 100% !important;
-          overflow-x: auto !important;
-          display: block !important;
+        .blog-content table {
+          max-width: 100%;
+          overflow-x: auto;
+          display: block;
           border-collapse: collapse;
         }
-        .ql-editor td, .ql-editor th {
+        .blog-content td, .blog-content th {
           border: 1px solid #e2e8f0;
           padding: 0.5rem 0.75rem;
           min-width: 80px;
         }
 
-        /* Text: break-word only for true overflow (long URLs, etc) */
-        .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
+        /* Text: natural wrap, break only URLs */
+        .blog-content p, .blog-content li, .blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4 {
           max-width: 100%;
-          overflow-wrap: break-word !important;
-          word-break: normal !important;
-          -webkit-hyphens: none !important;
-          -ms-hyphens: none !important;
-          hyphens: none !important;
-          white-space: normal !important;
+          overflow-wrap: break-word;
+          word-break: normal;
+          -webkit-hyphens: none;
+          -ms-hyphens: none;
+          hyphens: none;
+          white-space: normal;
         }
-        .ql-editor strong, .ql-editor em, .ql-editor span, .ql-editor b, .ql-editor i, .ql-editor u, .ql-editor a {
-          overflow-wrap: break-word !important;
-          word-break: normal !important;
-          -webkit-hyphens: none !important;
-          -ms-hyphens: none !important;
-          hyphens: none !important;
-          white-space: normal !important;
+        .blog-content strong, .blog-content em, .blog-content span, .blog-content b, .blog-content i, .blog-content u, .blog-content a {
+          overflow-wrap: break-word;
+          word-break: normal;
+          -webkit-hyphens: none;
+          -ms-hyphens: none;
+          hyphens: none;
+          white-space: normal;
         }
 
         .blog-video-container {
