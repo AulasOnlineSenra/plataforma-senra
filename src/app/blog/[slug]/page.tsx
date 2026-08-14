@@ -245,9 +245,9 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
           hyphens: none !important;
-          overflow-wrap: break-word !important;
+          overflow-wrap: normal !important;
           word-break: normal !important;
-          white-space: pre-wrap !important;
+          white-space: normal !important;
         }
         /* Quill Alignment */
         .ql-align-center { text-align: center !important; }
@@ -292,7 +292,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         }
         .ql-editor p, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4 {
           max-width: 100%;
-          overflow-wrap: break-word !important;
+          overflow-wrap: normal !important;
           word-break: normal !important;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
@@ -300,7 +300,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           white-space: normal !important;
         }
         .ql-editor strong, .ql-editor em, .ql-editor span, .ql-editor b, .ql-editor i, .ql-editor u, .ql-editor a {
-          overflow-wrap: break-word !important;
+          overflow-wrap: normal !important;
           word-break: normal !important;
           -webkit-hyphens: none !important;
           -ms-hyphens: none !important;
