@@ -3,6 +3,7 @@ import BlogSearchBar from '@/components/blog-search-bar';
 import BlogGrid from '@/components/blog-grid';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import WeatherHeader from '@/components/weather-header';
 
 export default async function BlogPage() {
   const result = await getPublishedPosts();
@@ -19,6 +20,11 @@ export default async function BlogPage() {
           <ArrowLeft className="h-4 w-4" />
           Voltar ao site
         </Link>
+      </div>
+
+      {/* Weather Header */}
+      <div className="absolute top-6 right-6 z-50">
+        <WeatherHeader />
       </div>
 
       {/* Header minimalista */}
@@ -40,7 +46,7 @@ export default async function BlogPage() {
         <BlogSearchBar posts={posts} />
         <div className="bg-white rounded-[12px] p-[3px]">
           {posts && posts.length > 0 ? (
-            <BlogGrid posts={posts} />
+            <BlogGrid posts={posts} context="home" />
           ) : (
             <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
               <svg className="w-16 h-16 mb-4 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">

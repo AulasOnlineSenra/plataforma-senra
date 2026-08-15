@@ -106,7 +106,7 @@ function PostReactions({ post, isHero = false }: { post: Post, isHero?: boolean 
   );
 }
 
-export default function BlogGrid({ posts }: { posts: Post[] }) {
+export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], context?: 'home' | 'article' }) {
   if (!posts || posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
@@ -129,18 +129,18 @@ export default function BlogGrid({ posts }: { posts: Post[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {carouselPosts.length > 0 && (
-        <div className="col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 min-h-[300px]">
-          <HeroCarousel posts={carouselPosts} />
+        <div className={`col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 ${context === 'home' ? 'min-h-[160px]' : 'min-h-[224px]'}`}>
+          <HeroCarousel posts={carouselPosts} context={context} />
         </div>
       )}
       {gridPostsList.map((post) => (
-        <BlogCard key={`card-${post.id}`} post={post} />
+        <BlogCard key={`card-${post.id}`} post={post} context={context} />
       ))}
     </div>
   );
 }
 
-function HeroCarousel({ posts }: { posts: Post[] }) {
+function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'home' | 'article' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -153,8 +153,11 @@ function HeroCarousel({ posts }: { posts: Post[] }) {
 
   if (posts.length === 0) return null;
 
+  const paddingClass = context === 'home' ? 'p-3 sm:p-4 pb-2' : 'p-4 sm:p-5 pb-3';
+  const titleClass = context === 'home' ? 'text-lg sm:text-xl mb-2' : 'text-xl sm:text-2xl mb-4';
+
   return (
-    <div className="relative flex flex-col w-full h-full min-h-[320px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
+    <div className="relative flex flex-col w-full h-full rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
       {posts.map((post, index) => {
         const timeLabel = "2h"; // Simulado
         const isActive = index === currentIndex;
@@ -182,16 +185,16 @@ function HeroCarousel({ posts }: { posts: Post[] }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
             </div>
             
-            <div className="relative mt-auto p-5 sm:p-6 pb-4">
+            <div className={`relative mt-auto ${paddingClass}`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[9px] font-bold text-black border border-white/20">
+                <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[8px] font-bold text-black border border-white/20">
                   {post.author.charAt(0)}
                 </div>
-                <span className="text-[11px] font-semibold text-white/90">{post.author}</span>
-                <span className="text-white/40 text-[10px]">• {timeLabel}</span>
+                <span className="text-[10px] font-semibold text-white/90">{post.author}</span>
+                <span className="text-white/40 text-[9px]">• {timeLabel}</span>
               </div>
               
-              <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-4 group-hover:text-amber-400 transition-colors line-clamp-3">
+              <h3 className={`font-bold text-white leading-tight group-hover:text-amber-400 transition-colors line-clamp-3 ${titleClass}`}>
                 {post.title}
               </h3>
               
@@ -218,18 +221,23 @@ function HeroCarousel({ posts }: { posts: Post[] }) {
   );
 }
 
-function BlogCard({ post }: { post: Post }) {
+function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | 'article' }) {
   const timeLabel = "5h"; // Simulado
   
+  const containerHeight = context === 'home' ? 'min-h-[160px]' : 'min-h-[224px]';
+  const imgHeight = context === 'home' ? 'h-20 sm:h-24' : 'h-28 sm:h-32';
+  const titleSize = context === 'home' ? 'text-xs' : 'text-sm';
+  const excerptClass = context === 'home' ? 'hidden' : 'text-[11px] text-muted-foreground line-clamp-2 mt-auto mb-2 hidden sm:block';
+
   return (
     <Link
       href={`/blog/${post.slug}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col bg-card rounded-xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 min-h-[320px]"
+      className={`group flex flex-col bg-card rounded-xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 ${containerHeight}`}
     >
       {/* Imagem */}
-      <div className="relative h-36 sm:h-40 overflow-hidden flex-shrink-0">
+      <div className={`relative ${imgHeight} overflow-hidden flex-shrink-0`}>
         {post.image ? (
           <img
             src={post.image}
@@ -244,25 +252,25 @@ function BlogCard({ post }: { post: Post }) {
       </div>
 
       {/* Conteúdo */}
-      <div className="flex flex-col flex-grow p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-5 h-5 rounded flex items-center justify-center bg-amber-500/10 text-amber-600 text-[9px] font-bold">
+      <div className="flex flex-col flex-grow p-3">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="w-4 h-4 rounded flex items-center justify-center bg-amber-500/10 text-amber-600 text-[8px] font-bold">
             {post.author.charAt(0)}
           </div>
-          <span className="text-[11px] font-semibold text-foreground/80">{post.author}</span>
-          <span className="text-muted-foreground/50 text-[10px]">• {timeLabel}</span>
+          <span className="text-[10px] font-semibold text-foreground/80">{post.author}</span>
+          <span className="text-muted-foreground/50 text-[9px]">• {timeLabel}</span>
         </div>
 
-        <h3 className="text-sm font-bold text-foreground leading-snug line-clamp-3 mb-2 group-hover:text-amber-600 transition-colors">
+        <h3 className={`${titleSize} font-bold text-foreground leading-snug line-clamp-3 mb-1 group-hover:text-amber-600 transition-colors`}>
           {post.title}
         </h3>
         
-        <p className="text-[13px] text-muted-foreground line-clamp-2 mt-auto mb-4 hidden sm:block">
+        <p className={excerptClass}>
           {post.excerpt}
         </p>
 
         {/* Rodapé interativo */}
-        <div className="pt-3 border-t border-border/30 mt-auto">
+        <div className="pt-2 border-t border-border/30 mt-auto">
           <PostReactions post={post} />
         </div>
       </div>

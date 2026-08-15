@@ -245,3 +245,16 @@ export async function getOtherPosts(currentPostId: string, limit: number = 30) {
     return { success: false, error: 'Falha ao buscar outros posts.' };
   }
 }
+
+export async function incrementPostViews(id: string) {
+  try {
+    const updated = await prisma.blogPost.update({
+      where: { id },
+      data: { views: { increment: 1 } },
+    });
+    return { success: true, data: updated };
+  } catch (error) {
+    console.error('Erro ao incrementar visualizações:', error);
+    return { success: false, error: 'Falha ao incrementar visualizações.' };
+  }
+}

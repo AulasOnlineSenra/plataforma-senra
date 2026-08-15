@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
-import { getBlogPostBySlug, getPublishedPosts } from '@/app/actions/blog';
+import { getBlogPostBySlug, getPublishedPosts, incrementPostViews } from '@/app/actions/blog';
 import { toast } from 'sonner';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreHorizontal } from 'lucide-react';
 import BlogGrid from '@/components/blog-grid';
+import WeatherHeader from '@/components/weather-header';
 
 type BlogPost = {
   id: string;
@@ -329,6 +330,15 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           hyphens: none;
           white-space: normal;
         }
+        .blog-content a {
+          font-size: 15px !important;
+          color: #f5b000 !important;
+          font-family: inherit !important;
+          text-decoration: underline;
+        }
+        .blog-content a:hover {
+          opacity: 0.8;
+        }
 
         .blog-video-container {
           width: 100%;
@@ -460,17 +470,20 @@ export default function BlogPostPage() {
   useEffect(() => {
     const loadInitialData = async () => {
       const [postResult, allPostsResult] = await Promise.all([
-        getBlogPostBySlug(slug),
+        getBlogPostBySlug(slug as string),
         getPublishedPosts()
       ]);
 
       if (postResult.success && postResult.data) {
-        const currentPost = postResult.data;
+        const currentPost = postResult.data as BlogPost;
         setPost(currentPost);
         setLoadedPosts([currentPost]);
         
+        // Incrementa as visualizações
+        incrementPostViews(currentPost.id);
+        
         if (allPostsResult.success && allPostsResult.data) {
-          const publishedPosts = allPostsResult.data;
+          const publishedPosts = allPostsResult.data as BlogPost[];
           setAllPosts(publishedPosts);
           
           const initialUsedIds = new Set<string>([currentPost.id]);
@@ -545,7 +558,10 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-160px)] bg-background overflow-x-hidden">
+    <div className="min-h-[calc(100vh-160px)] bg-background overflow-x-hidden relative">
+      <div className="absolute top-6 right-6 z-50">
+        <WeatherHeader />
+      </div>
       <div className="mx-auto w-full max-w-2xl px-4 sm:px-8 pt-[220px] pb-[15px]">
         <div className="mb-8 flex items-center gap-4">
           <Link href="/blog" className="text-sm text-muted-foreground hover:text-amber-500">
@@ -568,7 +584,7 @@ export default function BlogPostPage() {
                       <h2 className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Continue explorando</h2>
                     </div>
                     <div className="overflow-hidden">
-                      <BlogGrid posts={gridPosts} />
+                      <BlogGrid posts={gridPosts} context="article" />
                     </div>
                   </div>
                 )}
