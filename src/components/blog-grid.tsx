@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import WeatherWidget from '@/components/weather-widget';
 import { ThumbsUp, ThumbsDown, MessageSquare, MoreHorizontal, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { likePost, dislikePost } from '@/app/actions/blog';
 import { toast } from 'sonner';
 
@@ -119,108 +119,102 @@ export default function BlogGrid({ posts }: { posts: Post[] }) {
     );
   }
 
+  // Define counts: up to 10 for carousel, up to 8 for the remaining 5-col grid
+  const carouselCount = Math.min(10, Math.max(1, posts.length > 8 ? posts.length - 8 : 1));
+  const gridCount = Math.min(8, Math.max(0, posts.length - carouselCount));
+  
+  const carouselPosts = posts.slice(0, carouselCount);
+  const gridPostsList = posts.slice(carouselCount, carouselCount + gridCount);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-1">
-      {renderFeed(posts)}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      {carouselPosts.length > 0 && (
+        <div className="col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 min-h-[300px]">
+          <HeroCarousel posts={carouselPosts} />
+        </div>
+      )}
+      {gridPostsList.map((post) => (
+        <BlogCard key={`card-${post.id}`} post={post} />
+      ))}
     </div>
   );
 }
 
-function renderFeed(posts: Post[]) {
-  const elements: React.ReactNode[] = [];
-  let i = 0;
+function HeroCarousel({ posts }: { posts: Post[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Primeiro Post em Destaque (Hero)
-  elements.push(<HeroPost key={`hero-${posts[0].id}`} post={posts[0]} />);
-  i = 1;
+  useEffect(() => {
+    if (posts.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % posts.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [posts.length]);
 
-  let cycleIndex = 0;
-  while (i < posts.length) {
-    if (cycleIndex % 2 === 0) {
-      // Um post em destaque menor (Hero secundário)
-      const hero = <HeroPost key={`hero-sec-${cycleIndex}-${posts[i].id}`} post={posts[i]} />;
-      elements.push(hero);
-      i++;
-      
-      const remainingSlots = 3;
-      const remainingPosts = posts.slice(i, i + remainingSlots);
-      
-      remainingPosts.forEach((post) => {
-        elements.push(<BlogCard key={`card-${post.id}`} post={post} />);
-        i++;
-      });
-      
-      if (remainingPosts.length < remainingSlots) {
-        const emptyCount = remainingSlots - remainingPosts.length;
-        for (let e = 0; e < emptyCount; e++) {
-          elements.push(<div key={`empty-${cycleIndex}-${e}`} className="hidden lg:block" />);
-        }
-      }
-    } else {
-      const items = posts.slice(i, i + 4);
-      items.forEach((post) => {
-        elements.push(<BlogCard key={`card-fill-${post.id}`} post={post} />);
-        i++;
-      });
-      
-      elements.push(
-        <div key={`weather-${cycleIndex}`} className="col-span-1 h-full min-h-[300px]">
-          <WeatherWidget />
-        </div>
-      );
-    }
-    cycleIndex++;
-  }
+  if (posts.length === 0) return null;
 
-  return elements;
-}
-
-function HeroPost({ post }: { post: Post }) {
-  // Simular tempo decorrido do MSN se o createdAt for recente
-  const timeLabel = "2h"; // Em produção isso seria calculado
-  
   return (
-    <Link
-      href={`/blog/${post.slug}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group relative flex flex-col overflow-hidden rounded-xl bg-card border border-border/50 col-span-1 md:col-span-2 row-span-1 min-h-[300px] shadow-sm hover:shadow-md transition-all duration-300"
-    >
-      <div className="absolute inset-0 overflow-hidden">
-        {post.image ? (
-          <img
-            src={post.image}
-            alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-amber-500/20 to-slate-900/40" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-      </div>
-      
-      <div className="relative mt-auto p-5 sm:p-8">
-        <div className="flex items-center gap-2 mb-3 drop-shadow-[0_4px_4px_rgba(0,0,0,1)]">
-          <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-[10px] font-bold text-black border border-white/20">
-            {post.author.charAt(0)}
-          </div>
-          <span className="text-xs font-semibold text-white/90">{post.author}</span>
-          <span className="text-white/40 text-[10px]">• {timeLabel}</span>
-        </div>
+    <div className="relative flex flex-col w-full h-full min-h-[320px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
+      {posts.map((post, index) => {
+        const timeLabel = "2h"; // Simulado
+        const isActive = index === currentIndex;
         
-        <h3 className="text-xl sm:text-3xl font-bold text-white font-headline leading-tight mb-3 group-hover:text-amber-400 transition-colors drop-shadow-[0_4px_8px_rgba(0,0,0,1)] [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">
-          {post.title}
-        </h3>
-        
-        <p className="text-white/70 text-sm line-clamp-2 mb-6 hidden sm:block">
-          {post.excerpt}
-        </p>
-        
-        <div className="pt-4 border-t border-white/10">
-          <PostReactions post={post} isHero={true} />
-        </div>
-      </div>
-    </Link>
+        return (
+          <Link
+            key={post.id}
+            href={`/blog/${post.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`absolute inset-0 flex flex-col transition-opacity duration-1000 ${
+              isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            }`}
+          >
+            <div className="absolute inset-0 overflow-hidden">
+              {post.image ? (
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-800" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
+            </div>
+            
+            <div className="relative mt-auto p-5 sm:p-6 pb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[9px] font-bold text-black border border-white/20">
+                  {post.author.charAt(0)}
+                </div>
+                <span className="text-[11px] font-semibold text-white/90">{post.author}</span>
+                <span className="text-white/40 text-[10px]">• {timeLabel}</span>
+              </div>
+              
+              <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-4 group-hover:text-amber-400 transition-colors line-clamp-3">
+                {post.title}
+              </h3>
+              
+              <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                <PostReactions post={post} isHero={true} />
+                {posts.length > 1 && (
+                  <div className="flex flex-shrink-0 items-center gap-1.5 ml-4">
+                    {posts.map((_, dotIndex) => (
+                      <div
+                        key={dotIndex}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          dotIndex === currentIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
@@ -232,10 +226,10 @@ function BlogCard({ post }: { post: Post }) {
       href={`/blog/${post.slug}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 min-h-[340px]"
+      className="group flex flex-col bg-card rounded-xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 min-h-[320px]"
     >
       {/* Imagem */}
-      <div className="relative aspect-video overflow-hidden">
+      <div className="relative h-36 sm:h-40 overflow-hidden flex-shrink-0">
         {post.image ? (
           <img
             src={post.image}
@@ -243,32 +237,32 @@ function BlogCard({ post }: { post: Post }) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <span className="text-xs text-muted-foreground/30 font-bold uppercase tracking-widest text-center px-4">Plataforma Senra News</span>
+          <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <span className="text-xs text-muted-foreground/50 font-bold uppercase tracking-widest text-center px-4">Senra News</span>
           </div>
         )}
       </div>
 
       {/* Conteúdo */}
       <div className="flex flex-col flex-grow p-4">
-        <div className="flex items-center gap-2 mb-2.5">
-          <div className="w-5 h-5 rounded flex items-center justify-center bg-amber-500/10 text-amber-600 text-[10px] font-bold">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-5 h-5 rounded flex items-center justify-center bg-amber-500/10 text-amber-600 text-[9px] font-bold">
             {post.author.charAt(0)}
           </div>
           <span className="text-[11px] font-semibold text-foreground/80">{post.author}</span>
-          <span className="text-muted-foreground/60 text-[10px]">• {timeLabel}</span>
+          <span className="text-muted-foreground/50 text-[10px]">• {timeLabel}</span>
         </div>
 
-        <h3 className="text-[15px] font-bold text-foreground leading-snug line-clamp-3 mb-2 group-hover:text-amber-600 transition-colors">
+        <h3 className="text-sm font-bold text-foreground leading-snug line-clamp-3 mb-2 group-hover:text-amber-600 transition-colors">
           {post.title}
         </h3>
         
-        <p className="text-xs text-muted-foreground line-clamp-2 mt-auto mb-4">
+        <p className="text-[13px] text-muted-foreground line-clamp-2 mt-auto mb-4 hidden sm:block">
           {post.excerpt}
         </p>
 
         {/* Rodapé interativo */}
-        <div className="pt-3 border-t border-border/40">
+        <div className="pt-3 border-t border-border/30 mt-auto">
           <PostReactions post={post} />
         </div>
       </div>

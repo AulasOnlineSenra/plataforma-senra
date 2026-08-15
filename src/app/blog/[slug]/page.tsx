@@ -563,18 +563,14 @@ export default function BlogPostPage() {
                 <BlogPostContent post={postItem} />
                 
                 {gridPosts && gridPosts.length > 0 && (
-                  <div className="my-16 w-[100vw] max-w-5xl relative left-1/2 -translate-x-1/2 px-4 sm:px-8">
-                    <div className="mb-6 text-center">
-                      <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Continue explorando</h2>
+                  <div className="my-16 w-[100vw] max-w-[1224px] relative left-1/2 -translate-x-1/2 px-4 sm:px-8">
+                    <div className="mb-6 text-left">
+                      <h2 className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Continue explorando</h2>
                     </div>
-                    <div className="max-h-[840px] overflow-hidden">
+                    <div className="overflow-hidden">
                       <BlogGrid posts={gridPosts} />
                     </div>
                   </div>
-                )}
-
-                {index < loadedPosts.length - 1 && (
-                  <div className="my-12 border-t border-dashed border-border" />
                 )}
               </div>
             );
