@@ -563,11 +563,11 @@ export default function BlogPostPage() {
                 <BlogPostContent post={postItem} />
                 
                 {gridPosts && gridPosts.length > 0 && (
-                    <div className="my-12">
-                    <div className="mb-4 text-center">
+                  <div className="my-16 w-[100vw] max-w-5xl relative left-1/2 -translate-x-1/2 px-4 sm:px-8">
+                    <div className="mb-6 text-center">
                       <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Continue explorando</h2>
                     </div>
-                    <div className="max-h-[840px] overflow-hidden -mx-4 sm:-mx-8">
+                    <div className="max-h-[840px] overflow-hidden">
                       <BlogGrid posts={gridPosts} />
                     </div>
                   </div>
