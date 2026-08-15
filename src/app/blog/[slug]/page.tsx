@@ -517,6 +517,9 @@ export default function BlogPostPage() {
     const shuffledAvailable = shufflePosts(availablePosts);
     const nextPost = shuffledAvailable[0];
     
+    // Incrementa view para o novo artigo carregado na rolagem infinita
+    incrementPostViews(nextPost.id);
+    
     newUsedIds.add(nextPost.id);
     setUsedPostIds(newUsedIds);
 
