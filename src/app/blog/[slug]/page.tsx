@@ -197,6 +197,11 @@ function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
   let parsedContent = parseContentForCarousel(post.content);
   parsedContent = parseContentForVideo(parsedContent);
+  
+  // Convert non-breaking spaces to regular spaces to allow natural word wrapping.
+  // This fixes the issue where text pasted from PDFs or Word acts as a single giant word
+  // and gets cut mid-word or overflows the container.
+  parsedContent = parsedContent.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ');
 
 
   return (
