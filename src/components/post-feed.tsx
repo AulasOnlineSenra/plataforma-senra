@@ -153,7 +153,7 @@ function PostGrid({ posts }: { posts: BlogPost[] }) {
       {posts.map((post) => (
         <Link
           key={post.id}
-          href={`/blog/${post.id}`}
+          href={`/blog/${(post as any).slug || post.id}`}
           className="group flex flex-col bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
         >
           <div className="relative aspect-video overflow-hidden">

@@ -143,7 +143,7 @@ function HeroPost({ post }: { post: Post }) {
 
   return (
     <Link
-      href={`/blog/${post.id}`}
+      href={`/blog/${post.slug}`}
       className="group block relative overflow-hidden rounded-2xl col-span-4"
     >
       {post.image ? (
@@ -212,7 +212,7 @@ function Card50_50({ post }: { post: Post }) {
 
   return (
     <Link
-      href={`/blog/${post.id}`}
+      href={`/blog/${post.slug}`}
       className="group block relative overflow-hidden rounded-2xl col-span-1"
     >
       {post.image ? (
@@ -264,7 +264,7 @@ function WidePost({ post }: { post: Post }) {
 
   return (
     <Link
-      href={`/blog/${post.id}`}
+      href={`/blog/${post.slug}`}
       className="group block relative overflow-hidden rounded-2xl col-span-1"
     >
       {post.image ? (

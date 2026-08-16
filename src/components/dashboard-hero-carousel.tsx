@@ -172,7 +172,7 @@ export function DashboardHeroCarousel({
         icon: BookOpen,
         label: "NOVO POST",
         text: `${post.title} — ${post.excerpt}`,
-        href: `/blog/${post.id}`,
+        href: `/blog/${post.slug}`,
       });
     }
 

@@ -522,7 +522,7 @@ export default function NewBlogPostPage() {
                       if (paragraphs.length < 2) {
                         selectedPostsData.forEach(post => {
                           const a = document.createElement('p');
-                          a.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                          a.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
                           tempDiv.appendChild(a);
                         });
                       } else {
@@ -532,7 +532,7 @@ export default function NewBlogPostPage() {
                           const targetP = paragraphs[targetIndex];
                           if (targetP) {
                             const linkHtml = document.createElement('p');
-                            linkHtml.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                            linkHtml.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
                             targetP.parentNode?.insertBefore(linkHtml, targetP.nextSibling);
                           }
                         });
