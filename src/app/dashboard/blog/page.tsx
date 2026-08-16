@@ -102,9 +102,9 @@ export default function BlogAdminPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar com Meses */}
-        <div className="lg:col-span-1">
+        <div className="w-full lg:w-[calc(25%-50px)] shrink-0">
           <Card className="sticky top-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Arquivos</CardTitle>
@@ -141,7 +141,7 @@ export default function BlogAdminPage() {
         </div>
 
         {/* Lista de Artigos */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="w-full lg:w-[calc(75%+50px)] space-y-6 flex-grow">
           {isLoading ? (
             <Card>
               <CardContent className="flex items-center justify-center py-12 text-muted-foreground">
