@@ -258,3 +258,51 @@ export async function incrementPostViews(id: string) {
     return { success: false, error: 'Falha ao incrementar visualizações.' };
   }
 }
+
+export async function updatePostStatus(id: string, newStatus: 'DRAFT' | 'REVIEW' | 'PUBLISHED') {
+  try {
+    const post = await prisma.blogPost.update({
+      where: { id },
+      data: {
+        status: newStatus,
+        published: newStatus === 'PUBLISHED',
+      },
+    });
+    revalidatePath('/dashboard/blog');
+    revalidatePath('/blog');
+    return { success: true, data: post };
+  } catch (error) {
+    console.error('Erro ao atualizar status do post:', error);
+    return { success: false, error: 'Falha ao atualizar status.' };
+  }
+}
+
+export async function createDraftFromIdea(title: string, referenceUrl?: string) {
+  try {
+    let baseSlug = slugify(title);
+    if (!baseSlug) baseSlug = 'ideia';
+    let slug = `${baseSlug}-${Date.now().toString(36)}`;
+
+    const post = await prisma.blogPost.create({
+      data: {
+        id: crypto.randomUUID(),
+        slug,
+        title: title,
+        excerpt: 'Rascunho gerado a partir de referência.',
+        content: '<p>Comece a escrever seu artigo aqui...</p>',
+        author: 'Redação',
+        status: 'DRAFT',
+        published: false,
+        referenceUrl: referenceUrl || null,
+        tags: '[]',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+    revalidatePath('/dashboard/blog');
+    return { success: true, data: post };
+  } catch (error) {
+    console.error('Erro ao criar rascunho:', error);
+    return { success: false, error: 'Falha ao criar rascunho.' };
+  }
+}

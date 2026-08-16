@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
@@ -15,9 +16,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal } from 'lucide-react';
+import { 
+  Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal, 
+  PanelLeftClose, PanelLeftOpen, ArrowRight, CheckCircle2, 
+  Undo2, Globe, ExternalLink, Settings, Lightbulb
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getBlogPosts, deletePost, togglePublishPost } from '@/app/actions/blog';
+import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea } from '@/app/actions/blog';
+
+type PostStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED';
 
 type BlogPost = {
   id: string;
@@ -28,15 +35,28 @@ type BlogPost = {
   image: string | null;
   tags: string;
   published: boolean;
+  status: PostStatus;
+  referenceUrl: string | null;
   views: number;
   createdAt: string;
   updatedAt: string;
 };
 
+// Mock para Fase 1 (Fase 3 trará os dados reais via RSS)
+const MOCK_EXTERNAL_IDEAS = [
+  { id: '1', title: 'Como a Inteligência Artificial está mudando o ENEM 2026', source: 'Guia do Estudante' },
+  { id: '2', title: '5 Técnicas de Pomodoro que os aprovados em Medicina usam', source: 'Descomplica Blog' },
+  { id: '3', title: 'O que mais cai em Matemática no vestibular da USP', source: 'Blog da Fuvest' },
+  { id: '4', title: 'Redação nota 1000: Erros que você não pode cometer', source: 'ImagineRedação' },
+];
+
 export default function BlogAdminPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [newIdeaTitle, setNewIdeaTitle] = useState('');
+  const [isAddingIdea, setIsAddingIdea] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,7 +67,7 @@ export default function BlogAdminPage() {
     setIsLoading(true);
     const result = await getBlogPosts();
     if (result.success && result.data) {
-      setPosts(result.data);
+      setPosts(result.data as BlogPost[]);
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
@@ -58,7 +78,7 @@ export default function BlogAdminPage() {
     if (!deleteId) return;
     const result = await deletePost(deleteId);
     if (result.success) {
-      toast({ title: 'Sucesso', description: 'Post deletado com sucesso.', className: 'bg-emerald-600 text-white border-none' });
+      toast({ title: 'Sucesso', description: 'Artigo deletado com sucesso.', className: 'bg-emerald-600 text-white border-none' });
       loadPosts();
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
@@ -66,14 +86,27 @@ export default function BlogAdminPage() {
     setDeleteId(null);
   };
 
-  const handleTogglePublish = async (id: string) => {
-    const result = await togglePublishPost(id);
+  const handleStatusChange = async (id: string, newStatus: PostStatus) => {
+    const result = await updatePostStatus(id, newStatus);
     if (result.success) {
-      toast({ title: 'Sucesso', description: 'Status de publicação alterado.', className: 'bg-emerald-600 text-white border-none' });
+      toast({ title: 'Atualizado', description: `Status alterado para ${newStatus}.`, className: 'bg-emerald-600 text-white border-none' });
       loadPosts();
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
+  };
+
+  const handleCreateFromIdea = async (title: string, referenceUrl?: string) => {
+    setIsAddingIdea(true);
+    const result = await createDraftFromIdea(title, referenceUrl);
+    if (result.success) {
+      toast({ title: 'Ideia Adicionada!', description: 'O rascunho foi criado na coluna de Redação.', className: 'bg-emerald-600 text-white border-none' });
+      setNewIdeaTitle('');
+      loadPosts();
+    } else {
+      toast({ variant: 'destructive', title: 'Erro', description: result.error });
+    }
+    setIsAddingIdea(false);
   };
 
   const formatDate = (dateStr: string) => {
@@ -84,183 +117,258 @@ export default function BlogAdminPage() {
     });
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-headline flex items-center gap-2">
-            <Newspaper className="h-6 w-6 text-primary" />
-            Blog
-          </h1>
-          <p className="text-muted-foreground">Gerencie os artigos do blog da plataforma.</p>
-        </div>
-        <Button asChild className="gap-2">
-          <Link href="/dashboard/blog/new">
-            <Plus className="h-4 w-4" />
-            Novo Artigo
-          </Link>
-        </Button>
-      </div>
+  const drafts = posts.filter(p => p.status === 'DRAFT' || (!p.status && !p.published));
+  const reviews = posts.filter(p => p.status === 'REVIEW');
+  const published = posts.filter(p => p.status === 'PUBLISHED' || (!p.status && p.published));
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar com Meses */}
-        <div className="w-full lg:w-[calc(25%-100px)] shrink-0">
-          <Card className="sticky top-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Arquivos</CardTitle>
-              <CardDescription className="text-xs">
-                {posts.length} {posts.length === 1 ? 'artigo' : 'artigos'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-sm text-muted-foreground">Carregando...</div>
-              ) : posts.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Vazio</div>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {Object.keys(
-                    posts.reduce((acc, post) => {
-                      const m = new Date(post.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                      acc[m] = true;
-                      return acc;
-                    }, {} as Record<string, boolean>)
-                  ).map((month) => (
-                    <a
-                      key={month}
-                      href={`#month-${month.replace(/\s/g, '-')}`}
-                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-2 py-1.5 rounded-md transition-colors capitalize"
-                    >
-                      {month}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+  const PostCard = ({ post }: { post: BlogPost }) => (
+    <Card className="mb-3 hover:shadow-md transition-shadow group">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
+            {post.title}
+          </h3>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setDeleteId(post.id)} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" /> Deletar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+        
+        <p className="text-xs text-muted-foreground mb-4">
+          Por {post.author} • {formatDate(post.createdAt)}
+        </p>
 
-        {/* Lista de Artigos */}
-        <div className="w-full lg:w-[calc(75%+100px)] space-y-6 flex-grow">
-          {isLoading ? (
-            <Card>
-              <CardContent className="flex items-center justify-center py-12 text-muted-foreground">
-                Carregando artigos...
-              </CardContent>
-            </Card>
-          ) : posts.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-                <Newspaper className="h-12 w-12 opacity-30" />
-                <p>Nenhum artigo encontrado.</p>
-                <Button asChild variant="outline" size="sm" className="mt-2">
-                  <Link href="/dashboard/blog/new">Criar primeiro artigo</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            Object.entries(
-              posts.reduce((acc, post) => {
-                const month = new Date(post.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                if (!acc[month]) acc[month] = [];
-                acc[month].push(post);
-                return acc;
-              }, {} as Record<string, typeof posts>)
-            ).map(([month, monthPosts]) => (
-              <div key={month} id={`month-${month.replace(/\s/g, '-')}`} className="scroll-mt-6">
-                <h2 className="text-lg font-bold capitalize mb-3 text-foreground/80 pl-1">{month}</h2>
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b text-left bg-muted/20">
-                            <th className="pb-3 pt-4 px-4 font-medium text-muted-foreground">Título</th>
-                            <th className="pb-3 pt-4 px-4 font-medium text-muted-foreground hidden md:table-cell">Data</th>
-                            <th className="pb-3 pt-4 px-4 font-medium text-muted-foreground">Status</th>
-                            <th className="pb-3 pt-4 px-4 font-medium text-muted-foreground">Visitas</th>
-                            <th className="pb-3 pt-4 px-4 font-medium text-muted-foreground text-right">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {monthPosts.map((post) => (
-                            <tr key={post.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                              <td className="py-3 px-4 max-w-[200px] sm:max-w-[300px]">
-                                <div className="flex flex-col">
-                                  <Link 
-                                    href={`/dashboard/blog/edit/${post.id}`}
-                                    className="font-medium truncate hover:text-brand-yellow transition-colors block"
-                                    title={post.title}
-                                  >
-                                    {post.title}
-                                  </Link>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {post.author}
-                                  </p>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{formatDate(post.createdAt)}</td>
-                              <td className="py-3 px-4">
-                                {(() => {
-                                  const isScheduled = post.published && new Date(post.createdAt) > new Date();
-                                  return (
-                                    <Badge
-                                      variant={isScheduled ? 'outline' : post.published ? 'default' : 'secondary'}
-                                      className={isScheduled ? 'bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200' : post.published ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}
-                                    >
-                                      {isScheduled ? 'Programado' : post.published ? 'Publicado' : 'Rascunho'}
-                                    </Badge>
-                                  );
-                                })()}
-                              </td>
-                              <td className="py-3 px-4 text-muted-foreground font-medium">
-                                <div className="flex items-center gap-1.5">
-                                  <Eye className="w-3 h-3 opacity-50" />
-                                  {post.views || 0}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-right">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                      <span className="sr-only">Abrir menu</span>
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleTogglePublish(post.id)}>
-                                      {post.published ? (
-                                        <><EyeOff className="mr-2 h-4 w-4" />Despublicar</>
-                                      ) : (
-                                        <><Eye className="mr-2 h-4 w-4" />Publicar</>
-                                      )}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                      <Link href={`/dashboard/blog/edit/${post.id}`}>
-                                        <Pencil className="mr-2 h-4 w-4" />Editar
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      className="text-destructive focus:text-destructive"
-                                      onClick={() => setDeleteId(post.id)}
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />Deletar
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ))
+        <div className="flex gap-2">
+          {/* BOTÕES PARA REDAÇÃO */}
+          {(post.status === 'DRAFT' || (!post.status && !post.published)) && (
+            <>
+              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8">
+                <Link href={`/dashboard/blog/edit/${post.id}`}>
+                  <Pencil className="w-3 h-3 mr-1" /> Escrever
+                </Link>
+              </Button>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'REVIEW')} 
+                variant="default" size="sm" className="flex-1 text-xs h-8 bg-blue-600 hover:bg-blue-700"
+              >
+                Revisão <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </>
+          )}
+
+          {/* BOTÕES PARA REVISÃO */}
+          {post.status === 'REVIEW' && (
+            <>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'DRAFT')} 
+                variant="outline" size="sm" className="flex-1 text-xs h-8" title="Devolver para Redação"
+              >
+                <Undo2 className="w-3 h-3" />
+              </Button>
+              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8">
+                <Link href={`/dashboard/blog/edit/${post.id}`}>
+                  <Eye className="w-3 h-3 mr-1" /> Ler
+                </Link>
+              </Button>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'PUBLISHED')} 
+                variant="default" size="sm" className="flex-1 text-xs h-8 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Publicar
+              </Button>
+            </>
+          )}
+
+          {/* BOTÕES PARA PUBLICADO */}
+          {(post.status === 'PUBLISHED' || (!post.status && post.published)) && (
+            <>
+              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8" title="Ver no site">
+                <Link href={`/blog/${post.slug || post.id}`} target="_blank">
+                  <Globe className="w-3 h-3 mr-1" /> Site
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8">
+                <Link href={`/dashboard/blog/edit/${post.id}`}>
+                  <Pencil className="w-3 h-3 mr-1" /> Editar
+                </Link>
+              </Button>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'REVIEW')} 
+                variant="outline" size="sm" className="text-xs h-8 text-amber-600 hover:text-amber-700" title="Despublicar"
+              >
+                <EyeOff className="w-3 h-3" />
+              </Button>
+            </>
           )}
         </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="flex h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 rounded-xl border">
+      
+      {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
+      <div 
+        className={`bg-white border-r transition-all duration-300 flex flex-col shrink-0 ${
+          isSidebarOpen ? 'w-80' : 'w-0 opacity-0 overflow-hidden border-none'
+        }`}
+      >
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="font-bold flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-amber-500" />
+            Pesquisa & Pauta
+          </h2>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Configurar Referências">
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        <div className="p-4 border-b bg-slate-50/50">
+          <form 
+            onSubmit={(e) => { e.preventDefault(); if (newIdeaTitle) handleCreateFromIdea(newIdeaTitle); }}
+            className="flex gap-2"
+          >
+            <Input 
+              placeholder="Digite uma nova ideia..." 
+              className="h-8 text-xs" 
+              value={newIdeaTitle}
+              onChange={(e) => setNewIdeaTitle(e.target.value)}
+              disabled={isAddingIdea}
+            />
+            <Button type="submit" size="sm" className="h-8 px-3" disabled={!newIdeaTitle || isAddingIdea}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </form>
+        </div>
+
+        <ScrollArea className="flex-1 p-4">
+          <div className="text-xs text-muted-foreground font-medium mb-3">Ideias de Concorrentes (RSS)</div>
+          <div className="space-y-3">
+            {MOCK_EXTERNAL_IDEAS.map((idea) => (
+              <div key={idea.id} className="group flex gap-2 items-start p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-amber-200 hover:bg-amber-50/50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-slate-800 leading-snug mb-1">{idea.title}</p>
+                  <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> {idea.source}
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => handleCreateFromIdea(idea.title)}
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-amber-600 transition-all shrink-0 bg-white shadow-sm"
+                  title="Transformar em Pauta"
+                  disabled={isAddingIdea}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* PAINEL DIREITO: O PIPELINE KANBAN */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        {/* Header do Pipeline */}
+        <div className="h-16 border-b bg-white flex items-center px-4 justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="h-8 w-8 text-slate-600"
+              title={isSidebarOpen ? "Recolher Painel" : "Abrir Pesquisa & Pauta"}
+            >
+              {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+            </Button>
+            <div>
+              <h1 className="font-bold text-lg font-headline flex items-center gap-2">
+                <Newspaper className="h-5 w-5 text-brand-yellow" />
+                Pipeline de Conteúdo
+              </h1>
+            </div>
+          </div>
+          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800">
+            <Link href="/dashboard/blog/new">
+              <Plus className="h-4 w-4 mr-2" /> Novo Artigo
+            </Link>
+          </Button>
+        </div>
+
+        {/* Colunas do Kanban */}
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex h-full p-6 gap-6 min-w-[900px]">
+            
+            {/* Coluna 1: Redação */}
+            <div className="flex-1 flex flex-col max-w-[400px]">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-slate-300"></div>
+                  Redação
+                </h3>
+                <span className="text-xs font-semibold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{drafts.length}</span>
+              </div>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                {isLoading ? (
+                  <div className="text-center text-sm text-muted-foreground p-4">Carregando...</div>
+                ) : drafts.length === 0 ? (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">Nenhum rascunho.</div>
+                ) : (
+                  drafts.map(post => <PostCard key={post.id} post={post} />)
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Coluna 2: Revisão */}
+            <div className="flex-1 flex flex-col max-w-[400px]">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  Revisão & Edição
+                </h3>
+                <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{reviews.length}</span>
+              </div>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                {reviews.length === 0 && !isLoading ? (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">Nada em revisão.</div>
+                ) : (
+                  reviews.map(post => <PostCard key={post.id} post={post} />)
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Coluna 3: Publicação */}
+            <div className="flex-1 flex flex-col max-w-[400px]">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  Publicados
+                </h3>
+                <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{published.length}</span>
+              </div>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                {published.length === 0 && !isLoading ? (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">Nenhum publicado.</div>
+                ) : (
+                  published.map(post => <PostCard key={post.id} post={post} />)
+                )}
+              </ScrollArea>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
@@ -268,7 +376,7 @@ export default function BlogAdminPage() {
           <DialogHeader>
             <DialogTitle>Confirmar exclusão</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja deletar este artigo? Esta ação não pode ser desfeita.
+              Tem certeza que deseja deletar este artigo permanentemente?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
