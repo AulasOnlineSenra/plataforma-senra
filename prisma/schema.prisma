@@ -72,6 +72,8 @@ model BlogPost {
   image         String?
   tags          String   @default("[]")
   published     Boolean  @default(false)
+  status        String   @default("DRAFT")
+  referenceUrl  String?
   likes         Int      @default(0)
   dislikes      Int      @default(0)
   commentsCount Int      @default(0)
@@ -467,4 +469,13 @@ model Question {
 
   @@index([creatorId])
   @@index([discipline])
+}
+
+model ReferenceBlog {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  feedUrl   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
