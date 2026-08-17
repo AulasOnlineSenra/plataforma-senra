@@ -691,12 +691,12 @@ export default function EditBlogPostPage() {
               
               /* Headings Spacing */
               .ql-editor h2 {
-                margin-top: 2.5rem !important;
-                margin-bottom: 1rem !important;
+                margin-top: 3.5rem !important;
+                margin-bottom: 2rem !important;
               }
               .ql-editor h3 {
-                margin-top: 2.0rem !important;
-                margin-bottom: 1rem !important;
+                margin-top: 2.5rem !important;
+                margin-bottom: 2rem !important;
               }
               
               /* Table Styling */
