@@ -689,6 +689,16 @@ export default function EditBlogPostPage() {
               .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
               .ql-font-verdana { font-family: Verdana, sans-serif; }
               
+              /* Headings Spacing */
+              .ql-editor h2 {
+                margin-top: 2.5rem !important;
+                margin-bottom: 1rem !important;
+              }
+              .ql-editor h3 {
+                margin-top: 2.0rem !important;
+                margin-bottom: 1rem !important;
+              }
+              
               /* Table Styling */
               .ql-editor table {
                 width: 100% !important;
