@@ -3,16 +3,22 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPostById, updatePost } from '@/app/actions/blog';
 import dynamic from 'next/dynamic';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => {
@@ -25,10 +31,20 @@ const ReactQuill = dynamic(() => {
   });
 }, { ssr: false });
 
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+
 export default function EditBlogPostPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -45,8 +61,9 @@ export default function EditBlogPostPage() {
     createdAt: '',
   });
 
-  const [publishedPosts, setPublishedPosts] = useState<{id: string, title: string}[]>([]);
+  const [publishedPosts, setPublishedPosts] = useState<{id: string, title: string, slug?: string | null}[]>([]);
   const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
+  const [insertedLinks, setInsertedLinks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     import('@/app/actions/blog').then(m => {
@@ -92,16 +109,16 @@ export default function EditBlogPostPage() {
     loadPost();
   }, [params.id, router, toast]);
 
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   useEffect(() => {
     if (titleRef.current) {
       titleRef.current.style.height = 'auto';
       titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
     }
   }, [formData.title]);
+
+  const handleChange = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const imageHandler = useCallback(() => {
     const input = document.createElement('input');
@@ -175,17 +192,76 @@ export default function EditBlogPostPage() {
     };
   }, [toast]);
 
+  const videoHandler = useCallback(() => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'video/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files ? input.files[0] : null;
+      if (!file) return;
+
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+
+      toast({
+        title: 'Fazendo upload do vídeo...',
+        description: 'Por favor, aguarde. Vídeos podem demorar alguns segundos.',
+      });
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await res.json();
+
+        if (result.success && result.data?.url) {
+          const videoHtml = `\n[VIDEO:${result.data.url}]\n`;
+          quill.insertText(range.index, videoHtml);
+          quill.setSelection(range.index + videoHtml.length);
+          toast({
+            title: 'Vídeo adicionado!',
+            description: 'O vídeo será exibido corretamente na página do artigo.',
+            className: 'bg-emerald-600 text-white border-none',
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Erro no Upload',
+            description: result.error || 'Não foi possível salvar o vídeo.',
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        toast({
+          variant: 'destructive',
+          title: 'Erro inesperado',
+          description: 'Ocorreu um erro ao enviar o vídeo.',
+        });
+      }
+    };
+  }, [toast]);
+
   const modules = useMemo(() => ({
     toolbar: {
       container: '#custom-toolbar',
       handlers: {
         image: imageHandler,
+        video: videoHandler,
       },
     },
-  }), [imageHandler]);
+  }), [imageHandler, videoHandler]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule' | 'update') => {
+    if (e) e.preventDefault();
 
     if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.author.trim()) {
       toast({
@@ -196,11 +272,19 @@ export default function EditBlogPostPage() {
       return;
     }
 
+    if (publishMode === 'schedule' && !formData.createdAt) {
+      toast({
+        variant: 'destructive',
+        title: 'Data obrigatória',
+        description: 'Selecione uma data e hora para agendamento nas Configurações.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const id = params.id as string;
-      // Convert datetime-local (local time, no tz) to ISO string with timezone offset
-      // so the server stores the correct UTC time regardless of VPS timezone.
+      
       const createdAtISO = formData.createdAt
         ? new Date(formData.createdAt).toISOString()
         : undefined;
@@ -208,14 +292,23 @@ export default function EditBlogPostPage() {
       let finalCreatedAt = createdAtISO;
       const scheduledDate = createdAtISO ? new Date(createdAtISO) : null;
       
-      // If the user checked "Publicar Imediatamente" BUT the date is still in the future,
-      // we must reset the date to NOW so it publishes immediately.
-      if (formData.published && scheduledDate && scheduledDate > new Date()) {
-        finalCreatedAt = new Date().toISOString();
+      let publishedValue = formData.published;
+      
+      if (publishMode === 'now') {
+         publishedValue = true;
+         finalCreatedAt = new Date().toISOString();
+      } else if (publishMode === 'draft') {
+         publishedValue = false;
+      } else if (publishMode === 'schedule') {
+         publishedValue = true; // It's "published" but in the future
+      } else {
+        // 'update' mode keeps existing logic
+        if (formData.published && scheduledDate && scheduledDate > new Date()) {
+          finalCreatedAt = new Date().toISOString();
+        }
+        const isScheduled = !formData.published && scheduledDate && scheduledDate > new Date();
+        publishedValue = isScheduled ? true : formData.published;
       }
-
-      const isScheduled = !formData.published && scheduledDate && scheduledDate > new Date();
-      const publishedValue = isScheduled ? true : formData.published;
 
       const result = await updatePost(id, {
         ...formData,
@@ -244,300 +337,366 @@ export default function EditBlogPostPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-24 text-muted-foreground">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Carregando artigo...
+      <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon">
-          <Link href="/dashboard/blog">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold font-headline">Editar Artigo</h1>
-          <p className="text-muted-foreground">Atualize as informações do artigo.</p>
+    <div className="min-h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col">
+      {/* Top Navbar */}
+      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full hover:bg-slate-100"
+            onClick={() => router.push('/dashboard/blog')}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin text-slate-600" /> : <ArrowLeft className="h-5 w-5 text-slate-600" />}
+          </Button>
+          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+            <span className="bg-blue-100 px-2 py-1 rounded-md text-blue-700">Editando Artigo</span>
+          </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações do Artigo</CardTitle>
-            <CardDescription>Edite os campos abaixo.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
-              <textarea
-                id="title"
-                ref={titleRef}
-                placeholder="Título do artigo"
-                value={formData.title}
-                onChange={(e) => {
-                  handleChange('title', e.target.value);
-                }}
-                rows={1}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none overflow-hidden"
-                style={{ minHeight: '40px' }}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="author">Autor *</Label>
-              <Input
-                id="author"
-                placeholder="Nome do autor"
-                value={formData.author}
-                onChange={(e) => handleChange('author', e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="excerpt">Resumo *</Label>
-              <Textarea
-                id="excerpt"
-                placeholder="Breve descrição do artigo (aparece na listagem)"
-                value={formData.excerpt}
-                onChange={(e) => handleChange('excerpt', e.target.value)}
-                rows={3}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="content">Conteúdo *</Label>
-              <div className="bg-white text-slate-800 rounded-md border border-slate-200">
-                <div id="custom-toolbar" className="w-full bg-slate-50 border-b border-slate-200 px-2 py-2 flex flex-wrap items-center gap-1 sticky top-0 z-10">
-                  <select className="ql-font border-slate-200 rounded-md h-8 text-sm" defaultValue="">
-                    <option value="">Padrão</option>
-                    <option value="arial">Arial</option>
-                    <option value="courier">Courier</option>
-                    <option value="garamond">Garamond</option>
-                    <option value="tahoma">Tahoma</option>
-                    <option value="times-new-roman">Times New</option>
-                    <option value="verdana">Verdana</option>
-                  </select>
-                  <select className="ql-size border-slate-200 rounded-md h-8 text-sm" defaultValue="">
-                    <option value="small">Pequeno</option>
-                    <option value="">Normal</option>
-                    <option value="large">Grande</option>
-                    <option value="huge">Gigante</option>
-                  </select>
-                  <span className="w-px h-5 bg-slate-200 mx-1"></span>
-                  <button className="ql-bold" />
-                  <button className="ql-italic" />
-                  <button className="ql-underline" />
-                  <button className="ql-strike" />
-                  <span className="w-px h-5 bg-slate-200 mx-1"></span>
-                  <select className="ql-color border-slate-200 rounded-md h-8" />
-                  <select className="ql-background border-slate-200 rounded-md h-8" />
-                  <span className="w-px h-5 bg-slate-200 mx-1"></span>
-                  <button className="ql-list" value="ordered" />
-                  <button className="ql-list" value="bullet" />
-                  <button className="ql-link" />
-                  <button className="ql-image" />
-                  <button className="ql-clean" />
-                </div>
-                <style dangerouslySetInnerHTML={{__html: `
-                  .ql-container.ql-snow { border: none; font-size: 1.05rem; min-height: 400px; }
-                  .ql-font-arial { font-family: Arial, sans-serif; }
-                  .ql-font-courier { font-family: "Courier New", Courier, monospace; }
-                  .ql-font-garamond { font-family: Garamond, serif; }
-                  .ql-font-tahoma { font-family: Tahoma, sans-serif; }
-                  .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
-                  .ql-font-verdana { font-family: Verdana, sans-serif; }
-                `}} />
-                <ReactQuill 
-                  ref={quillRef}
-                  theme="snow"
-                  value={formData.content}
-                  onChange={(val) => handleChange('content', val)}
-                  modules={modules}
-                  placeholder="Escreva seu artigo aqui..."
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Capa do Artigo</Label>
-              {formData.image ? (
-                <div className="relative rounded-lg overflow-hidden border bg-slate-50">
-                  <img src={formData.image} alt="Capa" className="w-full h-32 object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => handleChange('image', '')}
-                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow"
-                  >✕</button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center gap-2 h-24 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      toast({ title: 'Fazendo upload...', description: 'Aguarde.' });
-                      try {
-                        const fd = new FormData();
-                        fd.append('file', file);
-                        const res = await fetch('/api/upload', { method: 'POST', body: fd });
-                        const result = await res.json();
-                        if (result.success && result.data?.url) {
-                          handleChange('image', result.data.url);
-                          toast({ title: 'Capa enviada!', className: 'bg-emerald-600 text-white border-none' });
-                        } else {
-                          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar.' });
-                        }
-                      } catch {
-                        toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Tente novamente.' });
-                      }
-                    }}
-                  />
-                  <span className="text-xs text-slate-400">Clique para upload da capa</span>
-                </label>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-              <Input
-                id="tags"
-                placeholder="Educação, Metodologia, Dicas"
-                value={formData.tags}
-                onChange={(e) => handleChange('tags', e.target.value)}
-              />
-            </div>
-
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label htmlFor="published" className="text-base">Publicar Imediatamente</Label>
-                  <p className="text-sm text-muted-foreground">
-                    O artigo ficará visível publicamente.
-                  </p>
-                </div>
-                <Switch
-                  id="published"
-                  checked={formData.published}
-                  onCheckedChange={(checked) => handleChange('published', checked)}
-                />
-              </div>
-
-              {!formData.published && (
-                <div className="space-y-2 border border-slate-200 bg-slate-50 p-4 rounded-xl">
-                  <Label htmlFor="createdAt" className="text-slate-700 font-bold flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" /> Agendar Publicação
-                  </Label>
-                  <p className="text-xs text-slate-500 mb-2">Se preenchido, o artigo será publicado automaticamente nessa data e hora. Deixe vazio para salvar como rascunho.</p>
+        <div className="flex items-center gap-3">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-600">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="font-headline text-2xl">Configurações do Artigo</SheetTitle>
+                <SheetDescription>Ajuste os metadados e configurações de publicação.</SheetDescription>
+              </SheetHeader>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="author" className="text-slate-700 font-bold">Autor *</Label>
                   <Input
-                    id="createdAt"
-                    type="datetime-local"
-                    value={formData.createdAt}
-                    onChange={(e) => handleChange('createdAt', e.target.value)}
-                    className="bg-white"
+                    id="author"
+                    placeholder="Nome do autor"
+                    value={formData.author}
+                    onChange={(e) => handleChange('author', e.target.value)}
+                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
                   />
                 </div>
-              )}
 
-              {/* Related Links Injector */}
-              <div className="space-y-3 pt-4 border-t border-slate-200">
-                <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
-                <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
-                
-                <div className="max-h-40 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
-                  {publishedPosts.filter(p => p.id !== params.id).map(post => {
-                    const isInserted = formData.content?.includes(post.id);
-                    const isSelected = selectedLinks.includes(post.id);
-                    return (
-                      <label key={post.id} className={`flex items-start gap-2 cursor-pointer group rounded-lg px-2 py-1 transition-colors ${isInserted ? 'bg-emerald-50 border border-emerald-200' : isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'}`}>
-                        <input 
-                          type="checkbox" 
-                          className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                          checked={isSelected || isInserted}
-                          disabled={isInserted}
-                          onChange={(e) => {
-                            if (isInserted) return;
-                            if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
-                            else setSelectedLinks(prev => prev.filter(id => id !== post.id));
-                          }}
-                        />
-                        <span className={`text-sm line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
-                          {post.title}
-                          {isInserted && <span className="ml-1 text-xs text-emerald-600">✓ adicionado</span>}
-                        </span>
-                      </label>
-                    );
-                  })}
-                  {publishedPosts.filter(p => p.id !== params.id).length === 0 && (
-                    <p className="text-sm text-slate-400 text-center py-2">Nenhum post publicado.</p>
+                <div className="space-y-2">
+                  <Label htmlFor="excerpt" className="text-slate-700 font-bold">Resumo *</Label>
+                  <Textarea
+                    id="excerpt"
+                    placeholder="Breve descrição do artigo (aparece na listagem)"
+                    value={formData.excerpt}
+                    onChange={(e) => handleChange('excerpt', e.target.value)}
+                    rows={4}
+                    className="rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0 resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-bold flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" /> Capa do Artigo
+                  </Label>
+                  {formData.image ? (
+                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                      <img src={formData.image} alt="Capa" className="w-full h-36 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleChange('image', '')}
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-2 h-28 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          toast({ title: 'Fazendo upload...', description: 'Aguarde enquanto salvamos a capa.' });
+                          try {
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                            const result = await res.json();
+                            if (result.success && result.data?.url) {
+                              handleChange('image', result.data.url);
+                              toast({ title: 'Capa enviada!', className: 'bg-emerald-600 text-white border-none' });
+                            } else {
+                              toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar a imagem.' });
+                            }
+                          } catch {
+                            toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Tente novamente.' });
+                          }
+                        }}
+                      />
+                      <ImageIcon className="h-6 w-6 text-slate-400" />
+                      <span className="text-sm text-slate-500">Clique para fazer upload da capa</span>
+                    </label>
                   )}
                 </div>
-                
-                <Button 
-                  type="button"
-                  variant="outline"
-                  className="w-full rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
-                  disabled={selectedLinks.length === 0}
-                  onClick={() => {
-                    if (!formData.content) {
-                      toast({ title: 'Aviso', description: 'Escreva algum conteúdo primeiro.', variant: 'destructive' });
-                      return;
-                    }
-                    
-                    const selectedPostsData = publishedPosts.filter(p => selectedLinks.includes(p.id));
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = formData.content;
-                    const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
-                    
-                    if (paragraphs.length < 2) {
-                      selectedPostsData.forEach(post => {
-                        const a = document.createElement('p');
-                        a.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
-                        tempDiv.appendChild(a);
-                      });
-                    } else {
-                      const interval = Math.max(1, Math.floor(paragraphs.length / (selectedPostsData.length + 1)));
-                      selectedPostsData.forEach((post, index) => {
-                        const targetIndex = Math.min((index + 1) * interval - 1, paragraphs.length - 1);
-                        const targetP = paragraphs[targetIndex];
-                        if (targetP) {
-                          const linkHtml = document.createElement('p');
-                          linkHtml.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
-                          targetP.parentNode?.insertBefore(linkHtml, targetP.nextSibling);
-                        }
-                      });
-                    }
-                    
-                    handleChange('content', tempDiv.innerHTML);
-                    setSelectedLinks([]);
-                    toast({ title: 'Sucesso', description: 'Links distribuídos no texto!', className: 'bg-emerald-600 text-white border-none' });
-                  }}
-                >
-                  Distribuir Links no Texto
-                </Button>
-              </div>
-          </CardContent>
-        </Card>
 
-        <div className="flex items-center justify-end gap-4 mt-6">
-          <Button asChild variant="outline" type="button">
-            <Link href="/dashboard/blog">Cancelar</Link>
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Salvar Alterações
-          </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="tags" className="text-slate-700 font-bold">Tags (separadas por vírgula)</Label>
+                  <Input
+                    id="tags"
+                    placeholder="Educação, Metodologia, Dicas"
+                    value={formData.tags}
+                    onChange={(e) => handleChange('tags', e.target.value)}
+                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="published" className="text-base font-bold text-slate-800">Publicar Imediatamente</Label>
+                    <p className="text-sm text-slate-500">
+                      O artigo ficará visível publicamente de imediato.
+                    </p>
+                  </div>
+                  <Switch
+                    id="published"
+                    checked={formData.published}
+                    onCheckedChange={(checked) => handleChange('published', checked)}
+                  />
+                </div>
+
+                {!formData.published && (
+                  <div className="space-y-2 border border-slate-200 bg-slate-50 p-4 rounded-2xl">
+                    <Label htmlFor="createdAt" className="text-slate-700 font-bold flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" /> Data e Hora de Publicação
+                    </Label>
+                    <p className="text-xs text-slate-500 mb-2">Defina para quando o artigo deve ser agendado.</p>
+                    <Input
+                      id="createdAt"
+                      type="datetime-local"
+                      value={formData.createdAt}
+                      onChange={(e) => handleChange('createdAt', e.target.value)}
+                      className="h-12 rounded-xl border-slate-300 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
+                    />
+                  </div>
+                )}
+
+                {/* Related Links Injector */}
+                <div className="space-y-3 pt-4 border-t border-slate-200">
+                  <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
+                  <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
+                  
+                  <div className="max-h-52 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
+                    {publishedPosts.filter(p => p.id !== params.id).map(post => {
+                      const isInserted = formData.content?.includes(post.id);
+                      const isSelected = selectedLinks.includes(post.id);
+                      return (
+                        <label key={post.id} className={`flex items-start gap-2 cursor-pointer group rounded-lg px-2 py-1 transition-colors ${isInserted ? 'bg-emerald-50 border border-emerald-200' : isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                          <input 
+                            type="checkbox" 
+                            className="mt-1 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                            checked={isSelected || isInserted}
+                            disabled={isInserted}
+                            onChange={(e) => {
+                              if (isInserted) return;
+                              if (e.target.checked) setSelectedLinks(prev => [...prev, post.id]);
+                              else setSelectedLinks(prev => prev.filter(id => id !== post.id));
+                            }}
+                          />
+                          <span className={`text-sm line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
+                            {post.title}
+                            {isInserted && <span className="ml-1 text-xs text-emerald-600">✓ adicionado</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {publishedPosts.filter(p => p.id !== params.id).length === 0 && (
+                      <p className="text-sm text-slate-400 text-center py-2">Nenhum post publicado.</p>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
+                    disabled={selectedLinks.length === 0}
+                    onClick={() => {
+                      if (!formData.content) {
+                        toast({ title: 'Aviso', description: 'Escreva algum conteúdo primeiro.', variant: 'destructive' });
+                        return;
+                      }
+                      
+                      const selectedPostsData = publishedPosts.filter(p => selectedLinks.includes(p.id));
+                      const tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = formData.content;
+                      const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
+                      
+                      if (paragraphs.length < 2) {
+                        selectedPostsData.forEach(post => {
+                          const a = document.createElement('p');
+                          a.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                          tempDiv.appendChild(a);
+                        });
+                      } else {
+                        const interval = Math.max(1, Math.floor(paragraphs.length / (selectedPostsData.length + 1)));
+                        selectedPostsData.forEach((post, index) => {
+                          const targetIndex = Math.min((index + 1) * interval - 1, paragraphs.length - 1);
+                          const targetP = paragraphs[targetIndex];
+                          if (targetP) {
+                            const linkHtml = document.createElement('p');
+                            linkHtml.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                            targetP.parentNode?.insertBefore(linkHtml, targetP.nextSibling);
+                          }
+                        });
+                      }
+                      
+                      handleChange('content', tempDiv.innerHTML);
+                      setInsertedLinks(prev => new Set([...prev, ...selectedLinks]));
+                      setSelectedLinks([]);
+                      toast({ title: 'Sucesso', description: 'Links distribuídos no texto!', className: 'bg-emerald-600 text-white border-none' });
+                    }}
+                  >
+                    Distribuir Links no Texto
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={isSubmitting}
+                className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-5 shadow-md transition-all hover:shadow-lg gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Salvar Alterações
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'update')} className="gap-2 font-medium">
+                <Save className="h-4 w-4 text-emerald-600" />
+                Atualizar (Manter Estado)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'now')} className="gap-2 font-medium">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Forçar Publicação
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'draft')} className="gap-2">
+                <Type className="h-4 w-4 text-slate-500" />
+                Voltar para Rascunho
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'schedule')} className="gap-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                Agendar publicação
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </form>
+      </header>
+
+      {/* Editor Area */}
+      <main className="flex-1 w-full bg-[#f8fafc] flex flex-col relative">
+        {/* Custom Toolbar */}
+        <div id="custom-toolbar" className="sticky top-[72px] z-20 w-full bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center gap-2 shadow-sm justify-center">
+          <select className="ql-font border-slate-200 rounded-md" defaultValue="">
+            <option value="">Padrão</option>
+            <option value="arial">Arial</option>
+            <option value="courier">Courier</option>
+            <option value="garamond">Garamond</option>
+            <option value="tahoma">Tahoma</option>
+            <option value="times-new-roman">Times New Roman</option>
+            <option value="verdana">Verdana</option>
+          </select>
+          <select className="ql-size border-slate-200 rounded-md" defaultValue="">
+            <option value="small">Pequeno</option>
+            <option value="">Normal</option>
+            <option value="large">Grande</option>
+            <option value="huge">Gigante</option>
+          </select>
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <button className="ql-bold text-slate-700 hover:text-slate-900" />
+          <button className="ql-italic text-slate-700 hover:text-slate-900" />
+          <button className="ql-underline text-slate-700 hover:text-slate-900" />
+          <button className="ql-strike text-slate-700 hover:text-slate-900" />
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <select className="ql-color border-slate-200 rounded-md" />
+          <select className="ql-background border-slate-200 rounded-md" />
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <button className="ql-list text-slate-700 hover:text-slate-900" value="ordered" />
+          <button className="ql-list text-slate-700 hover:text-slate-900" value="bullet" />
+          <span className="w-px h-6 bg-slate-200 mx-1"></span>
+          <button className="ql-link text-slate-700 hover:text-slate-900" />
+          <button className="ql-image text-slate-700 hover:text-slate-900" />
+          <button className="ql-video text-slate-700 hover:text-slate-900" />
+          <button className="ql-clean text-slate-700 hover:text-slate-900" />
+        </div>
+
+        <div className="max-w-4xl w-full mx-auto p-8 md:p-12 lg:px-24 bg-white min-h-[800px] shadow-sm my-8 border border-slate-100 rounded-xl">
+          {formData.image && (
+            <div className="mb-8 rounded-3xl overflow-hidden shadow-sm border border-slate-100 h-[300px] w-full">
+              <img src={formData.image} alt="Capa" className="w-full h-full object-cover" />
+            </div>
+          )}
+
+          <textarea
+            ref={titleRef}
+            placeholder="Título do Artigo"
+            value={formData.title}
+            onChange={(e) => {
+              handleChange('title', e.target.value);
+            }}
+            rows={1}
+            className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight resize-none bg-transparent overflow-hidden"
+            style={{ minHeight: '80px' }}
+          />
+
+          <div className="w-full h-px bg-slate-100 my-8"></div>
+
+          <div className="text-slate-800">
+            <style dangerouslySetInnerHTML={{__html: `
+              .ql-container.ql-snow {
+                border: none;
+                font-size: 1.125rem;
+                font-family: inherit;
+                min-height: 500px;
+              }
+              .ql-editor {
+                padding: 0;
+                line-height: 1.8;
+              }
+              .ql-editor p { margin-bottom: 1.2rem; }
+              .ql-font-arial { font-family: Arial, sans-serif; }
+              .ql-font-courier { font-family: "Courier New", Courier, monospace; }
+              .ql-font-garamond { font-family: Garamond, serif; }
+              .ql-font-tahoma { font-family: Tahoma, sans-serif; }
+              .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
+              .ql-font-verdana { font-family: Verdana, sans-serif; }
+            `}} />
+            <ReactQuill 
+              ref={quillRef}
+              theme="snow"
+              value={formData.content}
+              onChange={(val) => handleChange('content', val)}
+              modules={modules}
+              placeholder="Continue editando seu artigo incrível aqui..."
+            />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
