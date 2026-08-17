@@ -691,27 +691,31 @@ export default function EditBlogPostPage() {
               
               /* Table Styling */
               .ql-editor table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 1.5rem;
-                margin-top: 1rem;
+                width: 100% !important;
+                border: none !important;
+                border-collapse: collapse !important;
+                margin-bottom: 1.5rem !important;
+                margin-top: 1rem !important;
               }
               .ql-editor table td, .ql-editor table th {
-                border-bottom: 1px solid #e2e8f0;
-                padding: 1rem 0;
-                vertical-align: top;
-                word-wrap: break-word;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                padding: 1rem !important;
+                vertical-align: top !important;
+                word-wrap: break-word !important;
               }
               .ql-editor table td:first-child, .ql-editor table th:first-child {
-                padding-right: 1.5rem;
+                padding-right: 1.5rem !important;
               }
               .ql-editor table th {
-                font-weight: 700;
-                text-align: left;
-                color: #334155;
-                font-size: 0.75rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+                font-weight: 700 !important;
+                text-align: left !important;
+                color: #334155 !important;
+                font-size: 0.75rem !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.05em !important;
               }
             `}} />
             <ReactQuill 
