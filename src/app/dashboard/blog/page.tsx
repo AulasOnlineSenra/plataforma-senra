@@ -2,24 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
 import { 
   Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal, 
   PanelLeftClose, PanelLeftOpen, ArrowRight, CheckCircle2, 
-  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2
+  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2, Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea } from '@/app/actions/blog';
@@ -69,7 +71,9 @@ export default function BlogAdminPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
-  const [isAddingIdea, setIsAddingIdea] = useState(false);
+  
+  // Specific Loading states
+  const [addingIdeaId, setAddingIdeaId] = useState<string | null>(null);
   
   // Settings Modal State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -77,26 +81,40 @@ export default function BlogAdminPage() {
   const [newBlogUrl, setNewBlogUrl] = useState('');
   const [newBlogFeed, setNewBlogFeed] = useState('');
   const [isAddingBlog, setIsAddingBlog] = useState(false);
+  const [maxDays, setMaxDays] = useState<number>(3); // 3 days default
 
   const { toast } = useToast();
 
   useEffect(() => {
+    const savedMaxDays = localStorage.getItem('blog_radar_max_days');
+    if (savedMaxDays) {
+      setMaxDays(Number(savedMaxDays));
+    }
     loadPosts();
-    loadIdeas();
   }, []);
 
-  const loadPosts = async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    loadIdeas(maxDays);
+  }, [maxDays]);
+
+  const handleMaxDaysChange = (val: string) => {
+    const num = Number(val);
+    setMaxDays(num);
+    localStorage.setItem('blog_radar_max_days', num.toString());
+  };
+
+  const loadPosts = async (showLoadingState = true) => {
+    if (showLoadingState) setIsLoading(true);
     const result = await getBlogPosts();
     if (result.success && result.data) {
       setPosts(result.data as BlogPost[]);
     }
-    setIsLoading(false);
+    if (showLoadingState) setIsLoading(false);
   };
 
-  const loadIdeas = async () => {
+  const loadIdeas = async (days: number) => {
     setIsFetchingIdeas(true);
-    const result = await fetchExternalIdeas();
+    const result = await fetchExternalIdeas(days === 0 ? undefined : days);
     if (result.success && result.data) {
       setExternalIdeas(result.data);
     }
@@ -128,7 +146,7 @@ export default function BlogAdminPage() {
       setNewBlogUrl('');
       setNewBlogFeed('');
       loadReferenceBlogs();
-      loadIdeas(); // Recarrega ideias com o novo blog
+      loadIdeas(maxDays);
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
@@ -140,7 +158,7 @@ export default function BlogAdminPage() {
     if (result.success) {
       toast({ title: 'Removido', description: 'Blog removido do rastreador.' });
       loadReferenceBlogs();
-      loadIdeas();
+      loadIdeas(maxDays);
     }
   };
 
@@ -149,7 +167,7 @@ export default function BlogAdminPage() {
     const result = await deletePost(deleteId);
     if (result.success) {
       toast({ title: 'Sucesso', description: 'Artigo deletado com sucesso.', className: 'bg-emerald-600 text-white border-none' });
-      loadPosts();
+      loadPosts(false);
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
@@ -160,23 +178,23 @@ export default function BlogAdminPage() {
     const result = await updatePostStatus(id, newStatus);
     if (result.success) {
       toast({ title: 'Atualizado', description: `Status alterado para ${newStatus}.`, className: 'bg-emerald-600 text-white border-none' });
-      loadPosts();
+      loadPosts(false);
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
   };
 
-  const handleCreateFromIdea = async (title: string, referenceUrl?: string) => {
-    setIsAddingIdea(true);
+  const handleCreateFromIdea = async (title: string, referenceUrl?: string, ideaId?: string) => {
+    if (ideaId) setAddingIdeaId(ideaId);
     const result = await createDraftFromIdea(title, referenceUrl);
     if (result.success) {
       toast({ title: 'Ideia Adicionada!', description: 'O rascunho foi criado na coluna de Redação.', className: 'bg-emerald-600 text-white border-none' });
       setNewIdeaTitle('');
-      loadPosts();
+      loadPosts(false); // Atualiza os posts de forma natural sem tela de loading total
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
-    setIsAddingIdea(false);
+    setAddingIdeaId(null);
   };
 
   const formatDate = (dateStr: string) => {
@@ -190,6 +208,8 @@ export default function BlogAdminPage() {
   const drafts = posts.filter(p => p.status === 'DRAFT' || (!p.status && !p.published));
   const reviews = posts.filter(p => p.status === 'REVIEW');
   const published = posts.filter(p => p.status === 'PUBLISHED' || (!p.status && p.published));
+
+  const isIdeaAdded = (link: string) => posts.some(p => p.referenceUrl === link);
 
   const PostCard = ({ post }: { post: BlogPost }) => (
     <Card className="mb-3 hover:shadow-md transition-shadow group">
@@ -295,7 +315,7 @@ export default function BlogAdminPage() {
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
         className={`bg-white border-r transition-all duration-300 flex flex-col shrink-0 ${
-          isSidebarOpen ? 'w-80' : 'w-0 opacity-0 overflow-hidden border-none'
+          isSidebarOpen ? 'w-[350px]' : 'w-0 opacity-0 overflow-hidden border-none'
         }`}
       >
         <div className="p-4 border-b flex items-center justify-between">
@@ -304,7 +324,7 @@ export default function BlogAdminPage() {
             Pesquisa & Pauta
           </h2>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={loadIdeas} disabled={isFetchingIdeas} className="h-8 w-8 text-muted-foreground" title="Atualizar Feeds">
+            <Button variant="ghost" size="icon" onClick={() => loadIdeas(maxDays)} disabled={isFetchingIdeas} className="h-8 w-8 text-muted-foreground" title="Atualizar Feeds">
               <RefreshCw className={`w-4 h-4 ${isFetchingIdeas ? 'animate-spin text-amber-500' : ''}`} />
             </Button>
             <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-8 w-8 text-muted-foreground" title="Configurar Referências">
@@ -315,7 +335,7 @@ export default function BlogAdminPage() {
         
         <div className="p-4 border-b bg-slate-50/50">
           <form 
-            onSubmit={(e) => { e.preventDefault(); if (newIdeaTitle) handleCreateFromIdea(newIdeaTitle); }}
+            onSubmit={(e) => { e.preventDefault(); if (newIdeaTitle) handleCreateFromIdea(newIdeaTitle, undefined, 'manual'); }}
             className="flex gap-2"
           >
             <Input 
@@ -323,10 +343,10 @@ export default function BlogAdminPage() {
               className="h-8 text-xs" 
               value={newIdeaTitle}
               onChange={(e) => setNewIdeaTitle(e.target.value)}
-              disabled={isAddingIdea}
+              disabled={addingIdeaId === 'manual'}
             />
-            <Button type="submit" size="sm" className="h-8 px-3" disabled={!newIdeaTitle || isAddingIdea}>
-              <Plus className="w-4 h-4" />
+            <Button type="submit" size="sm" className="h-8 px-3" disabled={!newIdeaTitle || addingIdeaId === 'manual'}>
+              {addingIdeaId === 'manual' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             </Button>
           </form>
         </div>
@@ -342,35 +362,54 @@ export default function BlogAdminPage() {
           ) : externalIdeas.length === 0 ? (
             <div className="text-center text-xs text-slate-400 p-6 border-2 border-dashed border-slate-100 rounded-xl">
               Nenhuma pauta encontrada.<br/>
-              Adicione blogs nas configurações.
+              Adicione blogs nas configurações ou aumente o período de busca.
             </div>
           ) : (
             <div className="space-y-3">
-              {externalIdeas.map((idea) => (
-                <div key={idea.id} className="group flex gap-2 items-start p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-amber-200 hover:bg-amber-50/50 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <a href={idea.link} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-slate-800 leading-snug mb-1 hover:text-amber-600 block line-clamp-3">
-                      {idea.title}
-                    </a>
-                    <p className="text-[9px] text-slate-400 mt-0.5">
-                      {idea.pubDate ? new Date(idea.pubDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recente'}
-                    </p>
-                    <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1">
-                      <ExternalLink className="w-3 h-3" /> {idea.source}
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => handleCreateFromIdea(idea.title, idea.link)}
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-amber-600 transition-all shrink-0 bg-white shadow-sm border border-slate-200"
-                    title="Transformar em Pauta"
-                    disabled={isAddingIdea}
+              {externalIdeas.map((idea) => {
+                const added = isIdeaAdded(idea.link);
+                const isAdding = addingIdeaId === idea.id;
+
+                return (
+                  <div 
+                    key={idea.id} 
+                    className={`group flex gap-2 items-start p-3 rounded-lg border transition-colors ${
+                      added 
+                        ? 'border-amber-400 bg-amber-50/70' 
+                        : 'bg-slate-50 border-slate-100 hover:border-amber-200 hover:bg-amber-50/30'
+                    }`}
                   >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <a href={idea.link} target="_blank" rel="noopener noreferrer" className={`text-xs font-semibold leading-snug mb-1 hover:text-amber-600 block line-clamp-3 ${added ? 'text-amber-900' : 'text-slate-800'}`}>
+                        {idea.title}
+                      </a>
+                      <p className={`text-[10px] flex items-center flex-wrap gap-x-2 mt-1 ${added ? 'text-amber-700/70' : 'text-slate-400'}`}>
+                        <span>
+                          {idea.pubDate ? new Date(idea.pubDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Recente'}
+                        </span>
+                        <span className="opacity-50">•</span>
+                        <span className="flex items-center gap-1 font-medium text-slate-500">
+                          <ExternalLink className="w-3 h-3" /> {idea.source}
+                        </span>
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => !added && handleCreateFromIdea(idea.title, idea.link, idea.id)}
+                      variant={added ? "default" : "ghost"}
+                      size="icon" 
+                      className={`h-6 w-6 shrink-0 shadow-sm transition-all ${
+                        added 
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                          : 'bg-white border border-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-amber-600 group-hover:border-amber-300'
+                      }`}
+                      title={added ? "Já adicionado" : "Transformar em Pauta"}
+                      disabled={added || isAdding}
+                    >
+                      {isAdding ? <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> : added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </ScrollArea>
@@ -492,14 +531,35 @@ export default function BlogAdminPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-slate-500" />
-              Blogs de Referência
+              Configurações do Motor de Pesquisa
             </DialogTitle>
             <DialogDescription>
-              Adicione blogs concorrentes ou parceiros para puxar os títulos mais recentes (via RSS).
+              Adicione blogs concorrentes ou parceiros e ajuste o período de busca.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-6 py-4">
+            {/* Período de Busca */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-sm">Período de Busca</h4>
+                <p className="text-xs text-slate-500">Filtrar ideias de acordo com a data de publicação original.</p>
+              </div>
+              <Select value={maxDays.toString()} onValueChange={handleMaxDaysChange}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Últimas 24 horas</SelectItem>
+                  <SelectItem value="3">Últimos 3 dias</SelectItem>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="15">Últimos 15 dias</SelectItem>
+                  <SelectItem value="30">Último mês</SelectItem>
+                  <SelectItem value="0">Qualquer data (Todos)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <form onSubmit={handleAddBlog} className="flex gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div className="grid gap-2 flex-1">
                 <label className="text-xs font-bold text-slate-500 uppercase">Nome do Blog</label>

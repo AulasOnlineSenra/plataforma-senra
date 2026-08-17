@@ -45,7 +45,7 @@ export async function removeReferenceBlog(id: string) {
   }
 }
 
-export async function fetchExternalIdeas() {
+export async function fetchExternalIdeas(maxDays?: number) {
   try {
     const blogs = await prisma.referenceBlog.findMany();
     
@@ -54,6 +54,7 @@ export async function fetchExternalIdeas() {
     }
 
     const allIdeas = [];
+    const cutoffTime = maxDays ? Date.now() - (maxDays * 24 * 60 * 60 * 1000) : 0;
 
     // Busca feeds de forma paralela (com limite de tempo para não travar a requisição)
     const fetchPromises = blogs.map(async (blog) => {
@@ -69,14 +70,21 @@ export async function fetchExternalIdeas() {
         const xml = await response.text();
         const feed = await parser.parseString(xml);
         
-        // Pegar os últimos 5 artigos
-        const recentItems = feed.items.slice(0, 5).map(item => ({
-          id: `${blog.id}-${item.guid || item.link}`,
-          title: item.title || 'Sem título',
-          source: blog.name,
-          link: item.link || blog.url,
-          pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
-        }));
+        // Pegar artigos, filtrando por data e limitando aos 5 mais recentes
+        const recentItems = feed.items
+          .filter(item => {
+             if (!maxDays) return true;
+             if (!item.pubDate) return true; // Mantém se não tiver data
+             return new Date(item.pubDate).getTime() >= cutoffTime;
+          })
+          .slice(0, 5)
+          .map(item => ({
+            id: `${blog.id}-${item.guid || item.link}`,
+            title: item.title || 'Sem título',
+            source: blog.name,
+            link: item.link || blog.url,
+            pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
+          }));
 
         return recentItems;
       } catch (err) {
