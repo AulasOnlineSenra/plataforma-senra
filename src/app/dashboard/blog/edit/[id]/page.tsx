@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPostById, updatePost } from '@/app/actions/blog';
 import dynamic from 'next/dynamic';
