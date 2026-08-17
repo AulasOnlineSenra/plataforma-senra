@@ -49,6 +49,7 @@ type ExternalIdea = {
   title: string;
   source: string;
   link: string;
+  pubDate: number;
 };
 
 type ReferenceBlog = {
@@ -351,6 +352,9 @@ export default function BlogAdminPage() {
                     <a href={idea.link} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-slate-800 leading-snug mb-1 hover:text-amber-600 block line-clamp-3">
                       {idea.title}
                     </a>
+                    <p className="text-[9px] text-slate-400 mt-0.5">
+                      {idea.pubDate ? new Date(idea.pubDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recente'}
+                    </p>
                     <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1">
                       <ExternalLink className="w-3 h-3" /> {idea.source}
                     </p>

@@ -93,7 +93,7 @@ export async function fetchExternalIdeas() {
     }
     
     allIdeas.sort((a, b) => b.pubDate - a.pubDate);
-    const finalIdeas = allIdeas.slice(0, 20);
+    const finalIdeas = allIdeas.slice(0, 150);
 
     return { success: true, data: finalIdeas };
 
