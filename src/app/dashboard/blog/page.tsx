@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -19,10 +19,11 @@ import {
 import { 
   Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal, 
   PanelLeftClose, PanelLeftOpen, ArrowRight, CheckCircle2, 
-  Undo2, Globe, ExternalLink, Settings, Lightbulb
+  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea } from '@/app/actions/blog';
+import { getReferenceBlogs, addReferenceBlog, removeReferenceBlog, fetchExternalIdeas } from '@/app/actions/reference-blogs';
 
 type PostStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED';
 
@@ -40,27 +41,47 @@ type BlogPost = {
   views: number;
   createdAt: string;
   updatedAt: string;
+  slug?: string | null;
 };
 
-// Mock para Fase 1 (Fase 3 trará os dados reais via RSS)
-const MOCK_EXTERNAL_IDEAS = [
-  { id: '1', title: 'Como a Inteligência Artificial está mudando o ENEM 2026', source: 'Guia do Estudante' },
-  { id: '2', title: '5 Técnicas de Pomodoro que os aprovados em Medicina usam', source: 'Descomplica Blog' },
-  { id: '3', title: 'O que mais cai em Matemática no vestibular da USP', source: 'Blog da Fuvest' },
-  { id: '4', title: 'Redação nota 1000: Erros que você não pode cometer', source: 'ImagineRedação' },
-];
+type ExternalIdea = {
+  id: string;
+  title: string;
+  source: string;
+  link: string;
+};
+
+type ReferenceBlog = {
+  id: string;
+  name: string;
+  url: string;
+  feedUrl: string;
+};
 
 export default function BlogAdminPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [externalIdeas, setExternalIdeas] = useState<ExternalIdea[]>([]);
+  const [referenceBlogs, setReferenceBlogs] = useState<ReferenceBlog[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingIdeas, setIsFetchingIdeas] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
   const [isAddingIdea, setIsAddingIdea] = useState(false);
+  
+  // Settings Modal State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [newBlogName, setNewBlogName] = useState('');
+  const [newBlogUrl, setNewBlogUrl] = useState('');
+  const [newBlogFeed, setNewBlogFeed] = useState('');
+  const [isAddingBlog, setIsAddingBlog] = useState(false);
+
   const { toast } = useToast();
 
   useEffect(() => {
     loadPosts();
+    loadIdeas();
   }, []);
 
   const loadPosts = async () => {
@@ -68,10 +89,58 @@ export default function BlogAdminPage() {
     const result = await getBlogPosts();
     if (result.success && result.data) {
       setPosts(result.data as BlogPost[]);
+    }
+    setIsLoading(false);
+  };
+
+  const loadIdeas = async () => {
+    setIsFetchingIdeas(true);
+    const result = await fetchExternalIdeas();
+    if (result.success && result.data) {
+      setExternalIdeas(result.data);
+    }
+    setIsFetchingIdeas(false);
+  };
+
+  const loadReferenceBlogs = async () => {
+    const result = await getReferenceBlogs();
+    if (result.success && result.data) {
+      setReferenceBlogs(result.data);
+    }
+  };
+
+  // Carrega a lista de blogs ao abrir as configurações
+  useEffect(() => {
+    if (isSettingsOpen) {
+      loadReferenceBlogs();
+    }
+  }, [isSettingsOpen]);
+
+  const handleAddBlog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBlogName || !newBlogFeed) return;
+    setIsAddingBlog(true);
+    const result = await addReferenceBlog(newBlogName, newBlogUrl, newBlogFeed);
+    if (result.success) {
+      toast({ title: 'Adicionado', description: 'Blog adicionado ao rastreador.' });
+      setNewBlogName('');
+      setNewBlogUrl('');
+      setNewBlogFeed('');
+      loadReferenceBlogs();
+      loadIdeas(); // Recarrega ideias com o novo blog
     } else {
       toast({ variant: 'destructive', title: 'Erro', description: result.error });
     }
-    setIsLoading(false);
+    setIsAddingBlog(false);
+  };
+
+  const handleRemoveBlog = async (id: string) => {
+    const result = await removeReferenceBlog(id);
+    if (result.success) {
+      toast({ title: 'Removido', description: 'Blog removido do rastreador.' });
+      loadReferenceBlogs();
+      loadIdeas();
+    }
   };
 
   const handleDelete = async () => {
@@ -145,6 +214,12 @@ export default function BlogAdminPage() {
         <p className="text-xs text-muted-foreground mb-4">
           Por {post.author} • {formatDate(post.createdAt)}
         </p>
+
+        {post.referenceUrl && (
+           <a href={post.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md mb-3 hover:bg-slate-200 transition-colors">
+             <ExternalLink className="w-3 h-3" /> Link Original
+           </a>
+        )}
 
         <div className="flex gap-2">
           {/* BOTÕES PARA REDAÇÃO */}
@@ -227,9 +302,14 @@ export default function BlogAdminPage() {
             <Lightbulb className="w-4 h-4 text-amber-500" />
             Pesquisa & Pauta
           </h2>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Configurar Referências">
-            <Settings className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={loadIdeas} disabled={isFetchingIdeas} className="h-8 w-8 text-muted-foreground" title="Atualizar Feeds">
+              <RefreshCw className={`w-4 h-4 ${isFetchingIdeas ? 'animate-spin text-amber-500' : ''}`} />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-8 w-8 text-muted-foreground" title="Configurar Referências">
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
         
         <div className="p-4 border-b bg-slate-50/50">
@@ -252,28 +332,43 @@ export default function BlogAdminPage() {
 
         <ScrollArea className="flex-1 p-4">
           <div className="text-xs text-muted-foreground font-medium mb-3">Ideias de Concorrentes (RSS)</div>
-          <div className="space-y-3">
-            {MOCK_EXTERNAL_IDEAS.map((idea) => (
-              <div key={idea.id} className="group flex gap-2 items-start p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-amber-200 hover:bg-amber-50/50 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-800 leading-snug mb-1">{idea.title}</p>
-                  <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                    <ExternalLink className="w-3 h-3" /> {idea.source}
-                  </p>
+          
+          {isFetchingIdeas && externalIdeas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-slate-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="text-xs">Buscando pautas...</span>
+            </div>
+          ) : externalIdeas.length === 0 ? (
+            <div className="text-center text-xs text-slate-400 p-6 border-2 border-dashed border-slate-100 rounded-xl">
+              Nenhuma pauta encontrada.<br/>
+              Adicione blogs nas configurações.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {externalIdeas.map((idea) => (
+                <div key={idea.id} className="group flex gap-2 items-start p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-amber-200 hover:bg-amber-50/50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <a href={idea.link} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-slate-800 leading-snug mb-1 hover:text-amber-600 block line-clamp-3">
+                      {idea.title}
+                    </a>
+                    <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1">
+                      <ExternalLink className="w-3 h-3" /> {idea.source}
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => handleCreateFromIdea(idea.title, idea.link)}
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-amber-600 transition-all shrink-0 bg-white shadow-sm border border-slate-200"
+                    title="Transformar em Pauta"
+                    disabled={isAddingIdea}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button 
-                  onClick={() => handleCreateFromIdea(idea.title)}
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-amber-600 transition-all shrink-0 bg-white shadow-sm"
-                  title="Transformar em Pauta"
-                  disabled={isAddingIdea}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </ScrollArea>
       </div>
 
@@ -371,6 +466,7 @@ export default function BlogAdminPage() {
 
       </div>
 
+      {/* Modal Confirmar Exclusão de Artigo */}
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
@@ -382,6 +478,61 @@ export default function BlogAdminPage() {
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Deletar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Configuração de Referências (RSS) */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-slate-500" />
+              Blogs de Referência
+            </DialogTitle>
+            <DialogDescription>
+              Adicione blogs concorrentes ou parceiros para puxar os títulos mais recentes (via RSS).
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-6 py-4">
+            <form onSubmit={handleAddBlog} className="flex gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div className="grid gap-2 flex-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Nome do Blog</label>
+                <Input placeholder="Ex: Guia do Estudante" value={newBlogName} onChange={e => setNewBlogName(e.target.value)} required />
+              </div>
+              <div className="grid gap-2 flex-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Link do Feed (RSS/XML)</label>
+                <Input placeholder="Ex: site.com/feed" value={newBlogFeed} onChange={e => setNewBlogFeed(e.target.value)} required />
+              </div>
+              <Button type="submit" disabled={isAddingBlog || !newBlogName || !newBlogFeed}>
+                {isAddingBlog ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Adicionar'}
+              </Button>
+            </form>
+
+            <ScrollArea className="h-64 border rounded-xl">
+              <div className="divide-y">
+                {referenceBlogs.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-slate-500">Nenhum blog cadastrado.</div>
+                ) : (
+                  referenceBlogs.map(blog => (
+                    <div key={blog.id} className="flex items-center justify-between p-4 hover:bg-slate-50">
+                      <div>
+                        <p className="font-semibold text-sm">{blog.name}</p>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">{blog.feedUrl}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleRemoveBlog(blog.id)} className="text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setIsSettingsOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
