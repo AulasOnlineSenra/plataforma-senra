@@ -211,6 +211,9 @@ export default function NewBlogPostPage() {
         video: videoHandler,
       },
     },
+    clipboard: {
+      matchVisual: false,
+    },
   }), [imageHandler, videoHandler]);
 
   const handleChange = (field: string, value: string | boolean) => {
@@ -665,6 +668,31 @@ export default function NewBlogPostPage() {
               .ql-font-tahoma { font-family: Tahoma, sans-serif; }
               .ql-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
               .ql-font-verdana { font-family: Verdana, sans-serif; }
+              
+              /* Table Styling */
+              .ql-editor table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 1.5rem;
+                margin-top: 1rem;
+              }
+              .ql-editor table td, .ql-editor table th {
+                border-bottom: 1px solid #e2e8f0;
+                padding: 1rem 0;
+                vertical-align: top;
+                word-wrap: break-word;
+              }
+              .ql-editor table td:first-child, .ql-editor table th:first-child {
+                padding-right: 1.5rem;
+              }
+              .ql-editor table th {
+                font-weight: 700;
+                text-align: left;
+                color: #334155;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+              }
             `}} />
             <ReactQuill 
               ref={quillRef}
