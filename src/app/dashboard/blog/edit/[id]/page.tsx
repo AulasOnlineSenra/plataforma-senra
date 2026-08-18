@@ -699,13 +699,19 @@ export default function EditBlogPostPage() {
                 margin-bottom: 2rem !important;
               }
               
+              /* Lists Spacing */
+              .ql-editor ul, .ql-editor ol {
+                margin-top: 2rem !important;
+                margin-bottom: 2rem !important;
+              }
+              
               /* Table Styling */
               .ql-editor table {
                 width: 100% !important;
                 border: none !important;
                 border-collapse: collapse !important;
-                margin-bottom: 1.5rem !important;
-                margin-top: 1rem !important;
+                margin-top: 2rem !important;
+                margin-bottom: 2rem !important;
               }
               .ql-editor table td, .ql-editor table th {
                 border-top: none !important;
