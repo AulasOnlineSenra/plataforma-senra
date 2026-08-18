@@ -27,6 +27,31 @@ const ReactQuill = dynamic(() => {
     const Font = Quill.import('formats/font');
     Font.whitelist = ['arial', 'courier', 'garamond', 'tahoma', 'verdana', 'times-new-roman'];
     Quill.register(Font, true);
+
+    const BaseImageFormat = Quill.import('formats/image');
+    class ImageFormat extends BaseImageFormat {
+      static formats(domNode: any) {
+        return ['alt', 'width', 'height'].reduce(function(formats: any, attribute: string) {
+          if (domNode.hasAttribute(attribute)) {
+            formats[attribute] = domNode.getAttribute(attribute);
+          }
+          return formats;
+        }, {});
+      }
+      format(name: string, value: any) {
+        if (['alt', 'width', 'height'].indexOf(name) > -1) {
+          if (value) {
+            this.domNode.setAttribute(name, value);
+          } else {
+            this.domNode.removeAttribute(name);
+          }
+        } else {
+          super.format(name, value);
+        }
+      }
+    }
+    Quill.register(ImageFormat, true);
+
     return mod;
   });
 }, { ssr: false });
@@ -114,6 +139,31 @@ export default function EditBlogPostPage() {
       titleRef.current.style.height = 'auto';
       titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
     }
+
+    const handleDblClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && target.tagName === 'IMG') {
+        const currentAlt = target.getAttribute('alt') || '';
+        const newAlt = window.prompt("Texto Alternativo (SEO) da imagem:", currentAlt);
+        if (newAlt !== null) {
+          const quill = quillRef.current?.getEditor();
+          if (quill) {
+            let blot;
+            if (quill.constructor && typeof quill.constructor.find === 'function') {
+              blot = quill.constructor.find(target);
+            }
+            if (blot && typeof blot.format === 'function') {
+              blot.format('alt', newAlt);
+            } else {
+              target.setAttribute('alt', newAlt);
+            }
+            setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
+          }
+        }
+      }
+    };
+    document.addEventListener('dblclick', handleDblClick);
+    return () => document.removeEventListener('dblclick', handleDblClick);
   }, [formData.title]);
 
   const handleChange = (field: string, value: string | boolean) => {
@@ -163,6 +213,16 @@ export default function EditBlogPostPage() {
           if (uploadedUrls.length === 1) {
             quill.insertEmbed(range.index, 'image', uploadedUrls[0]);
             quill.setSelection(range.index + 1);
+            setTimeout(() => {
+              const newAlt = window.prompt("Texto Alternativo (SEO) da imagem enviada (opcional):");
+              if (newAlt) {
+                const [leaf] = quill.getLeaf(range.index);
+                if (leaf && typeof leaf.format === 'function') {
+                  leaf.format('alt', newAlt);
+                  setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
+                }
+              }
+            }, 100);
           } else {
             const marker = `\n[CARROSSEL_DE_IMAGENS:${uploadedUrls.join(',')}]\n`;
             quill.insertText(range.index, marker);
