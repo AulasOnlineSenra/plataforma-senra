@@ -313,7 +313,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         }
 
         /* Text: natural wrap, break only URLs */
-        .blog-content p, .blog-content li, .blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4 {
+        .blog-content p, .blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4 {
           max-width: 100%;
           overflow-wrap: break-word;
           word-break: normal;
@@ -322,6 +322,36 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           hyphens: none;
           white-space: normal;
         }
+        
+        /* Lists */
+        .blog-content ul {
+          list-style-type: disc !important;
+          padding-left: 2.5rem !important;
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+        }
+        .blog-content ol {
+          list-style-type: decimal !important;
+          padding-left: 2.5rem !important;
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+        }
+        .blog-content li {
+          display: list-item !important;
+          margin-bottom: 0.5em;
+          max-width: 100%;
+          overflow-wrap: break-word;
+          word-break: normal;
+        }
+        .blog-content li[data-list="bullet"] {
+          list-style-type: disc !important;
+          margin-left: 2.5rem !important;
+        }
+        .blog-content li[data-list="ordered"] {
+          list-style-type: decimal !important;
+          margin-left: 2.5rem !important;
+        }
+        
         .blog-content strong, .blog-content em, .blog-content span, .blog-content b, .blog-content i, .blog-content u, .blog-content a {
           overflow-wrap: break-word;
           word-break: normal;
