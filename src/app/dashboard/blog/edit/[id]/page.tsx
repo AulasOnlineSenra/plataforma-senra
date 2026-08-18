@@ -494,7 +494,7 @@ export default function EditBlogPostPage() {
                   <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
                   <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
                   
-                  <div className="max-h-52 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
+                  <div className="max-h-[278px] overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
                     {publishedPosts.filter(p => p.id !== params.id).map(post => {
                       const isInserted = formData.content?.includes(post.id);
                       const isSelected = selectedLinks.includes(post.id);
@@ -542,7 +542,7 @@ export default function EditBlogPostPage() {
                       if (paragraphs.length < 2) {
                         selectedPostsData.forEach(post => {
                           const a = document.createElement('p');
-                          a.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                          a.innerHTML = `<strong style="font-size: 13px;"><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
                           tempDiv.appendChild(a);
                         });
                       } else {
@@ -552,7 +552,7 @@ export default function EditBlogPostPage() {
                           const targetP = paragraphs[targetIndex];
                           if (targetP) {
                             const linkHtml = document.createElement('p');
-                            linkHtml.innerHTML = `<strong><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
+                            linkHtml.innerHTML = `<strong style="font-size: 13px;"><em>Leia também: <a href="/blog/${post.slug || post.id}" target="_blank" rel="noopener noreferrer" style="color: #d97706; text-decoration: underline;">${post.title}</a></em></strong>`;
                             targetP.parentNode?.insertBefore(linkHtml, targetP.nextSibling);
                           }
                         });

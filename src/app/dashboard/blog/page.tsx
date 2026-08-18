@@ -215,7 +215,7 @@ export default function BlogAdminPage() {
     <Card className="mb-3 hover:shadow-md transition-shadow group">
       <CardContent className="p-4">
         <div className="flex justify-between items-start gap-2 mb-2">
-          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
+          <h3 className="font-semibold text-xs line-clamp-2 leading-tight">
             {post.title}
           </h3>
           <DropdownMenu>
@@ -232,12 +232,12 @@ export default function BlogAdminPage() {
           </DropdownMenu>
         </div>
         
-        <p className="text-xs text-muted-foreground mb-4">
+        <p className="text-[10px] text-muted-foreground mb-4">
           Por {post.author} • {formatDate(post.createdAt)}
         </p>
 
         {post.referenceUrl && (
-           <a href={post.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md mb-3 hover:bg-slate-200 transition-colors">
+           <a href={post.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[8px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md mb-3 hover:bg-slate-200 transition-colors">
              <ExternalLink className="w-3 h-3" /> Link Original
            </a>
         )}
@@ -246,14 +246,14 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA REDAÇÃO */}
           {(post.status === 'DRAFT' || (!post.status && !post.published)) && (
             <>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Pencil className="w-3 h-3 mr-1" /> Escrever
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="default" size="sm" className="flex-1 text-xs h-8 bg-blue-600 hover:bg-blue-700"
+                variant="default" size="sm" className="flex-1 text-[10px] h-[27px] bg-blue-600 hover:bg-blue-700"
               >
                 Revisão <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
@@ -265,11 +265,11 @@ export default function BlogAdminPage() {
             <>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'DRAFT')} 
-                variant="outline" size="sm" className="flex-1 text-xs h-8" title="Devolver para Redação"
+                variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]" title="Devolver para Redação"
               >
                 <Undo2 className="w-3 h-3" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Eye className="w-3 h-3 mr-1" /> Ler
                 </Link>
@@ -286,19 +286,19 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA PUBLICADO */}
           {(post.status === 'PUBLISHED' || (!post.status && post.published)) && (
             <>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8" title="Ver no site">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]" title="Ver no site">
                 <Link href={`/blog/${post.slug || post.id}`} target="_blank">
                   <Globe className="w-3 h-3 mr-1" /> Site
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-xs h-8">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Pencil className="w-3 h-3 mr-1" /> Editar
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="outline" size="sm" className="text-xs h-8 text-amber-600 hover:text-amber-700" title="Despublicar"
+                variant="outline" size="sm" className="text-[10px] h-[27px] text-amber-600 hover:text-amber-700" title="Despublicar"
               >
                 <EyeOff className="w-3 h-3" />
               </Button>
