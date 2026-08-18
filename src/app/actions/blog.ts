@@ -136,6 +136,7 @@ export async function updatePost(
     tags?: string;
     published?: boolean;
     createdAt?: string;
+    status?: 'DRAFT' | 'REVIEW' | 'PUBLISHED';
   }
 ) {
   try {
@@ -150,6 +151,7 @@ export async function updatePost(
         tags: data.tags || '[]',
         published: data.published ?? false,
         ...(data.createdAt && { createdAt: new Date(data.createdAt) }),
+        ...(data.status && { status: data.status }),
       },
     });
     revalidatePath('/dashboard/blog');

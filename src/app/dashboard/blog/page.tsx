@@ -21,7 +21,7 @@ import {
 import { 
   Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal, 
   PanelLeftClose, PanelLeftOpen, ArrowRight, CheckCircle2, 
-  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2, Check
+  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2, Check, Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea } from '@/app/actions/blog';
@@ -211,13 +211,19 @@ export default function BlogAdminPage() {
 
   const isIdeaAdded = (link: string) => posts.some(p => p.referenceUrl === link);
 
-  const PostCard = ({ post }: { post: BlogPost }) => (
+  const PostCard = ({ post }: { post: BlogPost }) => {
+    const isScheduled = post.published && new Date(post.createdAt) > new Date();
+    
+    return (
     <Card className="mb-3 hover:shadow-md transition-shadow group">
       <CardContent className="p-4">
         <div className="flex justify-between items-start gap-2 mb-2">
-          <h3 className="font-semibold text-xs line-clamp-2 leading-tight">
-            {post.title}
-          </h3>
+          <div className="flex items-start gap-2">
+            {isScheduled && <Clock className="w-4 h-4 text-[#f5b000] shrink-0" title="Publicação Agendada" />}
+            <h3 className="font-semibold text-xs line-clamp-2 leading-tight">
+              {post.title}
+            </h3>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -307,7 +313,8 @@ export default function BlogAdminPage() {
         </div>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-slate-50 rounded-xl border">

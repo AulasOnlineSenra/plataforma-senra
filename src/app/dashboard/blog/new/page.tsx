@@ -479,7 +479,7 @@ export default function NewBlogPostPage() {
                   
                   <div className="max-h-[278px] overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
                     {publishedPosts.map(post => {
-                      const isInserted = formData.content?.includes(post.id);
+                      const isInserted = formData.content?.includes(post.slug || post.id);
                       const isSelected = selectedLinks.includes(post.id);
                       return (
                         <label key={post.id} className={`flex items-start gap-2 cursor-pointer group rounded-lg px-2 py-1 transition-colors ${isInserted ? 'bg-emerald-50 border border-emerald-200' : isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'}`}>
@@ -494,7 +494,7 @@ export default function NewBlogPostPage() {
                               else setSelectedLinks(prev => prev.filter(id => id !== post.id));
                             }}
                           />
-                          <span className={`text-sm line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
+                          <span className={`text-xs line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
                             {post.title}
                             {isInserted && <span className="ml-1 text-xs text-emerald-600">✓ adicionado</span>}
                           </span>

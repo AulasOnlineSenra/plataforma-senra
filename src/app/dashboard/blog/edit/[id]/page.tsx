@@ -296,14 +296,18 @@ export default function EditBlogPostPage() {
       const scheduledDate = createdAtISO ? new Date(createdAtISO) : null;
       
       let publishedValue = formData.published;
+      let statusValue: 'DRAFT' | 'REVIEW' | 'PUBLISHED' | undefined;
       
       if (publishMode === 'now') {
          publishedValue = true;
          finalCreatedAt = new Date().toISOString();
+         statusValue = 'PUBLISHED';
       } else if (publishMode === 'draft') {
          publishedValue = false;
+         statusValue = 'DRAFT';
       } else if (publishMode === 'schedule') {
          publishedValue = true; // It's "published" but in the future
+         statusValue = 'PUBLISHED';
       } else {
         // 'update' mode keeps existing logic
         if (formData.published && scheduledDate && scheduledDate > new Date()) {
@@ -317,6 +321,7 @@ export default function EditBlogPostPage() {
         ...formData,
         published: publishedValue,
         ...(finalCreatedAt && { createdAt: finalCreatedAt }),
+        ...(statusValue && { status: statusValue }),
         tags: JSON.stringify(formData.tags.split(',').map((t) => t.trim()).filter(Boolean)),
       });
 
@@ -346,6 +351,19 @@ export default function EditBlogPostPage() {
     );
   }
 
+  const isScheduled = formData.published && formData.createdAt && new Date(formData.createdAt) > new Date();
+
+  const formatDateForDisplay = (isoString: string) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    const time = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    return `${weekdays[d.getDay()]} ${day}/${month}/${year} às ${time}`;
+  };
+
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col">
       {/* Top Navbar */}
@@ -362,6 +380,11 @@ export default function EditBlogPostPage() {
           </Button>
           <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
             <span className="bg-blue-100 px-2 py-1 rounded-md text-blue-700">Editando Artigo</span>
+            {isScheduled && (
+              <span className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-md text-amber-700 font-bold border border-amber-200">
+                <Clock className="w-4 h-4 text-[#f5b000]" /> Agendado para: {formatDateForDisplay(formData.createdAt)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -496,7 +519,7 @@ export default function EditBlogPostPage() {
                   
                   <div className="max-h-[278px] overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
                     {publishedPosts.filter(p => p.id !== params.id).map(post => {
-                      const isInserted = formData.content?.includes(post.id);
+                      const isInserted = formData.content?.includes(post.slug || post.id);
                       const isSelected = selectedLinks.includes(post.id);
                       return (
                         <label key={post.id} className={`flex items-start gap-2 cursor-pointer group rounded-lg px-2 py-1 transition-colors ${isInserted ? 'bg-emerald-50 border border-emerald-200' : isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'}`}>
@@ -511,7 +534,7 @@ export default function EditBlogPostPage() {
                               else setSelectedLinks(prev => prev.filter(id => id !== post.id));
                             }}
                           />
-                          <span className={`text-sm line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
+                          <span className={`text-xs line-clamp-2 flex-1 ${isInserted ? 'text-emerald-700 font-medium' : 'text-slate-700 group-hover:text-amber-600'} transition-colors`}>
                             {post.title}
                             {isInserted && <span className="ml-1 text-xs text-emerald-600">✓ adicionado</span>}
                           </span>
