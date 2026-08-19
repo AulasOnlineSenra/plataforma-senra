@@ -223,8 +223,28 @@ function BlogPostContent({ post }: { post: BlogPost }) {
     }
   }, [parsedContent]);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": post.title,
+    "image": [
+      post.image || "https://www.senraaulasonline.com.br/placeholder.jpg"
+    ],
+    "datePublished": post.createdAt,
+    "dateModified": post.updatedAt || post.createdAt,
+    "author": [{
+      "@type": "Person",
+      "name": post.author || "Professor Senra",
+      "url": "https://www.senraaulasonline.com.br/professores"
+    }]
+  };
+
   return (
     <article className="prose prose-lg max-w-none w-full relative mb-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>
@@ -270,7 +290,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         )}
         
         {needsCollapse && !isExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-[246px] bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-[236px] bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
         )}
       </div>
 
