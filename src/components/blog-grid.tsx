@@ -226,7 +226,7 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
 function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | 'article' }) {
   const timeLabel = formatDistanceStrict(new Date(post.createdAt), new Date(), { addSuffix: true, locale: ptBR });
   
-  const containerHeight = context === 'home' ? 'min-h-[160px]' : 'h-[194px]';
+  const containerHeight = context === 'home' ? 'min-h-[160px]' : 'h-[214px]';
   const imgHeight = context === 'home' ? 'h-20 sm:h-24' : 'h-20 sm:h-24';
   const titleSize = context === 'home' ? 'text-xs' : 'text-xs';
   const excerptClass = 'hidden';
