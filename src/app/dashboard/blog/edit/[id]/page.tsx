@@ -72,6 +72,11 @@ export default function EditBlogPostPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [altPrompt, setAltPrompt] = useState<{
+    isOpen: boolean;
+    initialAlt: string;
+    onSave: (val: string) => void;
+  }>({ isOpen: false, initialAlt: '', onSave: () => {} });
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const quillRef = useRef<any>(null);
 
@@ -123,7 +128,12 @@ export default function EditBlogPostPage() {
           image: post.image || '',
           tags: tagsStr,
           published: post.published,
-          createdAt: post.createdAt ? new Date(post.createdAt).toISOString().slice(0, 16) : '',
+          createdAt: post.createdAt ? (() => {
+            const d = new Date(post.createdAt);
+            if (isNaN(d.getTime())) return '';
+            const pad = (n: number) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          })() : '',
         });
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Post não encontrado.' });
@@ -144,22 +154,25 @@ export default function EditBlogPostPage() {
       const target = e.target as HTMLElement;
       if (target && target.tagName === 'IMG') {
         const currentAlt = target.getAttribute('alt') || '';
-        const newAlt = window.prompt("Texto Alternativo (SEO) da imagem:", currentAlt);
-        if (newAlt !== null) {
-          const quill = quillRef.current?.getEditor();
-          if (quill) {
-            let blot;
-            if (quill.constructor && typeof quill.constructor.find === 'function') {
-              blot = quill.constructor.find(target);
+        setAltPrompt({
+          isOpen: true,
+          initialAlt: currentAlt,
+          onSave: (newAlt: string) => {
+            const quill = quillRef.current?.getEditor();
+            if (quill) {
+              let blot;
+              if (quill.constructor && typeof quill.constructor.find === 'function') {
+                blot = quill.constructor.find(target);
+              }
+              if (blot && typeof blot.format === 'function') {
+                blot.format('alt', newAlt);
+              } else {
+                target.setAttribute('alt', newAlt);
+              }
+              setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
             }
-            if (blot && typeof blot.format === 'function') {
-              blot.format('alt', newAlt);
-            } else {
-              target.setAttribute('alt', newAlt);
-            }
-            setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
           }
-        }
+        });
       }
     };
     document.addEventListener('dblclick', handleDblClick);
@@ -214,14 +227,19 @@ export default function EditBlogPostPage() {
             quill.insertEmbed(range.index, 'image', uploadedUrls[0]);
             quill.setSelection(range.index + 1);
             setTimeout(() => {
-              const newAlt = window.prompt("Texto Alternativo (SEO) da imagem enviada (opcional):");
-              if (newAlt) {
-                const [leaf] = quill.getLeaf(range.index);
-                if (leaf && typeof leaf.format === 'function') {
-                  leaf.format('alt', newAlt);
-                  setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
+              setAltPrompt({
+                isOpen: true,
+                initialAlt: '',
+                onSave: (newAlt: string) => {
+                  if (newAlt) {
+                    const [leaf] = quill.getLeaf(range.index);
+                    if (leaf && typeof leaf.format === 'function') {
+                      leaf.format('alt', newAlt);
+                      setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
+                    }
+                  }
                 }
-              }
+              });
             }, 100);
           } else {
             const marker = `\n[CARROSSEL_DE_IMAGENS:${uploadedUrls.join(',')}]\n`;
@@ -828,6 +846,30 @@ export default function EditBlogPostPage() {
           </div>
         </div>
       </main>
+
+      {altPrompt.isOpen && (
+        <div className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-[100] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl p-4 w-[340px] animate-in slide-in-from-bottom-5">
+          <p className="text-sm font-semibold mb-3">Texto Alternativo (SEO) da imagem</p>
+          <form onSubmit={(e) => {
+             e.preventDefault();
+             const val = new FormData(e.currentTarget).get('altText') as string;
+             altPrompt.onSave(val);
+             setAltPrompt({ ...altPrompt, isOpen: false });
+          }}>
+            <Input 
+              name="altText" 
+              defaultValue={altPrompt.initialAlt} 
+              placeholder="Digite o texto (opcional)" 
+              autoFocus 
+              className="mb-3"
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setAltPrompt({ ...altPrompt, isOpen: false })}>Cancelar</Button>
+              <Button type="submit" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-900">Salvar</Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
