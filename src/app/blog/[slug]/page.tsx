@@ -660,7 +660,7 @@ export default function BlogPostPage() {
           }
         });
       },
-      { threshold: 0.1, rootMargin: "-20% 0px -50% 0px" } // Triggers when the top of the article reaches the upper area of the viewport
+      { threshold: 0, rootMargin: "-40% 0px -40% 0px" } // Creates a 20% band in the middle of the screen to detect the active article reliably even if it is very tall
     );
 
     const articles = document.querySelectorAll('.article-container');
