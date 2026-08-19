@@ -6,7 +6,7 @@ import { ThumbsUp, ThumbsDown, MessageSquare, MoreHorizontal, Share2 } from 'luc
 import { useState, useEffect } from 'react';
 import { likePost, dislikePost } from '@/app/actions/blog';
 import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 type Post = {
@@ -161,7 +161,7 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
   return (
     <div className="relative flex flex-col w-full h-full rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
       {posts.map((post, index) => {
-        const timeLabel = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ptBR });
+        const timeLabel = formatDistanceStrict(new Date(post.createdAt), new Date(), { addSuffix: true, locale: ptBR });
         const isActive = index === currentIndex;
         
         return (
@@ -224,9 +224,9 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
 }
 
 function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | 'article' }) {
-  const timeLabel = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ptBR });
+  const timeLabel = formatDistanceStrict(new Date(post.createdAt), new Date(), { addSuffix: true, locale: ptBR });
   
-  const containerHeight = context === 'home' ? 'min-h-[160px]' : 'h-[164px]';
+  const containerHeight = context === 'home' ? 'min-h-[160px]' : 'h-[194px]';
   const imgHeight = context === 'home' ? 'h-20 sm:h-24' : 'h-20 sm:h-24';
   const titleSize = context === 'home' ? 'text-xs' : 'text-xs';
   const excerptClass = 'hidden';
