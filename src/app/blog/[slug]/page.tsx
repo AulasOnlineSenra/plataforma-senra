@@ -197,12 +197,39 @@ function parseContentForVideo(content: string) {
   });
 }
 
+function parseContentForTOC(htmlString: string) {
+  const toc: { id: string; text: string; level: number }[] = [];
+  let counter = 0;
+
+  const newHtml = htmlString.replace(/<(h[23])([^>]*)>(.*?)<\/\1>/gi, (match, tag, attrs, innerHtml) => {
+    counter++;
+    const text = innerHtml.replace(/<[^>]+>/g, '').trim();
+    const id = `toc-heading-${counter}`;
+    
+    if (!attrs.includes('id=')) {
+      attrs = ` id="${id}" ${attrs}`;
+    } else {
+      const idMatch = attrs.match(/id=["']([^"']+)["']/);
+      if (idMatch) {
+        toc.push({ id: idMatch[1], text, level: tag.toLowerCase() === 'h2' ? 2 : 3 });
+        return match;
+      }
+    }
+    
+    toc.push({ id, text, level: tag.toLowerCase() === 'h2' ? 2 : 3 });
+    return `<${tag}${attrs}>${innerHtml}</${tag}>`;
+  });
+
+  return { newHtml, toc };
+}
 
 function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
-  let parsedContent = parseContentForCarousel(post.content);
-  parsedContent = parseContentForVideo(parsedContent);
-  parsedContent = parsedContent.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ');
+  let rawParsedContent = parseContentForCarousel(post.content);
+  rawParsedContent = parseContentForVideo(rawParsedContent);
+  rawParsedContent = rawParsedContent.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ');
+
+  const { newHtml: parsedContent, toc } = parseContentForTOC(rawParsedContent);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [needsCollapse, setNeedsCollapse] = useState(false);
@@ -245,6 +272,20 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {toc.length > 0 && (
+        <nav aria-label="Índice do Artigo" className="sr-only">
+          <h2>Índice</h2>
+          <ul>
+            {toc.map((item, index) => (
+              <li key={index}>
+                <a href={`#${item.id}`}>{item.text}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>
