@@ -577,6 +577,35 @@ export default function BlogPostPage() {
     return () => observer.disconnect();
   }, [loadMorePosts, hasMore, isLoadingMore]);
 
+  // Observer to update URL and Title when scrolling through articles
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const slug = entry.target.getAttribute('data-slug');
+            const title = entry.target.getAttribute('data-title');
+            if (slug && window.location.pathname !== `/blog/${slug}`) {
+              window.history.replaceState(null, '', `/blog/${slug}`);
+            }
+            if (title) {
+              const newTitle = `${title} | Plataforma Senra`;
+              if (document.title !== newTitle) {
+                document.title = newTitle;
+              }
+            }
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "-20% 0px -50% 0px" } // Triggers when the top of the article reaches the upper area of the viewport
+    );
+
+    const articles = document.querySelectorAll('.article-container');
+    articles.forEach(article => observer.observe(article));
+
+    return () => observer.disconnect();
+  }, [loadedPosts]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
@@ -608,7 +637,12 @@ export default function BlogPostPage() {
             const gridHeight = gridPosts ? Math.min(gridPosts.length, 30) : 0;
             
             return (
-              <div key={`post-${postItem.id}`}>
+              <div 
+                key={`post-${postItem.id}`} 
+                className="article-container" 
+                data-slug={postItem.slug} 
+                data-title={postItem.title}
+              >
                 <BlogPostContent post={postItem} />
                 
                 {gridPosts && gridPosts.length > 0 && (
