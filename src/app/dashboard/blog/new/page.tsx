@@ -215,7 +215,6 @@ export default function NewBlogPostPage() {
           description: 'Ocorreu um erro ao enviar a imagem.',
         });
       }
-      }
     };
   }, [toast]);
 
