@@ -761,13 +761,14 @@ export default function BlogPostPage() {
             const gridHeight = gridPosts ? Math.min(gridPosts.length, 30) : 0;
             
             return (
-              <div 
-                key={`post-${postItem.id}`} 
-                className="article-container" 
-                data-slug={postItem.slug} 
-                data-title={postItem.title}
-              >
-                <BlogPostContent post={postItem} />
+              <div key={`post-${postItem.id}`}>
+                <div 
+                  className="article-container" 
+                  data-slug={postItem.slug} 
+                  data-title={postItem.title}
+                >
+                  <BlogPostContent post={postItem} />
+                </div>
                 
                 {gridPosts && gridPosts.length > 0 && (
                   <div className="my-16 w-[100vw] max-w-[1224px] relative left-1/2 -translate-x-1/2 px-4 sm:px-8">
