@@ -160,23 +160,27 @@ function parseContentForCarousel(content: string) {
   return decoded.replace(regex, (_match, urlsStr) => {
     const urls = (urlsStr as string).split(',').map((u: string) => u.trim()).filter(Boolean);
 
-    const indicators = urls.map((_: string, i: number) =>
-      `<button class="carousel-dot${i === 0 ? ' active' : ''}" data-index="${i}" aria-label="Imagem ${i + 1}"></button>`
-    ).join('');
-
     const imagesHtml = urls.map((url: string, i: number) =>
       `<div class="carousel-slide" data-index="${i}">
         <img src="${url}" alt="Imagem ${i + 1} do carrossel" loading="lazy" />
       </div>`
     ).join('');
 
+    const thumbnailsHtml = urls.map((url: string, i: number) =>
+      `<button class="carousel-thumb${i === 0 ? ' active' : ''}" data-index="${i}" aria-label="Ver Imagem ${i + 1}" onclick="(function(btn){var c=btn.closest('.blog-carousel-wrapper');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var next=parseInt(btn.getAttribute('data-index')||'0');t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-thumb').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)">
+        <img src="${url}" alt="Miniatura ${i + 1}" loading="lazy" />
+      </button>`
+    ).join('');
+
     const id = `carousel-${Math.random().toString(36).substring(2, 8)}`;
 
-    return `<div class="blog-carousel-container" id="${id}">
-  <div class="blog-carousel-track">${imagesHtml}</div>
-  <button class="carousel-prev" onclick="(function(btn){var c=btn.closest('.blog-carousel-container');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var tot=t.querySelectorAll('.carousel-slide').length;var next=(cur-1+tot)%tot;t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-dot').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)" aria-label="Anterior">&lsaquo;</button>
-  <button class="carousel-next" onclick="(function(btn){var c=btn.closest('.blog-carousel-container');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var tot=t.querySelectorAll('.carousel-slide').length;var next=(cur+1)%tot;t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-dot').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)" aria-label="Próximo">&rsaquo;</button>
-  <div class="carousel-dots">${indicators}</div>
+    return `<div class="blog-carousel-wrapper" id="${id}">
+  <div class="blog-carousel-container">
+    <div class="blog-carousel-track">${imagesHtml}</div>
+    <button class="carousel-prev" onclick="(function(btn){var c=btn.closest('.blog-carousel-wrapper');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var tot=t.querySelectorAll('.carousel-slide').length;var next=(cur-1+tot)%tot;t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-thumb').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)" aria-label="Anterior">&lsaquo;</button>
+    <button class="carousel-next" onclick="(function(btn){var c=btn.closest('.blog-carousel-wrapper');var t=c.querySelector('.blog-carousel-track');var cur=parseInt(t.getAttribute('data-current')||'0');var tot=t.querySelectorAll('.carousel-slide').length;var next=(cur+1)%tot;t.style.transform='translateX(-'+next*100+'%)';t.setAttribute('data-current',next);c.querySelectorAll('.carousel-thumb').forEach(function(d,i){d.classList.toggle('active',i===next);});})(this)" aria-label="Próximo">&rsaquo;</button>
+  </div>
+  <div class="carousel-thumbnails">${thumbnailsHtml}</div>
 </div>`;
   });
 }
@@ -198,15 +202,29 @@ function BlogPostContent({ post }: { post: BlogPost }) {
   const tags = parseTags(post.tags);
   let parsedContent = parseContentForCarousel(post.content);
   parsedContent = parseContentForVideo(parsedContent);
-  
-  // Convert non-breaking spaces to regular spaces to allow natural word wrapping.
-  // This fixes the issue where text pasted from PDFs or Word acts as a single giant word
-  // and gets cut mid-word or overflows the container.
   parsedContent = parsedContent.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ');
 
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [needsCollapse, setNeedsCollapse] = useState(false);
+  const [collapseHeight, setCollapseHeight] = useState<number | undefined>(undefined);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setTimeout(() => {
+        if (contentRef.current) {
+          const height = contentRef.current.scrollHeight;
+          if (height > 1200) { // arbitrary threshold to decide if we crop
+            setNeedsCollapse(true);
+            setCollapseHeight(Math.max(600, height * 0.3)); // Crop at 30%, minimum 600px
+          }
+        }
+      }, 300);
+    }
+  }, [parsedContent]);
 
   return (
-    <article className="prose prose-lg max-w-none w-full">
+    <article className="prose prose-lg max-w-none w-full relative mb-12">
       <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>
@@ -227,20 +245,44 @@ function BlogPostContent({ post }: { post: BlogPost }) {
       )}
 
       <div 
-        className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert blog-content px-0 overflow-x-hidden"
-        dangerouslySetInnerHTML={{ __html: parsedContent }}
-      />
+        ref={contentRef}
+        className="relative transition-all duration-700 ease-in-out overflow-hidden"
+        style={{
+          maxHeight: needsCollapse && !isExpanded ? `${collapseHeight}px` : 'none',
+        }}
+      >
+        <div 
+          className="space-y-6 prose prose-lg max-w-none prose-slate dark:prose-invert blog-content px-0 overflow-x-hidden"
+          dangerouslySetInnerHTML={{ __html: parsedContent }}
+        />
 
-      {tags.length > 0 && (
-        <div className="mt-8 flex flex-wrap gap-2">
-          {tags.map((tag, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 text-xs font-medium rounded-full"
-            >
-              #{tag}
-            </span>
-          ))}
+        {tags.length > 0 && (
+          <div className="mt-8 flex flex-wrap gap-2">
+            {tags.map((tag, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 text-xs font-medium rounded-full"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+        
+        {needsCollapse && !isExpanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+        )}
+      </div>
+
+      {needsCollapse && !isExpanded && (
+        <div className="mt-2 flex justify-center relative z-10">
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="flex items-center gap-2 px-8 py-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-full transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          >
+            <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            Continuar lendo
+          </button>
         </div>
       )}
 
@@ -383,10 +425,16 @@ function BlogPostContent({ post }: { post: BlogPost }) {
           display: block;
           border-radius: 15px;
         }
+        .blog-carousel-wrapper {
+          width: 100%;
+          margin: 2rem auto;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
         .blog-carousel-container {
           position: relative;
           width: 100%;
-          margin: 2rem auto;
           border-radius: 15px;
           overflow: hidden;
           box-shadow: 0 4px 16px rgba(0,0,0,0.12);
@@ -432,26 +480,41 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .carousel-prev:hover, .carousel-next:hover { background: rgba(0,0,0,0.75); }
         .carousel-prev { left: 10px; }
         .carousel-next { right: 10px; }
-        .carousel-dots {
-          position: absolute;
-          bottom: 10px;
-          left: 50%;
-          transform: translateX(-50%);
+        .carousel-thumbnails {
           display: flex;
-          gap: 6px;
-          z-index: 10;
+          gap: 0.5rem;
+          overflow-x: auto;
+          padding: 0.25rem 0;
+          scrollbar-width: none; /* Firefox */
         }
-        .carousel-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.5);
-          border: none;
+        .carousel-thumbnails::-webkit-scrollbar {
+          display: none; /* Chrome, Safari */
+        }
+        .carousel-thumb {
+          flex: 0 0 80px;
+          height: 60px;
+          border: 2px solid transparent;
+          border-radius: 8px;
+          overflow: hidden;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.2s;
+          opacity: 0.6;
           padding: 0;
+          background: transparent;
         }
-        .carousel-dot.active { background: white; }
+        .carousel-thumb img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          margin: 0 !important;
+        }
+        .carousel-thumb:hover {
+          opacity: 0.8;
+        }
+        .carousel-thumb.active {
+          border-color: #f5b000;
+          opacity: 1;
+        }
       `}} />
 
       <PostReactions post={post} />

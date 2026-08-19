@@ -135,7 +135,7 @@ export default function NewBlogPostPage() {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
-    input.setAttribute('multiple', 'true');
+    // For single image upload
     input.click();
 
     input.onchange = async () => {
@@ -215,6 +215,65 @@ export default function NewBlogPostPage() {
           description: 'Ocorreu um erro ao enviar a imagem.',
         });
       }
+      }
+    };
+  }, [toast]);
+
+  const carouselHandler = useCallback(() => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.setAttribute('multiple', 'true');
+    input.click();
+
+    input.onchange = async () => {
+      const files = input.files;
+      if (!files || files.length === 0) return;
+
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+
+      toast({
+        title: 'Criando carrossel...',
+        description: `Aguarde enquanto salvamos ${files.length} imagens.`,
+      });
+
+      try {
+        const uploadedUrls: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+          const formData = new FormData();
+          formData.append('file', files[i]);
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          const result = await res.json();
+          if (result.success && result.data?.url) {
+            uploadedUrls.push(result.data.url);
+          }
+        }
+
+        if (uploadedUrls.length > 0) {
+          if (uploadedUrls.length === 1) {
+            quill.insertEmbed(range.index, 'image', uploadedUrls[0]);
+            quill.setSelection(range.index + 1);
+          } else {
+            const marker = `\n[CARROSSEL_DE_IMAGENS:${uploadedUrls.join(',')}]\n`;
+            quill.insertText(range.index, marker);
+            quill.setSelection(range.index + marker.length);
+          }
+          toast({
+            title: 'Sucesso!',
+            description: 'Carrossel inserido com sucesso.',
+            className: 'bg-emerald-600 text-white border-none',
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Erro ao criar carrossel.' });
+      }
     };
   }, [toast]);
 
@@ -281,6 +340,7 @@ export default function NewBlogPostPage() {
       container: '#custom-toolbar',
       handlers: {
         image: imageHandler,
+        carousel: carouselHandler,
         video: videoHandler,
       },
     },
@@ -695,10 +755,13 @@ export default function NewBlogPostPage() {
           <button className="ql-list text-slate-700 hover:text-slate-900" value="ordered" />
           <button className="ql-list text-slate-700 hover:text-slate-900" value="bullet" />
           <span className="w-px h-6 bg-slate-200 mx-1"></span>
-          <button className="ql-link text-slate-700 hover:text-slate-900" />
-          <button className="ql-image text-slate-700 hover:text-slate-900" />
-          <button className="ql-video text-slate-700 hover:text-slate-900" />
-          <button className="ql-clean text-slate-700 hover:text-slate-900" />
+          <button className="ql-link text-slate-700 hover:text-slate-900" title="Inserir Link" />
+          <button className="ql-image text-slate-700 hover:text-slate-900" title="Inserir Imagem Simples" />
+          <button className="ql-carousel text-slate-700 hover:text-slate-900 flex items-center justify-center gap-1" title="Inserir Carrossel de Imagens">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          </button>
+          <button className="ql-video text-slate-700 hover:text-slate-900" title="Inserir Vídeo" />
+          <button className="ql-clean text-slate-700 hover:text-slate-900" title="Limpar Formatação" />
         </div>
 
         <div className="max-w-4xl w-full mx-auto p-8 md:p-12 lg:px-24 bg-white min-h-[800px] shadow-sm my-8 border border-slate-100 rounded-xl">
