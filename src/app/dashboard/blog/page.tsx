@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,10 +21,10 @@ import {
 import { 
   Plus, Pencil, Trash2, Eye, EyeOff, Newspaper, MoreHorizontal, 
   PanelLeftClose, PanelLeftOpen, ArrowRight, CheckCircle2, 
-  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2, Check, Clock
+  Undo2, Globe, ExternalLink, Settings, Lightbulb, RefreshCw, Loader2, Check, Clock, Copy
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea } from '@/app/actions/blog';
+import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea, getDashboardKanbanPosts, getDashboardPublishedPaginated } from '@/app/actions/blog';
 import { getReferenceBlogs, addReferenceBlog, removeReferenceBlog, fetchExternalIdeas } from '@/app/actions/reference-blogs';
 
 type PostStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED';
@@ -62,7 +62,13 @@ type ReferenceBlog = {
 };
 
 export default function BlogAdminPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [published, setPublished] = useState<any[]>([]);
+  const [hasMorePublished, setHasMorePublished] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  
   const [externalIdeas, setExternalIdeas] = useState<ExternalIdea[]>([]);
   const [referenceBlogs, setReferenceBlogs] = useState<ReferenceBlog[]>([]);
   
@@ -105,12 +111,42 @@ export default function BlogAdminPage() {
 
   const loadPosts = async (showLoadingState = true) => {
     if (showLoadingState) setIsLoading(true);
-    const result = await getBlogPosts();
-    if (result.success && result.data) {
-      setPosts(result.data as BlogPost[]);
+    const kanbanResult = await getDashboardKanbanPosts();
+    if (kanbanResult.success && kanbanResult.data) {
+      setDrafts(kanbanResult.data.drafts);
+      setReviews(kanbanResult.data.reviews);
+    }
+    const publishedResult = await getDashboardPublishedPaginated(0, 8);
+    if (publishedResult.success && publishedResult.data) {
+      setPublished(publishedResult.data);
+      setHasMorePublished(publishedResult.data.length === 8);
     }
     if (showLoadingState) setIsLoading(false);
   };
+
+  const loadMorePublished = async () => {
+    if (isLoadingMore || !hasMorePublished) return;
+    setIsLoadingMore(true);
+    const result = await getDashboardPublishedPaginated(published.length, 8);
+    if (result.success && result.data) {
+      setPublished(prev => [...prev, ...result.data]);
+      setHasMorePublished(result.data.length === 8);
+    }
+    setIsLoadingMore(false);
+  };
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMorePublished && !isLoadingMore) {
+          loadMorePublished();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (loadMoreRef.current) observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMorePublished, isLoadingMore, published.length]);
 
   const loadIdeas = async (days: number) => {
     setIsFetchingIdeas(true);
@@ -205,14 +241,16 @@ export default function BlogAdminPage() {
     });
   };
 
-  const drafts = posts.filter(p => p.status === 'DRAFT' || (!p.status && !p.published));
-  const reviews = posts.filter(p => p.status === 'REVIEW');
-  const published = posts.filter(p => p.status === 'PUBLISHED' || (!p.status && p.published));
+  const isIdeaAdded = (link: string) => drafts.some(p => p.referenceUrl === link) || reviews.some(p => p.referenceUrl === link) || published.some(p => p.referenceUrl === link);
 
-  const isIdeaAdded = (link: string) => posts.some(p => p.referenceUrl === link);
-
-  const PostCard = ({ post }: { post: BlogPost }) => {
+  const PostCard = ({ post }: { post: any }) => {
     const isScheduled = post.published && new Date(post.createdAt) > new Date();
+    
+    const handleCopyLink = (slugOrId: string) => {
+      const url = `${window.location.origin}/blog/${slugOrId}`;
+      navigator.clipboard.writeText(url);
+      toast({ title: 'Copiado!', description: 'Link copiado.', className: 'bg-emerald-600 text-white border-none' });
+    };
     
     return (
     <Card className="mb-3 hover:shadow-md transition-shadow group">
@@ -292,6 +330,9 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA PUBLICADO */}
           {(post.status === 'PUBLISHED' || (!post.status && post.published)) && (
             <>
+              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 text-[10px] h-[27px] px-0 max-w-[28px]" title="Copiar Link">
+                <Copy className="w-3 h-3" />
+              </Button>
               <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]" title="Ver no site">
                 <Link href={`/blog/${post.slug || post.id}`} target="_blank">
                   <Globe className="w-3 h-3 mr-1" /> Site
@@ -506,7 +547,15 @@ export default function BlogAdminPage() {
                 {published.length === 0 && !isLoading ? (
                   <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">Nenhum publicado.</div>
                 ) : (
-                  published.map(post => <PostCard key={post.id} post={post} />)
+                  <>
+                    {published.map(post => <PostCard key={post.id} post={post} />)}
+                    
+                    {/* Elemento observador para scroll infinito */}
+                    <div ref={loadMoreRef} className="h-10 flex items-center justify-center mt-4">
+                      {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />}
+                      {!hasMorePublished && published.length > 0 && <span className="text-xs text-slate-400">Fim da lista</span>}
+                    </div>
+                  </>
                 )}
               </ScrollArea>
             </div>

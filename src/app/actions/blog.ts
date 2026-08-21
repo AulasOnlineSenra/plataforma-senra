@@ -27,6 +27,42 @@ export async function getBlogPosts() {
   }
 }
 
+export async function getDashboardKanbanPosts() {
+  try {
+    const drafts = await prisma.blogPost.findMany({
+      where: { OR: [{ status: 'DRAFT' }, { status: null, published: false }] },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+    });
+    const reviews = await prisma.blogPost.findMany({
+      where: { status: 'REVIEW' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+    });
+    return { success: true, data: { drafts, reviews } };
+  } catch (error) {
+    console.error('Erro ao buscar Kanban posts:', error);
+    return { success: false, error: 'Falha ao buscar posts.' };
+  }
+}
+
+export async function getDashboardPublishedPaginated(skip: number, take: number) {
+  try {
+    const published = await prisma.blogPost.findMany({
+      where: { OR: [{ status: 'PUBLISHED' }, { status: null, published: true }] },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+    });
+    return { success: true, data: published };
+  } catch (error) {
+    console.error('Erro ao buscar posts publicados:', error);
+    return { success: false, error: 'Falha ao buscar posts publicados.' };
+  }
+}
+
+
 export async function getPublishedPosts() {
   try {
     // Auto-publish scheduled posts when current date is reached
