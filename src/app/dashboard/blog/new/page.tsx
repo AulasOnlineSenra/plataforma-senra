@@ -367,6 +367,15 @@ export default function NewBlogPostPage() {
     }
   }, [formData.title]);
 
+  const counters = useMemo(() => {
+    const text = (formData.content || '').replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ');
+    const chars = text.length;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    const blocks = (formData.content || '').match(/<\/(p|h[1-6]|li)>/g);
+    const lines = blocks ? blocks.length : 0;
+    return { chars, words, lines };
+  }, [formData.content]);
+
   const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule') => {
     if (e) e.preventDefault();
 
@@ -726,7 +735,8 @@ export default function NewBlogPostPage() {
       {/* Editor Area */}
       <main className="flex-1 w-full bg-[#f8fafc] flex flex-col relative">
         {/* Custom Toolbar */}
-        <div id="custom-toolbar" className="sticky top-[72px] z-20 w-full bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center gap-2 shadow-sm justify-center">
+        <div id="custom-toolbar" className="sticky top-[72px] z-20 w-full bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 mx-auto sm:mx-0">
           <select className="ql-font border-slate-200 rounded-md" defaultValue="">
             <option value="">Padrão</option>
             <option value="arial">Arial</option>
@@ -761,6 +771,16 @@ export default function NewBlogPostPage() {
           </button>
           <button className="ql-video text-slate-700 hover:text-slate-900" title="Inserir Vídeo" />
           <button className="ql-clean text-slate-700 hover:text-slate-900" title="Limpar Formatação" />
+          </div>
+
+          {/* Counters */}
+          <div className="text-[11px] font-semibold text-slate-400 hidden sm:flex items-center gap-3">
+            <span>{counters.words} <span className="font-normal">palavras</span></span>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>{counters.chars} <span className="font-normal">caracteres</span></span>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>{counters.lines} <span className="font-normal">linhas</span></span>
+          </div>
         </div>
 
         <div className="max-w-4xl w-full mx-auto p-8 md:p-12 lg:px-24 bg-white min-h-[800px] shadow-sm my-8 border border-slate-100 rounded-xl">

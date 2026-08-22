@@ -30,7 +30,7 @@ export async function getBlogPosts() {
 export async function getDashboardKanbanPosts() {
   try {
     const drafts = await prisma.blogPost.findMany({
-      where: { OR: [{ status: 'DRAFT' }, { status: null, published: false }] },
+      where: { OR: [{ status: 'DRAFT' }, { status: '', published: false }] },
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
     });
@@ -49,7 +49,7 @@ export async function getDashboardKanbanPosts() {
 export async function getDashboardPublishedPaginated(skip: number, take: number) {
   try {
     const published = await prisma.blogPost.findMany({
-      where: { OR: [{ status: 'PUBLISHED' }, { status: null, published: true }] },
+      where: { OR: [{ status: 'PUBLISHED' }, { status: '', published: true }] },
       orderBy: { createdAt: 'desc' },
       skip,
       take,
