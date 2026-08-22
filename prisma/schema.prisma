@@ -33,6 +33,9 @@ model AppSetting {
   backupRetention         Int      @default(5)
   backupEmail             String?
   backupDrive             String?
+  contactEmail            String?  @default("contato@aos.com.br")
+  contactInstagram        String?  @default("@senra.aulasonline")
+  contactSite             String?  @default("www.senraaulasonline.com.br")
   updatedAt               DateTime @updatedAt
 
   // Configurações do Simulado ENEM Automático

@@ -41,6 +41,11 @@ export default function SettingsPage() {
   const [pixKey, setPixKey] = useState('');
   const [pixKeyType, setPixKeyType] = useState(DEFAULT_SETTINGS.pixKeyType);
   
+  // Contact Info
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactInstagram, setContactInstagram] = useState('');
+  const [contactSite, setContactSite] = useState('');
+  
   // AI API Keys
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [openaiApiKey, setOpenaiApiKey] = useState('');
@@ -123,7 +128,9 @@ export default function SettingsPage() {
       setReferralModalMaxVisits(String((result.data as any).referralModalMaxVisits || 8));
       setReferralModalMaxDays(String((result.data as any).referralModalMaxDays || 45));
 
-
+      setContactEmail((result.data as any).contactEmail || 'contato@aos.com.br');
+      setContactInstagram((result.data as any).contactInstagram || '@senra.aulasonline');
+      setContactSite((result.data as any).contactSite || 'www.senraaulasonline.com.br');
     };
 
     loadSettings();
@@ -220,6 +227,9 @@ export default function SettingsPage() {
       referralModalFrequency,
       referralModalMaxVisits: parseInt(referralModalMaxVisits) || 8,
       referralModalMaxDays: parseInt(referralModalMaxDays) || 45,
+      contactEmail: contactEmail.trim(),
+      contactInstagram: contactInstagram.trim(),
+      contactSite: contactSite.trim(),
     });
     console.log('[handleSave] Resultado:', result);
     setIsLoading(false);
@@ -264,25 +274,64 @@ export default function SettingsPage() {
               </div>
               <div>
                 <CardTitle className="text-xl text-slate-900">Suporte & Vendas</CardTitle>
-                <CardDescription>WhatsApp principal de atendimento</CardDescription>
+                <CardDescription>Canais de atendimento e contato</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp" className="font-medium text-slate-700">
-                Número do WhatsApp (com DDI e DDD)
-              </Label>
-              <Input
-                id="whatsapp"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                placeholder="Ex: 5583999999999"
-              />
-              <p className="mt-2 text-sm text-slate-500">
-                Os links de "Comprar Plano" e "Falar com Suporte" redirecionarao para este número.
-              </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp" className="font-medium text-slate-700">
+                  Número do WhatsApp
+                </Label>
+                <Input
+                  id="whatsapp"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="Ex: 5583999999999"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-email" className="font-medium text-slate-700">
+                  E-mail de Contato
+                </Label>
+                <Input
+                  id="contact-email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="contato@aos.com.br"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-instagram" className="font-medium text-slate-700">
+                  Instagram
+                </Label>
+                <Input
+                  id="contact-instagram"
+                  value={contactInstagram}
+                  onChange={(e) => setContactInstagram(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="@senra.aulasonline"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-site" className="font-medium text-slate-700">
+                  Site
+                </Label>
+                <Input
+                  id="contact-site"
+                  value={contactSite}
+                  onChange={(e) => setContactSite(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="www.senraaulasonline.com.br"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              Estas informações serão exibidas na página de Contato (/contato) e no rodapé.
+            </p>
             </div>
           </CardContent>
         </Card>

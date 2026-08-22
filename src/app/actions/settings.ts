@@ -27,6 +27,9 @@ type SettingsInput = {
   referralModalMaxVisits?: number;
   referralModalMaxDays?: number;
   referralModalImages?: string;
+  contactEmail?: string;
+  contactInstagram?: string;
+  contactSite?: string;
 };
 
 export async function getSettings() {
@@ -88,6 +91,9 @@ export async function updateSettings(data: SettingsInput) {
         referralModalMaxVisits: data.referralModalMaxVisits || 8,
         referralModalMaxDays: data.referralModalMaxDays || 45,
         referralModalImages: data.referralModalImages || '[]',
+        contactEmail: data.contactEmail?.trim() || 'contato@aos.com.br',
+        contactInstagram: data.contactInstagram?.trim() || '@senra.aulasonline',
+        contactSite: data.contactSite?.trim() || 'www.senraaulasonline.com.br',
         updatedAt: now,
       },
       update: {
@@ -114,6 +120,9 @@ export async function updateSettings(data: SettingsInput) {
         referralModalMaxVisits: data.referralModalMaxVisits || 8,
         referralModalMaxDays: data.referralModalMaxDays || 45,
         referralModalImages: data.referralModalImages || '[]',
+        contactEmail: data.contactEmail?.trim() || 'contato@aos.com.br',
+        contactInstagram: data.contactInstagram?.trim() || '@senra.aulasonline',
+        contactSite: data.contactSite?.trim() || 'www.senraaulasonline.com.br',
         updatedAt: now,
       },
     });
