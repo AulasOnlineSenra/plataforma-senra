@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
+import { CookieBanner } from '@/components/cookie-banner';
 
 export const metadata: Metadata = {
   title: 'Aulas Online Senra',
@@ -34,6 +35,7 @@ export default function RootLayout({
           <AnalyticsTracker />
           {children}
           <Toaster />
+          <CookieBanner />
         </ThemeProvider>
       </body>
     </html>
