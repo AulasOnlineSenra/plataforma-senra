@@ -15,16 +15,16 @@ export default async function ContatoPage() {
 
   return (
     <div 
-      className="min-h-[calc(100vh-60px)] relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
+      className="min-h-[calc(100vh-130px)] relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/images/fundo-contato.png')" }}
     >
       <div className="container mx-auto px-6 md:px-12 lg:px-24 xl:px-32 flex">
         
         {/* Left Content Container */}
-        <div className="w-full md:w-3/5 lg:w-1/2 py-12 md:py-20 flex flex-col justify-center">
+        <div className="w-full md:w-3/5 lg:w-1/2 py-8 md:py-12 flex flex-col justify-center">
           
           {/* Logo Section */}
-          <div className="mb-8">
+          <div className="mb-6">
             <Link href="/" className="inline-block transition-transform hover:scale-105">
               <div className="flex items-center gap-4">
                 <div className="relative w-16 h-16">
@@ -44,19 +44,19 @@ export default async function ContatoPage() {
           </div>
 
           {/* Title Section */}
-          <div className="mb-8 font-extrabold uppercase leading-none tracking-tight">
-            <h1 className="text-6xl md:text-7xl lg:text-[5.5rem] text-slate-900 drop-shadow-sm">FALE</h1>
-            <h1 className="text-6xl md:text-7xl lg:text-[5.5rem] text-amber-500 drop-shadow-sm">CONOSCO</h1>
+          <div className="mb-6 font-extrabold uppercase leading-none tracking-tight">
+            <h1 className="text-5xl md:text-6xl lg:text-[5rem] text-slate-900 drop-shadow-sm">FALE</h1>
+            <h1 className="text-5xl md:text-6xl lg:text-[5rem] text-amber-500 drop-shadow-sm">CONOSCO</h1>
           </div>
 
           {/* Description */}
-          <div className="w-16 h-1 bg-amber-500 mb-6 rounded-full"></div>
-          <p className="text-slate-700 text-lg md:text-xl font-medium max-w-md mb-10">
+          <div className="w-16 h-1 bg-amber-500 mb-5 rounded-full"></div>
+          <p className="text-slate-700 text-lg md:text-xl font-medium max-w-md mb-8">
             Entre em contato conosco para dúvidas, sugestões ou parcerias.
           </p>
 
           {/* Contact Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 md:gap-y-8">
             {/* Email */}
             <div className="flex items-center gap-4">
               <div className="bg-amber-500 text-white p-3 rounded-full shadow-md shrink-0">
