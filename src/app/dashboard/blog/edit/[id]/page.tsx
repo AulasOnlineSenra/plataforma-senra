@@ -176,8 +176,16 @@ export default function EditBlogPostPage() {
       }
     };
     document.addEventListener('dblclick', handleDblClick);
-    return () => document.removeEventListener('dblclick', handleDblClick);
   }, [formData.title]);
+
+  const counters = useMemo(() => {
+    const text = (formData.content || '').replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ');
+    const chars = text.length;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    const blocks = (formData.content || '').match(/<\/(p|h[1-6]|li)>/g);
+    const lines = blocks ? blocks.length : 0;
+    return { chars, words, lines };
+  }, [formData.content]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
