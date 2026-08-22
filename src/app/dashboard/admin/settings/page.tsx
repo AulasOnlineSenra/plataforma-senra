@@ -332,7 +332,6 @@ export default function SettingsPage() {
             <p className="mt-2 text-sm text-slate-500">
               Estas informações serão exibidas na página de Contato (/contato) e no rodapé.
             </p>
-            </div>
           </CardContent>
         </Card>
 
