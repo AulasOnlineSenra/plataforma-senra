@@ -15,7 +15,7 @@ export default async function ContatoPage() {
 
   return (
     <div 
-      className="min-h-screen relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
+      className="min-h-[calc(100vh-60px)] relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/images/fundo-contato.png')" }}
     >
       <div className="container mx-auto px-6 md:px-12 lg:px-24 xl:px-32 flex">
@@ -28,21 +28,16 @@ export default async function ContatoPage() {
             <Link href="/" className="inline-block transition-transform hover:scale-105">
               <div className="flex items-center gap-4">
                 <div className="relative w-16 h-16">
-                  {/* Substitua pela logo real se tiver uma URL. Aqui usamos um placeholder aproximado ao da imagem */}
                   <Image 
-                    src="/images/logo.png" 
+                    src="/images/logo_AOS_fundo_preto.png" 
                     alt="Logo Aulas Online Senra" 
                     fill 
                     className="object-contain" 
                   />
-                  <div className="absolute inset-0 flex items-center justify-center font-bold text-4xl text-slate-900 border-4 border-amber-500 rounded-lg shadow-lg bg-white" style={{ display: 'none' }}>
-                    S
-                  </div>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs tracking-[0.2em] font-bold text-slate-800 uppercase">Aulas Online</span>
                   <span className="text-4xl font-extrabold text-slate-900 leading-none tracking-tight">SENRA</span>
-                  <span className="text-[0.65rem] tracking-widest font-bold text-slate-600 mt-1 uppercase">Aprender • Evoluir • Conquistar</span>
                 </div>
               </div>
             </Link>
@@ -57,7 +52,6 @@ export default async function ContatoPage() {
           {/* Description */}
           <div className="w-16 h-1 bg-amber-500 mb-6 rounded-full"></div>
           <p className="text-slate-700 text-lg md:text-xl font-medium max-w-md mb-10">
-            Estamos aqui para ajudar!<br/>
             Entre em contato conosco para dúvidas, sugestões ou parcerias.
           </p>
 
