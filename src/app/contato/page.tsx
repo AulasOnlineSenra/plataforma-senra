@@ -34,10 +34,6 @@ export default async function ContatoPage() {
                     alt="Logo Aulas Online Senra" 
                     fill 
                     className="object-contain" 
-                    onError={(e) => {
-                       // Fallback caso a logo não exista na pasta public
-                       e.currentTarget.style.display = 'none';
-                    }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center font-bold text-4xl text-slate-900 border-4 border-amber-500 rounded-lg shadow-lg bg-white" style={{ display: 'none' }}>
                     S
