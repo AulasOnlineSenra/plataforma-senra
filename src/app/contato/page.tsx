@@ -15,7 +15,7 @@ export default async function ContatoPage() {
 
   return (
     <div 
-      className="min-h-[calc(100vh-100px)] relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
+      className="min-h-[calc(100vh-80px)] relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/images/fundo-contato.png')" }}
     >
       <div className="container mx-auto px-6 md:px-12 lg:px-24 xl:px-32 flex">
