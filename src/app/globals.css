@@ -103,9 +103,37 @@ html {
 @layer base {
   * {
     @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--brand-blue) / 0.4) transparent;
+  }
+  .dark * {
+    scrollbar-color: hsl(var(--brand-yellow) / 0.4) transparent;
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Global Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--brand-blue) / 0.4);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--brand-blue) / 0.7);
+  }
+  
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(var(--brand-yellow) / 0.4);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--brand-yellow) / 0.7);
   }
   aside::-webkit-scrollbar,
   .sidebar-scroll::-webkit-scrollbar {
