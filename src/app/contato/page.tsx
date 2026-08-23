@@ -106,10 +106,10 @@ export default async function ContatoPage() {
       </div>
 
       {/* Footer Bar */}
-      <div className="absolute bottom-0 left-0 right-0 py-4 px-6 md:px-12 bg-slate-900/5 backdrop-blur-sm border-t border-slate-200/50">
+      <div className="absolute -bottom-[9px] left-0 right-0 py-4 px-6 md:px-12 bg-slate-900/5 border-t border-slate-200/50">
         <div className="container mx-auto flex items-center gap-3">
-          <Heart className="w-5 h-5 text-amber-500" />
-          <span className="text-slate-700 font-medium">Sua opinião é muito <span className="text-amber-500 font-bold">importante</span> para nós!</span>
+          <Heart className="w-[17px] h-[17px] text-brand-blue" />
+          <span className="text-slate-700 font-medium text-[13px]">Sua opinião é muito <span className="text-brand-blue font-bold">importante</span> para nós!</span>
         </div>
       </div>
     </div>
