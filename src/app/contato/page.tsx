@@ -69,7 +69,7 @@ export default async function ContatoPage() {
             </div>
 
             {/* WhatsApp */}
-            <div className="flex items-center gap-4 sm:translate-x-[30px]">
+            <div className="flex items-center gap-4 sm:translate-x-[50px]">
               <div className="bg-amber-500 text-white p-3 rounded-full shadow-md shrink-0">
                 <Phone className="w-6 h-6" />
               </div>
@@ -91,7 +91,7 @@ export default async function ContatoPage() {
             </div>
 
             {/* Site */}
-            <div className="flex items-center gap-4 sm:translate-x-[30px]">
+            <div className="flex items-center gap-4 sm:translate-x-[50px]">
               <div className="bg-amber-500 text-white p-3 rounded-full shadow-md shrink-0">
                 <Globe className="w-6 h-6" />
               </div>
@@ -106,10 +106,10 @@ export default async function ContatoPage() {
       </div>
 
       {/* Footer Bar */}
-      <div className="absolute -bottom-[9px] left-0 right-0 py-4 px-6 md:px-12 bg-slate-900/5 border-t border-slate-200/50">
-        <div className="container mx-auto flex items-center gap-3">
+      <div className="absolute bottom-0 left-0 right-0 pt-4 pb-[9px] px-6 md:px-12 bg-slate-900/5 border-t border-slate-200/50">
+        <div className="container mx-auto flex items-center gap-3 translate-x-[25px]">
           <Heart className="w-[17px] h-[17px] text-brand-blue" />
-          <span className="text-slate-700 font-medium text-[13px]">Sua opinião é muito <span className="text-brand-blue font-bold">importante</span> para nós!</span>
+          <span className="text-white font-medium text-[13px] tracking-[0.5px]">Sua opinião é muito <span className="text-brand-blue font-bold">importante</span> para nós!</span>
         </div>
       </div>
     </div>
