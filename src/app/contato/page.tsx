@@ -14,11 +14,16 @@ export default async function ContatoPage() {
   const site = settings?.contactSite || 'www.senraaulasonline.com.br';
 
   return (
-    <div 
-      className="min-h-screen relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/images/fundo-contato.png')" }}
-    >
-      <div className="container mx-auto px-6 md:px-12 lg:px-24 xl:px-32 flex">
+    <div className="min-h-screen relative flex items-center bg-slate-50 overflow-hidden">
+      <Image
+        src="/images/fundo-contato.png"
+        alt="Fundo Contato"
+        fill
+        priority
+        quality={90}
+        className="object-cover object-center z-0"
+      />
+      <div className="container relative z-10 mx-auto px-6 md:px-12 lg:px-24 xl:px-32 flex">
         
         {/* Left Content Container */}
         <div className="w-full md:w-3/5 lg:w-1/2 py-8 md:py-12 flex flex-col justify-center">
@@ -109,7 +114,7 @@ export default async function ContatoPage() {
       </div>
 
       {/* Footer Bar */}
-      <div className="absolute bottom-0 left-0 right-0 pt-4 pb-[9px] px-6 md:px-12">
+      <div className="absolute bottom-0 left-0 right-0 pt-4 pb-[9px] px-6 md:px-12 z-10">
         <div className="container mx-auto flex items-center gap-3 translate-x-[25px] translate-y-[3px]">
           <Heart className="w-[17px] h-[17px] text-brand-blue" strokeWidth={4} />
           <span className="text-white font-medium text-[13px] tracking-[0.5px]">Sua opinião é muito <span className="text-brand-blue font-bold">importante</span> para nós!</span>

@@ -118,12 +118,24 @@ html {
     width: 6px;
     height: 6px;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+  ::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-track-piece {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent !important;
   }
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--brand-blue) / 0.4);
     border-radius: 9999px;
+    border: none !important;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--brand-blue) / 0.7);
