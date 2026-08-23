@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import WeatherWidget from '@/components/weather-widget';
 import { ThumbsUp, ThumbsDown, MessageSquare, MoreHorizontal, Share2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { likePost, dislikePost } from '@/app/actions/blog';
@@ -179,6 +178,8 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
                 <img
                   src={post.image}
                   alt={post.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 />
               ) : (
@@ -244,6 +245,8 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
           <img
             src={post.image}
             alt={post.title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
