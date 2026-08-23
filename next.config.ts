@@ -11,6 +11,7 @@ const serverActionsAllowedOrigins = [
 ];
 
 const nextConfig: NextConfig = {
+  compress: true,
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
@@ -38,8 +39,17 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Todas as demais rotas (páginas, APIs): nunca cachear
-        source: '/((?!_next/static).*)',
+        // Rotas privadas e APIs: nunca cachear
+        source: '/dashboard/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/api/:path*',
         headers: [
           {
             key: 'Cache-Control',

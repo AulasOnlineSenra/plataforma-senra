@@ -292,6 +292,9 @@ export async function dispatchEnemSimulado(
 
     const dayLabel = dayType === 'DIA1' ? 'Dia 1 (Sábado)' : 'Dia 2 (Domingo)';
     let dispatched = 0;
+    
+    const simuladosToCreate: any[] = [];
+    const notificationsToCreate: any[] = [];
 
     for (const student of students) {
       // Evita duplicatas: se for automático, verifica se já foi gerado algum simulado HOJE.
@@ -650,32 +653,35 @@ export async function dispatchEnemSimulado(
         description = template.description || '';
       }
 
-      await prisma.simulado.create({
-        data: {
-          title,
-          description,
-          subject: `ENEM_${dayType}`,
-          creatorId: adminId,
-          studentId: student.id,
-          status: 'Pendente',
-          maxAttempts: 1,
-          timeLimitMinutes: timeLimit,
-          questions: questionsToUse,
-          attempts: [],
-        },
+      simuladosToCreate.push({
+        title,
+        description,
+        subject: `ENEM_${dayType}`,
+        creatorId: adminId,
+        studentId: student.id,
+        status: 'Pendente',
+        maxAttempts: 1,
+        timeLimitMinutes: timeLimit,
+        questions: questionsToUse,
+        attempts: [],
       });
 
-      await prisma.notification.create({
-        data: {
-          userId: student.id,
-          title: `🎯 Simulado ENEM ${dayLabel} disponível!`,
-          message: `Seu simulado "${title}" está no seu painel. Você tem ${timeLimit} minutos. Boa sorte!`,
-          type: 'ENEM_SIMULADO',
-          read: false,
-        },
+      notificationsToCreate.push({
+        userId: student.id,
+        title: `🎯 Simulado ENEM ${dayLabel} disponível!`,
+        message: `Seu simulado "${title}" está no seu painel. Você tem ${timeLimit} minutos. Boa sorte!`,
+        type: 'ENEM_SIMULADO',
+        read: false,
       });
 
       dispatched++;
+    }
+
+    if (simuladosToCreate.length > 0) {
+      await prisma.$transaction([
+        prisma.simulado.createMany({ data: simuladosToCreate }),
+        prisma.notification.createMany({ data: notificationsToCreate }),
+      ]);
     }
 
     return { success: true, dispatched, total: students.length };
