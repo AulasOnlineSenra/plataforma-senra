@@ -50,9 +50,9 @@ export default async function ContatoPage() {
           </div>
 
           {/* Description */}
-          <div className="flex gap-2 mb-5">
-            <div className="w-16 h-1 bg-amber-500 rounded-full"></div>
-            <div className="w-16 h-1 bg-brand-blue rounded-full"></div>
+          <div className="flex mb-5">
+            <div className="w-16 h-1 bg-amber-500 rounded-l-full"></div>
+            <div className="w-16 h-1 bg-brand-blue rounded-r-full"></div>
           </div>
           <p className="text-slate-700 text-lg md:text-xl font-medium max-w-md mb-8">
             Entre em contato conosco para dúvidas, sugestões ou parcerias.
