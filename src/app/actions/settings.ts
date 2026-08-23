@@ -130,6 +130,7 @@ export async function updateSettings(data: SettingsInput) {
     revalidatePath('/dashboard/admin/settings');
     revalidatePath('/dashboard/packages');
     revalidatePath('/dashboard/financeiro');
+    revalidatePath('/contato'); // Invalida o cache ISR da p\u00e1gina de contato
 
     console.log('[updateSettings] Configurações salvas:', settings);
     return { success: true, data: settings };

@@ -3,6 +3,10 @@ import { Mail, Phone, Instagram, Globe, Heart } from 'lucide-react';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
 
+// Revalida a cada 24h. Para forçar atualização imediata, o admin
+// chama revalidatePath('/contato') ao salvar as configurações.
+export const revalidate = 86400;
+
 export default async function ContatoPage() {
   const settings = await prisma.appSetting.findUnique({
     where: { id: 'global' },

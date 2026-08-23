@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import WeatherHeader from '@/components/weather-header';
 
+// Revalida a cada 1h. As actions de criar/editar/deletar post
+// j\u00e1 chamam revalidatePath('/blog') para atualiza\u00e7\u00e3o imediata.
+export const revalidate = 3600;
+
 export default async function BlogPage() {
   const result = await getPublishedPosts();
   const posts = result.success ? result.data : [];
