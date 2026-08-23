@@ -50,7 +50,10 @@ export default async function ContatoPage() {
           </div>
 
           {/* Description */}
-          <div className="w-16 h-1 bg-amber-500 mb-5 rounded-full"></div>
+          <div className="flex gap-2 mb-5">
+            <div className="w-16 h-1 bg-amber-500 rounded-full"></div>
+            <div className="w-16 h-1 bg-brand-blue rounded-full"></div>
+          </div>
           <p className="text-slate-700 text-lg md:text-xl font-medium max-w-md mb-8">
             Entre em contato conosco para dúvidas, sugestões ou parcerias.
           </p>
@@ -106,9 +109,9 @@ export default async function ContatoPage() {
       </div>
 
       {/* Footer Bar */}
-      <div className="absolute bottom-0 left-0 right-0 pt-4 pb-[9px] px-6 md:px-12 bg-slate-900/5 border-t border-slate-200/50">
-        <div className="container mx-auto flex items-center gap-3 translate-x-[25px]">
-          <Heart className="w-[17px] h-[17px] text-brand-blue" />
+      <div className="absolute bottom-0 left-0 right-0 pt-4 pb-[9px] px-6 md:px-12">
+        <div className="container mx-auto flex items-center gap-3 translate-x-[25px] translate-y-[3px]">
+          <Heart className="w-[17px] h-[17px] text-brand-blue" strokeWidth={4} />
           <span className="text-white font-medium text-[13px] tracking-[0.5px]">Sua opinião é muito <span className="text-brand-blue font-bold">importante</span> para nós!</span>
         </div>
       </div>
