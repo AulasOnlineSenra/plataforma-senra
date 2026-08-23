@@ -15,7 +15,7 @@ export default async function ContatoPage() {
 
   return (
     <div 
-      className="min-h-[calc(100vh-20px)] relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
+      className="min-h-screen relative flex items-center bg-slate-50 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/images/fundo-contato.png')" }}
     >
       <div className="container mx-auto px-6 md:px-12 lg:px-24 xl:px-32 flex">
@@ -69,7 +69,7 @@ export default async function ContatoPage() {
             </div>
 
             {/* WhatsApp */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 sm:translate-x-[30px]">
               <div className="bg-amber-500 text-white p-3 rounded-full shadow-md shrink-0">
                 <Phone className="w-6 h-6" />
               </div>
@@ -91,7 +91,7 @@ export default async function ContatoPage() {
             </div>
 
             {/* Site */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 sm:translate-x-[30px]">
               <div className="bg-amber-500 text-white p-3 rounded-full shadow-md shrink-0">
                 <Globe className="w-6 h-6" />
               </div>
