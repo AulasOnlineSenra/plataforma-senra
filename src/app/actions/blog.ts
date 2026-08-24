@@ -169,6 +169,7 @@ export async function createPost(data: {
   tags?: string;
   published?: boolean;
   createdAt?: string;
+  metaDescription?: string;
 }) {
   try {
     let baseSlug = slugify(data.title);
@@ -191,6 +192,7 @@ export async function createPost(data: {
         author: data.author,
         image: data.image || null,
         tags: data.tags || '[]',
+        metaDescription: data.metaDescription || null,
         published: data.published ?? false,
         createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
         updatedAt: new Date(),
@@ -217,6 +219,7 @@ export async function updatePost(
     published?: boolean;
     createdAt?: string;
     status?: 'DRAFT' | 'REVIEW' | 'PUBLISHED';
+    metaDescription?: string;
   }
 ) {
   try {
@@ -229,6 +232,7 @@ export async function updatePost(
         author: data.author,
         image: data.image || null,
         tags: data.tags || '[]',
+        metaDescription: data.metaDescription !== undefined ? data.metaDescription : undefined,
         published: data.published ?? false,
         ...(data.createdAt && { createdAt: new Date(data.createdAt) }),
         ...(data.status && { status: data.status }),

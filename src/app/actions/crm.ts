@@ -204,6 +204,53 @@ export async function createCrmLead(data: {
   }
 }
 
+export async function sendIdeaToCrm(title: string) {
+  try {
+    // Tenta encontrar uma coluna chamada "Redação", "Conteúdo", "Ideias"
+    const column = await prisma.crmColumn.findFirst({
+      where: {
+        OR: [
+          { name: { contains: "Redação", mode: "insensitive" } },
+          { name: { contains: "Conteúdo", mode: "insensitive" } },
+          { name: { contains: "Ideia", mode: "insensitive" } },
+        ]
+      }
+    });
+
+    if (!column) {
+      return { success: false, error: "Coluna de Redação/Ideias não encontrada no CRM. Crie uma para usar este recurso." };
+    }
+
+    const maxOrderLead = await prisma.crmLead.findFirst({
+      where: { columnId: column.id },
+      orderBy: { order: "desc" },
+    });
+    const nextOrder = maxOrderLead ? maxOrderLead.order + 1 : 0;
+
+    const lead = await prisma.crmLead.create({
+      data: {
+        name: title,
+        columnId: column.id,
+        source: "Blog Editor (H2)",
+        tags: '["Ideia de Artigo"]',
+        temperature: "frio",
+        order: nextOrder,
+      }
+    });
+    
+    // Disparar automação de IA de forma assíncrona
+    triggerAiAutomation('LEAD_CREATED', lead).catch(err => 
+      console.error("Erro ao disparar automação de lead:", err)
+    );
+
+    revalidatePath("/dashboard/crm");
+    return { success: true, data: lead };
+  } catch (error) {
+    console.error("Erro ao enviar ideia para o CRM:", error);
+    return { success: false, error: "Erro ao salvar no CRM." };
+  }
+}
+
 export async function updateCrmLead(id: string, data: { 
   name?: string; 
   email?: string; 

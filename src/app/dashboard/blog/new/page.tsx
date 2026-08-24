@@ -77,6 +77,10 @@ export default function NewBlogPostPage() {
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const quillRef = useRef<any>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  const [hoveredH2, setHoveredH2] = useState<{ element: HTMLElement; text: string; top: number; left: number } | null>(null);
+  const [isSendingIdea, setIsSendingIdea] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -85,6 +89,7 @@ export default function NewBlogPostPage() {
     author: 'Aulas Online Senra',
     image: '',
     tags: '',
+    metaDescription: '',
     published: false,
     createdAt: '',
   });
@@ -573,6 +578,20 @@ export default function NewBlogPostPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="metaDescription" className="text-slate-700 font-bold">Meta Description (SEO)</Label>
+                  <Textarea
+                    id="metaDescription"
+                    placeholder="Resumo otimizado para o Google (máx 160 caracteres)"
+                    value={formData.metaDescription}
+                    onChange={(e) => handleChange('metaDescription', e.target.value)}
+                    maxLength={160}
+                    rows={2}
+                    className="rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0 resize-none"
+                  />
+                  <div className="text-xs text-slate-400 text-right">{formData.metaDescription?.length || 0}/160</div>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="tags" className="text-slate-700 font-bold">Tags (separadas por vírgula)</Label>
                   <Input
                     id="tags"
@@ -804,7 +823,45 @@ export default function NewBlogPostPage() {
 
           <div className="w-full h-px bg-slate-100 my-8"></div>
 
-          <div className="text-slate-800">
+          <div className="text-slate-800 relative" ref={editorContainerRef}>
+            
+            {/* Floating H2 CRM Button */}
+            {hoveredH2 && (
+              <div 
+                className="crm-h2-btn absolute z-50 flex items-center justify-center transition-all duration-200 group"
+                style={{
+                  top: \`\${hoveredH2.top}px\`,
+                  left: \`\${hoveredH2.left}px\`,
+                  transform: 'translateY(-50%)',
+                }}
+                onMouseLeave={() => setHoveredH2(null)}
+              >
+                <button
+                  type="button"
+                  disabled={isSendingIdea}
+                  onClick={async () => {
+                    setIsSendingIdea(true);
+                    toast({ title: 'Enviando...', description: 'Salvando subtítulo como ideia de artigo.' });
+                    const res = await sendIdeaToCrm(hoveredH2.text);
+                    if (res.success) {
+                      toast({ title: 'Ideia salva!', description: 'Foi enviada para a coluna Redação/Ideias.', className: 'bg-emerald-600 text-white border-none' });
+                    } else {
+                      toast({ variant: 'destructive', title: 'Erro', description: res.error });
+                    }
+                    setIsSendingIdea(false);
+                    setHoveredH2(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-400 border border-slate-200 hover:border-amber-500 shadow-sm flex items-center justify-center transition-colors"
+                  title="Transformar este subtítulo em um novo artigo (CRM)"
+                >
+                  {isSendingIdea ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                </button>
+                <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
+                  Criar artigo disso
+                </div>
+              </div>
+            )}
+
             <style dangerouslySetInnerHTML={{__html: `
               .ql-container.ql-snow {
                 border: none;

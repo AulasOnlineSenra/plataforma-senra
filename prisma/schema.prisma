@@ -81,6 +81,7 @@ model BlogPost {
   dislikes      Int      @default(0)
   commentsCount Int      @default(0)
   views         Int      @default(0)
+  metaDescription String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

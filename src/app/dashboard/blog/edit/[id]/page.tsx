@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock, CheckCircle2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPostById, updatePost } from '@/app/actions/blog';
+import { sendIdeaToCrm } from '@/app/actions/crm';
 import dynamic from 'next/dynamic';
 import {
   DropdownMenu,
@@ -79,6 +80,10 @@ export default function EditBlogPostPage() {
   }>({ isOpen: false, initialAlt: '', onSave: () => {} });
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const quillRef = useRef<any>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  const [hoveredH2, setHoveredH2] = useState<{ element: HTMLElement; text: string; top: number; left: number } | null>(null);
+  const [isSendingIdea, setIsSendingIdea] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -87,6 +92,7 @@ export default function EditBlogPostPage() {
     author: '',
     image: '',
     tags: '',
+    metaDescription: '',
     published: false,
     createdAt: '',
   });
@@ -127,6 +133,7 @@ export default function EditBlogPostPage() {
           author: post.author,
           image: post.image || '',
           tags: tagsStr,
+          metaDescription: (post as any).metaDescription || '',
           published: post.published,
           createdAt: post.createdAt ? (() => {
             const d = new Date(post.createdAt);
@@ -235,6 +242,37 @@ export default function EditBlogPostPage() {
     }
 
     return () => cleanup?.();
+  }, []);
+
+  // Effect to track H2 hover
+  useEffect(() => {
+    const container = editorContainerRef.current;
+    if (!container) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Se estamos passando sobre um H2
+      if (target.tagName === 'H2' && target.closest('.ql-editor')) {
+        const rect = target.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        setHoveredH2({
+          element: target,
+          text: target.innerText,
+          top: rect.top - containerRect.top + (rect.height / 2),
+          left: -40, // 40px à esquerda do container
+        });
+      } 
+      // Se sairmos, mas não formos pro botão
+      else if (!target.closest('.crm-h2-btn')) {
+        // Um pequeno delay para não piscar
+        setHoveredH2(null);
+      }
+    };
+
+    container.addEventListener('mousemove', handleMouseMove);
+    return () => container.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const counters = useMemo(() => {
@@ -676,6 +714,20 @@ export default function EditBlogPostPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="metaDescription" className="text-slate-700 font-bold">Meta Description (SEO)</Label>
+                  <Textarea
+                    id="metaDescription"
+                    placeholder="Resumo otimizado para o Google (máx 160 caracteres)"
+                    value={formData.metaDescription}
+                    onChange={(e) => handleChange('metaDescription', e.target.value)}
+                    maxLength={160}
+                    rows={2}
+                    className="rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0 resize-none"
+                  />
+                  <div className="text-xs text-slate-400 text-right">{formData.metaDescription?.length || 0}/160</div>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="tags" className="text-slate-700 font-bold">Tags (separadas por vírgula)</Label>
                   <Input
                     id="tags"
@@ -910,7 +962,45 @@ export default function EditBlogPostPage() {
 
           <div className="w-full h-px bg-slate-100 my-8"></div>
 
-          <div className="text-slate-800">
+          <div className="text-slate-800 relative" ref={editorContainerRef}>
+            
+            {/* Floating H2 CRM Button */}
+            {hoveredH2 && (
+              <div 
+                className="crm-h2-btn absolute z-50 flex items-center justify-center transition-all duration-200 group"
+                style={{
+                  top: \`\${hoveredH2.top}px\`,
+                  left: \`\${hoveredH2.left}px\`,
+                  transform: 'translateY(-50%)',
+                }}
+                onMouseLeave={() => setHoveredH2(null)}
+              >
+                <button
+                  type="button"
+                  disabled={isSendingIdea}
+                  onClick={async () => {
+                    setIsSendingIdea(true);
+                    toast({ title: 'Enviando...', description: 'Salvando subtítulo como ideia de artigo.' });
+                    const res = await sendIdeaToCrm(hoveredH2.text);
+                    if (res.success) {
+                      toast({ title: 'Ideia salva!', description: 'Foi enviada para a coluna Redação/Ideias.', className: 'bg-emerald-600 text-white border-none' });
+                    } else {
+                      toast({ variant: 'destructive', title: 'Erro', description: res.error });
+                    }
+                    setIsSendingIdea(false);
+                    setHoveredH2(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-400 border border-slate-200 hover:border-amber-500 shadow-sm flex items-center justify-center transition-colors"
+                  title="Transformar este subtítulo em um novo artigo (CRM)"
+                >
+                  {isSendingIdea ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                </button>
+                <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
+                  Criar artigo disso
+                </div>
+              </div>
+            )}
+
             <style dangerouslySetInnerHTML={{__html: `
               .ql-container.ql-snow {
                 border: none;
