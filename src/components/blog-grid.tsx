@@ -281,7 +281,7 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
                 <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[8px] font-bold text-black border border-white/20">
                   {post.author.charAt(0)}
                 </div>
-                <span className="text-[7px] font-semibold text-white/90 leading-tight truncate max-w-[80px]">{post.author}</span>
+                <span className="text-[8px] font-semibold text-white/90 leading-tight truncate max-w-[80px]">{post.author}</span>
                 <span className="text-white/40 text-[9px] whitespace-nowrap">• {timeLabel}</span>
               </div>
               
@@ -350,8 +350,8 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
           <div className="w-4 h-4 rounded flex flex-shrink-0 items-center justify-center bg-amber-500/10 text-amber-600 text-[8px] font-bold">
             {post.author.charAt(0)}
           </div>
-          <span className="text-[7px] font-semibold text-foreground/80 leading-tight truncate max-w-[80px]">{post.author}</span>
-          <span className="text-muted-foreground/50 text-[9px] whitespace-nowrap">• {timeLabel}</span>
+          <span className="text-[8px] font-semibold text-foreground/80 leading-tight truncate max-w-[80px]">{post.author}</span>
+          <span className="text-muted-foreground/50 text-[7px] whitespace-nowrap">• {timeLabel}</span>
         </div>
 
         <h3 className={`${titleSize} font-bold text-foreground leading-snug line-clamp-3 mb-1 group-hover:text-amber-600 transition-colors`}>
