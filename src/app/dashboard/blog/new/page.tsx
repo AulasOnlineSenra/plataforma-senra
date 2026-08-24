@@ -830,8 +830,8 @@ export default function NewBlogPostPage() {
               <div 
                 className="crm-h2-btn absolute z-50 flex items-center justify-center transition-all duration-200 group"
                 style={{
-                  top: \`\${hoveredH2.top}px\`,
-                  left: \`\${hoveredH2.left}px\`,
+                  top: `${hoveredH2.top}px`,
+                  left: `${hoveredH2.left}px`,
                   transform: 'translateY(-50%)',
                 }}
                 onMouseLeave={() => setHoveredH2(null)}
