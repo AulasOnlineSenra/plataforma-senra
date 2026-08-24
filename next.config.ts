@@ -11,7 +11,6 @@ const serverActionsAllowedOrigins = [
 ];
 
 const nextConfig: NextConfig = {
-  compress: true,
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
@@ -28,28 +27,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Arquivos estáticos do Next.js: podem ser cacheados pelo navegador
-        // (cada build gera nomes únicos com hash, então nunca há conflito)
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        // Rotas privadas e APIs: nunca cachear
-        source: '/dashboard/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          },
-        ],
-      },
-      {
-        source: '/api/:path*',
+        source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
