@@ -280,7 +280,7 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
               <div className="flex items-center gap-2 mb-2">
                 <div className="relative w-4 h-4 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
                   <Image
-                    src="/logo_AOS_fundo_preto.png"
+                    src="/Logo_AOS_fundo_claro.png"
                     alt={post.author}
                     fill
                     className="object-cover"
@@ -354,7 +354,7 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
         <div className="flex items-center gap-1.5 mb-1.5">
           <div className="relative w-4 h-4 rounded flex-shrink-0 overflow-hidden border border-border/50">
             <Image
-              src="/logo_AOS_fundo_preto.png"
+              src="/Logo_AOS_fundo_claro.png"
               alt={post.author}
               fill
               className="object-cover"
