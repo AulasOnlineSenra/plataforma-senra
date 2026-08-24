@@ -178,6 +178,65 @@ export default function EditBlogPostPage() {
     document.addEventListener('dblclick', handleDblClick);
   }, [formData.title]);
 
+  // Fix: Quill clipboard does not handle <th>/<thead> correctly — header cells
+  // get concatenated into one line. This interceptor pre-processes the pasted
+  // HTML before Quill sees it, converting <th> → bold <td> and <thead> → <tbody>.
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    const attach = () => {
+      const quill = quillRef.current?.getEditor();
+      if (!quill?.root) return false;
+
+      const handlePaste = (e: ClipboardEvent) => {
+        const html = e.clipboardData?.getData('text/html');
+        if (!html || !/<th[\s>]/i.test(html)) return; // Only intervene when <th> is present
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Convert <th> → <td><strong>...</strong></td>
+        doc.querySelectorAll('th').forEach((th) => {
+          const td = doc.createElement('td');
+          const strong = doc.createElement('strong');
+          strong.innerHTML = th.innerHTML;
+          td.appendChild(strong);
+          th.parentNode?.replaceChild(td, th);
+        });
+
+        // Convert <thead> → <tbody> so Quill treats header rows like body rows
+        doc.querySelectorAll('thead').forEach((thead) => {
+          const tbody = doc.createElement('tbody');
+          tbody.innerHTML = thead.innerHTML;
+          thead.parentNode?.replaceChild(tbody, thead);
+        });
+
+        const fixedHtml = doc.body.innerHTML;
+        const range = quill.getSelection(true);
+        quill.clipboard.dangerouslyPasteHTML(range?.index ?? 0, fixedHtml);
+      };
+
+      quill.root.addEventListener('paste', handlePaste, true);
+      cleanup = () => quill.root.removeEventListener('paste', handlePaste, true);
+      return true;
+    };
+
+    if (!attach()) {
+      const timer = setInterval(() => {
+        if (attach()) clearInterval(timer);
+      }, 300);
+      return () => {
+        clearInterval(timer);
+        cleanup?.();
+      };
+    }
+
+    return () => cleanup?.();
+  }, []);
+
   const counters = useMemo(() => {
     const text = (formData.content || '').replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ');
     const chars = text.length;
