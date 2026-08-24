@@ -159,9 +159,23 @@ export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], c
     );
   }
 
-  // Define counts: up to 10 for carousel, all the rest for grid
-  const carouselCount = Math.min(10, Math.max(1, allPosts.length > 3 ? 10 : 1));
-  const gridCount = Math.max(0, allPosts.length - carouselCount);
+  // Calcula exatamente quantos itens vão para o carrossel e para a grade
+  // de forma que as linhas da grade estejam SEMPRE preenchidas (múltiplos de 5, considerando que o carrossel ocupa 2).
+  // A primeira linha precisa de 3 itens (além do carrossel). As próximas precisam de 5.
+  let carouselCount = 1;
+  let gridCount = allPosts.length - 1;
+
+  if (allPosts.length >= 4) {
+    const max_full_rows = Math.floor((allPosts.length - 4) / 5);
+    gridCount = 3 + max_full_rows * 5;
+    carouselCount = allPosts.length - gridCount;
+    
+    // Se o carrossel ficar com muitos itens (ex: > 10), limitamos e mostramos linha incompleta no final se necessário
+    if (carouselCount > 10) {
+      carouselCount = 10;
+      gridCount = allPosts.length - 10;
+    }
+  }
   
   const carouselPosts = allPosts.slice(0, carouselCount);
   const gridPostsList = allPosts.slice(carouselCount, carouselCount + gridCount);
