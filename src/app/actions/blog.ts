@@ -27,6 +27,24 @@ export async function getBlogPosts() {
   }
 }
 
+export async function getPublishedPostsPaginated(skip: number, take: number) {
+  try {
+    const posts = await prisma.blogPost.findMany({
+      where: {
+        published: true,
+        createdAt: { lte: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+    return { success: true, data: posts };
+  } catch (error) {
+    console.error('Erro ao buscar posts paginados:', error);
+    return { success: false, error: 'Falha ao buscar posts do blog.' };
+  }
+}
+
 export async function getDashboardKanbanPosts() {
   try {
     const drafts = await prisma.blogPost.findMany({

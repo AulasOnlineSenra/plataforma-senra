@@ -3,7 +3,6 @@ import BlogSearchBar from '@/components/blog-search-bar';
 import BlogGrid from '@/components/blog-grid';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import WeatherHeader from '@/components/weather-header';
 import prisma from '@/lib/prisma';
 
 // ISR: revalida a cada 1h.
@@ -20,6 +19,7 @@ export default async function BlogPage() {
       createdAt: { lte: new Date() },
     },
     orderBy: { createdAt: 'desc' },
+    take: 23,
   });
 
   return (
@@ -48,10 +48,7 @@ export default async function BlogPage() {
           </Link>
         </div>
 
-        {/* Weather Header */}
-        <div className="absolute top-6 right-6 z-50">
-          <WeatherHeader />
-        </div>
+
 
         <h1 className="sr-only">Blog Senra - Dicas de estudos, notícias sobre vestibulares e concursos</h1>
         <h2 className="sr-only">Últimos Artigos</h2>

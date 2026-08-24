@@ -8,7 +8,6 @@ import { getBlogPostBySlug, getPublishedPosts, incrementPostViews } from '@/app/
 import { toast } from 'sonner';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreHorizontal } from 'lucide-react';
 import BlogGrid from '@/components/blog-grid';
-import WeatherHeader from '@/components/weather-header';
 
 type BlogPost = {
   id: string;
@@ -745,9 +744,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-[calc(100vh-160px)] bg-background overflow-x-hidden relative">
-      <div className="absolute top-6 right-6 z-50">
-        <WeatherHeader />
-      </div>
+
       <div className="mx-auto w-full max-w-2xl px-4 sm:px-8 pt-[220px] pb-[15px]">
         <div className="mb-8 flex items-center gap-4">
           <Link href="/blog" className="text-sm text-muted-foreground hover:text-amber-500">

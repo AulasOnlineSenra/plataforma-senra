@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ThumbsUp, ThumbsDown, MessageSquare, MoreHorizontal, Share2 } from 'lucide-react';
+import Image from 'next/image';
+import { ThumbsUp, ThumbsDown, MessageSquare, MoreHorizontal, Share2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { likePost, dislikePost } from '@/app/actions/blog';
 import { toast } from 'sonner';
@@ -108,7 +109,45 @@ function PostReactions({ post, isHero = false }: { post: Post, isHero?: boolean 
 }
 
 export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], context?: 'home' | 'article' }) {
-  if (!posts || posts.length === 0) {
+  const [allPosts, setAllPosts] = useState<Post[]>(posts);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(context === 'home' && posts.length === 23);
+
+  // Sync state if props change (e.g. from parent re-render)
+  useEffect(() => {
+    setAllPosts(posts);
+    setHasMore(context === 'home' && posts.length >= 23);
+  }, [posts, context]);
+
+  const loadMore = async () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const { getPublishedPostsPaginated } = await import('@/app/actions/blog');
+      const res = await getPublishedPostsPaginated(allPosts.length, 15); // Load 3 rows
+      if (res.success && res.data) {
+        const newPosts = res.data as any[];
+        setAllPosts(prev => {
+          const combined = [...prev, ...newPosts];
+          // Filter duplicates just in case
+          const uniqueIds = new Set();
+          return combined.filter(p => {
+            if (uniqueIds.has(p.id)) return false;
+            uniqueIds.add(p.id);
+            return true;
+          });
+        });
+        if (newPosts.length < 15) {
+          setHasMore(false);
+        }
+      }
+    } catch (e) {
+      toast.error('Erro ao buscar mais artigos');
+    }
+    setIsLoadingMore(false);
+  };
+
+  if (!allPosts || allPosts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
         <svg className="w-16 h-16 mb-4 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,23 +159,42 @@ export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], c
     );
   }
 
-  // Define counts: up to 10 for carousel, up to 8 for the remaining 5-col grid
-  const carouselCount = Math.min(10, Math.max(1, posts.length > 8 ? posts.length - 8 : 1));
-  const gridCount = Math.min(8, Math.max(0, posts.length - carouselCount));
+  // Define counts: up to 10 for carousel, all the rest for grid
+  const carouselCount = Math.min(10, Math.max(1, allPosts.length > 3 ? 10 : 1));
+  const gridCount = Math.max(0, allPosts.length - carouselCount);
   
-  const carouselPosts = posts.slice(0, carouselCount);
-  const gridPostsList = posts.slice(carouselCount, carouselCount + gridCount);
+  const carouselPosts = allPosts.slice(0, carouselCount);
+  const gridPostsList = allPosts.slice(carouselCount, carouselCount + gridCount);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-      {carouselPosts.length > 0 && (
-        <div className={`col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 ${context === 'home' ? 'min-h-[160px]' : 'min-h-[224px]'}`}>
-          <HeroCarousel posts={carouselPosts} context={context} />
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {carouselPosts.length > 0 && (
+          <div className={`col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 ${context === 'home' ? 'min-h-[160px]' : 'min-h-[224px]'}`}>
+            <HeroCarousel posts={carouselPosts} context={context} />
+          </div>
+        )}
+        {gridPostsList.map((post) => (
+          <BlogCard key={`card-${post.id}`} post={post} context={context} />
+        ))}
+      </div>
+      
+      {context === 'home' && hasMore && (
+        <div className="flex justify-center mt-4 mb-8">
+          <button
+            onClick={loadMore}
+            disabled={isLoadingMore}
+            className="flex items-center gap-2 px-8 py-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-full transition-all shadow-md hover:shadow-lg disabled:opacity-70"
+          >
+            {isLoadingMore ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            )}
+            Carregar mais artigos
+          </button>
         </div>
       )}
-      {gridPostsList.map((post) => (
-        <BlogCard key={`card-${post.id}`} post={post} context={context} />
-      ))}
     </div>
   );
 }
@@ -175,12 +233,12 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
           >
             <div className="absolute inset-0 overflow-hidden">
               {post.image ? (
-                <img
+                <Image
                   src={post.image}
                   alt={post.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                  fill
+                  unoptimized
+                  className="object-cover transition-transform duration-1000 group-hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full bg-slate-800" />
@@ -242,12 +300,12 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
       {/* Imagem */}
       <div className={`relative ${imgHeight} overflow-hidden flex-shrink-0`}>
         {post.image ? (
-          <img
+          <Image
             src={post.image}
             alt={post.title}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            unoptimized
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
