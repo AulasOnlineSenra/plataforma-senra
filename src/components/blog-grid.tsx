@@ -23,6 +23,22 @@ type Post = {
   commentsCount: number;
 };
 
+const formatShortTime = (dateStr: string) => {
+  const diffStr = formatDistanceStrict(new Date(dateStr), new Date(), { locale: ptBR });
+  const parts = diffStr.split(' ');
+  if (parts.length >= 2) {
+    const num = parts[0];
+    const unit = parts[1].toLowerCase();
+    if (unit.startsWith('segundo')) return `${num}s`;
+    if (unit.startsWith('minuto')) return `${num}m`;
+    if (unit.startsWith('hora')) return `${num}h`;
+    if (unit.startsWith('dia')) return `${num}d`;
+    if (unit.startsWith('mês') || unit.startsWith('meses')) return `${num}M`;
+    if (unit.startsWith('ano')) return `${num}A`;
+  }
+  return diffStr;
+};
+
 // Componente para gerenciar as reações de cada post
 function PostReactions({ post, isHero = false }: { post: Post, isHero?: boolean }) {
   const [likes, setLikes] = useState(post.likes);
@@ -232,7 +248,7 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
   return (
     <div className="relative flex flex-col w-full h-full rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
       {posts.map((post, index) => {
-        const timeLabel = formatDistanceStrict(new Date(post.createdAt), new Date(), { addSuffix: true, locale: ptBR });
+        const timeLabel = formatShortTime(post.createdAt);
         const isActive = index === currentIndex;
         
         return (
@@ -265,8 +281,8 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
                 <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[8px] font-bold text-black border border-white/20">
                   {post.author.charAt(0)}
                 </div>
-                <span className="text-[10px] font-semibold text-white/90">{post.author}</span>
-                <span className="text-white/40 text-[9px]">• {timeLabel}</span>
+                <span className="text-[7px] font-semibold text-white/90 leading-tight truncate max-w-[80px]">{post.author}</span>
+                <span className="text-white/40 text-[9px] whitespace-nowrap">• {timeLabel}</span>
               </div>
               
               <h3 className={`font-bold text-white leading-tight group-hover:text-amber-400 transition-colors line-clamp-3 ${titleClass}`}>
@@ -297,7 +313,7 @@ function HeroCarousel({ posts, context = 'home' }: { posts: Post[], context?: 'h
 }
 
 function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | 'article' }) {
-  const timeLabel = formatDistanceStrict(new Date(post.createdAt), new Date(), { addSuffix: true, locale: ptBR });
+  const timeLabel = formatShortTime(post.createdAt);
   
   const containerHeight = context === 'home' ? 'min-h-[160px]' : 'h-[224px]';
   const imgHeight = context === 'home' ? 'h-20 sm:h-24' : 'h-20 sm:h-24';
@@ -331,11 +347,11 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
       {/* Conteúdo */}
       <div className="flex flex-col flex-grow p-3">
         <div className="flex items-center gap-1.5 mb-1.5">
-          <div className="w-4 h-4 rounded flex items-center justify-center bg-amber-500/10 text-amber-600 text-[8px] font-bold">
+          <div className="w-4 h-4 rounded flex flex-shrink-0 items-center justify-center bg-amber-500/10 text-amber-600 text-[8px] font-bold">
             {post.author.charAt(0)}
           </div>
-          <span className="text-[10px] font-semibold text-foreground/80">{post.author}</span>
-          <span className="text-muted-foreground/50 text-[9px]">• {timeLabel}</span>
+          <span className="text-[7px] font-semibold text-foreground/80 leading-tight truncate max-w-[80px]">{post.author}</span>
+          <span className="text-muted-foreground/50 text-[9px] whitespace-nowrap">• {timeLabel}</span>
         </div>
 
         <h3 className={`${titleSize} font-bold text-foreground leading-snug line-clamp-3 mb-1 group-hover:text-amber-600 transition-colors`}>
