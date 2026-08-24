@@ -148,6 +148,7 @@ function PostReactions({ post, isVertical = false }: { post: BlogPost; isVertica
 }
 
 function parseContentForCarousel(content: string) {
+  if (!content) return '';
   // The marker may have been HTML-encoded by Quill storage
   const decoded = content
     .replace(/&amp;/g, '&')
@@ -185,6 +186,7 @@ function parseContentForCarousel(content: string) {
 }
 
 function parseContentForVideo(content: string) {
+  if (!content) return '';
   const regex = /\[VIDEO:([^\]]+)\]/g;
   return content.replace(regex, (_match, url) => {
     return `<div class="blog-video-container">
@@ -197,6 +199,7 @@ function parseContentForVideo(content: string) {
 }
 
 function parseContentForTOC(htmlString: string) {
+  if (!htmlString) return { newHtml: '', toc: [] };
   const toc: { id: string; text: string; level: number }[] = [];
   let counter = 0;
 
@@ -653,7 +656,7 @@ export default function BlogPostPage() {
     loadInitialData();
   }, [slug, generateGridPosts]);
 
-  const loadMorePosts = useCallback(() => {
+  const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !hasMore || loadedPosts.length === 0 || allPosts.length === 0) return;
 
     setIsLoadingMore(true);
@@ -668,18 +671,26 @@ export default function BlogPostPage() {
     }
 
     const shuffledAvailable = shufflePosts(availablePosts);
-    const nextPost = shuffledAvailable[0];
+    const nextPostHeader = shuffledAvailable[0];
     
-    // Incrementa view para o novo artigo carregado na rolagem infinita
-    incrementPostViews(nextPost.id);
+    // Buscar o post completo (com content) antes de renderizar
+    const fullPostResult = await import('@/app/actions/blog').then(m => m.getBlogPostById(nextPostHeader.id));
     
-    newUsedIds.add(nextPost.id);
-    setUsedPostIds(newUsedIds);
+    if (fullPostResult.success && fullPostResult.data) {
+      const nextPost = fullPostResult.data as BlogPost;
+      
+      // Incrementa view para o novo artigo carregado na rolagem infinita
+      import('@/app/actions/blog').then(m => m.incrementPostViews(nextPost.id));
+      
+      newUsedIds.add(nextPost.id);
+      setUsedPostIds(newUsedIds);
 
-    const nextGridPosts = generateGridPosts(nextPost.id, allPosts, newUsedIds);
+      const nextGridPosts = generateGridPosts(nextPost.id, allPosts, newUsedIds);
 
-    setLoadedPosts(prev => [...prev, nextPost]);
-    setGridPostSets(prev => [...prev, nextGridPosts]);
+      setLoadedPosts(prev => [...prev, nextPost]);
+      setGridPostSets(prev => [...prev, nextGridPosts]);
+    }
+    
     setIsLoadingMore(false);
   }, [loadedPosts, allPosts, usedPostIds, isLoadingMore, hasMore, generateGridPosts]);
 
