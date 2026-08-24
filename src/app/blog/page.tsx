@@ -20,6 +20,19 @@ export default async function BlogPage() {
     },
     orderBy: { createdAt: 'desc' },
     take: 23,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      excerpt: true,
+      image: true,
+      author: true,
+      tags: true,
+      createdAt: true,
+      likes: true,
+      dislikes: true,
+      commentsCount: true,
+    }
   });
 
   return (

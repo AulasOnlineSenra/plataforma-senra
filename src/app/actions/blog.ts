@@ -37,6 +37,19 @@ export async function getPublishedPostsPaginated(skip: number, take: number) {
       orderBy: { createdAt: 'desc' },
       skip,
       take,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        image: true,
+        author: true,
+        tags: true,
+        createdAt: true,
+        likes: true,
+        dislikes: true,
+        commentsCount: true,
+      }
     });
     return { success: true, data: posts };
   } catch (error) {
@@ -91,6 +104,19 @@ export async function getPublishedPosts() {
         createdAt: { lte: cutoffDate }
       },
       orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        image: true,
+        author: true,
+        tags: true,
+        createdAt: true,
+        likes: true,
+        dislikes: true,
+        commentsCount: true,
+      }
     });
     return { success: true, data: posts };
   } catch (error) {
