@@ -36,19 +36,19 @@ export default async function BlogPage() {
   });
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Imagem de fundo otimizada via next/image (WebP + cache inteligente) */}
-      <Image
-        src="/imagem-fundo-blog.png"
-        alt="Fundo Blog"
-        fill
-        priority
-        quality={85}
-        className="object-cover object-center"
-        style={{ zIndex: 0 }}
-      />
+    <div className="min-h-screen relative">
+      {/* Imagem de fundo fixa na tela (Parallax effect de alta performance via next/image) */}
+      <div className="fixed inset-0 w-full h-full -z-10">
+        <Image
+          src="/imagem-fundo-blog.png"
+          alt="Fundo Blog"
+          fill
+          priority
+          quality={85}
+          className="object-cover object-center"
+        />
+      </div>
 
-      {/* Conteúdo sobreposto */}
       <div className="relative" style={{ zIndex: 1 }}>
         {/* Back to Home button */}
         <div className="absolute top-6 left-6 z-50">
