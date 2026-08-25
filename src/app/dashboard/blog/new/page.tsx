@@ -372,6 +372,38 @@ export default function NewBlogPostPage() {
     }
   }, [formData.title]);
 
+  // Effect to track H2 hover
+  useEffect(() => {
+    const container = editorContainerRef.current;
+    if (!container) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const h2Target = target.closest('h2');
+      
+      // Se estamos passando sobre um H2
+      if (h2Target && target.closest('.ql-editor')) {
+        const rect = h2Target.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        setHoveredH2({
+          element: h2Target as HTMLElement,
+          text: (h2Target as HTMLElement).innerText,
+          top: rect.top - containerRect.top + (rect.height / 2),
+          left: -40, // 40px à esquerda do container
+        });
+      } 
+      // Se sairmos, mas não formos pro botão
+      else if (!target.closest('.crm-h2-btn')) {
+        // Um pequeno delay para não piscar
+        setHoveredH2(null);
+      }
+    };
+
+    container.addEventListener('mousemove', handleMouseMove);
+    return () => container.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   const counters = useMemo(() => {
     const text = (formData.content || '').replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ');
     const chars = text.length;
