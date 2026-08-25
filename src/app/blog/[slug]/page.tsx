@@ -619,7 +619,7 @@ export default function BlogPostPage() {
 
   const generateGridPosts = useCallback((currentPostId: string, availablePosts: BlogPost[], usedIds: Set<string>): CardPost[] => {
     const postsForGrid = shufflePosts(availablePosts, Array.from(usedIds).concat([currentPostId]));
-    const gridPosts = postsForGrid.slice(0, 30);
+    const gridPosts = postsForGrid.slice(0, 13); // 13 posts = 5 in carousel, 8 in grid = exactly 2 lines
     return convertToCardPost(gridPosts);
   }, []);
 
