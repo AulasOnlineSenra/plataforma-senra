@@ -79,7 +79,7 @@ export default function NewBlogPostPage() {
   const quillRef = useRef<any>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
-  const [hoveredH2, setHoveredH2] = useState<{ element: HTMLElement; text: string; top: number; left: number } | null>(null);
+  const [selectedTextData, setSelectedTextData] = useState<{ text: string; top: number; left: number } | null>(null);
   const [isSendingIdea, setIsSendingIdea] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -372,36 +372,47 @@ export default function NewBlogPostPage() {
     }
   }, [formData.title]);
 
-  // Effect to track H2 hover
+  // Effect to track text selection
   useEffect(() => {
-    const container = editorContainerRef.current;
-    if (!container) return;
+    const handleMouseUp = () => {
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const container = editorContainerRef.current;
+        if (!selection || selection.isCollapsed || !container) {
+          if (selection?.isCollapsed) setSelectedTextData(null);
+          return;
+        }
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const h2Target = target.closest('h2');
-      
-      // Se estamos passando sobre um H2
-      if (h2Target && target.closest('.ql-editor')) {
-        const rect = h2Target.getBoundingClientRect();
+        if (!container.contains(selection.anchorNode)) {
+          setSelectedTextData(null);
+          return;
+        }
+
+        const text = selection.toString().trim();
+        if (!text) {
+          setSelectedTextData(null);
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-        
-        setHoveredH2({
-          element: h2Target as HTMLElement,
-          text: (h2Target as HTMLElement).innerText,
-          top: rect.top - containerRect.top + (rect.height / 2),
-          left: -40, // 40px à esquerda do container
+
+        setSelectedTextData({
+          text,
+          top: rect.top - containerRect.top - 40,
+          left: rect.left - containerRect.left + (rect.width / 2),
         });
-      } 
-      // Se sairmos, mas não formos pro botão
-      else if (!target.closest('.crm-h2-btn')) {
-        // Um pequeno delay para não piscar
-        setHoveredH2(null);
-      }
+      }, 10);
     };
 
-    container.addEventListener('mousemove', handleMouseMove);
-    return () => container.removeEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('keyup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('keyup', handleMouseUp);
+    };
   }, []);
 
   const counters = useMemo(() => {
@@ -857,40 +868,38 @@ export default function NewBlogPostPage() {
 
           <div className="text-slate-800 relative" ref={editorContainerRef}>
             
-            {/* Floating H2 CRM Button */}
-            {hoveredH2 && (
+            {/* Floating Selection CRM Button */}
+            {selectedTextData && (
               <div 
-                className="crm-h2-btn absolute z-50 flex items-center justify-center transition-all duration-200 group"
+                className="absolute z-50 flex items-center justify-center transition-all duration-200 animate-in fade-in zoom-in-95"
                 style={{
-                  top: `${hoveredH2.top}px`,
-                  left: `${hoveredH2.left}px`,
-                  transform: 'translateY(-50%)',
+                  top: `${selectedTextData.top}px`,
+                  left: `${selectedTextData.left}px`,
+                  transform: 'translate(-50%, 0)',
                 }}
-                onMouseLeave={() => setHoveredH2(null)}
               >
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()} // Prevents selection from clearing
                   disabled={isSendingIdea}
                   onClick={async () => {
                     setIsSendingIdea(true);
-                    toast({ title: 'Enviando...', description: 'Salvando subtítulo como ideia de artigo.' });
-                    const res = await sendIdeaToCrm(hoveredH2.text);
+                    toast({ title: 'Enviando...', description: 'Salvando texto selecionado como ideia.' });
+                    const res = await sendIdeaToCrm(selectedTextData.text.slice(0, 100));
                     if (res.success) {
                       toast({ title: 'Ideia salva!', description: 'Foi enviada para a coluna Redação/Ideias.', className: 'bg-emerald-600 text-white border-none' });
                     } else {
                       toast({ variant: 'destructive', title: 'Erro', description: res.error });
                     }
                     setIsSendingIdea(false);
-                    setHoveredH2(null);
+                    setSelectedTextData(null);
                   }}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-400 border border-slate-200 hover:border-amber-500 shadow-sm flex items-center justify-center transition-colors"
-                  title="Transformar este subtítulo em um novo artigo (CRM)"
+                  className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-amber-500 text-white shadow-lg flex items-center gap-2 transition-colors border border-slate-700 hover:border-amber-500 text-xs font-medium cursor-pointer"
+                  title="Transformar texto selecionado em ideia de artigo (CRM)"
                 >
-                  {isSendingIdea ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {isSendingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  Ideia CRM
                 </button>
-                <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
-                  Criar artigo disso
-                </div>
               </div>
             )}
 
