@@ -232,10 +232,15 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
           continue;
         }
         try {
-          const toolResult = await (tool as any)(call.args);
+          const toolResult = await tool.execute(call.args);
           toolCallsMade.push({ name: call.name, args: call.args, result: toolResult });
+          
+          const responsePayload = (toolResult !== null && typeof toolResult === 'object' && !Array.isArray(toolResult))
+            ? toolResult
+            : { items: toolResult };
+
           functionResponses.push({
-            functionResponse: { name: call.name, response: { result: JSON.stringify(toolResult) } }
+            functionResponse: { name: call.name, response: responsePayload }
           });
         } catch (toolErr: any) {
           functionResponses.push({
