@@ -266,9 +266,11 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
     if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("quota")) {
       errorMsg = "Limite de cota atingido (429). Sua chave de API atingiu o limite gratuito. Habilite o faturamento no Google AI Studio.";
     } else if (errorMsg.includes("404") || errorMsg.toLowerCase().includes("not found")) {
-      errorMsg = `Modelo '${agentRef?.model}' não encontrado. Selecione um modelo Gemini válido nas configurações do agente (ex: gemini-2.0-flash).`;
+      errorMsg = `Erro 404 da API: ${error.message} (Modelo tentado: ${modelName})`;
     } else if (errorMsg.toLowerCase().includes("api key") || errorMsg.toLowerCase().includes("api_key") || errorMsg.includes("403")) {
       errorMsg = "Chave de API inválida ou sem permissão. Verifique sua chave do Google AI Studio em Configurações.";
+    } else {
+      errorMsg = `Erro na API do Google: ${error.message}`;
     }
     return { success: false, error: errorMsg };
   }
