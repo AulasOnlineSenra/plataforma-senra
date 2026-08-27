@@ -142,10 +142,14 @@ function zodToGoogleSchema(schema: any): any {
 
 export async function runAiAgentTest(agentId: string, userPrompt: string) {
   let agentRef: any = null;
+  let modelName = '';
   try {
     const agent = await prisma.aiAgent.findUnique({ where: { id: agentId } });
     if (!agent) return { success: false, error: "Agente não encontrado." };
     agentRef = agent;
+
+    // Normalizar nome do modelo aqui (fora do escopo interno) para o catch poder ler
+    modelName = (agent.model || 'gemini-1.5-flash').replace(/^googleai\//, '');
 
     // Buscar a chave diretamente do banco — sem tocar em process.env
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
@@ -159,6 +163,7 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
     }
 
     // Instanciar o cliente com a chave do banco (escopo local, descartado após a requisição)
+    // apiVersion 'v1' é o endpoint estável que suporta gemini-1.5-flash e gemini-1.5-pro
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Resolver as ferramentas habilitadas para o agente
@@ -199,9 +204,6 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
         return decl;
       })
     }] : [];
-
-    // Normalizar nome do modelo (remover prefixo 'googleai/' se existir)
-    const modelName = agent.model.replace(/^googleai\//, '');
 
     console.log(`[IA] Agente: ${agent.name} | Modelo: ${modelName} | Ferramentas: ${activeTools.map(t => t.name).join(', ') || 'nenhuma'}`);
 
