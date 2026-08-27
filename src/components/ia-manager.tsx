@@ -72,10 +72,12 @@ interface Tool {
 
 const MODELS_BY_PROVIDER: Record<string, { label: string, models: string[] }> = {
   gemini: { label: 'Google Gemini', models: [
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-2.0-flash-exp',
-    'gemini-2.0-flash-thinking-exp-01-21',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-flash-latest',
+    'gemini-pro-latest',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
   ]},
 };
 
@@ -96,21 +98,21 @@ const AGENT_TEMPLATES = [
     description: 'Especialista em conversão de leads e gestão de funil.',
     instructions: 'Você é um Agente Comercial sênior. Sua missão é analisar leads, sugerir movimentações no funil e garantir que nenhum contato esfrie. Use a ferramenta searchLeads para encontrar leads e moveLead para organizá-los.',
     tools: ['crm', 'moveLead'],
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
   },
   {
     name: 'Redator de Blog',
     description: 'Cria conteúdos otimizados para SEO e gerencia o blog.',
     instructions: 'Você é um redator especializado em educação. Sua missão é criar posts engajadores para o blog. Sempre verifique posts existentes com searchBlogPosts antes de sugerir novos.',
     tools: ['blog', 'searchBlogPosts'],
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
   },
   {
     name: 'Gestor de Operações',
     description: 'Monitora métricas e gera relatórios de desempenho.',
     instructions: 'Você é um gestor operacional. Sua missão é fornecer uma visão clara da saúde da plataforma. Use getSystemStats para reportar números de alunos e leads.',
     tools: ['stats'],
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
   },
 ];
 
