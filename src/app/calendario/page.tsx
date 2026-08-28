@@ -2,31 +2,21 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { getVestibularesWithEvents } from '@/app/actions/vestibulares';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Search, CalendarDays, List, ExternalLink, MapPin, Building2, BookOpen, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CalendarioVestibularesPage() {
   const [vestibulares, setVestibulares] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // View mode: 'list' or 'calendar'
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  
+
   // Filters
   const [search, setSearch] = useState('');
-  const [filterInstitution, setFilterInstitution] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [filterState, setFilterState] = useState('all');
-  const [filterEventType, setFilterEventType] = useState('all');
-
-  // Modal State
-  const [selectedVestibular, setSelectedVestibular] = useState<any | null>(null);
+  const [filterType, setFilterType] = useState('');
+  const [filterState, setFilterState] = useState('');
+  const [filterEventType, setFilterEventType] = useState('');
 
   // Calendar State
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,38 +30,36 @@ export default function CalendarioVestibularesPage() {
     fetchData();
   }, []);
 
-  // Format Helpers
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-  const getEventIcon = (type: string) => {
-    if (type.includes('INSCRI') || type.includes('Inscri')) return '📝';
-    if (type.includes('PAG') || type.includes('Pag')) return '💰';
-    if (type.includes('PROVA') || type.includes('Prova')) return '🧑‍🎓';
-    if (type.includes('RESUL') || type.includes('Resul')) return '📋';
-    if (type.includes('MAT') || type.includes('Mat')) return '🎓';
-    return '📅';
-  };
-  const getEventColor = (type: string) => {
-    if (type.includes('INSCRI') || type.includes('Inscri')) return 'bg-emerald-100 text-emerald-700';
-    if (type.includes('PAG') || type.includes('Pag')) return 'bg-amber-100 text-amber-700';
-    if (type.includes('PROVA') || type.includes('Prova')) return 'bg-rose-100 text-rose-700';
-    if (type.includes('RESUL') || type.includes('Resul')) return 'bg-blue-100 text-blue-700';
-    if (type.includes('MAT') || type.includes('Mat')) return 'bg-purple-100 text-purple-700';
-    return 'bg-slate-100 text-slate-700';
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  const nextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
   };
 
-  // Extract all unique filters
-  const institutions = useMemo(() => Array.from(new Set(vestibulares.map(v => v.institution))), [vestibulares]);
-  const types = useMemo(() => Array.from(new Set(vestibulares.map(v => v.type))), [vestibulares]);
-  const states = useMemo(() => Array.from(new Set(vestibulares.map(v => v.state))), [vestibulares]);
-  const eventTypes = useMemo(() => {
-    const ets = new Set<string>();
-    vestibulares.forEach(v => v.events.forEach((e: any) => ets.add(e.type)));
-    return Array.from(ets);
-  }, [vestibulares]);
+  const previousMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
 
-  // Derived Flat Events for List / Calendar mapping
+  const clearFilters = () => {
+    setSearch('');
+    setFilterType('');
+    setFilterState('');
+    setFilterEventType('');
+  };
+
   const allEvents = useMemo(() => {
     const list: any[] = [];
     vestibulares.forEach(v => {
@@ -82,313 +70,686 @@ export default function CalendarioVestibularesPage() {
     return list.sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
   }, [vestibulares]);
 
-  // Apply Filters to Events
   const filteredEvents = useMemo(() => {
     return allEvents.filter(e => {
-      if (search) {
-        const s = search.toLowerCase();
-        if (!e.vestibular.name.toLowerCase().includes(s) && !e.vestibular.institution.toLowerCase().includes(s)) {
-          return false;
-        }
-      }
-      if (filterInstitution !== 'all' && e.vestibular.institution !== filterInstitution) return false;
-      if (filterType !== 'all' && e.vestibular.type !== filterType) return false;
-      if (filterState !== 'all' && e.vestibular.state !== filterState) return false;
-      if (filterEventType !== 'all' && e.type !== filterEventType) return false;
+      const name = e.vestibular.name.toLowerCase();
+      const inst = e.vestibular.institution.toLowerCase();
+      const s = search.toLowerCase();
       
-      // In List View, only show upcoming events
-      if (viewMode === 'list' && new Date(e.dateStart) < new Date(new Date().setHours(0,0,0,0))) {
-        return false;
-      }
+      const matchesSearch = !s || name.includes(s) || inst.includes(s);
+      const matchesType = !filterType || e.vestibular.type === filterType;
+      const matchesState = !filterState || e.vestibular.state === filterState || filterState === "Nacional";
       
-      return true;
+      // Match the normalized event type
+      let eTypeNormalized = "";
+      if (e.type.includes('INSCRI')) eTypeNormalized = 'inscricao';
+      else if (e.type.includes('PAG')) eTypeNormalized = 'pagamento';
+      else if (e.type.includes('PROVA')) eTypeNormalized = 'prova';
+      else if (e.type.includes('RESUL')) eTypeNormalized = 'resultado';
+      else if (e.type.includes('MAT')) eTypeNormalized = 'matricula';
+      
+      const matchesEvent = !filterEventType || eTypeNormalized === filterEventType;
+
+      return matchesSearch && matchesType && matchesState && matchesEvent;
     });
-  }, [allEvents, search, filterInstitution, filterType, filterState, filterEventType, viewMode]);
+  }, [allEvents, search, filterType, filterState, filterEventType]);
+
+  const getEventClass = (type: string) => {
+    if (type.includes('INSCRI')) return 'inscricao';
+    if (type.includes('PAG')) return 'pagamento';
+    if (type.includes('PROVA')) return 'prova';
+    if (type.includes('RESUL')) return 'resultado';
+    if (type.includes('MAT')) return 'matricula';
+    return '';
+  };
+
+  const getEventNameDisplay = (type: string) => {
+    if (type.includes('INSCRI')) return 'Inscrições';
+    if (type.includes('PAG')) return 'Pagamento';
+    if (type.includes('PROVA')) return 'Prova';
+    if (type.includes('RESUL')) return 'Resultado';
+    if (type.includes('MAT')) return 'Matrícula';
+    return type;
+  };
+
+  // Calendar logic
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const startingDayOfWeek = firstDayOfMonth.getDay(); 
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+  const calendarCells = [];
+  
+  // Previous month trailing days
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarCells.push({
+      day: daysInPrevMonth - startingDayOfWeek + i + 1,
+      isCurrentMonth: false,
+      date: new Date(currentYear, currentMonth - 1, daysInPrevMonth - startingDayOfWeek + i + 1),
+      events: []
+    });
+  }
+  
+  // Current month days
+  for (let i = 1; i <= daysInMonth; i++) {
+    const d = new Date(currentYear, currentMonth, i);
+    const dayEvents = filteredEvents.filter(e => {
+      const ed = new Date(e.dateStart);
+      return ed.getDate() === d.getDate() && ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
+    });
+    calendarCells.push({
+      day: i,
+      isCurrentMonth: true,
+      date: d,
+      events: dayEvents
+    });
+  }
+  
+  // Next month leading days (fill to 42 cells)
+  const remainingCells = 42 - calendarCells.length;
+  for (let i = 1; i <= remainingCells; i++) {
+    calendarCells.push({
+      day: i,
+      isCurrentMonth: false,
+      date: new Date(currentYear, currentMonth + 1, i),
+      events: []
+    });
+  }
+
+  // Upcoming events
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const upcomingEvents = filteredEvents.filter(e => new Date(e.dateStart) >= today).slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-20">
-      
-      {/* Hero Section */}
-      <div className="bg-slate-900 text-white py-16 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400 via-slate-900 to-slate-900"></div>
-        <div className="max-w-5xl mx-auto relative z-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-black font-headline mb-4 tracking-tight">
-            Calendário de Vestibulares
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        :root {
+          --navy: #0f172a;
+          --navy-2: #162033;
+          --orange: #f5b000;
+          --orange-dark: #d99600;
+          --white: #ffffff;
+          --bg: #f6f8fb;
+          --text: #172033;
+          --muted: #64748b;
+          --border: #e5eaf1;
+          --green: #16a34a;
+          --blue: #2563eb;
+          --red: #dc2626;
+          --purple: #7c3aed;
+          --shadow: 0 12px 35px rgba(15, 23, 42, .07);
+          --radius: 16px;
+        }
+
+        body {
+          background: var(--bg);
+          color: var(--text);
+          line-height: 1.5;
+        }
+
+        /* HEADER */
+        .topbar {
+          background: var(--navy);
+          color: white;
+          padding: 18px 24px;
+        }
+        .topbar-inner {
+          max-width: 1180px;
+          margin: auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+        }
+        .brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-weight: 800;
+          font-size: 18px;
+        }
+        .brand-mark {
+          width: 38px;
+          height: 38px;
+          background: var(--orange);
+          border-radius: 10px;
+          display: grid;
+          place-items: center;
+          color: var(--navy);
+          font-weight: 900;
+        }
+        .topbar-link {
+          color: rgba(255,255,255,.75);
+          text-decoration: none;
+          font-size: 14px;
+        }
+
+        /* HERO */
+        .hero {
+          background: radial-gradient(circle at 85% 20%, rgba(245,176,0,.13), transparent 28%), var(--navy);
+          color: white;
+          padding: 65px 24px 85px;
+        }
+        .hero-inner {
+          max-width: 1180px;
+          margin: auto;
+          text-align: center;
+        }
+        .eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(245,176,0,.12);
+          border: 1px solid rgba(245,176,0,.25);
+          color: #ffd66b;
+          padding: 7px 13px;
+          border-radius: 50px;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: .5px;
+          margin-bottom: 18px;
+        }
+        .hero h1 {
+          font-size: clamp(32px, 5vw, 54px);
+          line-height: 1.08;
+          max-width: 800px;
+          margin: 0 auto 18px;
+          letter-spacing: -1.5px;
+          font-weight: 900;
+        }
+        .hero h1 span { color: var(--orange); }
+        .hero p {
+          max-width: 690px;
+          margin: auto;
+          color: rgba(255,255,255,.72);
+          font-size: 17px;
+        }
+
+        /* MAIN */
+        .container {
+          max-width: 1180px;
+          margin: -35px auto 70px;
+          padding: 0 24px;
+          position: relative;
+        }
+
+        /* FILTERS */
+        .filters {
+          background: white;
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          box-shadow: var(--shadow);
+          padding: 22px;
+          margin-bottom: 28px;
+        }
+        .filters-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 17px;
+          gap: 15px;
+        }
+        .filters-header h2 { font-size: 16px; font-weight: 700; }
+        .clear-filters {
+          background: none;
+          border: none;
+          color: var(--blue);
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 600;
+        }
+        .filter-grid {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr 1fr 1fr;
+          gap: 12px;
+        }
+        .field { position: relative; }
+        .field input, .field select {
+          width: 100%;
+          height: 48px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 0 14px;
+          background: #fff;
+          color: var(--text);
+          outline: none;
+          transition: .2s;
+        }
+        .field input:focus, .field select:focus {
+          border-color: var(--orange);
+          box-shadow: 0 0 0 3px rgba(245,176,0,.12);
+        }
+
+        /* LAYOUT */
+        .content-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.7fr) minmax(300px, .75fr);
+          gap: 25px;
+          align-items: start;
+        }
+        .section-card {
+          background: white;
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          box-shadow: 0 5px 20px rgba(15,23,42,.04);
+          overflow: hidden;
+        }
+
+        /* CALENDAR */
+        .calendar-header {
+          padding: 20px 22px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 15px;
+        }
+        .month-title {
+          font-size: 20px;
+          font-weight: 800;
+          text-transform: capitalize;
+        }
+        .calendar-actions { display: flex; gap: 7px; }
+        .calendar-actions button {
+          width: 38px;
+          height: 38px;
+          border: 1px solid var(--border);
+          background: white;
+          border-radius: 9px;
+          cursor: pointer;
+          font-size: 17px;
+          display: grid;
+          place-items: center;
+        }
+        .calendar-actions button:hover { background: #f8fafc; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .weekday {
+          padding: 13px 8px;
+          text-align: center;
+          font-size: 11px;
+          font-weight: 800;
+          color: var(--muted);
+          text-transform: uppercase;
+          border-bottom: 1px solid var(--border);
+        }
+        .day {
+          min-height: 105px;
+          border-right: 1px solid var(--border);
+          border-bottom: 1px solid var(--border);
+          padding: 8px;
+          position: relative;
+          background: white;
+        }
+        .day:nth-child(7n) { border-right: none; }
+        .day-number {
+          font-size: 12px;
+          color: var(--muted);
+          margin-bottom: 5px;
+          font-weight: 700;
+        }
+        .day.today .day-number {
+          background: var(--orange);
+          color: var(--navy);
+          width: 25px;
+          height: 25px;
+          display: grid;
+          place-items: center;
+          border-radius: 50%;
+        }
+        .day.muted { background: #fafbfc; }
+        .day.muted .day-number { opacity: .35; }
+        .event {
+          display: block;
+          border-radius: 6px;
+          padding: 5px 6px;
+          margin-top: 4px;
+          font-size: 10px;
+          font-weight: 700;
+          line-height: 1.25;
+          cursor: pointer;
+          transition: .15s;
+        }
+        .event:hover {
+          transform: translateY(-1px);
+          filter: brightness(.97);
+        }
+        .event.inscricao { background: #dcfce7; color: #166534; }
+        .event.prova { background: #dbeafe; color: #1e40af; }
+        .event.pagamento { background: #fef3c7; color: #92400e; }
+        .event.resultado { background: #ede9fe; color: #5b21b6; }
+        .event.matricula { background: #fee2e2; color: #991b1b; }
+
+        /* LEGEND */
+        .legend {
+          padding: 16px 20px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 13px;
+          border-top: 1px solid var(--border);
+        }
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 600;
+        }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* UPCOMING EVENTS */
+        .upcoming { padding: 20px; }
+        .upcoming h2 { font-size: 18px; margin-bottom: 4px; font-weight: 800; }
+        .upcoming-subtitle {
+          color: var(--muted);
+          font-size: 13px;
+          margin-bottom: 18px;
+        }
+        .event-card {
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 14px;
+          margin-bottom: 11px;
+          transition: .2s;
+        }
+        .event-card:hover {
+          border-color: #d6dce5;
+          transform: translateY(-1px);
+        }
+        .event-card-date {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          margin-bottom: 9px;
+        }
+        .date-box {
+          width: 44px;
+          height: 44px;
+          border-radius: 9px;
+          background: #fff7df;
+          display: grid;
+          place-items: center;
+          color: var(--navy);
+          text-align: center;
+          line-height: 1;
+        }
+        .date-box strong { display: block; font-size: 17px; }
+        .date-box span {
+          display: block;
+          font-size: 8px;
+          text-transform: uppercase;
+          font-weight: 800;
+        }
+        .event-card h3 { font-size: 13px; margin-bottom: 3px; font-weight: 700; }
+        .event-card p { color: var(--muted); font-size: 11px; }
+        .event-tag {
+          display: inline-block;
+          margin-top: 9px;
+          padding: 4px 8px;
+          border-radius: 5px;
+          font-size: 9px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+        .tag-inscricao { background: #dcfce7; color: #166534; }
+        .tag-prova { background: #dbeafe; color: #1e40af; }
+        .tag-pagamento { background: #fef3c7; color: #92400e; }
+        .tag-resultado { background: #ede9fe; color: #5b21b6; }
+        .tag-matricula { background: #fee2e2; color: #991b1b; }
+
+        /* INFO BOX */
+        .info-box {
+          margin-top: 18px;
+          background: var(--navy);
+          color: white;
+          border-radius: var(--radius);
+          padding: 22px;
+          position: relative;
+          overflow: hidden;
+        }
+        .info-box::after {
+          content: "";
+          position: absolute;
+          width: 130px;
+          height: 130px;
+          background: var(--orange);
+          opacity: .08;
+          border-radius: 50%;
+          right: -40px;
+          top: -40px;
+        }
+        .info-box h3 { font-size: 17px; margin-bottom: 7px; font-weight: 800;}
+        .info-box p {
+          color: rgba(255,255,255,.68);
+          font-size: 12px;
+          margin-bottom: 15px;
+        }
+        .info-box a {
+          display: inline-block;
+          background: var(--orange);
+          color: var(--navy);
+          text-decoration: none;
+          padding: 9px 13px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        /* FOOTER */
+        .page-footer {
+          background: var(--navy);
+          color: rgba(255,255,255,.55);
+          padding: 35px 24px;
+          text-align: center;
+          font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+          .filter-grid { grid-template-columns: 1fr 1fr; }
+          .content-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 650px) {
+          .topbar { padding: 14px 16px; }
+          .topbar-link { display: none; }
+          .hero { padding: 45px 18px 65px; }
+          .hero p { font-size: 15px; }
+          .container { padding: 0 12px; margin-top: -25px; }
+          .filters { padding: 16px; }
+          .filter-grid { grid-template-columns: 1fr; }
+          .calendar-header { padding: 16px; }
+          .calendar { overflow-x: auto; }
+          .weekday { font-size: 9px; padding: 10px 2px; }
+          .day { min-height: 82px; padding: 5px; }
+          .day-number { font-size: 10px; }
+          .event { font-size: 8px; padding: 4px; }
+          .legend { gap: 8px; padding: 12px; }
+        }
+      `}} />
+
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="brand">
+            <div className="brand-mark">S</div>
+            Aulas Online Senra
+          </div>
+          <Link href="/" className="topbar-link">
+            Aulas particulares &rarr;
+          </Link>
+        </div>
+      </header>
+
+      <section className="hero">
+        <div className="hero-inner">
+          <div className="eyebrow">
+            📅 Atualizado regularmente
+          </div>
+          <h1>
+            Calendário de <span>Vestibulares</span>
           </h1>
-          <p className="text-slate-300 max-w-2xl mx-auto text-lg mb-10">
-            Consulte as principais datas de inscrições, provas, resultados e matrículas dos processos seletivos mais importantes do Brasil.
+          <p>
+            Consulte as principais datas de inscrições, pagamentos, provas, resultados e matrículas dos processos seletivos.
           </p>
+        </div>
+      </section>
+
+      <main className="container">
+        {/* FILTERS */}
+        <section className="filters">
+          <div className="filters-header">
+            <h2>Encontre o processo seletivo</h2>
+            <button className="clear-filters" onClick={clearFilters}>
+              Limpar filtros
+            </button>
+          </div>
+
+          <div className="filter-grid">
+            <div className="field">
+              <input
+                type="text"
+                placeholder="🔎 Buscar instituição..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <select value={filterType} onChange={e => setFilterType(e.target.value)}>
+                <option value="">Todos os tipos</option>
+                <option value="Vestibular">Vestibular</option>
+                <option value="Exame Nacional">Exame nacional</option>
+                <option value="Medicina">Medicina</option>
+                <option value="Admissão Escolar">Admissão escolar</option>
+              </select>
+            </div>
+            <div className="field">
+              <select value={filterState} onChange={e => setFilterState(e.target.value)}>
+                <option value="">Todos os estados</option>
+                <option value="RJ">Rio de Janeiro</option>
+                <option value="SP">São Paulo</option>
+                <option value="MG">Minas Gerais</option>
+                <option value="PR">Paraná</option>
+                <option value="RS">Rio Grande do Sul</option>
+                <option value="SC">Santa Catarina</option>
+                <option value="DF">Distrito Federal</option>
+                <option value="Nacional">Nacional</option>
+              </select>
+            </div>
+            <div className="field">
+              <select value={filterEventType} onChange={e => setFilterEventType(e.target.value)}>
+                <option value="">Todas as datas</option>
+                <option value="inscricao">Inscrições</option>
+                <option value="pagamento">Pagamento</option>
+                <option value="prova">Provas</option>
+                <option value="resultado">Resultados</option>
+                <option value="matricula">Matrículas</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* CONTENT */}
+        <div className="content-grid">
           
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl p-2 shadow-2xl flex items-center">
-            <Search className="w-6 h-6 text-slate-400 ml-3 mr-2" />
-            <input 
-              type="text" 
-              placeholder="Busque por vestibular, instituição ou estado..."
-              className="flex-1 bg-transparent border-none text-slate-800 text-lg focus:outline-none focus:ring-0 h-12"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 -mt-8 relative z-20">
-        
-        {/* Filters Toolbar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-8 flex flex-wrap items-center gap-3">
-          <Select value={filterInstitution} onValueChange={setFilterInstitution}>
-            <SelectTrigger className="w-full sm:w-[160px] h-10 rounded-xl">
-              <SelectValue placeholder="Instituição" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas Instituições</SelectItem>
-              {institutions.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-full sm:w-[150px] h-10 rounded-xl">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Tipos</SelectItem>
-              {types.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterState} onValueChange={setFilterState}>
-            <SelectTrigger className="w-full sm:w-[130px] h-10 rounded-xl">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todo o Brasil</SelectItem>
-              {states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterEventType} onValueChange={setFilterEventType}>
-            <SelectTrigger className="w-full sm:w-[160px] h-10 rounded-xl">
-              <SelectValue placeholder="Tipo de Data" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as Datas</SelectItem>
-              {eventTypes.map(et => <SelectItem key={et} value={et}>{et}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <div className="flex-1"></div>
-
-          {/* Toggle View */}
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <Button 
-              variant={viewMode === 'list' ? 'default' : 'ghost'} 
-              size="sm" 
-              className={`rounded-lg h-8 px-3 ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm hover:bg-white' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4 mr-2" /> Lista
-            </Button>
-            <Button 
-              variant={viewMode === 'calendar' ? 'default' : 'ghost'} 
-              size="sm" 
-              className={`rounded-lg h-8 px-3 ${viewMode === 'calendar' ? 'bg-white text-slate-900 shadow-sm hover:bg-white' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setViewMode('calendar')}
-            >
-              <CalendarDays className="w-4 h-4 mr-2" /> Calendário
-            </Button>
-          </div>
-        </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 text-emerald-500" />
-            <p className="font-medium">Carregando calendário...</p>
-          </div>
-        )}
-
-        {/* List View */}
-        {!loading && viewMode === 'list' && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-              Próximas datas importantes
-            </h2>
-            
-            {filteredEvents.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-slate-200">
-                <CalendarDays className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 font-medium">Nenhum evento futuro encontrado com os filtros atuais.</p>
+          {/* CALENDAR */}
+          <section className="section-card">
+            <div className="calendar-header">
+              <div className="month-title">
+                {monthNames[currentMonth]} {currentYear}
               </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {filteredEvents.slice(0, 30).map((ev: any) => (
-                  <div key={ev.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-start gap-4">
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center min-w-[70px]">
-                      <span className="block text-xs font-bold text-slate-400 uppercase">
-                        {new Date(ev.dateStart).toLocaleDateString('pt-BR', { month: 'short' })}
-                      </span>
-                      <span className="block text-2xl font-black text-slate-800">
-                        {new Date(ev.dateStart).getDate()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Building2 className="w-3 h-3" /> {ev.vestibular.institution}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getEventColor(ev.type)} uppercase`}>
-                          {ev.type}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-lg text-slate-900 leading-tight mb-2">
-                        {ev.vestibular.name}
-                      </h3>
-                      <div className="flex items-center gap-3 text-xs text-slate-500 mb-4">
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {ev.vestibular.state}</span>
-                        <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /> {ev.vestibular.type}</span>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full rounded-xl"
-                        onClick={() => setSelectedVestibular(ev.vestibular)}
-                      >
-                        Ver Detalhes do Processo
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              <div className="calendar-actions">
+                <button onClick={previousMonth}>&lsaquo;</button>
+                <button onClick={nextMonth}>&rsaquo;</button>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Calendar View */}
-        {!loading && viewMode === 'calendar' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-              >
-                &larr; Mês Anterior
-              </Button>
-              <h2 className="font-bold text-lg uppercase tracking-wide">
-                {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-              </h2>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-              >
-                Próximo Mês &rarr;
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-7 border-b border-slate-100 text-center">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-                <div key={d} className="py-3 text-xs font-bold text-slate-400 uppercase tracking-wider border-r last:border-r-0">
-                  {d}
-                </div>
-              ))}
             </div>
 
-            <div className="grid grid-cols-7 auto-rows-[120px]">
-              {Array.from({ length: 42 }).map((_, i) => {
-                const day = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-                day.setDate(day.getDate() - day.getDay() + i);
-                
-                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                const isToday = day.toDateString() === new Date().toDateString();
-                
-                // Find events for this day
-                const dayEvents = filteredEvents.filter(e => new Date(e.dateStart).toDateString() === day.toDateString());
+            <div className="calendar">
+              <div className="weekday">Dom</div>
+              <div className="weekday">Seg</div>
+              <div className="weekday">Ter</div>
+              <div className="weekday">Qua</div>
+              <div className="weekday">Qui</div>
+              <div className="weekday">Sex</div>
+              <div className="weekday">Sáb</div>
 
-                // Se passou dos 35 dias (5 semanas) e a última semana é de outro mês, escondemos
-                if (i >= 35 && !isCurrentMonth) return null;
-
+              {calendarCells.map((cell, idx) => {
+                const isToday = cell.date.toDateString() === new Date().toDateString();
                 return (
-                  <div key={i} className={`border-r border-b p-2 flex flex-col transition-colors ${!isCurrentMonth ? 'bg-slate-50 opacity-50' : 'bg-white hover:bg-slate-50'}`}>
-                    <span className={`text-sm font-semibold mb-2 inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday ? 'bg-emerald-500 text-white' : 'text-slate-700'}`}>
-                      {day.getDate()}
-                    </span>
-                    <div className="flex-1 overflow-y-auto space-y-1 scrollbar-hide">
-                      {dayEvents.map((ev: any) => (
-                        <button 
-                          key={ev.id}
-                          onClick={() => setSelectedVestibular(ev.vestibular)}
-                          className={`w-full text-left text-[10px] font-bold px-1.5 py-1 rounded-md truncate transition-transform hover:scale-[1.02] ${getEventColor(ev.type)}`}
-                          title={`${ev.vestibular.institution}: ${ev.type}`}
-                        >
-                          {getEventIcon(ev.type)} {ev.vestibular.institution}
-                        </button>
-                      ))}
-                    </div>
+                  <div key={idx} className={\`day \${!cell.isCurrentMonth ? 'muted' : ''} \${isToday ? 'today' : ''}\`}>
+                    <div className="day-number">{cell.day}</div>
+                    {cell.events.map((ev: any) => (
+                      <div
+                        key={ev.id}
+                        className={\`event \${getEventClass(ev.type)}\`}
+                        title={\`\${ev.vestibular.institution} - \${ev.type}\`}
+                      >
+                        {ev.vestibular.institution}
+                        <br />
+                        {getEventNameDisplay(ev.type)}
+                      </div>
+                    ))}
                   </div>
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Vestibular Detail Modal */}
-      <Dialog open={!!selectedVestibular} onOpenChange={(open) => !open && setSelectedVestibular(null)}>
-        <DialogContent className="max-w-md w-full rounded-2xl">
-          {selectedVestibular && (
-            <>
-              <DialogHeader className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide">
-                    {selectedVestibular.institution}
-                  </span>
-                  <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide">
-                    {selectedVestibular.type}
-                  </span>
-                </div>
-                <DialogTitle className="text-2xl font-black">{selectedVestibular.name}</DialogTitle>
-                <DialogDescription className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4" /> Estado: {selectedVestibular.state}
-                </DialogDescription>
-              </DialogHeader>
+            {/* LEGEND */}
+            <div className="legend">
+              <div className="legend-item"><span className="legend-dot" style={{background:'#16a34a'}}></span>Inscrição</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:'#2563eb'}}></span>Prova</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:'#d97706'}}></span>Pagamento</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:'#7c3aed'}}></span>Resultado</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:'#dc2626'}}></span>Matrícula</div>
+            </div>
+          </section>
 
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-bold text-slate-800 mb-3 border-b pb-2">Datas Importantes</h4>
-                  <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                    {selectedVestibular.events.map((ev: any, idx: number) => (
-                      <div key={ev.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-white bg-slate-200 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ml-0 md:ml-auto md:mr-auto">
-                          <span className="text-[10px]">{getEventIcon(ev.type)}</span>
-                        </div>
-                        <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-3 rounded-xl border border-slate-100 bg-white shadow-sm ml-4 md:ml-0 group-even:md:mr-4 group-odd:md:ml-4 text-left group-odd:md:text-right">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${getEventColor(ev.type).split(' ')[1]}`}>
-                            {ev.type}
-                          </span>
-                          <p className="font-bold text-slate-800 text-sm mt-0.5">
-                            {formatDate(ev.dateStart)} {ev.dateEnd ? `→ ${formatDate(ev.dateEnd)}` : ''}
-                          </p>
-                          {ev.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{ev.description}</p>}
+          {/* UPCOMING EVENTS */}
+          <aside>
+            <section className="section-card upcoming">
+              <h2>Próximas datas</h2>
+              <p className="upcoming-subtitle">Os próximos prazos importantes.</p>
+
+              {upcomingEvents.length === 0 ? (
+                <p style={{fontSize:'12px', color:'var(--muted)'}}>Nenhuma data próxima encontrada.</p>
+              ) : (
+                upcomingEvents.map((ev: any) => (
+                  <div key={ev.id} className="event-card">
+                    <div className="event-card-date">
+                      <div className="date-box">
+                        <div>
+                          <strong>{new Date(ev.dateStart).getDate()}</strong>
+                          <span>{monthNames[new Date(ev.dateStart).getMonth()].substring(0,3)}</span>
                         </div>
                       </div>
-                    ))}
+                      <div>
+                        <h3>{ev.vestibular.institution}</h3>
+                        <p>{ev.description || getEventNameDisplay(ev.type)}</p>
+                      </div>
+                    </div>
+                    <span className={\`event-tag tag-\${getEventClass(ev.type)}\`}>
+                      {getEventNameDisplay(ev.type)}
+                    </span>
                   </div>
-                </div>
+                ))
+              )}
+            </section>
 
-                {selectedVestibular.officialSite && (
-                  <Button asChild className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 text-md shadow-lg shadow-emerald-500/20">
-                    <a href={selectedVestibular.officialSite} target="_blank" rel="noopener noreferrer">
-                      Ir para o Site Oficial <ExternalLink className="w-4 h-4 ml-2" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            {/* CTA */}
+            <div className="info-box">
+              <h3>Vai prestar vestibular?</h3>
+              <p>Organize sua preparação com aulas particulares e acompanhamento individual.</p>
+              <Link href="/">
+                Conheça as aulas &rarr;
+              </Link>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <footer className="page-footer">
+        &copy; 2026 Aulas Online Senra &middot; Calendário de Vestibulares
+      </footer>
+    </>
   );
 }
