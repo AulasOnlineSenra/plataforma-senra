@@ -476,3 +476,52 @@ model Question {
   updatedAt           DateTime @updatedAt
   creator             User     @relation("Question_creatorIdToUser", fields: [creatorId], references: [id])
 
+  @@index([creatorId])
+  @@index([discipline])
+}
+
+model ReferenceBlog {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  feedUrl   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vestibular {
+  id               String            @id @default(cuid())
+  name             String            @default("")
+  institution      String
+  state            String            @default("Nacional")
+  type             String            @default("Vestibular")
+  officialSite     String?
+  isActive         Boolean           @default(true)
+  scrapingUrl      String?
+  lastScrapeStatus String?
+  lastScrapeDate   DateTime?
+  events           VestibularEvent[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([state])
+  @@index([type])
+  @@index([isActive])
+}
+
+model VestibularEvent {
+  id           String     @id @default(cuid())
+  vestibularId String
+  vestibular   Vestibular @relation(fields: [vestibularId], references: [id], onDelete: Cascade)
+  type         String
+  dateStart    DateTime
+  dateEnd      DateTime?
+  description  String?
+  status       String     @default("APPROVED")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([vestibularId])
+  @@index([type])
+  @@index([dateStart])
+}
