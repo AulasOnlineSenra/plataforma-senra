@@ -1,7 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { PrismaClient } from '../src/generated/client';
-import 'dotenv/config';
 
 const prisma = new PrismaClient();
 
@@ -28,7 +27,7 @@ const SOURCES = [
   }
 ];
 
-async function extractEventsWithGemini(institution: string, textContext: string) {
+async function extractEventsWithGemini(institution: string, textContext: string, apiKey: string) {
   const prompt = `
 Você é um extrator de datas de vestibulares altamente preciso. 
 Analise o texto abaixo, raspado da página oficial da instituição ${institution}.
@@ -53,7 +52,6 @@ ${textContext.substring(0, 15000)}
   `;
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -82,9 +80,16 @@ ${textContext.substring(0, 15000)}
 async function scrapeData() {
   console.log('🤖 Iniciando Scraping com Inteligência Artificial (Google Gemini)...');
   
-  if (!process.env.GEMINI_API_KEY) {
-    console.error('❌ ERRO: A variável de ambiente GEMINI_API_KEY não foi encontrada no arquivo .env!');
-    console.error('Adicione GEMINI_API_KEY="sua_chave" no .env antes de rodar este script.');
+  // Buscar a chave da API salva no banco de dados (Painel Administrativo)
+  const appSettings = await prisma.appSetting.findUnique({
+    where: { id: 'global' }
+  });
+
+  const apiKey = appSettings?.geminiApiKey;
+
+  if (!apiKey) {
+    console.error('❌ ERRO: A chave da API Gemini não foi encontrada no banco de dados!');
+    console.error('Acesse o Painel Administrativo > Configurações e adicione sua chave de API.');
     process.exit(1);
   }
 
@@ -103,7 +108,7 @@ async function scrapeData() {
       const rawText = $('body').text().replace(/\s+/g, ' ').trim();
       
       console.log(`🧠 Texto extraído (${rawText.length} caracteres). Enviando para a IA analisar...`);
-      const events = await extractEventsWithGemini(source.institution, rawText);
+      const events = await extractEventsWithGemini(source.institution, rawText, apiKey);
       
       if (events && Array.isArray(events) && events.length > 0) {
         const vestibular = await prisma.vestibular.findFirst({
