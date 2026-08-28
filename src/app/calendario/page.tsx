@@ -676,13 +676,13 @@ export default function CalendarioVestibularesPage() {
               {calendarCells.map((cell, idx) => {
                 const isToday = cell.date.toDateString() === new Date().toDateString();
                 return (
-                  <div key={idx} className={\`day \${!cell.isCurrentMonth ? 'muted' : ''} \${isToday ? 'today' : ''}\`}>
+                  <div key={idx} className={`day ${!cell.isCurrentMonth ? 'muted' : ''} ${isToday ? 'today' : ''}`}>
                     <div className="day-number">{cell.day}</div>
                     {cell.events.map((ev: any) => (
                       <div
                         key={ev.id}
-                        className={\`event \${getEventClass(ev.type)}\`}
-                        title={\`\${ev.vestibular.institution} - \${ev.type}\`}
+                        className={`event ${getEventClass(ev.type)}`}
+                        title={`${ev.vestibular.institution} - ${ev.type}`}
                       >
                         {ev.vestibular.institution}
                         <br />
@@ -727,7 +727,7 @@ export default function CalendarioVestibularesPage() {
                         <p>{ev.description || getEventNameDisplay(ev.type)}</p>
                       </div>
                     </div>
-                    <span className={\`event-tag tag-\${getEventClass(ev.type)}\`}>
+                    <span className={`event-tag tag-${getEventClass(ev.type)}`}>
                       {getEventNameDisplay(ev.type)}
                     </span>
                   </div>
