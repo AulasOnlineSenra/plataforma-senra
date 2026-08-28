@@ -10,8 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock, CheckCircle2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getBlogPostById, updatePost } from '@/app/actions/blog';
-import { sendIdeaToCrm } from '@/app/actions/crm';
+import { getBlogPostById, updatePost, createDraftFromIdea } from '@/app/actions/blog';
 import dynamic from 'next/dynamic';
 import {
   DropdownMenu,
@@ -992,21 +991,21 @@ export default function EditBlogPostPage() {
                   disabled={isSendingIdea}
                   onClick={async () => {
                     setIsSendingIdea(true);
-                    toast({ title: 'Enviando...', description: 'Salvando texto selecionado como ideia.' });
-                    const res = await sendIdeaToCrm(selectedTextData.text.slice(0, 100));
+                    toast({ title: 'Salvando...', description: 'Criando novo rascunho de artigo.' });
+                    const res = await createDraftFromIdea(selectedTextData.text.slice(0, 100));
                     if (res.success) {
-                      toast({ title: 'Ideia salva!', description: 'Foi enviada para a coluna Redação/Ideias.', className: 'bg-emerald-600 text-white border-none' });
+                      toast({ title: 'Rascunho criado!', description: 'Adicionado na aba de Redação do Blog.', className: 'bg-emerald-600 text-white border-none' });
                     } else {
                       toast({ variant: 'destructive', title: 'Erro', description: res.error });
                     }
                     setIsSendingIdea(false);
                     setSelectedTextData(null);
                   }}
-                  className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-amber-500 text-white shadow-lg flex items-center gap-2 transition-colors border border-slate-700 hover:border-amber-500 text-xs font-medium cursor-pointer"
-                  title="Transformar texto selecionado em ideia de artigo (CRM)"
+                  className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-emerald-600 text-white shadow-lg flex items-center gap-2 transition-colors border border-slate-700 hover:border-emerald-600 text-xs font-medium cursor-pointer"
+                  title="Transformar texto selecionado em rascunho de artigo"
                 >
-                  {isSendingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                  Ideia CRM
+                  {isSendingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Type className="w-3.5 h-3.5" />}
+                  Nova Ideia (Blog)
                 </button>
               </div>
             )}
