@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import * as https from 'https';
 import { PrismaClient } from '../src/generated/client';
 
 const prisma = new PrismaClient();
@@ -52,7 +53,7 @@ ${textContext.substring(0, 15000)}
   `;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -93,6 +94,9 @@ async function scrapeData() {
     process.exit(1);
   }
 
+  // Agente HTTP customizado para ignorar erros de SSL em sites universitários defasados
+  const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+
   for (const source of SOURCES) {
     try {
       console.log(`\n🌍 Acessando site: ${source.institution}...`);
@@ -100,12 +104,18 @@ async function scrapeData() {
       const response = await axios.get(source.url, {
         headers: { 
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
+        },
+        httpsAgent
       });
       
       const $ = cheerio.load(response.data);
       $('script, style, noscript, nav, footer, img').remove();
-      const rawText = $('body').text().replace(/\s+/g, ' ').trim();
+      let rawText = $('body').text().replace(/\s+/g, ' ').trim();
+      
+      // Corta o texto se for muito grande para não exceder limites de token
+      if (rawText.length > 25000) {
+        rawText = rawText.substring(0, 25000);
+      }
       
       console.log(`🧠 Texto extraído (${rawText.length} caracteres). Enviando para a IA analisar...`);
       const events = await extractEventsWithGemini(source.institution, rawText, apiKey);
