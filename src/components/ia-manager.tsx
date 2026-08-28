@@ -35,6 +35,7 @@ import {
   Clock,
   Cpu,
   AlertTriangle,
+  RotateCcw,
   User
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -85,6 +86,8 @@ interface ChatMessage {
   executionTimeMs?: number;
   usage?: { promptTokens: number; candidatesTokens: number; totalTokens: number } | null;
   timestamp: Date;
+  isError?: boolean;
+  retryPrompt?: string;
 }
 
 const MODELS_BY_PROVIDER: Record<string, { label: string, models: string[] }> = {
@@ -284,6 +287,8 @@ export function IaManager() {
         role: 'assistant',
         content: `⚠️ Erro: ${errorMsg}`,
         timestamp: new Date(),
+        isError: true,
+        retryPrompt: promptToSend,
       };
       setChatMessages(prev => [...prev, errorChatMsg]);
     }
@@ -562,7 +567,7 @@ export function IaManager() {
 
             {/* ABA: SANDBOX INTERATIVO */}
             <TabsContent value="sandbox" className="mt-4">
-              <Card className="flex flex-col h-[650px]">
+              <Card className="flex flex-col h-[610px]">
                 {/* Header do Sandbox com Medidor de Tokens & Limpar */}
                 <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between space-y-0 bg-slate-50/50">
                   <div className="flex items-center gap-3">
@@ -667,6 +672,22 @@ export function IaManager() {
                               : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                           }`}>
                             <p className="whitespace-pre-wrap">{msg.content}</p>
+
+                            {msg.isError && (
+                              <div className="mt-3 pt-3 border-t border-red-100 flex flex-col gap-2">
+                                <span className="text-[11px] text-red-600 font-medium">Você quer tentar enviar novamente?</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleTestAgent(msg.retryPrompt)}
+                                  disabled={isRunningTest}
+                                  className="w-fit text-xs gap-1.5 border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 rounded-lg h-7"
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                  Refazer
+                                </Button>
+                              </div>
+                            )}
 
                             {/* Tracing de Chamada de Ferramentas (Accordion de Output) */}
                             {msg.toolCalls && msg.toolCalls.length > 0 && (
