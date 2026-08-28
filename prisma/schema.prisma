@@ -483,3 +483,36 @@ model ReferenceBlog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Vestibular {
+  id           String            @id @default(cuid())
+  name         String
+  institution  String
+  state        String            @default("Nacional") // SP, RJ, Nacional, etc.
+  type         String            @default("Vestibular") // Vestibular, ENEM, Processo Seletivo, etc.
+  officialSite String?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  events       VestibularEvent[]
+
+  @@index([state])
+  @@index([type])
+  @@index([isActive])
+}
+
+model VestibularEvent {
+  id           String     @id @default(cuid())
+  vestibularId String
+  vestibular   Vestibular @relation(fields: [vestibularId], references: [id], onDelete: Cascade)
+  type         String     // INSCRIÇÕES, PAGAMENTO, PROVA_FASE_1, PROVA_FASE_2, RESULTADO, MATRÍCULA
+  dateStart    DateTime
+  dateEnd      DateTime?
+  description  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([vestibularId])
+  @@index([type])
+  @@index([dateStart])
+}
