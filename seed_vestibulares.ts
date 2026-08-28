@@ -77,7 +77,7 @@ async function main() {
           officialSite: 'https://google.com/search?q=' + encodeURIComponent(item.institution + ' vestibular')
         }
       });
-      console.log(\`Criado: \${vestibular.institution}\`);
+      console.log(`Criado: ${vestibular.institution}`);
 
       // Add a couple of random events in the current and next month for the calendar to have data
       const randomEventCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 events
@@ -96,12 +96,12 @@ async function main() {
             vestibularId: vestibular.id,
             type: randomType,
             dateStart: eventDate,
-            description: \`Atenção para o prazo de \${randomType.toLowerCase()} da instituição \${item.institution}.\`
+            description: `Atenção para o prazo de ${randomType.toLowerCase()} da instituição ${item.institution}.`
           }
         });
       }
     } else {
-      console.log(\`Já existe: \${item.institution}\`);
+      console.log(`Já existe: ${item.institution}`);
     }
   }
 
