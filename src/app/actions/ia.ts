@@ -140,16 +140,17 @@ function zodToGoogleSchema(schema: any): any {
   return { type: SchemaType.STRING };
 }
 
-export async function runAiAgentTest(agentId: string, userPrompt: string) {
+export async function runAiAgentTest(agentId: string, userPrompt: string, history?: { role: 'user' | 'model', content: string }[]) {
   let agentRef: any = null;
   let modelName = '';
+  const startTime = Date.now();
   try {
     const agent = await prisma.aiAgent.findUnique({ where: { id: agentId } });
     if (!agent) return { success: false, error: "Agente não encontrado." };
     agentRef = agent;
 
     // Normalizar nome do modelo aqui (fora do escopo interno) para o catch poder ler
-    modelName = (agent.model || 'gemini-1.5-flash').replace(/^googleai\//, '');
+    modelName = (agent.model || 'gemini-3.6-flash').replace(/^googleai\//, '');
 
     // Buscar a chave diretamente do banco — sem tocar em process.env
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
@@ -163,7 +164,6 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
     }
 
     // Instanciar o cliente com a chave do banco (escopo local, descartado após a requisição)
-    // apiVersion 'v1' é o endpoint estável que suporta gemini-1.5-flash e gemini-1.5-pro
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Resolver as ferramentas habilitadas para o agente
@@ -213,8 +213,14 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
       ...(googleTools.length > 0 ? { tools: googleTools } : {}),
     });
 
+    // Converter histórico para o formato do SDK se fornecido
+    const sdkHistory = (history || []).map(h => ({
+      role: h.role === 'model' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    }));
+
     // Suporte a agentic loop (tool calls)
-    const chat = model.startChat();
+    const chat = model.startChat({ history: sdkHistory });
     let result = await chat.sendMessage(userPrompt);
     let response = result.response;
     const toolCallsMade: { name: string; args: any; result: any }[] = [];
@@ -255,10 +261,19 @@ export async function runAiAgentTest(agentId: string, userPrompt: string) {
       response = result.response;
     }
 
+    const executionTimeMs = Date.now() - startTime;
+    const usage = response.usageMetadata ? {
+      promptTokens: response.usageMetadata.promptTokenCount || 0,
+      candidatesTokens: response.usageMetadata.candidatesTokenCount || 0,
+      totalTokens: response.usageMetadata.totalTokenCount || 0,
+    } : null;
+
     return {
       success: true,
       response: response.text(),
-      toolCalls: toolCallsMade.map(tc => ({ name: tc.name, args: tc.args })),
+      toolCalls: toolCallsMade.map(tc => ({ name: tc.name, args: tc.args, result: tc.result })),
+      executionTimeMs,
+      usage,
     };
 
   } catch (error: any) {

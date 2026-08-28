@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -28,7 +28,14 @@ import {
   Globe,
   PenTool,
   MessageCircle,
-  Database
+  Database,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Cpu,
+  AlertTriangle,
+  User
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -38,21 +45,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from './ui/dialog';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  getAiAgents,
-  createAiAgent,
-  updateAiAgent,
-  deleteAiAgent,
-  runAiAgentTest,
-  getAvailableProviders
-} from '@/app/actions/ia';
+} from './ui/tabs';
 import {
   Select,
   SelectContent,
@@ -61,13 +60,31 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from './ui/select';
+import { 
+  getAiAgents, 
+  createAiAgent, 
+  updateAiAgent, 
+  deleteAiAgent, 
+  runAiAgentTest,
+  getAvailableProviders
+} from '@/app/actions/ia';
 
 interface Tool {
   id: string;
   name: string;
   description: string;
   icon: any;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  toolCalls?: { name: string; args: any; result?: any }[];
+  executionTimeMs?: number;
+  usage?: { promptTokens: number; candidatesTokens: number; totalTokens: number } | null;
+  timestamp: Date;
 }
 
 const MODELS_BY_PROVIDER: Record<string, { label: string, models: string[] }> = {
@@ -77,6 +94,8 @@ const MODELS_BY_PROVIDER: Record<string, { label: string, models: string[] }> = 
     'gemini-3.1-pro-preview',
   ]},
 };
+
+const MAX_CONTEXT_TOKENS = 1048576; // 1M tokens (Gemini 3.6 / 3.5)
 
 const AVAILABLE_TOOLS: Tool[] = [
   { id: 'crm', name: 'Gestão de CRM', description: 'Buscar leads, criar e gerenciar funil.', icon: Database },
@@ -117,10 +136,13 @@ export function IaManager() {
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Chat / Sandbox State
   const [testPrompt, setTestPrompt] = useState('');
   const [isRunningTest, setIsRunningTest] = useState(false);
-  const [testResponse, setTestResponse] = useState('');
-  const [toolCalls, setToolCalls] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [availableProviders, setAvailableProviders] = useState<string[]>([]);
@@ -136,6 +158,16 @@ export function IaManager() {
     loadAgents();
     loadProviders();
   }, []);
+
+  useEffect(() => {
+    // Scroll para o fim do chat ao receber mensagens
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, isRunningTest]);
+
+  // Limpar chat ao trocar de agente
+  useEffect(() => {
+    setChatMessages([]);
+  }, [selectedAgent?.id]);
 
   const loadProviders = async () => {
     const result = await getAvailableProviders();
@@ -171,7 +203,7 @@ export function IaManager() {
     if (result.success) {
       toast.success("Agente criado com sucesso!");
       setIsCreateDialogOpen(false);
-      setNewAgent({ name: '', description: '', instructions: '', model: 'gemini-1.5-flash', tools: [] });
+      setNewAgent({ name: '', description: '', instructions: '', model: 'gemini-3.6-flash', tools: [] });
       loadAgents();
     } else {
       toast.error(result.error || "Erro ao criar agente");
@@ -181,18 +213,14 @@ export function IaManager() {
 
   const handleUpdateAgent = async () => {
     if (!selectedAgent) return;
-
     setLoading(true);
     const result = await updateAiAgent(selectedAgent.id, {
-      name: selectedAgent.name,
-      description: selectedAgent.description,
-      instructions: selectedAgent.instructions,
-      model: selectedAgent.model,
-      tools: JSON.stringify(selectedAgent.tools || [])
+      ...selectedAgent,
+      tools: JSON.stringify(selectedAgent.tools)
     });
 
     if (result.success) {
-      toast.success("Configurações salvas!");
+      toast.success("Agente atualizado!");
       loadAgents();
     } else {
       toast.error(result.error || "Erro ao atualizar agente");
@@ -202,32 +230,62 @@ export function IaManager() {
 
   const handleDeleteAgent = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este agente?")) return;
-
+    setLoading(true);
     const result = await deleteAiAgent(id);
     if (result.success) {
-      toast.success("Agente removido.");
-      if (selectedAgent?.id === id) setSelectedAgent(null);
+      toast.success("Agente excluído.");
+      setSelectedAgent(null);
       loadAgents();
+    } else {
+      toast.error(result.error || "Erro ao excluir agente");
     }
+    setLoading(false);
   };
 
-  const handleTestAgent = async () => {
-    if (!testPrompt || !selectedAgent) return;
+  const handleTestAgent = async (overridePrompt?: string) => {
+    const promptToSend = overridePrompt || testPrompt;
+    if (!promptToSend || !selectedAgent || isRunningTest) return;
 
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: promptToSend,
+      timestamp: new Date(),
+    };
+
+    setChatMessages(prev => [...prev, userMsg]);
+    if (!overridePrompt) setTestPrompt('');
     setIsRunningTest(true);
-    setTestResponse('');
-    setToolCalls([]);
-    console.log("Iniciando teste do agente:", selectedAgent.id);
-    const result = await runAiAgentTest(selectedAgent.id, testPrompt);
-    console.log("Resultado do teste:", result);
+
+    // Formatar histórico para a Server Action
+    const historyPayload = chatMessages.map(m => ({
+      role: m.role === 'user' ? 'user' as const : 'model' as const,
+      content: m.content
+    }));
+
+    const result = await runAiAgentTest(selectedAgent.id, promptToSend, historyPayload);
 
     if (result && result.success) {
-      setTestResponse(result.response || "");
-      setToolCalls(result.toolCalls || []);
+      const assistantMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: result.response || "Sem resposta.",
+        toolCalls: result.toolCalls || [],
+        executionTimeMs: result.executionTimeMs,
+        usage: result.usage,
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => [...prev, assistantMsg]);
     } else {
       const errorMsg = result?.error || "Erro desconhecido ao testar agente";
       toast.error(errorMsg);
-      setTestResponse(`Erro: ${errorMsg}`);
+      const errorChatMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `⚠️ Erro: ${errorMsg}`,
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => [...prev, errorChatMsg]);
     }
     setIsRunningTest(false);
   };
@@ -253,6 +311,56 @@ export function IaManager() {
         ? prev.tools.filter(id => id !== toolId)
         : [...prev.tools, toolId]
     }));
+  };
+
+  const toggleToolAccordion = (toolCallId: string) => {
+    setExpandedTools(prev => ({
+      ...prev,
+      [toolCallId]: !prev[toolCallId]
+    }));
+  };
+
+  // Calcular total de tokens da conversa atual
+  const totalTokensSession = chatMessages.reduce((sum, msg) => sum + (msg.usage?.totalTokens || 0), 0);
+  const tokenPercentage = Math.min(100, Math.round((totalTokensSession / MAX_CONTEXT_TOKENS) * 100 * 10) / 10);
+
+  // Determinar cor do medidor de tokens
+  const getTokenBadgeColor = () => {
+    if (tokenPercentage > 80) return 'bg-red-500/10 text-red-600 border-red-200';
+    if (tokenPercentage > 50) return 'bg-amber-500/10 text-amber-600 border-amber-200';
+    return 'bg-emerald-500/10 text-emerald-600 border-emerald-200';
+  };
+
+  // Prompts Sugeridos Dinâmicos por Agente
+  const getSuggestedPrompts = () => {
+    const tools = Array.isArray(selectedAgent?.tools) ? selectedAgent.tools : JSON.parse(selectedAgent?.tools || "[]");
+    
+    if (tools.includes('crm') || tools.includes('moveLead')) {
+      return [
+        'Buscar os últimos 5 leads cadastrados',
+        'Ver estatísticas de conversão de leads',
+        'Como você pode me ajudar a gerenciar o funil?'
+      ];
+    }
+    if (tools.includes('blog') || tools.includes('searchBlogPosts')) {
+      return [
+        'Pesquisar artigos sobre Enem e Vestibular',
+        'Sugerir 3 temas de artigos para o blog',
+        'Quais ferramentas de blog você possui?'
+      ];
+    }
+    if (tools.includes('stats')) {
+      return [
+        'Ver estatísticas gerais da plataforma',
+        'Qual é o resumo dos nossos números hoje?',
+        'Quais relatórios você consegue gerar?'
+      ];
+    }
+    return [
+      'Quem é você e qual sua função?',
+      'Quais tarefas você consegue realizar?',
+      'Faça uma breve apresentação das suas habilidades.'
+    ];
   };
 
   if (loading && agents.length === 0) {
@@ -299,34 +407,28 @@ export function IaManager() {
               </div>
             </button>
           ))}
-          <Button variant="outline" className="w-full mt-2 border-dashed" onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Agente Customizado
-          </Button>
 
-          <div className="mt-6">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-1">Templates Rápidos</p>
-            <div className="grid gap-2">
-              {AGENT_TEMPLATES.map((template, idx) => (
+          {/* Templates Rápidos */}
+          <div className="pt-4 border-t mt-2">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Templates Rápidos</p>
+            <div className="space-y-1">
+              {AGENT_TEMPLATES.map((tpl) => (
                 <button
-                  key={idx}
+                  key={tpl.name}
                   onClick={() => {
                     setNewAgent({
-                      name: template.name,
-                      description: template.description,
-                      instructions: template.instructions,
-                      model: template.model,
-                      tools: template.tools
+                      name: tpl.name,
+                      description: tpl.description,
+                      instructions: tpl.instructions,
+                      model: tpl.model,
+                      tools: tpl.tools
                     });
                     setIsCreateDialogOpen(true);
                   }}
-                  className="flex flex-col gap-1 p-3 rounded-xl border bg-card hover:bg-accent text-left transition-all group"
+                  className="w-full text-left p-2 text-xs rounded-lg hover:bg-muted transition-colors flex items-center justify-between text-muted-foreground"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold">{template.name}</span>
-                    <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <span className="text-[10px] text-muted-foreground line-clamp-1">{template.description}</span>
+                  <span className="font-medium truncate">{tpl.name}</span>
+                  <Plus className="h-3 w-3 shrink-0 opacity-50" />
                 </button>
               ))}
             </div>
@@ -334,66 +436,78 @@ export function IaManager() {
         </CardContent>
       </Card>
 
-      {/* Main Content: Configuração do Agente */}
-      <div className="grid gap-6">
+      {/* Área Principal: Configuração & Sandbox */}
+      <div>
         {selectedAgent ? (
-          <Tabs defaultValue="config" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-              <TabsTrigger value="config" className="gap-2">
-                <Settings2 className="h-4 w-4" /> Configuração
-              </TabsTrigger>
-              <TabsTrigger value="sandbox" className="gap-2">
-                <MessageSquare className="h-4 w-4" /> Sandbox
-              </TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="sandbox" className="w-full">
+            <div className="flex items-center justify-between pb-2 border-b">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  {selectedAgent.name}
+                </h2>
+                <p className="text-xs text-muted-foreground">{selectedAgent.description || 'Sem descrição'}</p>
+              </div>
+              <TabsList className="grid w-[240px] grid-cols-2">
+                <TabsTrigger value="sandbox" className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5" /> Sandbox
+                </TabsTrigger>
+                <TabsTrigger value="config" className="flex items-center gap-2">
+                  <Settings2 className="h-3.5 w-3.5" /> Ajustes
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
+            {/* ABA: CONFIGURAÇÕES */}
             <TabsContent value="config" className="mt-4">
               <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Configurar Agente</CardTitle>
-                      <CardDescription>Defina as instruções e permissões para {selectedAgent.name}</CardDescription>
-                    </div>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteAgent(selectedAgent.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                <CardHeader className="flex flex-row items-start justify-between">
+                  <div>
+                    <CardTitle>Perfil e Instruções do Agente</CardTitle>
+                    <CardDescription>Defina a personalidade, modelo e permissões de ferramentas.</CardDescription>
                   </div>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteAgent(selectedAgent.id)}>
+                    <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Nome do Agente</Label>
                       <Input 
-                        value={selectedAgent.name} 
-                        onChange={e => setSelectedAgent({...selectedAgent, name: e.target.value})}
+                        value={selectedAgent.name || ""} 
+                        onChange={e => setSelectedAgent({...selectedAgent, name: e.target.value})} 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Modelo Principal</Label>
+                      <Label>Modelo de IA</Label>
                       <Select 
-                        value={selectedAgent.model} 
+                        value={selectedAgent.model || "gemini-3.6-flash"} 
                         onValueChange={value => setSelectedAgent({...selectedAgent, model: value})}
                       >
                         <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Selecione um modelo" />
+                          <SelectValue placeholder="Selecione o modelo" />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableProviders.length === 0 ? (
-                            <SelectItem value="none" disabled>Nenhuma chave de API configurada</SelectItem>
-                          ) : (
-                            availableProviders.map(provider => (
-                              <SelectGroup key={provider}>
-                                <SelectLabel>{MODELS_BY_PROVIDER[provider]?.label}</SelectLabel>
-                                {MODELS_BY_PROVIDER[provider]?.models.map(m => (
-                                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                                ))}
-                              </SelectGroup>
-                            ))
-                          )}
+                          {availableProviders.map(provider => (
+                            <SelectGroup key={provider}>
+                              <SelectLabel>{MODELS_BY_PROVIDER[provider]?.label}</SelectLabel>
+                              {MODELS_BY_PROVIDER[provider]?.models.map(m => (
+                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Descrição Curta</Label>
+                    <Input 
+                      value={selectedAgent.description || ""} 
+                      onChange={e => setSelectedAgent({...selectedAgent, description: e.target.value})} 
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -411,7 +525,7 @@ export function IaManager() {
 
                   <div className="space-y-4">
                     <Label className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-green-500" /> 
+                      <ShieldCheck className="h-4 w-4 text-emerald-500" /> 
                       Ferramentas Habilitadas (Capabilities)
                     </Label>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -446,58 +560,216 @@ export function IaManager() {
               </Card>
             </TabsContent>
 
+            {/* ABA: SANDBOX INTERATIVO */}
             <TabsContent value="sandbox" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sandbox de Teste</CardTitle>
-                  <CardDescription>Simule uma interação com seu agente para validar o comportamento.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="min-h-[300px] border rounded-xl bg-slate-50 p-4 font-mono text-sm overflow-y-auto">
-                    {testResponse || toolCalls.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex gap-2">
-                          <Badge variant="outline">User</Badge>
-                          <p className="text-slate-600">{testPrompt}</p>
-                        </div>
-                        
-                        {toolCalls.map((call, idx) => (
-                          <div key={idx} className="flex gap-2 items-start bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                            <Zap className="h-4 w-4 text-blue-500 mt-1" />
-                            <div className="text-xs">
-                              <span className="font-bold text-blue-700">Chamando ferramenta: </span>
-                              <code className="bg-blue-100 px-1 rounded">{call.name}</code>
-                              <pre className="mt-1 text-[10px] text-blue-600 overflow-x-auto">
-                                {JSON.stringify(call.args, null, 2)}
-                              </pre>
-                            </div>
-                          </div>
-                        ))}
+              <Card className="flex flex-col h-[650px]">
+                {/* Header do Sandbox com Medidor de Tokens & Limpar */}
+                <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between space-y-0 bg-slate-50/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm font-bold">Sandbox de Teste Interativo</CardTitle>
+                      <CardDescription className="text-xs">Simule um diálogo contínuo para validar comportamentos.</CardDescription>
+                    </div>
+                  </div>
 
-                        {testResponse && (
-                          <div className="flex gap-2">
-                            <Badge className="bg-primary">IA</Badge>
-                            <p className="text-slate-900 whitespace-pre-wrap">{testResponse}</p>
-                          </div>
-                        )}
+                  {/* Medidor de Limite de Tokens */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2 text-xs">
+                        <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-mono font-medium text-slate-700">
+                          {totalTokensSession.toLocaleString()} / {(MAX_CONTEXT_TOKENS / 1000).toFixed(0)}k tokens
+                        </span>
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-semibold ${getTokenBadgeColor()}`}>
+                          {tokenPercentage}% do contexto
+                        </Badge>
                       </div>
-                    ) : (
-                      <p className="text-muted-foreground italic text-center py-20">Aguardando comando para teste...</p>
+                      {/* Barra Visual de Progresso */}
+                      <div className="w-36 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-300 ${
+                            tokenPercentage > 80 ? 'bg-red-500' : tokenPercentage > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.max(2, tokenPercentage)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Botão de Limpar Chat */}
+                    {chatMessages.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Limpar Histórico de Teste"
+                        onClick={() => setChatMessages([])}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                </CardHeader>
+
+                {/* Área de Mensagens (Chat Scrollable) */}
+                <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
+                  {chatMessages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
+                      <div className="p-4 rounded-full bg-primary/5 text-primary border border-primary/10">
+                        <Bot className="h-8 w-8" />
+                      </div>
+                      <div className="max-w-md space-y-1">
+                        <p className="font-bold text-slate-800">Pronto para testar o {selectedAgent.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Digite uma mensagem abaixo ou selecione um prompt rápido para simular uma interação real.
+                        </p>
+                      </div>
+
+                      {/* Prompts Sugeridos Rápidos */}
+                      <div className="pt-4 space-y-2 w-full max-w-md">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Prompts Sugeridos:</p>
+                        <div className="flex flex-col gap-2">
+                          {getSuggestedPrompts().map((prompt, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleTestAgent(prompt)}
+                              className="text-left text-xs bg-white p-3 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-between group shadow-sm"
+                            >
+                              <span className="text-slate-700 font-medium group-hover:text-primary">{prompt}</span>
+                              <Wand2 className="h-3.5 w-3.5 text-slate-400 group-hover:text-primary shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    chatMessages.map((msg) => (
+                      <div 
+                        key={msg.id} 
+                        className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
+                      >
+                        {/* Avatar */}
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                          msg.role === 'user' 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-slate-800 text-white'
+                        }`}>
+                          {msg.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                        </div>
+
+                        {/* Conteúdo da Mensagem */}
+                        <div className="space-y-2">
+                          <div className={`p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                            msg.role === 'user'
+                              ? 'bg-primary text-primary-foreground rounded-tr-none'
+                              : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
+                          }`}>
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
+
+                            {/* Tracing de Chamada de Ferramentas (Accordion de Output) */}
+                            {msg.toolCalls && msg.toolCalls.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                  <Zap className="h-3 w-3 text-amber-500" /> Ferramentas Utilizadas ({msg.toolCalls.length}):
+                                </p>
+                                {msg.toolCalls.map((tc, idx) => {
+                                  const isExpanded = expandedTools[`${msg.id}-${idx}`];
+                                  return (
+                                    <div key={idx} className="border border-blue-100 bg-blue-50/40 rounded-lg text-xs overflow-hidden">
+                                      <button
+                                        onClick={() => toggleToolAccordion(`${msg.id}-${idx}`)}
+                                        className="w-full p-2 flex items-center justify-between hover:bg-blue-100/50 transition-colors text-left"
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <Badge className="bg-blue-600 text-[10px] px-1.5 py-0">{tc.name}</Badge>
+                                          <span className="text-slate-600 font-mono text-[11px] truncate max-w-[200px]">
+                                            {JSON.stringify(tc.args)}
+                                          </span>
+                                        </div>
+                                        {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-blue-500" /> : <ChevronDown className="h-3.5 w-3.5 text-blue-500" />}
+                                      </button>
+                                      
+                                      {/* Detalhes do Resultado da Ferramenta */}
+                                      {isExpanded && (
+                                        <div className="p-2 border-t border-blue-100 bg-slate-900 text-slate-200 font-mono text-[10px] space-y-1">
+                                          <p className="text-blue-400 font-semibold">Parâmetros Enviados:</p>
+                                          <pre className="overflow-x-auto p-1 bg-slate-950 rounded">{JSON.stringify(tc.args, null, 2)}</pre>
+                                          <p className="text-emerald-400 font-semibold pt-1">Dados Retornados do Banco:</p>
+                                          <pre className="overflow-x-auto p-1 bg-slate-950 rounded text-slate-300">{JSON.stringify(tc.result || "Sem retorno", null, 2)}</pre>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Footer da Mensagem (Tempo de Resposta & Tokens) */}
+                          {msg.role === 'assistant' && (
+                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground px-1">
+                              {msg.executionTimeMs && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-slate-400" />
+                                  {(msg.executionTimeMs / 1000).toFixed(2)}s
+                                </span>
+                              )}
+                              {msg.usage && (
+                                <span>
+                                  • {msg.usage.totalTokens} tokens
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Estado de "Pensando" durante execução */}
+                  {isRunningTest && (
+                    <div className="flex gap-3 max-w-[85%] mr-auto items-center">
+                      <div className="h-8 w-8 rounded-full bg-slate-800 text-white flex items-center justify-center shrink-0">
+                        <Bot className="h-4 w-4 animate-pulse" />
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white border border-slate-200 text-slate-500 text-xs flex items-center gap-2 shadow-sm rounded-tl-none">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                        <span>Processando raciocínio e consultando banco de dados...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={chatEndRef} />
+                </CardContent>
+
+                {/* Footer do Sandbox: Input de Pergunta */}
+                <CardFooter className="p-3 border-t bg-white">
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleTestAgent();
+                    }}
+                    className="flex gap-2 w-full"
+                  >
                     <Input 
-                      placeholder="Diga algo ao agente..." 
+                      placeholder={`Pergunte algo ao ${selectedAgent.name}...`} 
                       value={testPrompt}
                       onChange={e => setTestPrompt(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleTestAgent()}
+                      disabled={isRunningTest}
+                      className="rounded-xl"
                     />
-                    <Button onClick={handleTestAgent} disabled={isRunningTest || !testPrompt}>
+                    <Button 
+                      type="submit" 
+                      disabled={isRunningTest || !testPrompt.trim()}
+                      className="rounded-xl px-4"
+                    >
                       {isRunningTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                      Testar
+                      Enviar
                     </Button>
-                  </div>
-                </CardContent>
+                  </form>
+                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
@@ -528,7 +800,7 @@ export function IaManager() {
               <div className="space-y-2">
                 <Label>Modelo Principal</Label>
                 <Select 
-                  value={newAgent.model} 
+                  value={newAgent.model || 'gemini-3.6-flash'} 
                   onValueChange={value => setNewAgent({...newAgent, model: value})}
                 >
                   <SelectTrigger className="rounded-xl">
