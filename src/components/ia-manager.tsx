@@ -139,6 +139,7 @@ export function IaManager() {
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('sandbox');
   
   // Chat / Sandbox State
   const [testPrompt, setTestPrompt] = useState('');
@@ -444,30 +445,17 @@ export function IaManager() {
       {/* Área Principal: Configuração & Sandbox */}
       <div>
         {selectedAgent ? (
-          <Tabs defaultValue="sandbox" className="w-full">
-            <div className="flex items-center justify-between pb-2 border-b">
-              <div>
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-primary" />
-                  {selectedAgent.name}
-                </h2>
-                <p className="text-xs text-muted-foreground">{selectedAgent.description || 'Sem descrição'}</p>
-              </div>
-              <TabsList className="grid w-[240px] grid-cols-2">
-                <TabsTrigger value="sandbox" className="flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5" /> Sandbox
-                </TabsTrigger>
-                <TabsTrigger value="config" className="flex items-center gap-2">
-                  <Settings2 className="h-3.5 w-3.5" /> Ajustes
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* ABA: CONFIGURAÇÕES */}
-            <TabsContent value="config" className="mt-4">
+            <TabsContent value="config" className="mt-0">
               <Card>
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Button variant="outline" size="sm" onClick={() => setActiveTab('sandbox')} className="h-7 text-xs">
+                        ← Voltar ao Sandbox
+                      </Button>
+                    </div>
                     <CardTitle>Perfil e Instruções do Agente</CardTitle>
                     <CardDescription>Defina a personalidade, modelo e permissões de ferramentas.</CardDescription>
                   </div>
@@ -566,22 +554,22 @@ export function IaManager() {
             </TabsContent>
 
             {/* ABA: SANDBOX INTERATIVO */}
-            <TabsContent value="sandbox" className="mt-4">
+            <TabsContent value="sandbox" className="mt-0">
               <Card className="flex flex-col h-[610px]">
-                {/* Header do Sandbox com Medidor de Tokens & Limpar */}
+                {/* Header do Sandbox com Agente, Medidor de Tokens & Controles */}
                 <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between space-y-0 bg-slate-50/50">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <Sparkles className="h-4 w-4" />
+                      <Bot className="h-5 w-5" />
                     </div>
                     <div>
-                      <CardTitle className="text-sm font-bold">Sandbox de Teste Interativo</CardTitle>
-                      <CardDescription className="text-xs">Simule um diálogo contínuo para validar comportamentos.</CardDescription>
+                      <CardTitle className="text-sm font-bold">{selectedAgent.name}</CardTitle>
+                      <CardDescription className="text-xs">{selectedAgent.description || 'Sem descrição'}</CardDescription>
                     </div>
                   </div>
 
-                  {/* Medidor de Limite de Tokens */}
-                  <div className="flex items-center gap-3">
+                  {/* Controles: Medidor de Tokens, Limpar e Ajustes */}
+                  <div className="flex items-center gap-4">
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex items-center gap-2 text-xs">
                         <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
@@ -603,18 +591,31 @@ export function IaManager() {
                       </div>
                     </div>
 
-                    {/* Botão de Limpar Chat */}
-                    {chatMessages.length > 0 && (
+                    <div className="flex items-center gap-1 border-l border-slate-200 pl-4">
+                      {/* Botão de Limpar Chat */}
+                      {chatMessages.length > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Limpar Histórico de Teste"
+                          onClick={() => setChatMessages([])}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {/* Botão Ajustes */}
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        title="Limpar Histórico de Teste"
-                        onClick={() => setChatMessages([])}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        title="Ajustes do Agente"
+                        onClick={() => setActiveTab('config')}
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Settings2 className="h-4 w-4" />
                       </Button>
-                    )}
+                    </div>
                   </div>
                 </CardHeader>
 
