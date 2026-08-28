@@ -516,7 +516,7 @@ export default function EditBlogPostPage() {
     },
   }), [imageHandler, videoHandler]);
 
-  const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule' | 'update') => {
+  const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule' | 'update' | 'review') => {
     if (e) e.preventDefault();
 
     if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.author.trim()) {
@@ -561,6 +561,9 @@ export default function EditBlogPostPage() {
       } else if (publishMode === 'schedule') {
          publishedValue = true; // It's "published" but in the future
          statusValue = 'PUBLISHED';
+      } else if (publishMode === 'review') {
+         publishedValue = false;
+         statusValue = 'REVIEW';
       } else {
         // 'update' mode keeps existing logic
         if (formData.published && scheduledDate && scheduledDate > new Date()) {
@@ -626,7 +629,7 @@ export default function EditBlogPostPage() {
             variant="ghost"
             size="icon"
             className="rounded-full hover:bg-slate-100"
-            onClick={() => router.push('/dashboard/blog')}
+            onClick={() => handleSubmit(null, 'update')}
             disabled={isSubmitting}
           >
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin text-slate-600" /> : <ArrowLeft className="h-5 w-5 text-slate-600" />}
@@ -879,9 +882,9 @@ export default function EditBlogPostPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => handleSubmit(null, 'update')} className="gap-2 font-medium">
+              <DropdownMenuItem onClick={() => handleSubmit(null, 'review')} className="gap-2 font-medium">
                 <Save className="h-4 w-4 text-emerald-600" />
-                Atualizar (Manter Estado)
+                Atualizar (Revisão)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleSubmit(null, 'now')} className="gap-2 font-medium">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />

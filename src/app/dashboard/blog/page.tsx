@@ -330,22 +330,22 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA PUBLICADO */}
           {(post.status === 'PUBLISHED' || (!post.status && post.published)) && (
             <>
-              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 text-[10px] h-[27px] px-0 max-w-[28px]" title="Copiar Link">
+              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 text-[8px] h-[27px] px-0 max-w-[28px]" title="Copiar Link">
                 <Copy className="w-3 h-3" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]" title="Ver no site">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]" title="Ver no site">
                 <Link href={`/blog/${post.slug || post.id}`} target="_blank">
                   <Globe className="w-3 h-3 mr-1" /> Site
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Pencil className="w-3 h-3 mr-1" /> Editar
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="outline" size="sm" className="text-[10px] h-[27px] text-amber-600 hover:text-amber-700" title="Despublicar"
+                variant="outline" size="sm" className="text-[8px] h-[27px] text-amber-600 hover:text-amber-700" title="Despublicar"
               >
                 <EyeOff className="w-3 h-3" />
               </Button>
@@ -363,7 +363,7 @@ export default function BlogAdminPage() {
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
         className={`bg-white border-r transition-all duration-300 flex flex-col shrink-0 ${
-          isSidebarOpen ? 'w-[350px]' : 'w-0 opacity-0 overflow-hidden border-none'
+          isSidebarOpen ? 'w-[310px]' : 'w-0 opacity-0 overflow-hidden border-none'
         }`}
       >
         <div className="p-4 border-b flex items-center justify-between">
@@ -485,7 +485,7 @@ export default function BlogAdminPage() {
               </h1>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800">
+          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800 text-white">
             <Link href="/dashboard/blog/new">
               <Plus className="h-4 w-4 mr-2" /> Novo Artigo
             </Link>
@@ -535,7 +535,7 @@ export default function BlogAdminPage() {
             </div>
 
             {/* Coluna 3: Publicação */}
-            <div className="flex-1 flex flex-col max-w-[400px]">
+            <div className="flex-1 flex flex-col max-w-[370px]">
               <div className="flex items-center justify-between mb-4 px-1">
                 <h3 className="font-bold text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
