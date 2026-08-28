@@ -1,13 +1,9 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { PrismaClient } from '../src/generated/client';
-import OpenAI from 'openai';
 import 'dotenv/config';
 
 const prisma = new PrismaClient();
-
-// Inicializa a OpenAI (Ela puxa automaticamente a OPENAI_API_KEY do seu .env)
-const openai = new OpenAI();
 
 const SOURCES = [
   {
@@ -32,10 +28,10 @@ const SOURCES = [
   }
 ];
 
-async function extractEventsWithAI(institution: string, textContext: string) {
+async function extractEventsWithGemini(institution: string, textContext: string) {
   const prompt = `
 Você é um extrator de datas de vestibulares altamente preciso. 
-Analise o texto abaixo, que foi raspado da página oficial da instituição ${institution}.
+Analise o texto abaixo, raspado da página oficial da instituição ${institution}.
 Sua missão é identificar as principais datas do calendário do vestibular mais recente (inscrições, provas, resultados, matrículas).
 
 Regras rigorosas:
@@ -43,14 +39,12 @@ Regras rigorosas:
 2. Categorize cada evento em um destes TIPOS EXATOS: "INSCRIÇÃO", "PAGAMENTO", "PROVA", "RESULTADO" ou "MATRÍCULA".
 3. O campo dateStart DEVE estar no formato ISO "YYYY-MM-DD". Se o evento tiver vários dias, use o primeiro dia.
 4. O campo description deve ser um resumo curto (ex: "Prova da 1ª Fase").
-5. Retorne o resultado ESTRITAMENTE em formato JSON. Nada de texto antes ou depois.
+5. Retorne o resultado ESTRITAMENTE em formato JSON (um array de objetos). Nada de texto antes ou depois, sem crases de formatação markdown.
 
-Formato exigido:
-{
-  "events": [
-    { "type": "PROVA", "dateStart": "2026-11-20", "description": "Prova da 1ª Fase" }
-  ]
-}
+Formato exigido de resposta (Apenas o Array JSON):
+[
+  { "type": "PROVA", "dateStart": "2026-11-20", "description": "Prova da 1ª Fase" }
+]
 
 Texto extraído do site:
 """
@@ -59,27 +53,38 @@ ${textContext.substring(0, 15000)}
   `;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
+    const apiKey = process.env.GEMINI_API_KEY;
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
     });
 
-    const content = response.choices[0].message.content || '{"events":[]}';
-    const parsed = JSON.parse(content);
-    return parsed.events || [];
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error(`Erro na API Gemini: ${data.error.message}`);
+      return [];
+    }
+
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+    const parsed = JSON.parse(textContent);
+    return parsed || [];
   } catch (error) {
-    console.error(`Erro na IA ao analisar ${institution}:`, error);
+    console.error(`Erro na requisição ao Gemini ao analisar ${institution}:`, error);
     return [];
   }
 }
 
 async function scrapeData() {
-  console.log('🤖 Iniciando Scraping com Inteligência Artificial...');
+  console.log('🤖 Iniciando Scraping com Inteligência Artificial (Google Gemini)...');
   
-  if (!process.env.OPENAI_API_KEY) {
-    console.error('❌ ERRO: A variável de ambiente OPENAI_API_KEY não foi encontrada no arquivo .env!');
-    console.error('Crie a chave na OpenAI e adicione ao .env antes de rodar este script.');
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('❌ ERRO: A variável de ambiente GEMINI_API_KEY não foi encontrada no arquivo .env!');
+    console.error('Adicione GEMINI_API_KEY="sua_chave" no .env antes de rodar este script.');
     process.exit(1);
   }
 
@@ -93,15 +98,14 @@ async function scrapeData() {
         }
       });
       
-      // Cheerio para extrair e limpar apenas o texto puro (removendo tags HTML, scripts e css)
       const $ = cheerio.load(response.data);
       $('script, style, noscript, nav, footer, img').remove();
       const rawText = $('body').text().replace(/\s+/g, ' ').trim();
       
       console.log(`🧠 Texto extraído (${rawText.length} caracteres). Enviando para a IA analisar...`);
-      const events = await extractEventsWithAI(source.institution, rawText);
+      const events = await extractEventsWithGemini(source.institution, rawText);
       
-      if (events && events.length > 0) {
+      if (events && Array.isArray(events) && events.length > 0) {
         const vestibular = await prisma.vestibular.findFirst({
           where: { institution: source.institution }
         });
@@ -114,21 +118,23 @@ async function scrapeData() {
 
           // Insere os novos
           for (const ev of events) {
-            await prisma.vestibularEvent.create({
-              data: {
-                vestibularId: vestibular.id,
-                type: ev.type,
-                dateStart: new Date(ev.dateStart),
-                description: ev.description || ''
-              }
-            });
+            if (ev.type && ev.dateStart) {
+              await prisma.vestibularEvent.create({
+                data: {
+                  vestibularId: vestibular.id,
+                  type: ev.type,
+                  dateStart: new Date(ev.dateStart),
+                  description: ev.description || ''
+                }
+              });
+            }
           }
-          console.log(`✅ Sucesso! A IA encontrou e salvou ${events.length} datas reais para ${source.institution}`);
+          console.log(`✅ Sucesso! O Gemini encontrou e salvou ${events.length} datas reais para ${source.institution}`);
         } else {
           console.log(`⚠️ ${source.institution} não encontrada no banco de dados.`);
         }
       } else {
-        console.log(`ℹ️ A IA não encontrou nenhuma data clara no texto extraído de ${source.institution}.`);
+        console.log(`ℹ️ O Gemini não encontrou nenhuma data clara no texto extraído de ${source.institution}.`);
       }
     } catch (error: any) {
       console.error(`❌ Erro geral no processamento de ${source.institution}: ${error.message}`);
