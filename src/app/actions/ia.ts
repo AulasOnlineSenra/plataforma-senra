@@ -154,19 +154,17 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
 
     // Buscar a chave diretamente do banco — sem tocar em process.env
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
-    const apiKey = settings?.geminiApiKey;
+    const rawApiKey = settings?.geminiApiKey || "";
+    const apiKeys = rawApiKey.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
-    if (!apiKey) {
+    if (apiKeys.length === 0) {
       return { 
         success: false, 
         error: "Chave de API do Google (Gemini) não configurada. Vá em Configurações → Integrações e adicione sua chave do Google AI Studio." 
       };
     }
 
-    // Instanciar o cliente com a chave do banco (escopo local, descartado após a requisição)
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    // Resolver as ferramentas habilitadas para o agente
+    // Resolver as ferramentas habilitadas para o agente (fora do loop)
     const enabledToolIds: string[] = typeof agent.tools === 'string' 
       ? JSON.parse(agent.tools || "[]") 
       : (agent.tools as string[] || []);
@@ -207,88 +205,125 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
 
     console.log(`[IA] Agente: ${agent.name} | Modelo: ${modelName} | Ferramentas: ${activeTools.map(t => t.name).join(', ') || 'nenhuma'}`);
 
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: agent.instructions || "Você é um assistente útil da Plataforma Senra.",
-      ...(googleTools.length > 0 ? { tools: googleTools } : {}),
-    });
-
     // Converter histórico para o formato do SDK se fornecido
     const sdkHistory = (history || []).map(h => ({
       role: h.role === 'model' ? 'model' : 'user',
       parts: [{ text: h.content }]
     }));
 
-    // Suporte a agentic loop (tool calls)
-    const chat = model.startChat({ history: sdkHistory });
-    let result = await chat.sendMessage(userPrompt);
-    let response = result.response;
-    const toolCallsMade: { name: string; args: any; result: any }[] = [];
-    
-    // Processar chamadas de ferramentas (até 5 iterações para evitar loop infinito)
-    for (let i = 0; i < 5; i++) {
-      const functionCalls = response.functionCalls();
-      if (!functionCalls || functionCalls.length === 0) break;
+    // === INÍCIO DO POOL DE CHAVES (API KEY ROTATION) ===
+    let lastError: any = null;
+    let lastErrorMsg = "";
 
-      const functionResponses = [];
-      for (const call of functionCalls) {
-        const tool = activeTools.find(t => t.name === call.name);
-        if (!tool) {
-          functionResponses.push({
-            functionResponse: { name: call.name, response: { error: "Ferramenta não encontrada." } }
-          });
-          continue;
+    for (let i = 0; i < apiKeys.length; i++) {
+      const currentKey = apiKeys[i];
+      try {
+        console.log(`[IA] Tentando execução com a chave API #${i + 1}...`);
+        
+        // Instanciar o cliente com a chave atual do loop
+        const genAI = new GoogleGenerativeAI(currentKey);
+        
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: agent.instructions || "Você é um assistente útil da Plataforma Senra.",
+          ...(googleTools.length > 0 ? { tools: googleTools } : {}),
+        });
+
+        // Suporte a agentic loop (tool calls)
+        const chat = model.startChat({ history: sdkHistory });
+        let result = await chat.sendMessage(userPrompt);
+        let response = result.response;
+        const toolCallsMade: { name: string; args: any; result: any }[] = [];
+        
+        // Processar chamadas de ferramentas (até 5 iterações para evitar loop infinito)
+        for (let j = 0; j < 5; j++) {
+          const functionCalls = response.functionCalls();
+          if (!functionCalls || functionCalls.length === 0) break;
+
+          const functionResponses = [];
+          for (const call of functionCalls) {
+            const tool = activeTools.find(t => t.name === call.name);
+            if (!tool) {
+              functionResponses.push({
+                functionResponse: { name: call.name, response: { error: "Ferramenta não encontrada." } }
+              });
+              continue;
+            }
+            try {
+              const toolResult = await tool.execute(call.args);
+              toolCallsMade.push({ name: call.name, args: call.args, result: toolResult });
+              
+              const responsePayload = (toolResult !== null && typeof toolResult === 'object' && !Array.isArray(toolResult))
+                ? toolResult
+                : { items: toolResult };
+
+              functionResponses.push({
+                functionResponse: { name: call.name, response: responsePayload }
+              });
+            } catch (toolErr: any) {
+              functionResponses.push({
+                functionResponse: { name: call.name, response: { error: toolErr.message } }
+              });
+            }
+          }
+
+          result = await chat.sendMessage(functionResponses as any);
+          response = result.response;
         }
-        try {
-          const toolResult = await tool.execute(call.args);
-          toolCallsMade.push({ name: call.name, args: call.args, result: toolResult });
-          
-          const responsePayload = (toolResult !== null && typeof toolResult === 'object' && !Array.isArray(toolResult))
-            ? toolResult
-            : { items: toolResult };
 
-          functionResponses.push({
-            functionResponse: { name: call.name, response: responsePayload }
-          });
-        } catch (toolErr: any) {
-          functionResponses.push({
-            functionResponse: { name: call.name, response: { error: toolErr.message } }
-          });
+        const executionTimeMs = Date.now() - startTime;
+        const usage = response.usageMetadata ? {
+          promptTokens: response.usageMetadata.promptTokenCount || 0,
+          candidatesTokens: response.usageMetadata.candidatesTokenCount || 0,
+          totalTokens: response.usageMetadata.totalTokenCount || 0,
+        } : null;
+
+        console.log(`[IA] Sucesso com a chave API #${i + 1}!`);
+
+        return {
+          success: true,
+          response: response.text(),
+          toolCalls: toolCallsMade.map(tc => ({ name: tc.name, args: tc.args, result: tc.result })),
+          executionTimeMs,
+          usage,
+        };
+
+      } catch (error: any) {
+        lastError = error;
+        lastErrorMsg = error.message || "Falha ao executar o agente.";
+        
+        const isRateLimit = lastErrorMsg.includes("429") || lastErrorMsg.toLowerCase().includes("quota") || lastErrorMsg.includes("503");
+        
+        console.warn(`[IA ERRO] Falha com a chave #${i + 1}: ${lastErrorMsg}`);
+        
+        if (isRateLimit && i < apiKeys.length - 1) {
+          console.log(`[IA] Limite atingido na chave #${i + 1}. Rotacionando para a chave #${i + 2}...`);
+          continue; // Tenta a próxima chave
+        } else {
+          // Erro fatal (ex: 404, 403) ou acabaram as chaves do pool
+          break;
         }
       }
-
-      result = await chat.sendMessage(functionResponses as any);
-      response = result.response;
     }
 
-    const executionTimeMs = Date.now() - startTime;
-    const usage = response.usageMetadata ? {
-      promptTokens: response.usageMetadata.promptTokenCount || 0,
-      candidatesTokens: response.usageMetadata.candidatesTokenCount || 0,
-      totalTokens: response.usageMetadata.totalTokenCount || 0,
-    } : null;
-
-    return {
-      success: true,
-      response: response.text(),
-      toolCalls: toolCallsMade.map(tc => ({ name: tc.name, args: tc.args, result: tc.result })),
-      executionTimeMs,
-      usage,
-    };
+    // Se chegou aqui, todas as tentativas falharam
+    console.error("[IA ERRO FATAL] Todas as tentativas falharam ou ocorreu erro fatal.", lastError);
+    
+    let errorMsg = lastErrorMsg;
+    if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("quota")) {
+      errorMsg = "Limite de cota atingido (429) em todas as chaves cadastradas. Cadastre novas chaves no Google AI Studio.";
+    } else if (errorMsg.includes("404") || errorMsg.toLowerCase().includes("not found")) {
+      errorMsg = `Erro 404 da API: ${errorMsg} (Modelo tentado: ${modelName})`;
+    } else if (errorMsg.toLowerCase().includes("api key") || errorMsg.toLowerCase().includes("api_key") || errorMsg.includes("403")) {
+      errorMsg = "Chave de API inválida ou sem permissão. Verifique suas chaves do Google AI Studio em Configurações.";
+    } else {
+      errorMsg = `Erro na API do Google: ${errorMsg}`;
+    }
+    
+    return { success: false, error: errorMsg };
 
   } catch (error: any) {
-    console.error("[IA ERRO]", error);
-    let errorMsg = error.message || "Falha ao executar o agente.";
-    
-    if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("quota")) {
-      errorMsg = "Limite de cota atingido (429). Sua chave de API atingiu o limite gratuito. Habilite o faturamento no Google AI Studio.";
-    } else if (errorMsg.includes("404") || errorMsg.toLowerCase().includes("not found")) {
-      errorMsg = `Erro 404 da API: ${error.message} (Modelo tentado: ${modelName})`;
-    } else if (errorMsg.toLowerCase().includes("api key") || errorMsg.toLowerCase().includes("api_key") || errorMsg.includes("403")) {
-      errorMsg = "Chave de API inválida ou sem permissão. Verifique sua chave do Google AI Studio em Configurações.";
-    } else {
-      errorMsg = `Erro na API do Google: ${error.message}`;
-    }
-    return { success: false, error: errorMsg };
+    console.error("[IA ERRO GERAL]", error);
+    return { success: false, error: error.message || "Erro desconhecido." };
   }
 }
