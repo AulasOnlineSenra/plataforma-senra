@@ -30,6 +30,8 @@ type SettingsInput = {
   contactEmail?: string;
   contactInstagram?: string;
   contactSite?: string;
+  scraperRequiresApproval?: boolean;
+  scraperFrequency?: string;
 };
 
 export async function getSettings() {
@@ -94,6 +96,8 @@ export async function updateSettings(data: SettingsInput) {
         contactEmail: data.contactEmail?.trim() || 'contato@aos.com.br',
         contactInstagram: data.contactInstagram?.trim() || '@senra.aulasonline',
         contactSite: data.contactSite?.trim() || 'www.senraaulasonline.com.br',
+        scraperRequiresApproval: data.scraperRequiresApproval ?? true,
+        scraperFrequency: data.scraperFrequency || 'weekly',
         updatedAt: now,
       },
       update: {
@@ -123,6 +127,8 @@ export async function updateSettings(data: SettingsInput) {
         contactEmail: data.contactEmail?.trim() || 'contato@aos.com.br',
         contactInstagram: data.contactInstagram?.trim() || '@senra.aulasonline',
         contactSite: data.contactSite?.trim() || 'www.senraaulasonline.com.br',
+        scraperRequiresApproval: data.scraperRequiresApproval ?? true,
+        scraperFrequency: data.scraperFrequency || 'weekly',
         updatedAt: now,
       },
     });

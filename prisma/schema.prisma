@@ -46,6 +46,11 @@ model AppSetting {
   enemReleaseMinute       Int      @default(0)
   enemOnlyTaggedStudents  Boolean  @default(true) // Enviar apenas para alunos com tag Foco ENEM
 
+  // Configurações do Scraper de Calendário (IA)
+  scraperRequiresApproval Boolean  @default(true)
+  scraperFrequency        String   @default("weekly") // "daily" | "weekly"
+  scraperLastRun          DateTime?
+
   // Modal de Indicações
   referralModalEnabled    Boolean  @default(true)
   referralModalFrequency  String   @default("always") // "always" ou "once_per_day"
@@ -470,6 +475,201 @@ model Question {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   creator             User     @relation("Question_creatorIdToUser", fields: [creatorId], references: [id])
+title                         String
+  description                   String
+  subject                       String
+  creatorId                     String
+  studentId                     String
+  status                        String   @default("Pendente")
+  maxAttempts                   Int      @default(1)
+  timeLimitMinutes              Int?
+  questions                     Json
+  attempts                      Json
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+  User_Simulado_studentIdToUser User     @relation("Simulado_studentIdToUser", fields: [studentId], references: [id])
+  User_Simulado_creatorIdToUser User     @relation("Simulado_creatorIdToUser", fields: [creatorId], references: [id])
+
+  @@index([studentId, createdAt])
+  @@index([creatorId, createdAt])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  studentId     String
+  planName      String
+  creditsAdded  Int
+  amountPaid    Float
+  paymentMethod String   @default("PIX")
+  status        String   @default("COMPROVADO")
+  createdAt     DateTime @default(now())
+  proofUrl      String?
+  bookings      String?
+  student       User     @relation(fields: [studentId], references: [id])
+
+  @@index([status])
+  @@index([studentId])
+  @@index([createdAt])
+  @@index([studentId, createdAt])
+}
+
+model SimuladoTemplate {
+  id               String   @id @default(cuid())
+  title            String
+  description      String   @default("")
+  subject          String   @default("ENEM")
+  dayType          String   @default("DIA1") // "DIA1" | "DIA2" | "CUSTOM"
+  timeLimitMinutes Int?     // Dia1=330 (5h30), Dia2=300 (5h)
+  questions        Json     @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model User {
+  id                                                 String             @id @default(cuid())
+  name                                               String
+  email                                              String             @unique
+  password                                           String
+  role                                               String             @default("student")
+  avatarUrl                                          String?
+  status                                             String             @default("active")
+  referralCode                                       String             @unique
+  referredById                                       String?
+  resetToken                                         String?
+  resetTokenExpiry                                   DateTime?
+  credits                                            Int                @default(0)
+  createdAt                                          DateTime           @default(now())
+  updatedAt                                          DateTime           @updatedAt
+  subject                                            String?
+  cpf                                                String?            @unique
+  birthDate                                          DateTime?
+  cep                                                String?
+  state                                              String?
+  neighborhood                                       String?
+  street                                             String?
+  number                                             String?
+  videoUrl                                           String?
+  isValidated                                        Boolean            @default(false)
+  bio                                                String?
+  education                                          String?
+  pixKey                                             String?
+  pixKeyType                                         String?
+  subjects                                           String?
+  tags                                               String?            @default("[]") // JSON array, ex: ["Foco ENEM"]
+  autoSchedule                                       Boolean            @default(false)
+  suspendedAt                                        DateTime?
+  phone                                              String?
+  googleCalendarConnected                            Boolean            @default(false)
+  googleCalendarToken                                String?
+  googleCalendarRefreshToken                         String?
+  googleCalendarEmail                                String?
+  googleCalendarTokenExpiry                          DateTime?
+  failedLoginAttempts                                Int                @default(0)
+  lastFailedLogin                                    DateTime?
+  usedReferralDiscount                               Boolean            @default(false)
+  Availability                                       Availability[]
+  ChatMessage_ChatMessage_receiverIdToUser           ChatMessage[]      @relation("ChatMessage_receiverIdToUser")
+  ChatMessage_ChatMessage_senderIdToUser             ChatMessage[]      @relation("ChatMessage_senderIdToUser")
+  teacherLessons                                     Lesson[]           @relation("Lesson_teacherIdToUser")
+  studentLessons                                     Lesson[]           @relation("Lesson_studentIdToUser")
+  Notification                                       Notification[]
+  Rating_Rating_teacherIdToUser                      Rating[]           @relation("Rating_teacherIdToUser")
+  Rating_Rating_studentIdToUser                      Rating[]           @relation("Rating_studentIdToUser")
+  ScheduledMessage_ScheduledMessage_receiverIdToUser ScheduledMessage[] @relation("ScheduledMessage_receiverIdToUser")
+  ScheduledMessage_ScheduledMessage_senderIdToUser   ScheduledMessage[] @relation("ScheduledMessage_senderIdToUser")
+  Simulado_Simulado_studentIdToUser                  Simulado[]         @relation("Simulado_studentIdToUser")
+  Simulado_Simulado_creatorIdToUser                  Simulado[]         @relation("Simulado_creatorIdToUser")
+  Transaction                                        Transaction[]
+  questionsCreated                                   Question[]         @relation("Question_creatorIdToUser")
+  User                                               User?              @relation("UserToUser", fields: [referredById], references: [id])
+  other_User                                         User[]             @relation("UserToUser")
+}
+
+model QuizQuestion {
+  id          String   @id @default(cuid())
+  question    String
+  questionPt  String?
+  type        String   @default("text")
+  options     String?  @default("[]")
+  placeholder String?
+  isRequired  Boolean  @default(false)
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiAgent {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  instructions String?
+  model        String   @default("gemini-2.0-flash")
+  tools        String?  @default("[]") // JSON array of enabled tool IDs
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PageVisit {
+  id        String   @id @default(cuid())
+  url       String
+  userId    String?
+  device    String   @default("Desktop")
+  source    String?
+  timeSpent Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([url])
+  @@index([createdAt])
+}
+
+model CrmChecklistTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  items     String   @default("[]") // JSON array of texts
+  createdAt DateTime @default(now())
+}
+
+model ScheduleStructure {
+  id        String   @id @default(cuid())
+  userId    String
+  dayOfWeek Int      // 0 = Sunday, 1 = Monday, etc.
+  startTime String   // e.g., "07:00"
+  endTime   String   // e.g., "08:30"
+  subject   String
+  teacherId String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Question {
+  id                  String   @id @default(cuid())
+  title               String?
+  discipline          String   // e.g., "matematica", "linguagens", "humanas", "natureza"
+  subject             String   // e.g., "Funções", "Termodinâmica"
+  difficulty          String   @default("Médio") // Fácil, Médio, Difícil
+  context             String   // Texto de apoio/enunciado
+  files               String   @default("[]") // JSON string list of supporting image URLs
+  correctAlternative  String   // Letra da alternativa correta (A, B, C, D, E)
+  alternatives        Json     // List of alternatives [{ letter, text, file }]
+  creatorId           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  creator             User     @relation("Question_creatorIdToUser", fields: [creatorId], references: [id])
 
   @@index([creatorId])
   @@index([discipline])
@@ -485,16 +685,19 @@ model ReferenceBlog {
 }
 
 model Vestibular {
-  id           String            @id @default(cuid())
-  name         String
-  institution  String
-  state        String            @default("Nacional") // SP, RJ, Nacional, etc.
-  type         String            @default("Vestibular") // Vestibular, ENEM, Processo Seletivo, etc.
-  officialSite String?
-  isActive     Boolean           @default(true)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  events       VestibularEvent[]
+  id               String            @id @default(cuid())
+  name             String
+  institution      String
+  state            String            @default("Nacional")
+  type             String            @default("Vestibular")
+  officialSite     String?
+  isActive         Boolean           @default(true)
+  scrapingUrl      String?
+  lastScrapeStatus String?
+  lastScrapeDate   DateTime?
+  events           VestibularEvent[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([state])
   @@index([type])
@@ -505,10 +708,11 @@ model VestibularEvent {
   id           String     @id @default(cuid())
   vestibularId String
   vestibular   Vestibular @relation(fields: [vestibularId], references: [id], onDelete: Cascade)
-  type         String     // INSCRIÇÕES, PAGAMENTO, PROVA_FASE_1, PROVA_FASE_2, RESULTADO, MATRÍCULA
+  type         String
   dateStart    DateTime
   dateEnd      DateTime?
   description  String?
+  status       String     @default("APPROVED")
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

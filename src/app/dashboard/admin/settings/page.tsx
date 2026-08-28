@@ -71,6 +71,11 @@ export default function SettingsPage() {
   const [referralModalMaxVisits, setReferralModalMaxVisits] = useState('8');
   const [referralModalMaxDays, setReferralModalMaxDays] = useState('45');
   
+  // Scraper Settings
+  const [scraperRequiresApproval, setScraperRequiresApproval] = useState(true);
+  const [scraperFrequency, setScraperFrequency] = useState('weekly');
+  const [isScrapingNow, setIsScrapingNow] = useState(false);
+  
   // Restore State
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const [restorePassword, setRestorePassword] = useState('');
@@ -131,6 +136,9 @@ export default function SettingsPage() {
       setContactEmail((result.data as any).contactEmail || 'contato@aos.com.br');
       setContactInstagram((result.data as any).contactInstagram || '@senra.aulasonline');
       setContactSite((result.data as any).contactSite || 'www.senraaulasonline.com.br');
+
+      setScraperRequiresApproval((result.data as any).scraperRequiresApproval ?? true);
+      setScraperFrequency((result.data as any).scraperFrequency || 'weekly');
     };
 
     loadSettings();
@@ -230,6 +238,8 @@ export default function SettingsPage() {
       contactEmail: contactEmail.trim(),
       contactInstagram: contactInstagram.trim(),
       contactSite: contactSite.trim(),
+      scraperRequiresApproval,
+      scraperFrequency,
     });
     console.log('[handleSave] Resultado:', result);
     setIsLoading(false);
@@ -680,7 +690,117 @@ export default function SettingsPage() {
         </Card>
       </div>
 
+      {/* Scraper / Robô de Extração de Datas */}
+      <Card className="rounded-3xl border-slate-200 shadow-sm md:col-span-2">
+        <CardHeader className="border-b border-slate-100 pb-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-fuchsia-100 p-3 text-fuchsia-600">
+              <Bot className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle className="text-xl text-slate-900">Robô Extração (Datas Vestibulares)</CardTitle>
+              <CardDescription>Automatize a coleta das datas nos sites das instituições via Google Gemini</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-8">
+          
+          <div className="grid md:grid-cols-2 gap-6 p-4 rounded-xl border border-slate-200 bg-white">
+            <div className="space-y-4">
+              <div>
+                <p className="font-medium text-slate-900 flex items-center gap-2">
+                  <Check className="w-5 h-5 text-fuchsia-500" />
+                  Sistema de "Quarentena"
+                </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Se ativado, as datas extraídas entrarão com status "Pendente" para você aprovar antes que os alunos possam ver.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch 
+                   checked={scraperRequiresApproval} 
+                   onCheckedChange={setScraperRequiresApproval} 
+                   className="data-[state=checked]:bg-fuchsia-600"
+                />
+                <Label className="font-medium">Exigir aprovação manual</Label>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                 <Label>Frequência da Varredura Automática</Label>
+                 <Select value={scraperFrequency} onValueChange={setScraperFrequency}>
+                    <SelectTrigger className="border-slate-200 focus:ring-brand-yellow">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Diário (Recomendado na reta final)</SelectItem>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+            </div>
+          </div>
 
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+            <div>
+              <p className="font-medium text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                Forçar Sincronização Agora
+              </p>
+              <p className="text-sm text-slate-500 max-w-lg mt-1">
+                Aperte este botão para ignorar a frequência acima e obrigar o robô a varrer os sites imediatamente.
+              </p>
+            </div>
+            <Button
+              type="button"
+              disabled={isScrapingNow}
+              onClick={async () => {
+                try {
+                  setIsScrapingNow(true);
+                  toast({ title: 'A IA está analisando...', description: 'O Gemini está lendo os sites oficiais, aguarde...' });
+                  const res = await fetch('/api/scraper/calendario', { method: 'POST' });
+                  if (!res.ok) throw new Error('Erro na requisição');
+                  const data = await res.json();
+                  if(data.success) {
+                     toast({ title: 'Sucesso!', description: 'Extração finalizada com sucesso.', className: 'border-none bg-green-600 text-white' });
+                  } else {
+                     toast({ title: 'Aviso', description: 'O processo encerrou com possíveis avisos. Cheque os logs.', variant: 'destructive' });
+                  }
+                } catch(e) {
+                  toast({ title: 'Erro', description: 'Falha ao executar o scraper', variant: 'destructive' });
+                } finally {
+                  setIsScrapingNow(false);
+                }
+              }}
+              className="shrink-0 bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
+            >
+              {isScrapingNow ? 'Varrendo sites...' : 'Rodar Robô Agora'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex justify-end gap-4 mt-6 border-t border-slate-100 pt-6">
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={isLoading}
+          className="h-12 min-w-[200px] rounded-full bg-brand-yellow px-8 font-bold text-slate-900 shadow-sm transition-all hover:bg-amber-400 hover:shadow-md focus:ring-4 focus:ring-amber-500/20 active:scale-[0.98]"
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
+              <span>Salvando...</span>
+            </div>
+          ) : (
+            <>
+              <Save className="mr-2 h-5 w-5" />
+              Salvar Alterações
+            </>
+          )}
+        </Button>
+      </div>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm md:col-span-2">
         <CardHeader className="border-b border-slate-100 pb-6">
