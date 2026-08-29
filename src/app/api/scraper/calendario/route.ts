@@ -69,7 +69,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'A chave da API Gemini não foi configurada.' }, { status: 400 });
     }
     
-    const apiKeys = apiKeyRaw.split(',').map(k => k.trim()).filter(Boolean);
+    // Support keys separated by comma or newlines
+    const apiKeys = apiKeyRaw.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
     if (apiKeys.length === 0) {
       return NextResponse.json({ success: false, error: 'Nenhuma chave da API Gemini válida foi encontrada.' }, { status: 400 });
     }

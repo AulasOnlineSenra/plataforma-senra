@@ -623,65 +623,56 @@ export default function SettingsPage() {
           <CardContent className="pt-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
-                <Label className="font-medium text-slate-700">Google Gemini API Key</Label>
                 <Textarea
                   value={geminiApiKey}
                   onChange={(e) => setGeminiApiKey(e.target.value)}
-                  className="min-h-[80px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-..., sk-..."
+                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
+                  placeholder="Google Gemini API Key:&#10;chave 1&#10;chave 2&#10;chave n"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-medium text-slate-700">OpenAI API Key</Label>
                 <Textarea
                   value={openaiApiKey}
                   onChange={(e) => setOpenaiApiKey(e.target.value)}
-                  className="min-h-[80px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-..., sk-..."
+                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
+                  placeholder="OpenAI API Key:&#10;chave 1&#10;chave 2&#10;chave n"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-medium text-slate-700">Anthropic (Claude) Key</Label>
                 <Textarea
                   value={anthropicApiKey}
                   onChange={(e) => setAnthropicApiKey(e.target.value)}
-                  className="min-h-[80px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-ant-..., sk-ant-..."
+                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
+                  placeholder="Anthropic (Claude) Key:&#10;chave 1&#10;chave 2&#10;chave n"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-medium text-slate-700">OpenRouter API Key</Label>
-                <Input
-                  type="password"
+                <Textarea
                   value={openRouterApiKey}
                   onChange={(e) => setOpenRouterApiKey(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-or-..."
+                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
+                  placeholder="OpenRouter API Key:&#10;chave 1&#10;chave 2&#10;chave n"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-medium text-slate-700">Grok (xAI) API Key</Label>
-                <Input
-                  type="password"
+                <Textarea
                   value={grokApiKey}
                   onChange={(e) => setGrokApiKey(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="xai-..."
+                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
+                  placeholder="Grok (xAI) API Key:&#10;chave 1&#10;chave 2&#10;chave n"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-medium text-slate-700">MiniMax API Key</Label>
-                <Input
-                  type="password"
+                <Textarea
                   value={minimaxApiKey}
                   onChange={(e) => setMinimaxApiKey(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="Key..."
+                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
+                  placeholder="MiniMax API Key:&#10;chave 1&#10;chave 2&#10;chave n"
                 />
               </div>
             </div>
             <p className="mt-4 text-sm text-slate-500 italic">
-              * Suas chaves são armazenadas de forma segura. Você pode inserir várias chaves para o mesmo provedor separando-as por vírgula (ex: key1, key2) para usar rotação automática e evitar limites.
+              * Suas chaves são armazenadas de forma segura. Você pode inserir várias chaves para o mesmo provedor digitando cada chave em uma nova linha (lista) para usar rotação automática e evitar limites.
             </p>
           </CardContent>
         </Card>
