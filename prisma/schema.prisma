@@ -525,15 +525,3 @@ model VestibularEvent {
   @@index([type])
   @@index([dateStart])
 }
-
-model AiAgent {
-  id           String   @id @default(cuid())
-  name         String
-  description  String?
-  instructions String?  @db.Text
-  model        String?  @default("gemini-3.6-flash")
-  tools        String?  @db.Text
-  status       String   @default("active")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
