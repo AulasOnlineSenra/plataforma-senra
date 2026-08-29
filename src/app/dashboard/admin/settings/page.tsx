@@ -624,32 +624,29 @@ export default function SettingsPage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
                 <Label className="font-medium text-slate-700">Google Gemini API Key</Label>
-                <Input
-                  type="password"
+                <Textarea
                   value={geminiApiKey}
                   onChange={(e) => setGeminiApiKey(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-..."
+                  className="min-h-[80px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-..., sk-..."
                 />
               </div>
               <div className="space-y-2">
                 <Label className="font-medium text-slate-700">OpenAI API Key</Label>
-                <Input
-                  type="password"
+                <Textarea
                   value={openaiApiKey}
                   onChange={(e) => setOpenaiApiKey(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-..."
+                  className="min-h-[80px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-..., sk-..."
                 />
               </div>
               <div className="space-y-2">
                 <Label className="font-medium text-slate-700">Anthropic (Claude) Key</Label>
-                <Input
-                  type="password"
+                <Textarea
                   value={anthropicApiKey}
                   onChange={(e) => setAnthropicApiKey(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
-                  placeholder="sk-ant-..."
+                  className="min-h-[80px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow"
+                  placeholder="sk-ant-..., sk-ant-..."
                 />
               </div>
               <div className="space-y-2">
@@ -684,7 +681,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <p className="mt-4 text-sm text-slate-500 italic">
-              * Suas chaves são armazenadas de forma segura e usadas apenas para processar requisições de IA da plataforma.
+              * Suas chaves são armazenadas de forma segura. Você pode inserir várias chaves para o mesmo provedor separando-as por vírgula (ex: key1, key2) para usar rotação automática e evitar limites.
             </p>
           </CardContent>
         </Card>

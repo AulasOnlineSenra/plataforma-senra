@@ -62,12 +62,21 @@ export async function POST(req: Request) {
       where: { id: 'global' }
     });
 
-    const apiKey = appSettings?.geminiApiKey;
+    const apiKeyRaw = appSettings?.geminiApiKey;
     const requiresApproval = appSettings?.scraperRequiresApproval ?? true;
 
-    if (!apiKey) {
+    if (!apiKeyRaw) {
       return NextResponse.json({ success: false, error: 'A chave da API Gemini não foi configurada.' }, { status: 400 });
     }
+    
+    const apiKeys = apiKeyRaw.split(',').map(k => k.trim()).filter(Boolean);
+    if (apiKeys.length === 0) {
+      return NextResponse.json({ success: false, error: 'Nenhuma chave da API Gemini válida foi encontrada.' }, { status: 400 });
+    }
+    
+    // Rotação: seleciona uma chave aleatória para evitar o limite de requisições de uma única chave.
+    const apiKey = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+    console.log(`🤖 [API] Usando chave Gemini final terminada em ...${apiKey.substring(apiKey.length - 4)}`);
 
     const vestibulares = await prisma.vestibular.findMany({
       where: { isActive: true, scrapingUrl: { not: null } }
