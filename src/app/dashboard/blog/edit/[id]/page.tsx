@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { AiDraftModal } from '@/components/blog/ai-draft-modal';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => {
@@ -645,6 +646,29 @@ export default function EditBlogPostPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <AiDraftModal 
+            currentTitle={formData.title} 
+            onDraftGenerated={(contentHtml, seo) => {
+              if (contentHtml) {
+                const quill = quillRef.current?.getEditor();
+                if (quill) {
+                  // Append content to existing content or replace if empty
+                  const currentLength = quill.getLength();
+                  quill.clipboard.dangerouslyPasteHTML(currentLength, contentHtml);
+                  setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
+                } else {
+                  setFormData(prev => ({ ...prev, content: prev.content + contentHtml }));
+                }
+              }
+              if (seo) {
+                setFormData(prev => ({
+                  ...prev,
+                  metaDescription: seo.metaDescription || prev.metaDescription,
+                  tags: seo.tags || prev.tags
+                }));
+              }
+            }}
+          />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-600">
