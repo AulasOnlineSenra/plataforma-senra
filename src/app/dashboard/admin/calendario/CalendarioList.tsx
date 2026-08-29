@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { updateScrapingUrl } from '@/app/actions/vestibular';
-import { saveSettings } from '@/app/actions/settings';
+import { updateSettings } from '@/app/actions/settings';
 
 export function CalendarioList({ initialData, scraperConfig }: { initialData: any[], scraperConfig: any }) {
   const { toast } = useToast();
@@ -41,10 +41,10 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
 
   const handleSaveConfig = async () => {
     setIsSavingConfig(true);
-    const result = await saveSettings({
+    const result = await updateSettings({
       scraperRequiresApproval,
       scraperFrequency
-    });
+    } as any);
     setIsSavingConfig(false);
 
     if (result.success) {
