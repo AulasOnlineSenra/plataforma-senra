@@ -10,14 +10,28 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCalendarioPage() {
-  const vestibulares = await prisma.vestibular.findMany({
-    orderBy: { name: 'asc' },
-    include: {
-      _count: {
-        select: { events: true }
+  const [vestibulares, appSettings] = await Promise.all([
+    prisma.vestibular.findMany({
+      orderBy: { name: 'asc' },
+      include: {
+        _count: {
+          select: { events: true }
+        }
       }
-    }
-  });
+    }),
+    prisma.appSetting.findUnique({
+      where: { id: 'global' },
+      select: {
+        scraperRequiresApproval: true,
+        scraperFrequency: true
+      }
+    })
+  ]);
+
+  const scraperConfig = {
+    scraperRequiresApproval: appSettings?.scraperRequiresApproval ?? true,
+    scraperFrequency: appSettings?.scraperFrequency ?? 'weekly',
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 pb-8">
@@ -27,12 +41,12 @@ export default async function AdminCalendarioPage() {
             Calendário de Vestibulares
           </h1>
           <p className="text-slate-500">
-            Gerencie as URLs do robô de extração e veja o status da última varredura.
+            Gerencie as configurações do robô de extração e veja o status da última varredura.
           </p>
         </div>
       </div>
 
-      <CalendarioList initialData={vestibulares} />
+      <CalendarioList initialData={vestibulares} scraperConfig={scraperConfig} />
     </div>
   );
 }
