@@ -18,6 +18,7 @@ import { getSettings, updateSettings, updateAvailabilityType } from '@/app/actio
 import { getAllQuizQuestions, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, reorderQuizQuestions } from '@/app/actions/quiz';
 
 import { Textarea } from '@/components/ui/textarea';
+import { MultiKeyInput } from '@/components/ui/multi-key-input';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
@@ -623,56 +624,50 @@ export default function SettingsPage() {
           <CardContent className="pt-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
-                <Textarea
+                <MultiKeyInput
                   value={geminiApiKey}
-                  onChange={(e) => setGeminiApiKey(e.target.value)}
-                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
-                  placeholder="Google Gemini API Key:&#10;chave 1&#10;chave 2&#10;chave n"
+                  onChange={setGeminiApiKey}
+                  placeholder="Google Gemini API Key"
                 />
               </div>
               <div className="space-y-2">
-                <Textarea
+                <MultiKeyInput
                   value={openaiApiKey}
-                  onChange={(e) => setOpenaiApiKey(e.target.value)}
-                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
-                  placeholder="OpenAI API Key:&#10;chave 1&#10;chave 2&#10;chave n"
+                  onChange={setOpenaiApiKey}
+                  placeholder="OpenAI API Key"
                 />
               </div>
               <div className="space-y-2">
-                <Textarea
+                <MultiKeyInput
                   value={anthropicApiKey}
-                  onChange={(e) => setAnthropicApiKey(e.target.value)}
-                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
-                  placeholder="Anthropic (Claude) Key:&#10;chave 1&#10;chave 2&#10;chave n"
+                  onChange={setAnthropicApiKey}
+                  placeholder="Anthropic (Claude) Key"
                 />
               </div>
               <div className="space-y-2">
-                <Textarea
+                <MultiKeyInput
                   value={openRouterApiKey}
-                  onChange={(e) => setOpenRouterApiKey(e.target.value)}
-                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
-                  placeholder="OpenRouter API Key:&#10;chave 1&#10;chave 2&#10;chave n"
+                  onChange={setOpenRouterApiKey}
+                  placeholder="OpenRouter API Key"
                 />
               </div>
               <div className="space-y-2">
-                <Textarea
+                <MultiKeyInput
                   value={grokApiKey}
-                  onChange={(e) => setGrokApiKey(e.target.value)}
-                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
-                  placeholder="Grok (xAI) API Key:&#10;chave 1&#10;chave 2&#10;chave n"
+                  onChange={setGrokApiKey}
+                  placeholder="Grok (xAI) API Key"
                 />
               </div>
               <div className="space-y-2">
-                <Textarea
+                <MultiKeyInput
                   value={minimaxApiKey}
-                  onChange={(e) => setMinimaxApiKey(e.target.value)}
-                  className="min-h-[120px] rounded-xl border-slate-200 focus:border-brand-yellow focus:ring-brand-yellow placeholder:text-slate-400"
-                  placeholder="MiniMax API Key:&#10;chave 1&#10;chave 2&#10;chave n"
+                  onChange={setMinimaxApiKey}
+                  placeholder="MiniMax API Key"
                 />
               </div>
             </div>
             <p className="mt-4 text-sm text-slate-500 italic">
-              * Suas chaves são armazenadas de forma segura. Você pode inserir várias chaves para o mesmo provedor digitando cada chave em uma nova linha (lista) para usar rotação automática e evitar limites.
+              * Suas chaves são armazenadas de forma segura. Você pode inserir várias chaves para o mesmo provedor digitando a chave e pressionando o ícone de + ou Enter para usar rotação automática e evitar limites.
             </p>
           </CardContent>
         </Card>
