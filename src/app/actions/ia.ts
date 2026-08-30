@@ -155,7 +155,7 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
     // Buscar a chave diretamente do banco — sem tocar em process.env
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
     const rawApiKey = settings?.geminiApiKey || "";
-    const apiKeys = rawApiKey.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    const apiKeys = rawApiKey.split(/\r?\n|,/).map(k => k.trim()).filter(k => k.length > 0);
 
     if (apiKeys.length === 0) {
       return { 

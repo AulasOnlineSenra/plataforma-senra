@@ -25,7 +25,7 @@ export function AiDraftModal({ currentTitle, onDraftGenerated }: AiDraftModalPro
 
   const [selectedAgent, setSelectedAgent] = useState('');
   const [topic, setTopic] = useState('');
-  const [wordCount, setWordCount] = useState('1000');
+  const [wordCount, setWordCount] = useState('1400');
   const [extraInstructions, setExtraInstructions] = useState('');
   const [generateSeo, setGenerateSeo] = useState(true);
 
@@ -171,9 +171,9 @@ IMPORTANTE: Formate todo o conteúdo do artigo APENAS EM HTML VÁLIDO (use tags 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="500">Curto (~500 palavras)</SelectItem>
-                <SelectItem value="1000">Médio (~1000 palavras)</SelectItem>
-                <SelectItem value="2000">Longo (~2000 palavras)</SelectItem>
+                <SelectItem value="1400">Curto (~1400 palavras)</SelectItem>
+                <SelectItem value="1950">Médio (~1950 palavras)</SelectItem>
+                <SelectItem value="2500">Longo (~2500 palavras)</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -520,13 +520,26 @@ export default function EditBlogPostPage() {
   const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule' | 'update' | 'review') => {
     if (e) e.preventDefault();
 
-    if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.author.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Preencha título, resumo, conteúdo e autor.',
-      });
-      return;
+    const isPublishing = publishMode === 'now' || publishMode === 'schedule' || (publishMode === 'update' && formData.published);
+
+    if (isPublishing) {
+      if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.author.trim()) {
+        toast({
+          variant: 'destructive',
+          title: 'Campos obrigatórios',
+          description: 'Preencha título, resumo, conteúdo e autor para publicar.',
+        });
+        return;
+      }
+    } else {
+      if (!formData.title.trim()) {
+        toast({
+          variant: 'destructive',
+          title: 'Título obrigatório',
+          description: 'O artigo deve ter pelo menos um título.',
+        });
+        return;
+      }
     }
 
     if (publishMode === 'schedule' && !formData.createdAt) {
