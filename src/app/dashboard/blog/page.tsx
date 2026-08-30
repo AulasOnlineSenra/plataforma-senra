@@ -326,12 +326,6 @@ export default function BlogAdminPage() {
               >
                 Imagens <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
-              <Button 
-                onClick={() => handleStatusChange(post.id, 'PUBLISHED')} 
-                variant="default" size="sm" className="flex-1 text-[10px] h-[27px] bg-emerald-600 hover:bg-emerald-700 px-2"
-              >
-                <CheckCircle2 className="w-3 h-3 mr-1" /> Publicar
-              </Button>
             </>
           )}
 
@@ -376,9 +370,9 @@ export default function BlogAdminPage() {
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="outline" size="sm" className="flex-1 text-[6px] h-[27px] text-amber-600 hover:text-amber-700 px-1" title="Despublicar"
+                variant="outline" size="sm" className="flex-1 text-[6px] h-[27px] text-amber-600 hover:text-amber-700 px-0 max-w-[28px]" title="Ocultar"
               >
-                <EyeOff className="w-3 h-3 mr-0.5" /> Ocultar
+                <EyeOff className="w-3 h-3" />
               </Button>
             </>
           )}
@@ -394,10 +388,10 @@ export default function BlogAdminPage() {
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
         className={`bg-white border-r transition-all duration-300 flex flex-col shrink-0 ${
-          isSidebarOpen ? 'w-[285px]' : 'w-0 opacity-0 overflow-hidden border-none'
+          isSidebarOpen ? 'w-[220px]' : 'w-0 opacity-0 overflow-hidden border-none'
         }`}
       >
-        <div className="p-4 border-b flex items-center justify-between">
+        <div className="py-3 px-4 border-b flex items-center justify-between">
           <h2 className="font-bold flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-500" />
             Pesquisa & Pauta
@@ -412,7 +406,7 @@ export default function BlogAdminPage() {
           </div>
         </div>
         
-        <div className="p-4 border-b bg-slate-50/50">
+        <div className="p-3 border-b bg-slate-50/50">
           <form 
             onSubmit={(e) => { e.preventDefault(); if (newIdeaTitle) handleCreateFromIdea(newIdeaTitle, undefined, 'manual'); }}
             className="flex gap-2"
@@ -430,7 +424,7 @@ export default function BlogAdminPage() {
           </form>
         </div>
 
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-3 [&_[data-radix-scroll-area-scrollbar]]:!hidden">
           <div className="text-xs text-muted-foreground font-medium mb-3">Ideias de Concorrentes (RSS)</div>
           
           {isFetchingIdeas && externalIdeas.length === 0 ? (
@@ -525,7 +519,7 @@ export default function BlogAdminPage() {
 
         {/* Colunas do Kanban */}
         <div className="flex-1 overflow-x-auto">
-          <div className="flex h-full p-6 gap-6 min-w-[900px]">
+          <div className="flex h-full p-6 gap-6 min-w-[700px]">
             
             {/* Coluna 1: Redação */}
             <div className="flex-1 flex flex-col max-w-[370px]">
