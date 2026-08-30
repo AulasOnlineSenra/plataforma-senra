@@ -70,7 +70,12 @@ export async function getDashboardKanbanPosts() {
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
     });
-    return { success: true, data: { drafts, reviews } };
+    const images = await prisma.blogPost.findMany({
+      where: { status: 'IMAGES' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+    });
+    return { success: true, data: { drafts, reviews, images } };
   } catch (error) {
     console.error('Erro ao buscar Kanban posts:', error);
     return { success: false, error: 'Falha ao buscar posts.' };
@@ -218,7 +223,7 @@ export async function updatePost(
     tags?: string;
     published?: boolean;
     createdAt?: string;
-    status?: 'DRAFT' | 'REVIEW' | 'PUBLISHED';
+    status?: 'DRAFT' | 'REVIEW' | 'IMAGES' | 'PUBLISHED';
     metaDescription?: string;
   }
 ) {
@@ -345,7 +350,7 @@ export async function incrementPostViews(id: string) {
   }
 }
 
-export async function updatePostStatus(id: string, newStatus: 'DRAFT' | 'REVIEW' | 'PUBLISHED') {
+export async function updatePostStatus(id: string, newStatus: 'DRAFT' | 'REVIEW' | 'IMAGES' | 'PUBLISHED') {
   try {
     const post = await prisma.blogPost.update({
       where: { id },

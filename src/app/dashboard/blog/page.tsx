@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea, getDashboardKanbanPosts, getDashboardPublishedPaginated } from '@/app/actions/blog';
 import { getReferenceBlogs, addReferenceBlog, removeReferenceBlog, fetchExternalIdeas } from '@/app/actions/reference-blogs';
 
-type PostStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED';
+type PostStatus = 'DRAFT' | 'REVIEW' | 'IMAGES' | 'PUBLISHED';
 
 type BlogPost = {
   id: string;
@@ -64,6 +64,7 @@ type ReferenceBlog = {
 export default function BlogAdminPage() {
   const [drafts, setDrafts] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [images, setImages] = useState<any[]>([]);
   const [published, setPublished] = useState<any[]>([]);
   const [hasMorePublished, setHasMorePublished] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -115,6 +116,7 @@ export default function BlogAdminPage() {
     if (kanbanResult.success && kanbanResult.data) {
       setDrafts(kanbanResult.data.drafts);
       setReviews(kanbanResult.data.reviews);
+      setImages(kanbanResult.data.images || []);
     }
     const publishedResult = await getDashboardPublishedPaginated(0, 8);
     if (publishedResult.success && publishedResult.data) {
@@ -290,14 +292,14 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA REDAÇÃO */}
           {(post.status === 'DRAFT' || (!post.status && !post.published)) && (
             <>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Pencil className="w-3 h-3 mr-1" /> Escrever
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="default" size="sm" className="flex-1 text-[10px] h-[27px] bg-blue-600 hover:bg-blue-700"
+                variant="default" size="sm" className="flex-1 text-[8px] h-[27px] bg-blue-600 hover:bg-blue-700"
               >
                 Revisão <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
@@ -309,18 +311,47 @@ export default function BlogAdminPage() {
             <>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'DRAFT')} 
-                variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]" title="Devolver para Redação"
+                variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]" title="Devolver para Redação"
               >
                 <Undo2 className="w-3 h-3" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[10px] h-[27px]">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
+                <Link href={`/dashboard/blog/edit/${post.id}`}>
+                  <Eye className="w-3 h-3 mr-1" /> Ler
+                </Link>
+              </Button>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'IMAGES')} 
+                variant="outline" size="sm" className="flex-1 text-[8px] h-[27px] text-fuchsia-600 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Enviar para Imagens"
+              >
+                Imagens <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'PUBLISHED')} 
+                variant="default" size="sm" className="flex-1 text-[10px] h-[27px] bg-emerald-600 hover:bg-emerald-700 px-2"
+              >
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Publicar
+              </Button>
+            </>
+          )}
+
+          {/* BOTÕES PARA IMAGENS */}
+          {post.status === 'IMAGES' && (
+            <>
+              <Button 
+                onClick={() => handleStatusChange(post.id, 'REVIEW')} 
+                variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]" title="Devolver para Revisão"
+              >
+                <Undo2 className="w-3 h-3" />
+              </Button>
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Eye className="w-3 h-3 mr-1" /> Ler
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'PUBLISHED')} 
-                variant="default" size="sm" className="flex-1 text-xs h-8 bg-emerald-600 hover:bg-emerald-700"
+                variant="default" size="sm" className="flex-1 text-[10px] h-[27px] bg-emerald-600 hover:bg-emerald-700 px-2"
               >
                 <CheckCircle2 className="w-3 h-3 mr-1" /> Publicar
               </Button>
@@ -330,24 +361,24 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA PUBLICADO */}
           {(post.status === 'PUBLISHED' || (!post.status && post.published)) && (
             <>
-              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 text-[8px] h-[27px] px-0 max-w-[28px]" title="Copiar Link">
+              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 text-[6px] h-[27px] px-0 max-w-[28px]" title="Copiar Link">
                 <Copy className="w-3 h-3" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]" title="Ver no site">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[6px] h-[27px]">
                 <Link href={`/blog/${post.slug || post.id}`} target="_blank">
                   <Globe className="w-3 h-3 mr-1" /> Site
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
+              <Button asChild variant="outline" size="sm" className="flex-1 text-[6px] h-[27px]">
                 <Link href={`/dashboard/blog/edit/${post.id}`}>
                   <Pencil className="w-3 h-3 mr-1" /> Editar
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="outline" size="sm" className="text-[8px] h-[27px] text-amber-600 hover:text-amber-700" title="Despublicar"
+                variant="outline" size="sm" className="flex-1 text-[6px] h-[27px] text-amber-600 hover:text-amber-700 px-1" title="Despublicar"
               >
-                <EyeOff className="w-3 h-3" />
+                <EyeOff className="w-3 h-3 mr-0.5" /> Ocultar
               </Button>
             </>
           )}
@@ -363,7 +394,7 @@ export default function BlogAdminPage() {
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
         className={`bg-white border-r transition-all duration-300 flex flex-col shrink-0 ${
-          isSidebarOpen ? 'w-[310px]' : 'w-0 opacity-0 overflow-hidden border-none'
+          isSidebarOpen ? 'w-[285px]' : 'w-0 opacity-0 overflow-hidden border-none'
         }`}
       >
         <div className="p-4 border-b flex items-center justify-between">
@@ -497,7 +528,7 @@ export default function BlogAdminPage() {
           <div className="flex h-full p-6 gap-6 min-w-[900px]">
             
             {/* Coluna 1: Redação */}
-            <div className="flex-1 flex flex-col max-w-[400px]">
+            <div className="flex-1 flex flex-col max-w-[370px]">
               <div className="flex items-center justify-between mb-4 px-1">
                 <h3 className="font-bold text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-slate-300"></div>
@@ -517,7 +548,7 @@ export default function BlogAdminPage() {
             </div>
 
             {/* Coluna 2: Revisão */}
-            <div className="flex-1 flex flex-col max-w-[400px]">
+            <div className="flex-1 flex flex-col max-w-[370px]">
               <div className="flex items-center justify-between mb-4 px-1">
                 <h3 className="font-bold text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
@@ -534,8 +565,26 @@ export default function BlogAdminPage() {
               </ScrollArea>
             </div>
 
-            {/* Coluna 3: Publicação */}
+            {/* Coluna 3: Imagens */}
             <div className="flex-1 flex flex-col max-w-[370px]">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-fuchsia-500"></div>
+                  Imagens
+                </h3>
+                <span className="text-xs font-semibold bg-fuchsia-100 text-fuchsia-700 px-2 py-0.5 rounded-full">{images.length}</span>
+              </div>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                {images.length === 0 && !isLoading ? (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">Nada para adicionar imagens.</div>
+                ) : (
+                  images.map(post => <PostCard key={post.id} post={post} />)
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Coluna 4: Publicação */}
+            <div className="flex-1 flex flex-col max-w-[340px]">
               <div className="flex items-center justify-between mb-4 px-1">
                 <h3 className="font-bold text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
