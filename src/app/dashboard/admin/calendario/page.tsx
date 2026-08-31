@@ -37,6 +37,21 @@ export default async function AdminCalendarioPage() {
     scraperFrequency: appSettings?.scraperFrequency ?? 'weekly',
   };
 
+  // Serialize Date objects → ISO strings so Next.js can pass them safely to the Client Component
+  const serializedVestibulares = vestibulares.map(v => ({
+    ...v,
+    createdAt: v.createdAt.toISOString(),
+    updatedAt: v.updatedAt.toISOString(),
+    lastScrapeDate: v.lastScrapeDate ? v.lastScrapeDate.toISOString() : null,
+    events: v.events.map((e: any) => ({
+      ...e,
+      dateStart: e.dateStart.toISOString(),
+      dateEnd: e.dateEnd ? e.dateEnd.toISOString() : null,
+      createdAt: e.createdAt.toISOString(),
+      updatedAt: e.updatedAt.toISOString(),
+    })),
+  }));
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 pb-8">
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -50,7 +65,7 @@ export default async function AdminCalendarioPage() {
         </div>
       </div>
 
-      <CalendarioList initialData={vestibulares} scraperConfig={scraperConfig} />
+      <CalendarioList initialData={serializedVestibulares} scraperConfig={scraperConfig} />
     </div>
   );
 }

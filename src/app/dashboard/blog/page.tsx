@@ -26,6 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { getBlogPosts, deletePost, updatePostStatus, createDraftFromIdea, getDashboardKanbanPosts, getDashboardPublishedPaginated } from '@/app/actions/blog';
 import { getReferenceBlogs, addReferenceBlog, removeReferenceBlog, fetchExternalIdeas } from '@/app/actions/reference-blogs';
+import { BlogKpis } from '@/components/blog/blog-kpis';
 
 type PostStatus = 'DRAFT' | 'REVIEW' | 'IMAGES' | 'PUBLISHED';
 
@@ -604,6 +605,15 @@ export default function BlogAdminPage() {
             </div>
 
           </div>
+        </div>
+
+        {/* SEGUNDA DOBRA: KPIs DO BLOG */}
+        <div className="shrink-0 border-t bg-slate-50 px-6 overflow-y-auto" style={{maxHeight: '420px'}}>
+          <div className="py-3 flex items-center gap-2">
+            <span className="font-bold text-sm text-slate-700">📊 Painel de Desempenho</span>
+            <span className="text-xs text-slate-400">— dados em tempo real do blog</span>
+          </div>
+          <BlogKpis />
         </div>
 
       </div>

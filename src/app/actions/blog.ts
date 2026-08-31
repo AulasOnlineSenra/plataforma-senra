@@ -397,3 +397,60 @@ export async function createDraftFromIdea(title: string, referenceUrl?: string) 
     return { success: false, error: 'Falha ao criar rascunho.' };
   }
 }
+
+export async function getBlogKpis() {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [byStatus, publishedLast30, referenceBlogs, postsWithRef] = await Promise.all([
+      // Count per status
+      prisma.blogPost.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+      }),
+      // Published in the last 30 days
+      prisma.blogPost.count({
+        where: { status: 'PUBLISHED', createdAt: { gte: thirtyDaysAgo } },
+      }),
+      // All reference blogs
+      prisma.referenceBlog.findMany({ select: { id: true, name: true, url: true } }),
+      // Posts that have a referenceUrl
+      prisma.blogPost.findMany({
+        where: { referenceUrl: { not: null } },
+        select: { referenceUrl: true },
+      }),
+    ]);
+
+    // Build status map
+    const statusMap: Record<string, number> = {};
+    for (const row of byStatus) {
+      statusMap[row.status || 'DRAFT'] = (statusMap[row.status || 'DRAFT'] || 0) + row._count._all;
+    }
+
+    // Rank reference blogs by how many posts link to their domain
+    const refRanking = referenceBlogs.map(blog => {
+      let count = 0;
+      try {
+        const domain = new URL(blog.url).hostname.replace('www.', '');
+        count = postsWithRef.filter(p => p.referenceUrl && p.referenceUrl.includes(domain)).length;
+      } catch { /* ignore invalid URLs */ }
+      return { id: blog.id, name: blog.name, url: blog.url, usageCount: count };
+    }).sort((a, b) => b.usageCount - a.usageCount);
+
+    return {
+      success: true,
+      data: {
+        draft: statusMap['DRAFT'] || 0,
+        review: statusMap['REVIEW'] || 0,
+        images: statusMap['IMAGES'] || 0,
+        published: statusMap['PUBLISHED'] || 0,
+        publishedLast30,
+        refRanking,
+      },
+    };
+  } catch (error) {
+    console.error('Erro ao buscar KPIs do blog:', error);
+    return { success: false, error: 'Falha ao buscar KPIs.' };
+  }
+}
