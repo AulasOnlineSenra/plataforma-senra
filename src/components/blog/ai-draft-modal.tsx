@@ -77,7 +77,7 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       prompt = `
 Escreva um rascunho de artigo para blog sobre o seguinte tema: "${topic}".
 Tamanho desejado do texto: aproximadamente ${wordCount} palavras.
-${extraInstructions ? \`\nInstruções extras (Tópicos obrigatórios):\n\${extraInstructions}\n\` : ''}
+${extraInstructions ? '\nInstruções extras (Tópicos obrigatórios):\n' + extraInstructions + '\n' : ''}
 
 ${generateSeo ? 'MUITO IMPORTANTE: No final do artigo, inclua OBRIGATORIAMENTE um bloco JSON com uma \`metaDescription\` (resumo chamativo com no máximo 160 caracteres) e \`tags\` (array de strings). Formate exatamente assim:\n```json\n{"metaDescription": "...", "tags": ["tag1", "tag2"]}\n```\n' : ''}
 
@@ -87,7 +87,7 @@ IMPORTANTE: Formate todo o conteúdo do artigo APENAS EM HTML VÁLIDO (use tags 
       prompt = `
 Você é um Revisor e Editor Chefe experiente.
 Revise e reescreva o artigo abaixo para melhorar a escaneabilidade, corrigir erros gramaticais, melhorar o tom de voz e adicionar formatação (negritos, listas) onde apropriado.
-${extraInstructions ? \`\nInstruções do usuário:\n\${extraInstructions}\n\` : ''}
+${extraInstructions ? '\nInstruções do usuário:\n' + extraInstructions + '\n' : ''}
 
 Título Original: ${topic}
 Conteúdo Original:
