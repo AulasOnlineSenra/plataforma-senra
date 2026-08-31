@@ -99,6 +99,7 @@ export default function BlogAdminPage() {
       setMaxDays(Number(savedMaxDays));
     }
     loadPosts();
+    loadReferenceBlogs();
   }, []);
 
   useEffect(() => {
@@ -167,9 +168,9 @@ export default function BlogAdminPage() {
     }
   };
 
-  // Carrega a lista de blogs ao abrir as configurações
+  // Carrega a lista de blogs ao abrir as configurações (agora já carregado no mount, mantido por segurança)
   useEffect(() => {
-    if (isSettingsOpen) {
+    if (isSettingsOpen && referenceBlogs.length === 0) {
       loadReferenceBlogs();
     }
   }, [isSettingsOpen]);
@@ -246,6 +247,20 @@ export default function BlogAdminPage() {
 
   const isIdeaAdded = (link: string) => drafts.some(p => p.referenceUrl === link) || reviews.some(p => p.referenceUrl === link) || published.some(p => p.referenceUrl === link);
 
+  const getReferenceName = (referenceUrl: string) => {
+    try {
+      const postDomain = new URL(referenceUrl.startsWith('http') ? referenceUrl : `https://${referenceUrl}`).hostname.replace('www.', '');
+      for (const blog of referenceBlogs) {
+        const sourceUrl = blog.url || blog.feedUrl || '';
+        const refDomain = new URL(sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`).hostname.replace('www.', '');
+        if (refDomain && (postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`))) {
+          return blog.name;
+        }
+      }
+    } catch { /* ignore */ }
+    return "Link Original";
+  };
+
   const PostCard = ({ post }: { post: any }) => {
     const isScheduled = post.published && new Date(post.createdAt) > new Date();
     
@@ -284,8 +299,8 @@ export default function BlogAdminPage() {
         </p>
 
         {post.referenceUrl && (
-           <a href={post.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[8px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md mb-3 hover:bg-slate-200 transition-colors">
-             <ExternalLink className="w-3 h-3" /> Link Original
+           <a href={post.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[8px] font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md mb-3 hover:bg-slate-200 transition-colors truncate max-w-full">
+             <ExternalLink className="w-3 h-3 shrink-0" /> <span className="truncate">{getReferenceName(post.referenceUrl)}</span>
            </a>
         )}
 
