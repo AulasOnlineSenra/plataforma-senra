@@ -14,6 +14,7 @@ async function main() {
   for (const post of posts) {
     if (!post.referenceUrl) continue;
     
+    console.log(`URL do Post ${post.id}: ${post.referenceUrl}`);
     let finalUrl = post.referenceUrl;
     if (finalUrl.includes('google.com/url') && finalUrl.includes('url=')) {
       try {
