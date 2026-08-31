@@ -142,6 +142,7 @@ export function IaManager() {
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('sandbox');
+  const [modelsByProvider, setModelsByProvider] = useState<Record<string, { label: string, models: string[] }>>(MODELS_BY_PROVIDER);
   
   // Chat / Sandbox State
   const [testPrompt, setTestPrompt] = useState('');
@@ -177,10 +178,37 @@ export function IaManager() {
 
   const loadProviders = async () => {
     const result = await getAvailableProviders();
-    if (result.success) {
-      setAvailableProviders(result.data || []);
+    if (result.success && result.data) {
+      setAvailableProviders(result.data);
+      if (result.data.includes('openrouter')) {
+        loadOpenRouterModels();
+      }
     }
   };
+
+  const loadOpenRouterModels = async () => {
+    const { fetchOpenRouterModels } = await import('@/app/actions/ia');
+    const res = await fetchOpenRouterModels();
+    if (res.success && res.data) {
+      const newModels = { ...MODELS_BY_PROVIDER };
+      const orModels = res.data as any[];
+      // Filter for popular models to not break UI, or just add all
+      // We will sort and add all, grouping by their prefix
+      orModels.forEach(m => {
+        const providerId = m.id.split('/')[0];
+        const key = `openrouter_${providerId}`;
+        if (!newModels[key]) {
+          newModels[key] = { label: `OpenRouter: ${providerId.charAt(0).toUpperCase() + providerId.slice(1)}`, models: [] };
+        }
+        newModels[key].models.push(`openrouter:${m.id}`);
+      });
+      setModelsByProvider(newModels);
+    }
+  };
+
+  const activeProviderKeys = Object.keys(modelsByProvider).filter(k => 
+    availableProviders.includes(k) || (availableProviders.includes('openrouter') && k.startsWith('openrouter_'))
+  );
 
   const loadAgents = async () => {
     setLoading(true);
@@ -484,14 +512,18 @@ export function IaManager() {
                           <SelectValue placeholder="Selecione o modelo" />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableProviders.map(provider => (
-                            <SelectGroup key={provider}>
-                              <SelectLabel>{MODELS_BY_PROVIDER[provider]?.label}</SelectLabel>
-                              {MODELS_BY_PROVIDER[provider]?.models.map(m => (
-                                <SelectItem key={m} value={m}>{m}</SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
+                          {availableProviders.length === 0 ? (
+                            <SelectItem value="none" disabled>Configure as chaves API</SelectItem>
+                          ) : (
+                            activeProviderKeys.map(provider => (
+                              <SelectGroup key={provider}>
+                                <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
+                                {modelsByProvider[provider]?.models.map(m => (
+                                  <SelectItem key={m} value={m}>{m.replace('openrouter:', '')}</SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -834,11 +866,11 @@ export function IaManager() {
                     {availableProviders.length === 0 ? (
                       <SelectItem value="none" disabled>Configure as chaves API primeiro</SelectItem>
                     ) : (
-                      availableProviders.map(provider => (
+                      activeProviderKeys.map(provider => (
                         <SelectGroup key={provider}>
-                          <SelectLabel>{MODELS_BY_PROVIDER[provider]?.label}</SelectLabel>
-                          {MODELS_BY_PROVIDER[provider]?.models.map(m => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
+                          {modelsByProvider[provider]?.models.map(m => (
+                            <SelectItem key={m} value={m}>{m.replace('openrouter:', '')}</SelectItem>
                           ))}
                         </SelectGroup>
                       ))

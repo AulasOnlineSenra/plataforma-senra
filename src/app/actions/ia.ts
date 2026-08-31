@@ -105,6 +105,18 @@ export async function getAvailableProviders() {
   }
 }
 
+export async function fetchOpenRouterModels() {
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/models", { cache: "no-store" });
+    if (!res.ok) throw new Error("Falha ao buscar modelos");
+    const data = await res.json();
+    return { success: true, data: data.data };
+  } catch (error) {
+    console.error("Erro ao buscar modelos OpenRouter:", error);
+    return { success: false, error: "Falha ao carregar modelos." };
+  }
+}
+
 // ============================================================
 // Execução do Agente IA — usando SDK nativo do Google Generative AI
 // A chave é buscada do banco a cada chamada, nunca fica em process.env
