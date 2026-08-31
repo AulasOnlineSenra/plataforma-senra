@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Bot, CheckCircle, AlertTriangle, XCircle, Globe, Save, Check, Sparkles, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,9 +44,6 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
 
   const [scraperRequiresApproval, setScraperRequiresApproval] = useState(scraperConfig?.scraperRequiresApproval ?? true);
   const [scraperFrequency, setScraperFrequency] = useState(scraperConfig?.scraperFrequency || 'weekly');
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const handleSaveUrl = async (id: string, url: string) => {
     setLoadingId(id);
@@ -102,8 +99,6 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
     if (!aHasUrl && bHasUrl) return 1;
     return a.institution.localeCompare(b.institution);
   });
-
-  if (!mounted) return null; // Avoid hydration mismatch on timezone dependent dates
 
   return (
     <div className="space-y-6">
@@ -285,7 +280,7 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
                             </button>
                           )}
                         </div>
-                        <p className={`text-xs font-medium mt-0.5 truncate ${statusColor}`}>
+                        <p suppressHydrationWarning className={`text-xs font-medium mt-0.5 truncate ${statusColor}`}>
                           {statusText}
                         </p>
                       </div>
@@ -332,7 +327,7 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
                                 <span className={`text-[10px] font-bold uppercase tracking-wider ${style.color}`}>
                                   {style.label}
                                 </span>
-                                <p className="text-sm font-semibold text-slate-800 mt-0.5">
+                                <p suppressHydrationWarning className="text-sm font-semibold text-slate-800 mt-0.5">
                                   {format(new Date(ev.dateStart), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                                 </p>
                                 {ev.description && (

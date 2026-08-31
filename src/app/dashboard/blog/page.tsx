@@ -385,7 +385,7 @@ export default function BlogAdminPage() {
 
   return (
     <div className="flex flex-col bg-slate-50 rounded-xl border overflow-hidden">
-      <div className="flex overflow-hidden" style={{minHeight: '800px', height: 'calc(100vh - 3.5rem)'}}>
+      <div className="flex overflow-hidden" style={{minHeight: '1400px', height: 'calc(1600vh - 3.5rem)'}}>
       
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
