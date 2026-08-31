@@ -37,7 +37,15 @@ async function main() {
       for (const blog of blogs) {
         const sourceUrl = blog.url || blog.feedUrl || '';
         const refDomain = new URL(sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`).hostname.replace('www.', '');
-        if (refDomain === 'google.com' || refDomain === 'google.com.br') continue;
+        
+        // Regra especial para Google News: tenta casar o nome do blog com o titulo do post
+        if (refDomain === 'google.com' || refDomain === 'news.google.com' || refDomain === 'google.com.br') {
+          if (post.title.toLowerCase().includes(blog.name.toLowerCase())) {
+            matchedBlogId = blog.id;
+            break;
+          }
+          continue;
+        }
         
         if (refDomain && (postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`))) {
           matchedBlogId = blog.id;
