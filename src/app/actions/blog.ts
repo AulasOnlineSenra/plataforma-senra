@@ -63,17 +63,17 @@ export async function getDashboardKanbanPosts() {
     const drafts = await prisma.blogPost.findMany({
       where: { OR: [{ status: 'DRAFT' }, { status: '', published: false }] },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, referenceBlogId: true, slug: true }
     });
     const reviews = await prisma.blogPost.findMany({
       where: { status: 'REVIEW' },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, referenceBlogId: true, slug: true }
     });
     const images = await prisma.blogPost.findMany({
       where: { status: 'IMAGES' },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, referenceBlogId: true, slug: true }
     });
     return { success: true, data: { drafts, reviews, images } };
   } catch (error) {
@@ -89,7 +89,7 @@ export async function getDashboardPublishedPaginated(skip: number, take: number)
       orderBy: { createdAt: 'desc' },
       skip,
       take,
-      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, slug: true }
+      select: { id: true, title: true, author: true, createdAt: true, status: true, published: true, referenceUrl: true, referenceBlogId: true, slug: true }
     });
     return { success: true, data: published };
   } catch (error) {
