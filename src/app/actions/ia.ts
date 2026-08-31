@@ -110,6 +110,7 @@ export async function getAvailableProviders() {
 // A chave é buscada do banco a cada chamada, nunca fica em process.env
 // ============================================================
 import { GoogleGenerativeAI, Tool, FunctionDeclaration, SchemaType } from "@google/generative-ai";
+import OpenAI from "openai";
 
 // Mapeia os tipos Zod básicos para o SchemaType do Google AI SDK
 function zodToGoogleSchema(schema: any): any {
@@ -211,7 +212,58 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
       parts: [{ text: h.content }]
     }));
 
-    // === INÍCIO DO POOL DE CHAVES (API KEY ROTATION) ===
+    const isOpenRouter = agent.model?.startsWith('openrouter:');
+    
+    if (isOpenRouter) {
+      const orModelName = agent.model!.replace('openrouter:', '');
+      const orApiKey = settings?.openRouterApiKey || process.env.OPENROUTER_API_KEY;
+      
+      if (!orApiKey) {
+        return { success: false, error: "Chave de API do OpenRouter não configurada nas Integrações. Vá em Configurações e adicione sua chave." };
+      }
+      
+      const openai = new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: orApiKey,
+      });
+
+      const messages: any[] = [];
+      if (agent.instructions) {
+        messages.push({ role: "system", content: agent.instructions });
+      }
+      
+      if (history) {
+        for (const h of history) {
+          messages.push({ role: h.role === 'model' ? 'assistant' : 'user', content: h.content });
+        }
+      }
+      messages.push({ role: "user", content: userPrompt });
+
+      try {
+        console.log(`[IA] Executando via OpenRouter | Modelo: ${orModelName}`);
+        const response = await openai.chat.completions.create({
+          model: orModelName,
+          messages: messages,
+        });
+        
+        return {
+          success: true,
+          response: response.choices[0]?.message?.content || "",
+          toolCalls: [],
+          executionTimeMs: Date.now() - startTime,
+          usage: {
+            promptTokens: response.usage?.prompt_tokens || 0,
+            candidatesTokens: response.usage?.completion_tokens || 0,
+            totalTokens: response.usage?.total_tokens || 0,
+          }
+        };
+      } catch (err: any) {
+        console.error("[IA OpenRouter Error]", err);
+        return { success: false, error: "Erro na API do OpenRouter: " + (err.message || "Desconhecido") };
+      }
+    }
+
+    // === INÍCIO DO POOL DE CHAVES (API KEY ROTATION NATIVO GEMINI) ===
     let lastError: any = null;
     let lastErrorMsg = "";
 
