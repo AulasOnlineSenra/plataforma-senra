@@ -16,6 +16,10 @@ export default async function AdminCalendarioPage() {
       include: {
         _count: {
           select: { events: true }
+        },
+        events: {
+          orderBy: { dateStart: 'asc' },
+          select: { id: true, type: true, dateStart: true, description: true, status: true }
         }
       }
     }),

@@ -15,3 +15,31 @@ export async function updateScrapingUrl(vestibularId: string, url: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function approveEvent(eventId: string) {
+  try {
+    await prisma.vestibularEvent.update({
+      where: { id: eventId },
+      data: { status: 'APPROVED' }
+    });
+    revalidatePath('/dashboard/admin/calendario');
+    revalidatePath('/calendario');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function approveAllPendingEvents(vestibularId: string) {
+  try {
+    await prisma.vestibularEvent.updateMany({
+      where: { vestibularId, status: 'PENDING' },
+      data: { status: 'APPROVED' }
+    });
+    revalidatePath('/dashboard/admin/calendario');
+    revalidatePath('/calendario');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
