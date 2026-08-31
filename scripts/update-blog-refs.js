@@ -7,6 +7,7 @@ async function main() {
     where: { referenceUrl: { not: null }, referenceBlogId: null }
   });
 
+  console.log('Blogs:', blogs);
   console.log(`Encontrados ${posts.length} posts para atualizar.`);
 
   let updatedCount = 0;
@@ -22,6 +23,11 @@ async function main() {
         const realUrl = urlObj.searchParams.get('url');
         if (realUrl) finalUrl = realUrl;
       } catch (e) {}
+    } else if (finalUrl.includes('news.google.com/rss/articles/')) {
+      try {
+        const res = await fetch(finalUrl, { method: 'HEAD', redirect: 'follow' });
+        finalUrl = res.url;
+      } catch(e) {}
     }
 
     try {
