@@ -166,16 +166,17 @@ ${currentContent || ''}
   };
 
   const trigger = getTriggerConfig();
+  const Icon = trigger.icon;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={\`rounded-xl \${trigger.color}\`}>
-          <trigger.icon className="h-4 w-4 mr-2" />
+        <Button variant="outline" size="sm" className={`rounded-xl ${trigger.color}`}>
+          <Icon className="h-4 w-4 mr-2" />
           {trigger.text}
         </Button>
       </DialogTrigger>
-      <DialogContent className={\`sm:max-w-[\${generatedHtml ? '800px' : '500px'}] border-none shadow-2xl transition-all duration-300\`}>
+      <DialogContent className={`sm:max-w-[${generatedHtml ? '800px' : '500px'}] border-none shadow-2xl transition-all duration-300`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Bot className="h-5 w-5 text-brand-yellow" /> Assistente de IA
