@@ -36,7 +36,8 @@ import {
   Cpu,
   AlertTriangle,
   RotateCcw,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -143,6 +144,37 @@ export function IaManager() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('sandbox');
   const [modelsByProvider, setModelsByProvider] = useState<Record<string, { label: string, models: string[] }>>(MODELS_BY_PROVIDER);
+  const [hiddenModels, setHiddenModels] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('@senra:hiddenModels');
+    if (saved) {
+      try { setHiddenModels(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
+
+  const handleHideModel = (modelId: string) => {
+    setHiddenModels(prev => {
+      const newHidden = [...prev, modelId];
+      localStorage.setItem('@senra:hiddenModels', JSON.stringify(newHidden));
+      return newHidden;
+    });
+    
+    toast('Modelo ocultado da lista', {
+      position: 'bottom-left',
+      duration: 5000,
+      action: {
+        label: 'Desfazer',
+        onClick: () => {
+          setHiddenModels(prev => {
+            const restored = prev.filter(m => m !== modelId);
+            localStorage.setItem('@senra:hiddenModels', JSON.stringify(restored));
+            return restored;
+          });
+        }
+      }
+    });
+  };
   
   // Chat / Sandbox State
   const [testPrompt, setTestPrompt] = useState('');
@@ -518,8 +550,23 @@ export function IaManager() {
                             activeProviderKeys.map(provider => (
                               <SelectGroup key={provider}>
                                 <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
-                                {modelsByProvider[provider]?.models.map(m => (
-                                  <SelectItem key={m} value={m}>{m.replace('openrouter:', '')}</SelectItem>
+                                {modelsByProvider[provider]?.models.filter(m => !hiddenModels.includes(m)).map(m => (
+                                  <SelectItem key={m} value={m} className="group relative pr-8">
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className="truncate">{m.replace('openrouter:', '')}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleHideModel(m);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-10"
+                                      >
+                                        <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
+                                      </button>
+                                    </div>
+                                  </SelectItem>
                                 ))}
                               </SelectGroup>
                             ))
@@ -869,8 +916,23 @@ export function IaManager() {
                       activeProviderKeys.map(provider => (
                         <SelectGroup key={provider}>
                           <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
-                          {modelsByProvider[provider]?.models.map(m => (
-                            <SelectItem key={m} value={m}>{m.replace('openrouter:', '')}</SelectItem>
+                          {modelsByProvider[provider]?.models.filter(m => !hiddenModels.includes(m)).map(m => (
+                            <SelectItem key={m} value={m} className="group relative pr-8">
+                              <div className="flex items-center justify-between w-full">
+                                <span className="truncate">{m.replace('openrouter:', '')}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleHideModel(m);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-10"
+                                >
+                                  <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
+                                </button>
+                              </div>
+                            </SelectItem>
                           ))}
                         </SelectGroup>
                       ))
