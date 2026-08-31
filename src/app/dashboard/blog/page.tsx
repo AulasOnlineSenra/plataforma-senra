@@ -224,9 +224,9 @@ export default function BlogAdminPage() {
     }
   };
 
-  const handleCreateFromIdea = async (title: string, referenceUrl?: string, ideaId?: string) => {
+  const handleCreateFromIdea = async (title: string, referenceUrl?: string, ideaId?: string, referenceBlogId?: string) => {
     if (ideaId) setAddingIdeaId(ideaId);
-    const result = await createDraftFromIdea(title, referenceUrl);
+    const result = await createDraftFromIdea(title, referenceUrl, referenceBlogId);
     if (result.success) {
       toast({ title: 'Ideia Adicionada!', description: 'O rascunho foi criado na coluna de Redação.', className: 'bg-emerald-600 text-white border-none' });
       setNewIdeaTitle('');
@@ -247,7 +247,11 @@ export default function BlogAdminPage() {
 
   const isIdeaAdded = (link: string) => drafts.some(p => p.referenceUrl === link) || reviews.some(p => p.referenceUrl === link) || published.some(p => p.referenceUrl === link);
 
-  const getReferenceName = (referenceUrl: string) => {
+  const getReferenceName = (referenceUrl: string, referenceBlogId?: string) => {
+    if (referenceBlogId) {
+      const blog = referenceBlogs.find(b => b.id === referenceBlogId);
+      if (blog) return blog.name;
+    }
     try {
       let finalUrl = referenceUrl;
       if (finalUrl.includes('google.com/url') && finalUrl.includes('url=')) {
@@ -312,7 +316,7 @@ export default function BlogAdminPage() {
 
         {post.referenceUrl && (
            <a href={post.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[8px] font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md mb-3 hover:bg-slate-200 transition-colors truncate max-w-full">
-             <ExternalLink className="w-3 h-3 shrink-0" /> <span className="truncate">{getReferenceName(post.referenceUrl)}</span>
+             <ExternalLink className="w-3 h-3 shrink-0" /> <span className="truncate">{getReferenceName(post.referenceUrl, post.referenceBlogId)}</span>
            </a>
         )}
 
@@ -496,7 +500,7 @@ export default function BlogAdminPage() {
                       </p>
                     </div>
                     <Button 
-                      onClick={() => !added && handleCreateFromIdea(idea.title, idea.link, idea.id)}
+                      onClick={() => !added && handleCreateFromIdea(idea.title, idea.link, idea.id, idea.id.split('-')[0])}
                       variant={added ? "default" : "ghost"}
                       size="icon" 
                       className={`h-6 w-6 shrink-0 shadow-sm transition-all ${

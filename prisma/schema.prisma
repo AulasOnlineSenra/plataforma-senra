@@ -82,6 +82,8 @@ model BlogPost {
   published     Boolean  @default(false)
   status        String   @default("DRAFT")
   referenceUrl  String?
+  referenceBlogId String?
+  referenceBlog ReferenceBlog? @relation(fields: [referenceBlogId], references: [id], onDelete: SetNull)
   likes         Int      @default(0)
   dislikes      Int      @default(0)
   commentsCount Int      @default(0)
@@ -487,6 +489,7 @@ model ReferenceBlog {
   feedUrl   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  blogPosts BlogPost[]
 }
 
 model Vestibular {

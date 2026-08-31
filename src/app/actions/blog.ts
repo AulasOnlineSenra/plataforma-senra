@@ -368,7 +368,7 @@ export async function updatePostStatus(id: string, newStatus: 'DRAFT' | 'REVIEW'
   }
 }
 
-export async function createDraftFromIdea(title: string, referenceUrl?: string) {
+export async function createDraftFromIdea(title: string, referenceUrl?: string, referenceBlogId?: string) {
   try {
     let baseSlug = slugify(title);
     if (!baseSlug) baseSlug = 'ideia';
@@ -385,6 +385,7 @@ export async function createDraftFromIdea(title: string, referenceUrl?: string) 
         status: 'DRAFT',
         published: false,
         referenceUrl: referenceUrl || null,
+        referenceBlogId: referenceBlogId || null,
         tags: '[]',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -415,10 +416,11 @@ export async function getBlogKpis() {
       }),
       // All reference blogs
       prisma.referenceBlog.findMany({ select: { id: true, name: true, url: true, feedUrl: true } }),
-      // Posts that have a referenceUrl
-      prisma.blogPost.findMany({
-        where: { referenceUrl: { not: null } },
-        select: { referenceUrl: true },
+      // Posts usages by referenceBlogId
+      prisma.blogPost.groupBy({
+        by: ['referenceBlogId'],
+        _count: { _all: true },
+        where: { referenceBlogId: { not: null } }
       }),
     ]);
 
@@ -428,32 +430,16 @@ export async function getBlogKpis() {
       statusMap[row.status || 'DRAFT'] = (statusMap[row.status || 'DRAFT'] || 0) + row._count._all;
     }
 
-    // Rank reference blogs by how many posts link to their domain
+    // Rank reference blogs based on the direct referenceBlogId count
+    const refUsageMap: Record<string, number> = {};
+    for (const row of postsWithRef) {
+      if (row.referenceBlogId) {
+        refUsageMap[row.referenceBlogId] = row._count._all;
+      }
+    }
+
     const refRanking = referenceBlogs.map(blog => {
-      let count = 0;
-      try {
-        const sourceUrl = blog.url || blog.feedUrl || '';
-        const refDomain = new URL(sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`).hostname.replace('www.', '');
-        
-        if (refDomain && refDomain !== 'google.com' && refDomain !== 'google.com.br') {
-          count = postsWithRef.filter(p => {
-            if (!p.referenceUrl) return false;
-            try {
-              let finalUrl = p.referenceUrl;
-              if (finalUrl.includes('google.com/url') && finalUrl.includes('url=')) {
-                try {
-                  const urlObj = new URL(finalUrl);
-                  const realUrl = urlObj.searchParams.get('url');
-                  if (realUrl) finalUrl = realUrl;
-                } catch {}
-              }
-              const postDomain = new URL(finalUrl.startsWith('http') ? finalUrl : `https://${finalUrl}`).hostname.replace('www.', '');
-              return postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`);
-            } catch { return false; }
-          }).length;
-        }
-      } catch { /* ignore invalid URLs */ }
-      return { id: blog.id, name: blog.name, url: blog.url, usageCount: count };
+      return { id: blog.id, name: blog.name, url: blog.url, usageCount: refUsageMap[blog.id] || 0 };
     }).sort((a, b) => b.usageCount - a.usageCount);
 
     return {
