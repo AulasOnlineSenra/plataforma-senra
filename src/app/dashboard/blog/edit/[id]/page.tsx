@@ -94,6 +94,7 @@ export default function EditBlogPostPage() {
     tags: '',
     metaDescription: '',
     published: false,
+    status: 'DRAFT',
     createdAt: '',
   });
 
@@ -135,6 +136,7 @@ export default function EditBlogPostPage() {
           tags: tagsStr,
           metaDescription: (post as any).metaDescription || '',
           published: post.published,
+          status: post.status || 'DRAFT',
           createdAt: post.createdAt ? (() => {
             const d = new Date(post.createdAt);
             if (isNaN(d.getTime())) return '';
@@ -661,16 +663,24 @@ export default function EditBlogPostPage() {
         <div className="flex items-center gap-3">
           <AiDraftModal 
             currentTitle={formData.title} 
+            currentContent={formData.content}
+            mode={(formData.status as 'DRAFT' | 'REVIEW' | 'IMAGES') || 'DRAFT'}
             onDraftGenerated={(contentHtml, seo) => {
               if (contentHtml) {
                 const quill = quillRef.current?.getEditor();
                 if (quill) {
-                  // Append content to existing content or replace if empty
-                  const currentLength = quill.getLength();
-                  quill.clipboard.dangerouslyPasteHTML(currentLength, contentHtml);
+                  if (formData.status === 'REVIEW' || formData.status === 'IMAGES') {
+                    // Substitui todo o conteúdo limpando primeiro
+                    quill.setText('');
+                    quill.clipboard.dangerouslyPasteHTML(0, contentHtml);
+                  } else {
+                    // DRAFT: anexa no final se já houver algo
+                    const currentLength = quill.getLength();
+                    quill.clipboard.dangerouslyPasteHTML(currentLength, contentHtml);
+                  }
                   setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
                 } else {
-                  setFormData(prev => ({ ...prev, content: prev.content + contentHtml }));
+                  setFormData(prev => ({ ...prev, content: (formData.status === 'REVIEW' || formData.status === 'IMAGES') ? contentHtml : prev.content + contentHtml }));
                 }
               }
               if (seo) {
