@@ -89,6 +89,8 @@ Você é um Revisor e Editor Chefe experiente.
 Revise e reescreva o artigo abaixo para melhorar a escaneabilidade, corrigir erros gramaticais, melhorar o tom de voz e adicionar formatação (negritos, listas) onde apropriado.
 ${extraInstructions ? '\nInstruções do usuário:\n' + extraInstructions + '\n' : ''}
 
+${generateSeo ? 'MUITO IMPORTANTE: No final da sua resposta, após fechar o HTML do artigo, inclua OBRIGATORIAMENTE um bloco JSON isolado com uma `metaDescription` (resumo chamativo de até 160 caracteres) e `tags` (array de strings). Formate exatamente assim:\n```json\n{"metaDescription": "...", "tags": ["tag1", "tag2"]}\n```\n' : ''}
+
 Título Original: ${topic}
 Conteúdo Original:
 ${currentContent || ''}
@@ -118,7 +120,7 @@ ${currentContent || ''}
         let contentHtml = result.response;
         let seoData = undefined;
 
-        if (mode === 'DRAFT' && generateSeo) {
+        if ((mode === 'DRAFT' || mode === 'REVIEW') && generateSeo) {
           const jsonMatch = contentHtml.match(/```json\n([\s\S]*?)\n```/);
           if (jsonMatch && jsonMatch[1]) {
             try {
@@ -138,7 +140,13 @@ ${currentContent || ''}
 
         setGeneratedHtml(contentHtml);
         setGeneratedSeo(seoData);
-        toast({ title: 'Análise concluída!', description: 'Valide o resultado antes de aplicar.', className: 'bg-emerald-600 text-white border-none' });
+        
+        let successTitle = 'Análise concluída!';
+        let successMsg = 'Valide o resultado antes de aplicar.';
+        if (mode === 'REVIEW') successMsg = 'O texto foi revisado e reescrito com sucesso!';
+        if (mode === 'IMAGES') successMsg = 'Os prompts de imagem foram criados e inseridos no texto.';
+        
+        toast({ title: successTitle, description: successMsg, className: 'bg-emerald-600 text-white border-none' });
       } else {
         toast({ variant: 'destructive', title: 'Erro na geração', description: result.error || 'Tente novamente mais tarde.' });
       }
@@ -176,7 +184,7 @@ ${currentContent || ''}
           {trigger.text}
         </Button>
       </DialogTrigger>
-      <DialogContent className={`sm:max-w-[${generatedHtml ? '800px' : '500px'}] border-none shadow-2xl transition-all duration-300`}>
+      <DialogContent className={`sm:max-w-[${generatedHtml ? (mode === 'IMAGES' ? '840px' : '800px') : '500px'}] border-none shadow-2xl transition-all duration-300`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Bot className="h-5 w-5 text-brand-yellow" /> Assistente de IA
@@ -190,7 +198,12 @@ ${currentContent || ''}
 
         {generatedHtml ? (
           <div className="space-y-4 py-4">
-            <h3 className="font-bold text-slate-800 border-b pb-2">Pré-visualização do Resultado</h3>
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-bold text-slate-800">Pré-visualização do Resultado</h3>
+              <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Tarefa Concluída
+              </span>
+            </div>
             <div 
               className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-slate-50 border rounded-xl"
               dangerouslySetInnerHTML={{ __html: generatedHtml }}
@@ -258,7 +271,7 @@ ${currentContent || ''}
               </div>
             )}
 
-            {mode === 'DRAFT' && (
+            {(mode === 'DRAFT' || mode === 'REVIEW') && (
               <div className="flex items-center space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <Checkbox 
                   id="seo" 

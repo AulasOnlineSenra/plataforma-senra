@@ -435,11 +435,19 @@ export async function getBlogKpis() {
         const sourceUrl = blog.url || blog.feedUrl || '';
         const refDomain = new URL(sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`).hostname.replace('www.', '');
         
-        if (refDomain) {
+        if (refDomain && refDomain !== 'google.com' && refDomain !== 'google.com.br') {
           count = postsWithRef.filter(p => {
             if (!p.referenceUrl) return false;
             try {
-              const postDomain = new URL(p.referenceUrl.startsWith('http') ? p.referenceUrl : `https://${p.referenceUrl}`).hostname.replace('www.', '');
+              let finalUrl = p.referenceUrl;
+              if (finalUrl.includes('google.com/url') && finalUrl.includes('url=')) {
+                try {
+                  const urlObj = new URL(finalUrl);
+                  const realUrl = urlObj.searchParams.get('url');
+                  if (realUrl) finalUrl = realUrl;
+                } catch {}
+              }
+              const postDomain = new URL(finalUrl.startsWith('http') ? finalUrl : `https://${finalUrl}`).hostname.replace('www.', '');
               return postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`);
             } catch { return false; }
           }).length;

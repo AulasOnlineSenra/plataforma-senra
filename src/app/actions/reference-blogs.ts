@@ -78,13 +78,23 @@ export async function fetchExternalIdeas(maxDays?: number) {
              return new Date(item.pubDate).getTime() >= cutoffTime;
           })
           .slice(0, 5)
-          .map(item => ({
-            id: `${blog.id}-${item.guid || item.link}`,
-            title: item.title || 'Sem título',
-            source: blog.name,
-            link: item.link || blog.url,
-            pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
-          }));
+          .map(item => {
+            let actualLink = item.link || blog.url;
+            if (actualLink.includes('google.com/url') && actualLink.includes('url=')) {
+               try {
+                 const urlObj = new URL(actualLink);
+                 const realUrl = urlObj.searchParams.get('url');
+                 if (realUrl) actualLink = realUrl;
+               } catch {}
+            }
+            return {
+              id: `${blog.id}-${item.guid || item.link}`,
+              title: item.title || 'Sem título',
+              source: blog.name,
+              link: actualLink,
+              pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
+            };
+          });
 
         return recentItems;
       } catch (err) {

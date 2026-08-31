@@ -249,10 +249,22 @@ export default function BlogAdminPage() {
 
   const getReferenceName = (referenceUrl: string) => {
     try {
-      const postDomain = new URL(referenceUrl.startsWith('http') ? referenceUrl : `https://${referenceUrl}`).hostname.replace('www.', '');
+      let finalUrl = referenceUrl;
+      if (finalUrl.includes('google.com/url') && finalUrl.includes('url=')) {
+        try {
+          const urlObj = new URL(finalUrl);
+          const realUrl = urlObj.searchParams.get('url');
+          if (realUrl) finalUrl = realUrl;
+        } catch {}
+      }
+
+      const postDomain = new URL(finalUrl.startsWith('http') ? finalUrl : `https://${finalUrl}`).hostname.replace('www.', '');
       for (const blog of referenceBlogs) {
         const sourceUrl = blog.url || blog.feedUrl || '';
         const refDomain = new URL(sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`).hostname.replace('www.', '');
+        if (refDomain === 'google.com' || refDomain === 'google.com.br') {
+          continue; // Evita que todos os links deem match com feeds do Google Alerts
+        }
         if (refDomain && (postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`))) {
           return blog.name;
         }
