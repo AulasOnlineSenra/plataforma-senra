@@ -9,6 +9,7 @@ export async function getVestibularesWithEvents() {
       where: { isActive: true },
       include: {
         events: {
+          where: { status: 'APPROVED' },
           orderBy: { dateStart: 'asc' },
         },
       },

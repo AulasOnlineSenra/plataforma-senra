@@ -388,7 +388,7 @@ export default function BlogAdminPage() {
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
         className={`bg-white border-r transition-all duration-300 flex flex-col shrink-0 ${
-          isSidebarOpen ? 'w-[220px]' : 'w-0 opacity-0 overflow-hidden border-none'
+          isSidebarOpen ? 'w-[235px]' : 'w-0 opacity-0 overflow-hidden border-none'
         }`}
       >
         <div className="py-3 px-4 border-b flex items-center justify-between">

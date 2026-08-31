@@ -112,9 +112,15 @@ export async function POST(req: Request) {
         const events = await extractEventsWithGemini(vest.institution, rawText, apiKey);
         
         if (events && Array.isArray(events) && events.length > 0) {
-          await prisma.vestibularEvent.deleteMany({
-            where: { vestibularId: vest.id }
-          });
+          if (requiresApproval) {
+            await prisma.vestibularEvent.deleteMany({
+              where: { vestibularId: vest.id, status: 'PENDING' }
+            });
+          } else {
+            await prisma.vestibularEvent.deleteMany({
+              where: { vestibularId: vest.id }
+            });
+          }
 
           for (const ev of events) {
             if (ev.type && ev.dateStart) {
