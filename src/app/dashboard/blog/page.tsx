@@ -293,16 +293,16 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA REDAÇÃO */}
           {(post.status === 'DRAFT' || (!post.status && !post.published)) && (
             <>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
-                <Link href={`/dashboard/blog/edit/${post.id}`}>
-                  <Pencil className="w-3 h-3 mr-1" /> Escrever
+              <Button asChild variant="outline" size="sm" className="flex-1 h-[27px]" title="Escrever / Editar">
+                <Link href={`/dashboard/blog/edit/${post.id}`} className="flex justify-center">
+                  <Pencil className="w-4 h-4" />
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="default" size="sm" className="flex-1 text-[8px] h-[27px] bg-blue-600 hover:bg-blue-700"
+                variant="default" size="sm" className="flex-1 h-[27px] bg-blue-600 hover:bg-blue-700" title="Enviar para Revisão"
               >
-                Revisão <ArrowRight className="w-3 h-3 ml-1" />
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </>
           )}
@@ -312,20 +312,20 @@ export default function BlogAdminPage() {
             <>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'DRAFT')} 
-                variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]" title="Devolver para Redação"
+                variant="outline" size="sm" className="flex-1 h-[27px]" title="Devolver para Redação"
               >
-                <Undo2 className="w-3 h-3" />
+                <Undo2 className="w-4 h-4" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
-                <Link href={`/dashboard/blog/edit/${post.id}`}>
-                  <Eye className="w-3 h-3 mr-1" /> Ler
+              <Button asChild variant="outline" size="sm" className="flex-1 h-[27px]" title="Ler / Editar">
+                <Link href={`/dashboard/blog/edit/${post.id}`} className="flex justify-center">
+                  <Eye className="w-4 h-4" />
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'IMAGES')} 
-                variant="outline" size="sm" className="flex-1 text-[8px] h-[27px] text-fuchsia-600 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Enviar para Imagens"
+                variant="outline" size="sm" className="flex-1 h-[27px] text-fuchsia-600 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Enviar para Imagens"
               >
-                Imagens <ArrowRight className="w-3 h-3 ml-1" />
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </>
           )}
@@ -335,20 +335,20 @@ export default function BlogAdminPage() {
             <>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]" title="Devolver para Revisão"
+                variant="outline" size="sm" className="flex-1 h-[27px]" title="Devolver para Revisão"
               >
-                <Undo2 className="w-3 h-3" />
+                <Undo2 className="w-4 h-4" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[8px] h-[27px]">
-                <Link href={`/dashboard/blog/edit/${post.id}`}>
-                  <Eye className="w-3 h-3 mr-1" /> Ler
+              <Button asChild variant="outline" size="sm" className="flex-1 h-[27px]" title="Ler / Editar">
+                <Link href={`/dashboard/blog/edit/${post.id}`} className="flex justify-center">
+                  <Eye className="w-4 h-4" />
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'PUBLISHED')} 
-                variant="default" size="sm" className="flex-1 text-[10px] h-[27px] bg-emerald-600 hover:bg-emerald-700 px-2"
+                variant="default" size="sm" className="flex-1 h-[27px] bg-emerald-600 hover:bg-emerald-700" title="Publicar Artigo"
               >
-                <CheckCircle2 className="w-3 h-3 mr-1" /> Publicar
+                <CheckCircle2 className="w-4 h-4" />
               </Button>
             </>
           )}
@@ -356,24 +356,24 @@ export default function BlogAdminPage() {
           {/* BOTÕES PARA PUBLICADO */}
           {(post.status === 'PUBLISHED' || (!post.status && post.published)) && (
             <>
-              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 text-[6px] h-[27px] px-0 max-w-[28px]" title="Copiar Link">
-                <Copy className="w-3 h-3" />
+              <Button onClick={() => handleCopyLink(post.slug || post.id)} variant="outline" size="sm" className="flex-1 h-[27px]" title="Copiar Link Público">
+                <Copy className="w-4 h-4" />
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[6px] h-[27px]">
-                <Link href={`/blog/${post.slug || post.id}`} target="_blank">
-                  <Globe className="w-3 h-3 mr-1" /> Site
+              <Button asChild variant="outline" size="sm" className="flex-1 h-[27px]" title="Ver no Site">
+                <Link href={`/blog/${post.slug || post.id}`} target="_blank" className="flex justify-center">
+                  <Globe className="w-4 h-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm" className="flex-1 text-[6px] h-[27px]">
-                <Link href={`/dashboard/blog/edit/${post.id}`}>
-                  <Pencil className="w-3 h-3 mr-1" /> Editar
+              <Button asChild variant="outline" size="sm" className="flex-1 h-[27px]" title="Editar Artigo">
+                <Link href={`/dashboard/blog/edit/${post.id}`} className="flex justify-center">
+                  <Pencil className="w-4 h-4" />
                 </Link>
               </Button>
               <Button 
                 onClick={() => handleStatusChange(post.id, 'REVIEW')} 
-                variant="outline" size="sm" className="flex-1 text-[6px] h-[27px] text-amber-600 hover:text-amber-700 px-0 max-w-[28px]" title="Ocultar"
+                variant="outline" size="sm" className="flex-1 h-[27px] text-amber-600 hover:text-amber-700" title="Ocultar"
               >
-                <EyeOff className="w-3 h-3" />
+                <EyeOff className="w-4 h-4" />
               </Button>
             </>
           )}
