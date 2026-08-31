@@ -556,12 +556,20 @@ export function IaManager() {
                                       <span className="truncate">{m.replace('openrouter:', '')}</span>
                                       <button
                                         type="button"
+                                        onPointerDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onPointerUp={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
                                         onClick={(e) => {
                                           e.preventDefault();
                                           e.stopPropagation();
                                           handleHideModel(m);
                                         }}
-                                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-10"
+                                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-50 pointer-events-auto cursor-pointer"
                                       >
                                         <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
                                       </button>
@@ -636,7 +644,7 @@ export function IaManager() {
 
             {/* ABA: SANDBOX INTERATIVO */}
             <TabsContent value="sandbox" className="mt-0">
-              <Card className="flex flex-col h-[610px]">
+              <Card className="flex flex-col h-[565px]">
                 {/* Header do Sandbox com Agente, Medidor de Tokens & Controles */}
                 <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between space-y-0 bg-slate-50/50">
                   <div className="flex items-center gap-3">
@@ -922,12 +930,20 @@ export function IaManager() {
                                 <span className="truncate">{m.replace('openrouter:', '')}</span>
                                 <button
                                   type="button"
+                                  onPointerDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onPointerUp={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     handleHideModel(m);
                                   }}
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-10"
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-50 pointer-events-auto cursor-pointer"
                                 >
                                   <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
                                 </button>
