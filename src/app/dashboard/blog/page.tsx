@@ -384,7 +384,8 @@ export default function BlogAdminPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-slate-50 rounded-xl border">
+    <div className="flex flex-col bg-slate-50 rounded-xl border overflow-hidden">
+      <div className="flex overflow-hidden" style={{minHeight: '800px', height: 'calc(100vh - 3.5rem)'}}>
       
       {/* PAINEL ESQUERDO: PESQUISA & PAUTA (Retrátil) */}
       <div 
@@ -608,7 +609,7 @@ export default function BlogAdminPage() {
         </div>
 
         {/* SEGUNDA DOBRA: KPIs DO BLOG */}
-        <div className="shrink-0 border-t bg-slate-50 px-6 overflow-y-auto" style={{maxHeight: '420px'}}>
+        <div className="shrink-0 border-t bg-slate-50 px-6 overflow-y-auto" style={{maxHeight: '380px'}}>
           <div className="py-3 flex items-center gap-2">
             <span className="font-bold text-sm text-slate-700">📊 Painel de Desempenho</span>
             <span className="text-xs text-slate-400">— dados em tempo real do blog</span>
@@ -617,6 +618,7 @@ export default function BlogAdminPage() {
         </div>
 
       </div>
+    </div>
 
       {/* Modal Confirmar Exclusão de Artigo */}
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

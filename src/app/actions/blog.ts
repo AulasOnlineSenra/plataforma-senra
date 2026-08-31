@@ -432,8 +432,14 @@ export async function getBlogKpis() {
     const refRanking = referenceBlogs.map(blog => {
       let count = 0;
       try {
-        const domain = new URL(blog.url).hostname.replace('www.', '');
-        count = postsWithRef.filter(p => p.referenceUrl && p.referenceUrl.includes(domain)).length;
+        const refDomain = new URL(blog.url.startsWith('http') ? blog.url : `https://${blog.url}`).hostname.replace('www.', '');
+        count = postsWithRef.filter(p => {
+          if (!p.referenceUrl) return false;
+          try {
+            const postDomain = new URL(p.referenceUrl.startsWith('http') ? p.referenceUrl : `https://${p.referenceUrl}`).hostname.replace('www.', '');
+            return postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`);
+          } catch { return false; }
+        }).length;
       } catch { /* ignore invalid URLs */ }
       return { id: blog.id, name: blog.name, url: blog.url, usageCount: count };
     }).sort((a, b) => b.usageCount - a.usageCount);

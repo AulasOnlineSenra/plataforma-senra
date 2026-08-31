@@ -44,11 +44,11 @@ export default async function AdminCalendarioPage() {
     updatedAt: v.updatedAt.toISOString(),
     lastScrapeDate: v.lastScrapeDate ? v.lastScrapeDate.toISOString() : null,
     events: v.events.map((e: any) => ({
-      ...e,
+      id: e.id,
+      type: e.type,
       dateStart: e.dateStart.toISOString(),
-      dateEnd: e.dateEnd ? e.dateEnd.toISOString() : null,
-      createdAt: e.createdAt.toISOString(),
-      updatedAt: e.updatedAt.toISOString(),
+      description: e.description ?? null,
+      status: e.status,
     })),
   }));
 
