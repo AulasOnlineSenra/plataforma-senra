@@ -261,7 +261,7 @@ export default function BlogAdminPage() {
         <div className="flex justify-between items-start gap-2 mb-2">
           <div className="flex items-start gap-2">
             {isScheduled && <Clock className="w-4 h-4 text-[#f5b000] shrink-0" title="Publicação Agendada" />}
-            <h3 className="font-semibold text-xs line-clamp-2 leading-tight">
+            <h3 className="font-semibold text-xs line-clamp-2 leading-tight" title={post.title}>
               {post.title}
             </h3>
           </div>
