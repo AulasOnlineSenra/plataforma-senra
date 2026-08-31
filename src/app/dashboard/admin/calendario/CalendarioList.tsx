@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, CheckCircle, AlertTriangle, XCircle, Globe, Save, Check, Sparkles, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,6 +44,9 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
 
   const [scraperRequiresApproval, setScraperRequiresApproval] = useState(scraperConfig?.scraperRequiresApproval ?? true);
   const [scraperFrequency, setScraperFrequency] = useState(scraperConfig?.scraperFrequency || 'weekly');
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const handleSaveUrl = async (id: string, url: string) => {
     setLoadingId(id);
@@ -99,6 +102,8 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
     if (!aHasUrl && bHasUrl) return 1;
     return a.institution.localeCompare(b.institution);
   });
+
+  if (!mounted) return null; // Avoid hydration mismatch on timezone dependent dates
 
   return (
     <div className="space-y-6">

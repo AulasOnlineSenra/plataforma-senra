@@ -414,7 +414,7 @@ export async function getBlogKpis() {
         where: { status: 'PUBLISHED', createdAt: { gte: thirtyDaysAgo } },
       }),
       // All reference blogs
-      prisma.referenceBlog.findMany({ select: { id: true, name: true, url: true } }),
+      prisma.referenceBlog.findMany({ select: { id: true, name: true, url: true, feedUrl: true } }),
       // Posts that have a referenceUrl
       prisma.blogPost.findMany({
         where: { referenceUrl: { not: null } },
@@ -432,14 +432,18 @@ export async function getBlogKpis() {
     const refRanking = referenceBlogs.map(blog => {
       let count = 0;
       try {
-        const refDomain = new URL(blog.url.startsWith('http') ? blog.url : `https://${blog.url}`).hostname.replace('www.', '');
-        count = postsWithRef.filter(p => {
-          if (!p.referenceUrl) return false;
-          try {
-            const postDomain = new URL(p.referenceUrl.startsWith('http') ? p.referenceUrl : `https://${p.referenceUrl}`).hostname.replace('www.', '');
-            return postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`);
-          } catch { return false; }
-        }).length;
+        const sourceUrl = blog.url || blog.feedUrl || '';
+        const refDomain = new URL(sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`).hostname.replace('www.', '');
+        
+        if (refDomain) {
+          count = postsWithRef.filter(p => {
+            if (!p.referenceUrl) return false;
+            try {
+              const postDomain = new URL(p.referenceUrl.startsWith('http') ? p.referenceUrl : `https://${p.referenceUrl}`).hostname.replace('www.', '');
+              return postDomain === refDomain || postDomain.endsWith(`.${refDomain}`) || refDomain.endsWith(`.${postDomain}`);
+            } catch { return false; }
+          }).length;
+        }
       } catch { /* ignore invalid URLs */ }
       return { id: blog.id, name: blog.name, url: blog.url, usageCount: count };
     }).sort((a, b) => b.usageCount - a.usageCount);
