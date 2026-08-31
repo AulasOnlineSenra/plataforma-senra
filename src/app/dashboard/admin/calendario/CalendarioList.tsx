@@ -19,6 +19,7 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isScrapingNow, setIsScrapingNow] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-3.6-flash');
 
   const [scraperRequiresApproval, setScraperRequiresApproval] = useState(scraperConfig?.scraperRequiresApproval ?? true);
   const [scraperFrequency, setScraperFrequency] = useState(scraperConfig?.scraperFrequency || 'weekly');
@@ -128,32 +129,47 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
                 Aperte este botão para ignorar a frequência acima e obrigar o robô a varrer os sites imediatamente.
               </p>
             </div>
-            <Button
-              type="button"
-              disabled={isScrapingNow}
-              onClick={async () => {
-                try {
-                  setIsScrapingNow(true);
-                  toast({ title: 'A IA está analisando...', description: 'O Gemini está lendo os sites oficiais, aguarde...' });
-                  const res = await fetch('/api/scraper/calendario', { method: 'POST' });
-                  if (!res.ok) throw new Error('Erro na requisição');
-                  const data = await res.json();
-                  if(data.success) {
-                     toast({ title: 'Sucesso!', description: 'Extração finalizada com sucesso.', className: 'border-none bg-green-600 text-white' });
-                     window.location.reload(); // Atualiza a página para ver os novos status
-                  } else {
-                     toast({ title: 'Aviso', description: 'O processo encerrou com possíveis avisos. Cheque os logs.', variant: 'destructive' });
+            <div className="flex flex-col gap-2">
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger className="w-full md:w-[200px] border-slate-200 focus:ring-brand-yellow text-sm bg-white">
+                  <SelectValue placeholder="Modelo de IA" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gemini-3.6-flash">gemini-3.6-flash</SelectItem>
+                  <SelectItem value="gemini-3.5-flash">gemini-3.5-flash</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                disabled={isScrapingNow}
+                onClick={async () => {
+                  try {
+                    setIsScrapingNow(true);
+                    toast({ title: 'A IA está analisando...', description: 'O Gemini está lendo os sites oficiais, aguarde...' });
+                    const res = await fetch('/api/scraper/calendario', { 
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ model: selectedModel })
+                    });
+                    if (!res.ok) throw new Error('Erro na requisição');
+                    const data = await res.json();
+                    if(data.success) {
+                       toast({ title: 'Sucesso!', description: 'Extração finalizada com sucesso.', className: 'border-none bg-green-600 text-white' });
+                       window.location.reload(); // Atualiza a página para ver os novos status
+                    } else {
+                       toast({ title: 'Aviso', description: 'O processo encerrou com possíveis avisos. Cheque os logs.', variant: 'destructive' });
+                    }
+                  } catch(e) {
+                    toast({ title: 'Erro', description: 'Falha ao executar o scraper', variant: 'destructive' });
+                  } finally {
+                    setIsScrapingNow(false);
                   }
-                } catch(e) {
-                  toast({ title: 'Erro', description: 'Falha ao executar o scraper', variant: 'destructive' });
-                } finally {
-                  setIsScrapingNow(false);
-                }
-              }}
-              className="shrink-0 bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
-            >
-              {isScrapingNow ? 'Varrendo sites...' : 'Rodar Robô Agora'}
-            </Button>
+                }}
+                className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
+              >
+                {isScrapingNow ? 'Varrendo sites...' : 'Rodar Robô Agora'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -171,7 +187,13 @@ export function CalendarioList({ initialData, scraperConfig }: { initialData: an
           </div>
         ) : (
           <div className="max-h-[500px] overflow-y-auto p-4 bg-slate-50/50 flex flex-col gap-3 custom-scrollbar">
-            {vestibulares.map((vest) => {
+            {[...vestibulares].sort((a, b) => {
+              const aHasUrl = !!a.scrapingUrl;
+              const bHasUrl = !!b.scrapingUrl;
+              if (aHasUrl && !bHasUrl) return -1;
+              if (!aHasUrl && bHasUrl) return 1;
+              return a.institution.localeCompare(b.institution);
+            }).map((vest) => {
               let StatusIcon = Bot;
               let statusColor = "text-slate-400";
               let bgIcon = "bg-slate-100";

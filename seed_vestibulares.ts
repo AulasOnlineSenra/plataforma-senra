@@ -79,27 +79,7 @@ async function main() {
       });
       console.log(`Criado: ${vestibular.institution}`);
 
-      // Add a couple of random events in the current and next month for the calendar to have data
-      const randomEventCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 events
-      
-      for(let i = 0; i < randomEventCount; i++) {
-        const today = new Date();
-        // Generate a random day in the current month or next month
-        const futureDays = Math.floor(Math.random() * 60) + 1; 
-        const eventDate = new Date(today);
-        eventDate.setDate(today.getDate() + futureDays);
-        
-        const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-        await prisma.vestibularEvent.create({
-          data: {
-            vestibularId: vestibular.id,
-            type: randomType,
-            dateStart: eventDate,
-            description: `Atenção para o prazo de ${randomType.toLowerCase()} da instituição ${item.institution}.`
-          }
-        });
-      }
+      // Random events generation removed to maintain accurate data
     } else {
       console.log(`Já existe: ${item.institution}`);
     }
