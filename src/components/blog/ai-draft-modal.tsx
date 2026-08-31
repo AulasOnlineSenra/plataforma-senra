@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Bot, Loader2, Sparkles, Wand2, Plus, PenTool, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAiAgents, runAiAgentTest } from '@/app/actions/ia';
 import { toast } from '@/hooks/use-toast';
+import { execute as htmlDiff } from 'htmldiff-js';
 
 interface AiDraftModalProps {
   currentTitle: string;
@@ -33,6 +34,27 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
   
   const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
   const [generatedSeo, setGeneratedSeo] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'diff' | 'final'>('final');
+
+  const diffHtml = useMemo(() => {
+    if (mode === 'REVIEW' && currentContent && generatedHtml) {
+      try {
+        return htmlDiff(currentContent, generatedHtml);
+      } catch (e) {
+        console.error('Diff error', e);
+        return null;
+      }
+    }
+    return null;
+  }, [mode, currentContent, generatedHtml]);
+
+  useEffect(() => {
+    if (generatedHtml && diffHtml) {
+      setViewMode('diff');
+    } else {
+      setViewMode('final');
+    }
+  }, [generatedHtml, diffHtml]);
 
   useEffect(() => {
     if (isOpen) {
@@ -199,14 +221,38 @@ ${currentContent || ''}
         {generatedHtml ? (
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="font-bold text-slate-800">Pré-visualização do Resultado</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="font-bold text-slate-800">Pré-visualização do Resultado</h3>
+                {diffHtml && (
+                  <div className="flex items-center bg-slate-100 rounded-lg p-0.5 text-xs font-semibold">
+                    <button 
+                      onClick={() => setViewMode('diff')} 
+                      className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'diff' ? 'bg-white shadow-sm text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      🔍 Ver Alterações
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('final')} 
+                      className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'final' ? 'bg-white shadow-sm text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      👁️ Resultado Final
+                    </button>
+                  </div>
+                )}
+              </div>
               <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> Tarefa Concluída
               </span>
             </div>
+            
+            <style dangerouslySetInnerHTML={{__html: `
+              .diff-viewer ins { background-color: #dcfce7; text-decoration: none; color: #166534; border-radius: 2px; padding: 0 2px; }
+              .diff-viewer del { background-color: #fee2e2; text-decoration: line-through; color: #991b1b; border-radius: 2px; padding: 0 2px; }
+            `}} />
+
             <div 
-              className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-slate-50 border rounded-xl"
-              dangerouslySetInnerHTML={{ __html: generatedHtml }}
+              className={`prose prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-slate-50 border rounded-xl ${viewMode === 'diff' ? 'diff-viewer' : ''}`}
+              dangerouslySetInnerHTML={{ __html: viewMode === 'diff' && diffHtml ? diffHtml : generatedHtml }}
             />
           </div>
         ) : (
