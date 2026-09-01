@@ -33,16 +33,94 @@ const buildPrompt = (type: 'title' | 'cover' | 'excerpt', plainContent: string, 
   const excerpt = plainContent.substring(0, 3000);
 
   if (type === 'title') {
-    return `Você é um especialista em Copywriting e SEO. Crie 3 opções de Títulos extremamente clicáveis (virais e otimizados para busca) para este artigo.
-Retorne APENAS os 3 títulos, um por linha, estritamente separados por quebra de linha dupla. Sem numeração, sem aspas, sem marcadores (bullet points).
-Exemplo de saída:
-Como Estudar para o ENEM em 2026
+    return `Você é um especialista em SEO, Copywriting e estratégia editorial para um grande portal brasileiro de educação.
 
-O Guia Definitivo do ENEM 2026
+Sua tarefa é criar 3 opções de títulos para o artigo abaixo.
 
-Passe no ENEM: Dicas de Ouro
+O objetivo é combinar:
 
-Conteúdo do Artigo (baseie-se apenas nisto):
+1. alta relevância para mecanismos de busca;
+2. forte potencial de clique;
+3. clareza imediata sobre o conteúdo;
+4. linguagem natural em português brasileiro;
+5. credibilidade e autoridade editorial.
+
+O título deve despertar interesse sem parecer sensacionalista ou enganoso.
+
+### REGRAS DE SEO
+
+Identifique mentalmente a principal intenção de busca do artigo e construa os títulos em torno dela.
+
+Priorize a palavra-chave principal de forma natural, preferencialmente próxima do início do título quando isso melhorar a compreensão.
+
+Utilize termos que correspondam à forma como um usuário realmente pesquisaria no Google.
+
+Não faça keyword stuffing.
+
+Não repita palavras desnecessariamente.
+
+Não invente palavras-chave que não tenham relação real com o conteúdo.
+
+### REGRAS DE COPYWRITING
+
+Os títulos devem despertar curiosidade e comunicar claramente o benefício ou a informação principal do artigo.
+
+Prefira títulos específicos, concretos e úteis.
+
+Quando houver números, datas, valores, rankings ou informações objetivas no artigo, utilize-os somente quando estiverem claramente sustentados pelo conteúdo fornecido.
+
+Não utilize clickbait enganoso.
+
+Não use expressões vazias como "você não vai acreditar", "o segredo que ninguém conta", "imperdível", "chocante" ou similares.
+
+O título deve prometer exatamente o que o artigo entrega.
+
+### POSICIONAMENTO EDITORIAL
+
+O Aulas Online Senra é uma marca educacional com posicionamento profissional e premium.
+
+Os títulos devem transmitir autoridade, utilidade, confiança e conhecimento.
+
+Evite linguagem infantilizada, exageradamente informal ou típica de conteúdo caça-cliques.
+
+Escreva em português brasileiro natural.
+
+### CRIE 3 VERSÕES COM FUNÇÕES DIFERENTES
+
+Título 1 — SEO:
+Priorize intenção de busca, clareza e correspondência com a consulta principal do usuário.
+
+Título 2 — CTR:
+Priorize maior potencial de clique, mantendo relevância SEO e credibilidade.
+
+Título 3 — Editorial:
+Priorize autoridade, sofisticação e clareza, mantendo bom potencial de busca.
+
+As três opções devem ser realmente diferentes entre si, e não apenas pequenas alterações da mesma frase.
+
+### REGRAS FINAIS
+
+Não invente informações.
+
+Não faça afirmações que não possam ser sustentadas pelo artigo.
+
+Não transforme uma informação secundária em promessa principal.
+
+Não utilize emojis.
+
+Não utilize hashtags.
+
+Não use ponto de exclamação em excesso.
+
+Evite títulos excessivamente longos.
+
+Retorne APENAS os 3 títulos.
+
+Cada título deve estar em uma linha separada por uma quebra de linha dupla.
+
+Não use numeração, aspas, marcadores ou qualquer outro texto.
+
+### CONTEÚDO DO ARTIGO
 
 ${excerpt}`;
   }
