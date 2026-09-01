@@ -74,16 +74,14 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className="h-8 gap-2 rounded-full border-brand-yellow/30 bg-brand-yellow/10 text-brand-yellow-dark hover:bg-brand-yellow/20 hover:text-brand-yellow-dark hover:border-brand-yellow/50 transition-all font-medium text-xs px-3 shadow-sm"
+          size="icon"
+          title={type === 'title' ? "Gerar Ideias" : type === 'cover' ? "Prompt de Arte" : "Gerar Resumo SEO"}
+          className="h-8 w-8 rounded-full border-brand-yellow/30 bg-brand-yellow/10 text-brand-yellow-dark hover:bg-brand-yellow/20 hover:text-brand-yellow-dark hover:border-brand-yellow/50 transition-all shadow-sm flex-shrink-0"
           onClick={() => {
             if (!result) handleGenerate();
           }}
         >
-          <Sparkles className="h-3.5 w-3.5 fill-current" />
-          {type === 'title' && "Gerar Ideias"}
-          {type === 'cover' && "Prompt de Arte"}
-          {type === 'excerpt' && "Gerar Resumo SEO"}
+          <Sparkles className="h-4 w-4 fill-current" />
         </Button>
       </PopoverTrigger>
       
