@@ -5,7 +5,7 @@ import { Sparkles, Loader2, Copy, Check, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { generateSeoSuggestion } from '@/app/actions/blog-seo';
+import { runAiAgentTest } from '@/app/actions/ia';
 
 interface AiSeoAssistantProps {
   content: string;
@@ -13,6 +13,64 @@ interface AiSeoAssistantProps {
   onApply?: (text: string) => void;
   onApplyAlt?: (text: string) => void;
 }
+
+// Strip HTML tags so we send clean text to the AI (same logic as ai-draft-modal)
+const stripHtml = (html: string) =>
+  html
+    .replace(/<\/(p|h[1-6]|li|div|tr|td|th|blockquote)>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// Build the task prompt for each SEO type
+const buildPrompt = (type: 'title' | 'cover' | 'excerpt', plainContent: string): string => {
+  // Limit to ~3000 chars to keep tokens reasonable
+  const excerpt = plainContent.substring(0, 3000);
+
+  if (type === 'title') {
+    return `Você é um especialista em Copywriting e SEO. Crie 3 opções de Títulos extremamente clicáveis (virais e otimizados para busca) para este artigo.
+Retorne APENAS os 3 títulos, um por linha, estritamente separados por quebra de linha dupla. Sem numeração, sem aspas, sem marcadores (bullet points).
+Exemplo de saída:
+Como Estudar para o ENEM em 2026
+
+O Guia Definitivo do ENEM 2026
+
+Passe no ENEM: Dicas de Ouro
+
+Conteúdo do Artigo (baseie-se apenas nisto):
+
+${excerpt}`;
+  }
+
+  if (type === 'excerpt') {
+    return `Você é um especialista em SEO. Escreva UMA ÚNICA meta description (resumo) para o artigo.
+Regras:
+- MÁXIMO absoluto de 160 caracteres. Seja conciso e direto.
+- Use gatilhos de curiosidade para gerar cliques (CTR alto) no Google.
+- Retorne APENAS o texto do resumo, sem aspas, sem prefixos, sem a palavra "Resumo:".
+
+Conteúdo do Artigo (baseie-se apenas nisto):
+
+${excerpt}`;
+  }
+
+  // type === 'cover'
+  return `Você é um Diretor de Arte e Especialista em Acessibilidade. Leia o artigo e crie o cenário para a imagem de capa.
+Devolva ESTRITAMENTE um JSON válido no seguinte formato:
+{
+  "prompt": "Prompt em INGLÊS mega detalhado para Midjourney/Flux. Descreva o sujeito, ação, iluminação (neon, natural, cinematic), estilo (hyper-realistic, photography) e ambiente.",
+  "alt": "Texto alternativo em PORTUGUÊS (descrevendo literalmente e de forma seca o que tem na imagem) para pontuar no SEO do Google Imagens."
+}
+Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto JSON.
+
+Conteúdo do Artigo (baseie-se apenas nisto):
+
+${excerpt}`;
+};
 
 export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,9 +81,8 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
   const { toast } = useToast();
 
   const handleGenerate = async () => {
-    // Tira as tags HTML para checar o tamanho real
+    // Check minimum content
     const plainText = (content || '').replace(/<[^>]*>?/gm, '').trim();
-
     if (!plainText || plainText.length < 50) {
       toast({
         title: 'Escreva um pouco mais',
@@ -37,44 +94,78 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
 
     setIsLoading(true);
     setResult(null);
+
     try {
-      let agentId = undefined;
+      // Read the same agent used for the article body in this pipeline stage
+      let agentId: string | undefined = undefined;
       if (typeof window !== 'undefined') {
-        // Use the pipeline-stage-specific key so the SEO assistant always
-        // uses the same provider/model as the active blog writing agent.
         agentId = localStorage.getItem('lastUsedBlogAgentId_DRAFT')
           || localStorage.getItem('lastUsedBlogAgentId_REVIEW')
           || localStorage.getItem('lastUsedBlogAgentId')
           || undefined;
       }
-      const res = await generateSeoSuggestion(content, type, agentId);
-      if (res.success && res.data) {
+
+      if (!agentId) {
+        toast({
+          title: 'Nenhum agente selecionado',
+          description: 'Abra o assistente de IA (botão "Gerar com IA") e selecione um agente primeiro.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const prompt = buildPrompt(type, stripHtml(content));
+
+      // Use the same engine as the article body — with disableTools to prevent
+      // the "Role 'function' not supported" error that occurs with tool-enabled agents
+      const res = await runAiAgentTest(agentId, prompt, undefined, { disableTools: true });
+
+      if (res.success && res.response) {
+        const responseText = res.response.trim();
+
         if (type === 'cover') {
           try {
-            const parsed = JSON.parse(res.data);
+            const cleanJson = responseText
+              .replace(/^```json/i, '')
+              .replace(/^```/, '')
+              .replace(/```$/, '')
+              .trim();
+            const parsed = JSON.parse(cleanJson);
             setResult(parsed);
           } catch {
-            toast({ title: 'Erro', description: 'Erro na leitura dos dados da IA. Tente gerar novamente.', variant: 'destructive' });
+            toast({
+              title: 'Erro',
+              description: 'Erro na leitura dos dados da IA. Tente gerar novamente.',
+              variant: 'destructive',
+            });
           }
         } else if (type === 'title') {
-          const titles = res.data.split('\n').filter((t: string) => t.trim().length > 0);
+          const titles = responseText.split('\n').filter((t: string) => t.trim().length > 0);
           setResult(titles);
         } else {
-          setResult(res.data);
+          setResult(responseText);
         }
       } else {
-        toast({ title: 'Erro ao gerar', description: res.error, variant: 'destructive' });
+        toast({
+          title: 'Erro ao gerar',
+          description: res.error || 'Falha na comunicação com a IA.',
+          variant: 'destructive',
+        });
       }
     } catch (e) {
-      toast({ title: 'Erro', description: 'Falha inesperada na comunicação com a IA.', variant: 'destructive' });
+      toast({
+        title: 'Erro',
+        description: 'Falha inesperada na comunicação com a IA.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const copyToClipboard = (text: string, type: 'prompt' | 'alt') => {
+  const copyToClipboard = (text: string, copyType: 'prompt' | 'alt') => {
     navigator.clipboard.writeText(text);
-    if (type === 'prompt') {
+    if (copyType === 'prompt') {
       setCopiedPrompt(true);
       setTimeout(() => setCopiedPrompt(false), 2000);
     } else {
@@ -84,8 +175,8 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
   };
 
   return (
-    <Popover 
-      open={isOpen} 
+    <Popover
+      open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
         if (open && !result && !isLoading) {
@@ -97,13 +188,13 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
         <Button
           variant="outline"
           size="icon"
-          title={type === 'title' ? "Gerar Ideias" : type === 'cover' ? "Prompt de Arte" : "Gerar Resumo SEO"}
+          title={type === 'title' ? 'Gerar Ideias' : type === 'cover' ? 'Prompt de Arte' : 'Gerar Resumo SEO'}
           className="h-8 w-8 rounded-full border-brand-yellow/30 bg-brand-yellow/10 text-brand-yellow-dark hover:bg-brand-yellow/20 hover:text-brand-yellow-dark hover:border-brand-yellow/50 transition-all shadow-sm flex-shrink-0"
         >
           <Sparkles className="h-4 w-4 fill-current" />
         </Button>
       </PopoverTrigger>
-      
+
       <PopoverContent className="w-80 sm:w-96 p-0 overflow-hidden shadow-xl rounded-xl border-slate-200" align="start">
         <div className="bg-gradient-to-r from-brand-yellow/10 to-amber-500/10 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -112,15 +203,21 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
             </div>
             <div>
               <h4 className="font-bold text-slate-800 text-sm">
-                {type === 'title' && "Ideias de Título SEO"}
-                {type === 'cover' && "Direção de Arte (Capa)"}
-                {type === 'excerpt' && "Resumo Otimizado (Meta)"}
+                {type === 'title' && 'Ideias de Título SEO'}
+                {type === 'cover' && 'Direção de Arte (Capa)'}
+                {type === 'excerpt' && 'Resumo Otimizado (Meta)'}
               </h4>
               <p className="text-[10px] text-slate-500 font-medium">Lendo contexto do rascunho...</p>
             </div>
           </div>
           {!isLoading && result && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-slate-200" onClick={handleGenerate} title="Gerar novamente">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-full hover:bg-slate-200"
+              onClick={handleGenerate}
+              title="Gerar novamente"
+            >
               <Sparkles className="h-3.5 w-3.5 text-slate-400 hover:text-amber-500" />
             </Button>
           )}
@@ -164,8 +261,8 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
                     <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
                       <Check className="h-3 w-3 text-emerald-500" /> SEO Otimizado
                     </span>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => {
                         onApply?.(result);
                         setIsOpen(false);
