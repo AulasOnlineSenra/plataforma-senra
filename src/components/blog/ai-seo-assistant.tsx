@@ -33,7 +33,11 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
     setIsLoading(true);
     setResult(null);
     try {
-      const res = await generateSeoSuggestion(content, type);
+      let agentId = undefined;
+      if (typeof window !== 'undefined') {
+        agentId = localStorage.getItem('lastUsedBlogAgentId') || undefined;
+      }
+      const res = await generateSeoSuggestion(content, type, agentId);
       if (res.success && res.data) {
         if (type === 'cover') {
           try {

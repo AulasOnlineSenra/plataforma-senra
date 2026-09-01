@@ -74,7 +74,15 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       const activeAgents = result.data.filter((a: any) => a.status === 'active');
       setAgents(activeAgents);
       if (activeAgents.length > 0) {
-        setSelectedAgent(activeAgents[0].id);
+        let savedAgentId = null;
+        if (typeof window !== 'undefined') {
+          savedAgentId = localStorage.getItem('lastUsedBlogAgentId');
+        }
+        if (savedAgentId && activeAgents.find((a: any) => a.id === savedAgentId)) {
+          setSelectedAgent(savedAgentId);
+        } else {
+          setSelectedAgent(activeAgents[0].id);
+        }
       }
     }
     setIsLoadingAgents(false);
@@ -264,7 +272,15 @@ ${currentContent || ''}
                   <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando agentes...
                 </div>
               ) : (
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <Select 
+                value={selectedAgent} 
+                onValueChange={(val) => {
+                  setSelectedAgent(val);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('lastUsedBlogAgentId', val);
+                  }
+                }}
+              >
                   <SelectTrigger className="rounded-xl border-slate-200 h-10">
                     <SelectValue placeholder="Selecione um agente..." />
                   </SelectTrigger>

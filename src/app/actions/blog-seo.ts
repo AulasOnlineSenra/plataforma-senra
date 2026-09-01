@@ -4,21 +4,43 @@ import prisma from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
 
-export async function generateSeoSuggestion(content: string, type: 'title' | 'cover' | 'excerpt') {
+export async function generateSeoSuggestion(content: string, type: 'title' | 'cover' | 'excerpt', agentId?: string) {
   try {
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
     if (!settings) throw new Error("Configurações não encontradas.");
 
     let provider = 'gemini';
     let apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || '';
+    let modelToUse = "gemini-1.5-flash"; // Default fallback
     
-    // Prioriza OpenRouter se existir, pois modelos como gpt-4o-mini/claude-3-haiku são ótimos para seguir instruções curtas
+    // Prioriza OpenRouter se existir, a menos que o agente force o gemini
     if (settings.openRouterApiKey) {
       provider = 'openrouter';
       apiKey = settings.openRouterApiKey;
+      modelToUse = "openai/gpt-4o-mini";
     }
 
     if (!apiKey) throw new Error("Nenhuma chave de API configurada no painel de Integrações.");
+
+    // Se o usuário passou um agentId (salvo no localStorage), pegamos qual modelo aquele agente usa
+    if (agentId) {
+      const agent = await prisma.aiAgent.findUnique({ where: { id: agentId }, select: { model: true } });
+      if (agent && agent.model) {
+        if (agent.model.startsWith("openrouter:")) {
+          provider = "openrouter";
+          modelToUse = agent.model.replace("openrouter:", "");
+          apiKey = settings.openRouterApiKey || apiKey;
+        } else if (agent.model.startsWith("googleai/")) {
+          provider = "gemini";
+          modelToUse = agent.model.replace("googleai/", "");
+          apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || apiKey;
+        } else {
+          // Fallback assumindo gemini
+          provider = "gemini";
+          modelToUse = agent.model;
+        }
+      }
+    }
 
     let systemPrompt = "";
     if (type === 'title') {
@@ -54,7 +76,7 @@ Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto
     if (provider === 'openrouter') {
       const openai = new OpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey });
       const res = await openai.chat.completions.create({
-        model: "openai/gpt-4o-mini", // rápido e excelente em JSON e instruções curtas
+        model: modelToUse, 
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
@@ -63,7 +85,7 @@ Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto
       responseText = res.choices[0].message.content || "";
     } else {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: systemPrompt });
+      const model = genAI.getGenerativeModel({ model: modelToUse, systemInstruction: systemPrompt });
       const res = await model.generateContent(userMessage);
       responseText = res.response.text();
     }
