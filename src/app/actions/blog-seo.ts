@@ -29,16 +29,32 @@ export async function generateSeoSuggestion(content: string, type: 'title' | 'co
         if (agent.model.startsWith("openrouter:")) {
           provider = "openrouter";
           modelToUse = agent.model.replace("openrouter:", "");
-          apiKey = settings.openRouterApiKey || apiKey;
+          apiKey = settings.openRouterApiKey || "";
         } else if (agent.model.startsWith("googleai/")) {
           provider = "gemini";
           modelToUse = agent.model.replace("googleai/", "");
-          apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || apiKey;
+          apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || "";
         } else {
           // Fallback assumindo gemini
           provider = "gemini";
           modelToUse = agent.model;
+          apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || "";
         }
+      }
+    }
+
+    if (!apiKey) {
+      // Se o provedor escolhido não tem chave, tentamos o outro como fallback de emergência
+      if (provider === 'gemini' && settings.openRouterApiKey) {
+        provider = 'openrouter';
+        apiKey = settings.openRouterApiKey;
+        modelToUse = "openai/gpt-4o-mini";
+      } else if (provider === 'openrouter' && settings.geminiApiKey) {
+        provider = 'gemini';
+        apiKey = settings.geminiApiKey.split(/\r?\n|,/)[0].trim();
+        modelToUse = "gemini-1.5-flash";
+      } else {
+        throw new Error(`A chave de API para o provedor selecionado (${provider}) não está configurada.`);
       }
     }
 
