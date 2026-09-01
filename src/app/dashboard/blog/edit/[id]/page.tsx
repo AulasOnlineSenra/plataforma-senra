@@ -519,7 +519,7 @@ export default function EditBlogPostPage() {
     },
   }), [imageHandler, videoHandler]);
 
-  const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule' | 'update' | 'review') => {
+  const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule' | 'update' | 'review' | 'images') => {
     if (e) e.preventDefault();
 
     const isPublishing = publishMode === 'now' || publishMode === 'schedule' || (publishMode === 'update' && formData.published);
@@ -565,7 +565,7 @@ export default function EditBlogPostPage() {
       const scheduledDate = createdAtISO ? new Date(createdAtISO) : null;
       
       let publishedValue = formData.published;
-      let statusValue: 'DRAFT' | 'REVIEW' | 'PUBLISHED' | undefined;
+      let statusValue: 'DRAFT' | 'REVIEW' | 'IMAGES' | 'PUBLISHED' | undefined;
       
       if (publishMode === 'now') {
          publishedValue = true;
@@ -580,6 +580,9 @@ export default function EditBlogPostPage() {
       } else if (publishMode === 'review') {
          publishedValue = false;
          statusValue = 'REVIEW';
+      } else if (publishMode === 'images') {
+         publishedValue = false;
+         statusValue = 'IMAGES';
       } else {
         // 'update' mode keeps existing logic
         if (formData.published && scheduledDate && scheduledDate > new Date()) {
@@ -935,10 +938,17 @@ export default function EditBlogPostPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => handleSubmit(null, 'review')} className="gap-2 font-medium">
-                <Save className="h-4 w-4 text-emerald-600" />
-                Atualizar (Revisão)
-              </DropdownMenuItem>
+              {(formData.status === 'REVIEW' || formData.status === 'IMAGES') ? (
+                <DropdownMenuItem onClick={() => handleSubmit(null, 'images')} className="gap-2 font-medium">
+                  <ImageIcon className="h-4 w-4 text-emerald-600" />
+                  Atualizar (Imagens)
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => handleSubmit(null, 'review')} className="gap-2 font-medium">
+                  <Save className="h-4 w-4 text-emerald-600" />
+                  Atualizar (Revisão)
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => handleSubmit(null, 'now')} className="gap-2 font-medium">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 Forçar Publicação

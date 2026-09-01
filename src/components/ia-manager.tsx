@@ -37,7 +37,8 @@ import {
   AlertTriangle,
   RotateCcw,
   User,
-  X
+  X,
+  Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -145,13 +146,27 @@ export function IaManager() {
   const [activeTab, setActiveTab] = useState('sandbox');
   const [modelsByProvider, setModelsByProvider] = useState<Record<string, { label: string, models: string[] }>>(MODELS_BY_PROVIDER);
   const [hiddenModels, setHiddenModels] = useState<string[]>([]);
+  const [favoriteModels, setFavoriteModels] = useState<string[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('@senra:hiddenModels');
     if (saved) {
       try { setHiddenModels(JSON.parse(saved)); } catch (e) {}
     }
+    const savedFav = localStorage.getItem('@senra:favoriteModels');
+    if (savedFav) {
+      try { setFavoriteModels(JSON.parse(savedFav)); } catch (e) {}
+    }
   }, []);
+
+  const handleToggleFavorite = (modelId: string) => {
+    setFavoriteModels(prev => {
+      const isFav = prev.includes(modelId);
+      const newFav = isFav ? prev.filter(id => id !== modelId) : [...prev, modelId];
+      localStorage.setItem('@senra:favoriteModels', JSON.stringify(newFav));
+      return newFav;
+    });
+  };
 
   const handleHideModel = (modelId: string) => {
     setHiddenModels(prev => {
@@ -547,37 +562,58 @@ export function IaManager() {
                           {availableProviders.length === 0 ? (
                             <SelectItem value="none" disabled>Configure as chaves API</SelectItem>
                           ) : (
-                            activeProviderKeys.map(provider => (
-                              <SelectGroup key={provider}>
-                                <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
-                                {modelsByProvider[provider]?.models.filter(m => !hiddenModels.includes(m)).map(m => (
-                                  <SelectItem key={m} value={m} className="group relative pr-8">
-                                    <div className="flex items-center justify-between w-full">
-                                      <span className="truncate">{m.replace('openrouter:', '')}</span>
-                                      <button
-                                        type="button"
-                                        onPointerDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onPointerUp={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          handleHideModel(m);
-                                        }}
-                                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 transition-opacity absolute right-6 z-50 pointer-events-auto cursor-pointer"
-                                      >
-                                        <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
-                                      </button>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            ))
+                            activeProviderKeys.map(provider => {
+                              const providerModels = modelsByProvider[provider]?.models.filter(m => !hiddenModels.includes(m)) || [];
+                              // Sort to put favorites at the top
+                              const sortedModels = [...providerModels].sort((a, b) => {
+                                const aFav = favoriteModels.includes(a);
+                                const bFav = favoriteModels.includes(b);
+                                if (aFav && !bFav) return -1;
+                                if (!aFav && bFav) return 1;
+                                return 0;
+                              });
+
+                              return (
+                                <SelectGroup key={provider}>
+                                  <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
+                                  {sortedModels.map(m => (
+                                    <SelectItem key={m} value={m} className="group relative pr-8">
+                                      <div className="flex items-center justify-between w-full">
+                                        <span className="truncate">{m.replace('openrouter:', '')}</span>
+                                        <div className="opacity-0 group-hover:opacity-100 flex gap-1 absolute right-2 z-50 pointer-events-auto cursor-pointer transition-opacity">
+                                          <button
+                                            type="button"
+                                            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                            onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              handleToggleFavorite(m);
+                                            }}
+                                            className="p-0.5 rounded hover:bg-slate-200 transition-colors"
+                                          >
+                                            <Star className={`h-3.5 w-3.5 ${favoriteModels.includes(m) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400 hover:text-yellow-400'}`} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                            onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              handleHideModel(m);
+                                            }}
+                                            className="p-0.5 rounded hover:bg-slate-200 transition-colors"
+                                          >
+                                            <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              );
+                            })
                           )}
                         </SelectContent>
                       </Select>
