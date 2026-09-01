@@ -93,6 +93,7 @@ Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto
       const openai = new OpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: key });
       const res = await openai.chat.completions.create({
         model: model,
+        max_tokens: 512, // SEO content is short — cap tokens to avoid 402 errors on free-tier models
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
@@ -121,7 +122,10 @@ Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto
       try {
         if (provider === 'gemini' && settings.openRouterApiKey) {
           console.log(`[SEO] Tentando fallback para OpenRouter...`);
-          responseText = await executeOpenRouter(settings.openRouterApiKey, "openai/gpt-4o-mini");
+          // Reuse the agent's own model (if available) so we stay on the right provider.
+          // Fall back to a known-free model only if no agent model is configured.
+          const fallbackOrModel = modelToUse.startsWith('gemini') ? 'openai/gpt-4o-mini' : modelToUse;
+          responseText = await executeOpenRouter(settings.openRouterApiKey, fallbackOrModel);
         } else if (provider === 'openrouter' && settings.geminiApiKey) {
           console.log(`[SEO] Tentando fallback para Gemini...`);
           const fallbackKey = settings.geminiApiKey.split(/\r?\n|,/)[0].trim();

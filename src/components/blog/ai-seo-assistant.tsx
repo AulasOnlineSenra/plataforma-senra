@@ -40,7 +40,12 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
     try {
       let agentId = undefined;
       if (typeof window !== 'undefined') {
-        agentId = localStorage.getItem('lastUsedBlogAgentId') || undefined;
+        // Use the pipeline-stage-specific key so the SEO assistant always
+        // uses the same provider/model as the active blog writing agent.
+        agentId = localStorage.getItem('lastUsedBlogAgentId_DRAFT')
+          || localStorage.getItem('lastUsedBlogAgentId_REVIEW')
+          || localStorage.getItem('lastUsedBlogAgentId')
+          || undefined;
       }
       const res = await generateSeoSuggestion(content, type, agentId);
       if (res.success && res.data) {
