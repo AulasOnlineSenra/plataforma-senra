@@ -628,6 +628,7 @@ export default function SettingsPage() {
                   value={geminiApiKey}
                   onChange={setGeminiApiKey}
                   placeholder="Google Gemini API Key"
+                  provider="gemini"
                 />
               </div>
               <div className="space-y-2">
@@ -635,6 +636,7 @@ export default function SettingsPage() {
                   value={openaiApiKey}
                   onChange={setOpenaiApiKey}
                   placeholder="OpenAI API Key"
+                  provider="openai"
                 />
               </div>
               <div className="space-y-2">
@@ -642,6 +644,7 @@ export default function SettingsPage() {
                   value={anthropicApiKey}
                   onChange={setAnthropicApiKey}
                   placeholder="Anthropic (Claude) Key"
+                  provider="anthropic"
                 />
               </div>
               <div className="space-y-2">
@@ -649,6 +652,7 @@ export default function SettingsPage() {
                   value={openRouterApiKey}
                   onChange={setOpenRouterApiKey}
                   placeholder="OpenRouter API Key"
+                  provider="openrouter"
                 />
               </div>
               <div className="space-y-2">
@@ -656,6 +660,7 @@ export default function SettingsPage() {
                   value={grokApiKey}
                   onChange={setGrokApiKey}
                   placeholder="Grok (xAI) API Key"
+                  provider="grok"
                 />
               </div>
               <div className="space-y-2">
@@ -663,6 +668,7 @@ export default function SettingsPage() {
                   value={minimaxApiKey}
                   onChange={setMinimaxApiKey}
                   placeholder="MiniMax API Key"
+                  provider="minimax"
                 />
               </div>
             </div>
