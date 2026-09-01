@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Sparkles, Loader2, Copy, Check, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { generateSeoSuggestion } from '@/app/actions/blog-seo';
 
 interface AiSeoAssistantProps {
@@ -20,12 +20,17 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
   const [result, setResult] = useState<any>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedAlt, setCopiedAlt] = useState(false);
+  const { toast } = useToast();
 
   const handleGenerate = async () => {
-    // Evita chamada à API se não houver contexto suficiente
-    if (!content || content.trim().length < 50) {
-      toast('Escreva um pouco mais do artigo', {
+    // Tira as tags HTML para checar o tamanho real
+    const plainText = (content || '').replace(/<[^>]*>?/gm, '').trim();
+
+    if (!plainText || plainText.length < 50) {
+      toast({
+        title: 'Escreva um pouco mais',
         description: 'A IA precisa de pelo menos um parágrafo para gerar sugestões precisas.',
+        variant: 'destructive',
       });
       return;
     }
@@ -44,7 +49,7 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
             const parsed = JSON.parse(res.data);
             setResult(parsed);
           } catch {
-            toast('Erro na leitura dos dados da IA', { description: 'Tente gerar novamente.' });
+            toast({ title: 'Erro', description: 'Erro na leitura dos dados da IA. Tente gerar novamente.', variant: 'destructive' });
           }
         } else if (type === 'title') {
           const titles = res.data.split('\n').filter((t: string) => t.trim().length > 0);
@@ -53,10 +58,10 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
           setResult(res.data);
         }
       } else {
-        toast('Erro ao gerar', { description: res.error });
+        toast({ title: 'Erro ao gerar', description: res.error, variant: 'destructive' });
       }
     } catch (e) {
-      toast('Erro inesperado', { description: 'Falha na comunicação com a IA.' });
+      toast({ title: 'Erro', description: 'Falha inesperada na comunicação com a IA.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -74,16 +79,21 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open && !result && !isLoading) {
+          handleGenerate();
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           size="icon"
           title={type === 'title' ? "Gerar Ideias" : type === 'cover' ? "Prompt de Arte" : "Gerar Resumo SEO"}
           className="h-8 w-8 rounded-full border-brand-yellow/30 bg-brand-yellow/10 text-brand-yellow-dark hover:bg-brand-yellow/20 hover:text-brand-yellow-dark hover:border-brand-yellow/50 transition-all shadow-sm flex-shrink-0"
-          onClick={() => {
-            if (!result) handleGenerate();
-          }}
         >
           <Sparkles className="h-4 w-4 fill-current" />
         </Button>
@@ -129,7 +139,7 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
                       onClick={() => {
                         onApply?.(titleStr);
                         setIsOpen(false);
-                        toast('Título atualizado com sucesso!');
+                        toast({ title: 'Sucesso', description: 'Título atualizado!', className: 'bg-emerald-600 text-white border-none' });
                       }}
                       className="text-left text-sm font-bold text-slate-700 hover:text-brand-yellow-dark bg-slate-50 hover:bg-amber-50 border border-slate-100 hover:border-amber-200 rounded-lg p-3 transition-colors group"
                     >
@@ -154,7 +164,7 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
                       onClick={() => {
                         onApply?.(result);
                         setIsOpen(false);
-                        toast('Resumo aplicado!');
+                        toast({ title: 'Sucesso', description: 'Resumo aplicado!', className: 'bg-emerald-600 text-white border-none' });
                       }}
                       className="h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs px-4"
                     >
