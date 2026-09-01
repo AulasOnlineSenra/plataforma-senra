@@ -567,7 +567,7 @@ export default function NewBlogPostPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="excerpt" className="text-slate-700 font-bold">Resumo *</Label>
-                    <AiSeoAssistant content={formData.content} type="excerpt" onApply={(text) => handleChange('excerpt', text)} />
+                    <AiSeoAssistant content={formData.content} title={formData.title} type="excerpt" onApply={(text) => handleChange('excerpt', text)} />
                   </div>
                   <Textarea
                     id="excerpt"
@@ -584,7 +584,7 @@ export default function NewBlogPostPage() {
                     <Label className="text-slate-700 font-bold flex items-center gap-2">
                       <ImageIcon className="h-4 w-4" /> Capa do Artigo
                     </Label>
-                    <AiSeoAssistant content={formData.content} type="cover" />
+                    <AiSeoAssistant content={formData.content} title={formData.title} type="cover" />
                   </div>
                   {formData.image ? (
                     <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
@@ -872,7 +872,7 @@ export default function NewBlogPostPage() {
               style={{ minHeight: '80px', paddingRight: '120px' }}
             />
             <div className="absolute right-0 top-6">
-              <AiSeoAssistant content={formData.content} type="title" onApply={(text) => handleChange('title', text)} />
+              <AiSeoAssistant content={formData.content} title={formData.title} type="title" onApply={(text) => handleChange('title', text)} />
             </div>
           </div>
 

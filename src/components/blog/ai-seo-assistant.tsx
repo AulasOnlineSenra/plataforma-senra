@@ -9,6 +9,7 @@ import { runAiAgentTest } from '@/app/actions/ia';
 
 interface AiSeoAssistantProps {
   content: string;
+  title?: string;
   type: 'title' | 'cover' | 'excerpt';
   onApply?: (text: string) => void;
   onApplyAlt?: (text: string) => void;
@@ -27,7 +28,7 @@ const stripHtml = (html: string) =>
     .trim();
 
 // Build the task prompt for each SEO type
-const buildPrompt = (type: 'title' | 'cover' | 'excerpt', plainContent: string): string => {
+const buildPrompt = (type: 'title' | 'cover' | 'excerpt', plainContent: string, title?: string): string => {
   // Limit to ~3000 chars to keep tokens reasonable
   const excerpt = plainContent.substring(0, 3000);
 
@@ -59,20 +60,128 @@ ${excerpt}`;
   }
 
   // type === 'cover'
-  return `Você é um Diretor de Arte e Especialista em Acessibilidade. Leia o artigo e crie o cenário para a imagem de capa.
-Devolva ESTRITAMENTE um JSON válido no seguinte formato:
+  return `Você é o Diretor de Arte Editorial do Aulas Online Senra, uma marca brasileira de educação premium especializada em aulas particulares online e preparação acadêmica para ENEM, vestibulares e processos seletivos.
+
+Sua tarefa é analisar o título e o conteúdo inicial do artigo e criar o conceito visual da IMAGEM DE CAPA do artigo.
+
+A imagem deve parecer uma fotografia editorial premium produzida profissionalmente para uma publicação educacional, e NÃO uma imagem genérica de banco de imagens.
+
+### OBJETIVO VISUAL
+
+Crie uma cena que comunique visualmente a IDEIA CENTRAL do artigo de forma natural, sofisticada e imediatamente compreensível.
+
+Não ilustre literalmente cada palavra do título. Primeiro identifique o principal assunto, situação, problema, ação ou contexto apresentado no artigo e transforme isso em uma cena visual convincente.
+
+Priorize representação conceitual e editorial em vez de clichês visuais.
+
+### DIREÇÃO DE ARTE
+
+Sempre utilizar fotografia realista e hiper-realista.
+
+A estética deve transmitir:
+
+* educação de alto nível;
+* inteligência;
+* concentração;
+* credibilidade;
+* sofisticação;
+* naturalidade;
+* contexto brasileiro quando isso for relevante;
+* aparência premium e contemporânea.
+
+Preferir momentos espontâneos e plausíveis em vez de poses artificiais de banco de imagens.
+
+Evitar clichês excessivamente genéricos, como estudante sorrindo para a câmera segurando livros, pilhas de livros aleatórias, professor posando artificialmente diante de um quadro ou imagens educacionais excessivamente encenadas.
+
+A iluminação deve ser natural ou cinematográfica, escolhida de acordo com o tema do artigo. Não utilizar neon ou efeitos futuristas sem justificativa explícita pelo assunto.
+
+Utilizar composição fotográfica sofisticada, profundidade de campo natural, texturas realistas, iluminação fisicamente plausível e detalhes faciais e ambientais autênticos.
+
+### IDENTIDADE VISUAL
+
+Manter uma linguagem visual compatível com uma marca educacional premium.
+
+Priorizar ambientes elegantes, limpos e contemporâneos, com predominância visual sutil de azul-marinho, branco/off-white e detalhes quentes discretos quando fizer sentido.
+
+Não transformar a imagem em uma peça publicitária da marca.
+
+Não inserir elementos gráficos da identidade visual artificialmente dentro da fotografia.
+
+### COMPOSIÇÃO
+
+A imagem será utilizada como capa de artigo em formato horizontal 1200x628.
+
+Criar composição cinematográfica horizontal, adequada para hero image de site.
+
+Manter um ponto focal visual muito claro.
+
+Utilizar espaço negativo de forma intencional quando necessário para acomodar o layout do site.
+
+Evitar cortar cabeças, mãos, objetos principais ou elementos essenciais da cena.
+
+A composição deve continuar funcionando mesmo com pequenos recortes em diferentes dispositivos.
+
+### RESTRIÇÕES OBRIGATÓRIAS
+
+Não inserir:
+
+* texto;
+* letras;
+* números;
+* títulos;
+* palavras;
+* logotipos;
+* marcas;
+* marcas d'água;
+* interfaces artificiais;
+* elementos gráficos;
+* infográficos;
+* ilustrações;
+* aparência de desenho;
+* aparência de CGI;
+* estética cartoon;
+* anatomia deformada;
+* mãos deformadas;
+* objetos impossíveis;
+* elementos que não façam sentido no contexto do artigo.
+
+Sempre utilizar pessoas com aparência humana realista e proporções anatômicas naturais.
+
+### ALT TEXT
+
+Crie um texto alternativo em português, curto, literal e objetivo.
+
+Descreva SOMENTE o que pode ser observado na imagem.
+
+Não invente informações.
+
+Não inclua opiniões, interpretações, intenções, chamadas comerciais ou palavras-chave artificiais.
+
+Não diga que a pessoa está se preparando para determinado exame, curso ou profissão se isso não puder ser visualmente identificado.
+
+O alt text deve priorizar acessibilidade e descrever os elementos visuais essenciais da cena.
+
+### FORMATO DE SAÍDA
+
+Retorne ESTRITAMENTE um JSON válido, sem markdown, sem \`\`\`json e sem qualquer texto adicional:
+
 {
-  "prompt": "Prompt em INGLÊS mega detalhado para Midjourney/Flux. Descreva o sujeito, ação, iluminação (neon, natural, cinematic), estilo (hyper-realistic, photography) e ambiente.",
-  "alt": "Texto alternativo em PORTUGUÊS (descrevendo literalmente e de forma seca o que tem na imagem) para pontuar no SEO do Google Imagens."
+  "prompt": "Prompt em INGLÊS extremamente detalhado para Midjourney/Flux. Descreva o sujeito principal, ação, ambiente, contexto, composição horizontal, enquadramento, câmera, lente, profundidade de campo, iluminação, atmosfera, materiais, textura, realismo fotográfico e estética editorial premium.",
+  "alt": "Texto alternativo em PORTUGUÊS, literal, objetivo e acessível."
 }
-Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto JSON.
 
-Conteúdo do Artigo (baseie-se apenas nisto):
+Não inclua nenhum campo adicional.
 
+### CONTEÚDO DO ARTIGO
+
+Título:
+${title || '(não informado)'}
+
+Conteúdo inicial:
 ${excerpt}`;
 };
 
-export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssistantProps) {
+export function AiSeoAssistant({ content, title, type, onApply, onApplyAlt }: AiSeoAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -114,7 +223,7 @@ export function AiSeoAssistant({ content, type, onApply, onApplyAlt }: AiSeoAssi
         return;
       }
 
-      const prompt = buildPrompt(type, stripHtml(content));
+      const prompt = buildPrompt(type, stripHtml(content), title);
 
       // Use the same engine as the article body — with disableTools to prevent
       // the "Role 'function' not supported" error that occurs with tool-enabled agents
