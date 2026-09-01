@@ -79,6 +79,16 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       setGeneratedSeo(null);
       if (agents.length === 0) {
         loadAgents();
+      } else {
+        // Modal already has agents loaded — re-sync selected agent from localStorage
+        // so that all sections (title, cover, excerpt, body) within the same pipeline
+        // stage always share the same last-saved agent.
+        if (typeof window !== 'undefined') {
+          const savedAgentId = localStorage.getItem(`lastUsedBlogAgentId_${mode}`);
+          if (savedAgentId && agents.find((a: any) => a.id === savedAgentId)) {
+            setSelectedAgent(savedAgentId);
+          }
+        }
       }
     }
   }, [isOpen, currentTitle]);
