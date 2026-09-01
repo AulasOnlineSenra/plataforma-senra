@@ -153,7 +153,7 @@ function zodToGoogleSchema(schema: any): any {
   return { type: SchemaType.STRING };
 }
 
-export async function runAiAgentTest(agentId: string, userPrompt: string, history?: { role: 'user' | 'model', content: string }[]) {
+export async function runAiAgentTest(agentId: string, userPrompt: string, history?: { role: 'user' | 'model', content: string }[], options?: { disableTools?: boolean }) {
   let agentRef: any = null;
   let modelName = '';
   const startTime = Date.now();
@@ -202,7 +202,9 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
     });
 
     // Converter ferramentas Genkit para o formato do Google AI SDK
-    const googleTools: Tool[] = activeTools.length > 0 ? [{
+    // Se disableTools=true, ignora as ferramentas do agente para evitar o erro
+    // "Role 'function' is not supported" em chamadas do modal do blog.
+    const googleTools: Tool[] = (!options?.disableTools && activeTools.length > 0) ? [{
       functionDeclarations: activeTools.map(t => {
         const decl: FunctionDeclaration = {
           name: t.name,

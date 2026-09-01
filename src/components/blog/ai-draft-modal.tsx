@@ -168,7 +168,7 @@ ${plainContent}
     }
 
     try {
-      const result = await runAiAgentTest(selectedAgent, prompt);
+      const result = await runAiAgentTest(selectedAgent, prompt, undefined, { disableTools: true });
       
       if (result.success && result.response) {
         let contentHtml = result.response;
