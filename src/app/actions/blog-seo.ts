@@ -89,21 +89,50 @@ Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto
 
     let responseText = "";
 
-    if (provider === 'openrouter') {
-      const openai = new OpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey });
+    const executeOpenRouter = async (key: string, model: string) => {
+      const openai = new OpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: key });
       const res = await openai.chat.completions.create({
-        model: modelToUse, 
+        model: model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ]
       });
-      responseText = res.choices[0].message.content || "";
-    } else {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: modelToUse, systemInstruction: systemPrompt });
-      const res = await model.generateContent(userMessage);
-      responseText = res.response.text();
+      return res.choices[0].message.content || "";
+    };
+
+    const executeGemini = async (key: string, model: string) => {
+      const genAI = new GoogleGenerativeAI(key);
+      const aiModel = genAI.getGenerativeModel({ model: model, systemInstruction: systemPrompt });
+      const res = await aiModel.generateContent(userMessage);
+      return res.response.text();
+    };
+
+    try {
+      if (provider === 'openrouter') {
+        responseText = await executeOpenRouter(apiKey, modelToUse);
+      } else {
+        responseText = await executeGemini(apiKey, modelToUse);
+      }
+    } catch (primaryError: any) {
+      console.warn(`[SEO] Falha no provedor primário (${provider}):`, primaryError.message);
+      
+      // FALLBACK AUTOMÁTICO PARA O PROVEDOR SECUNDÁRIO SE O PRIMEIRO FALHAR (ex: limite de cota, chave inválida)
+      try {
+        if (provider === 'gemini' && settings.openRouterApiKey) {
+          console.log(`[SEO] Tentando fallback para OpenRouter...`);
+          responseText = await executeOpenRouter(settings.openRouterApiKey, "openai/gpt-4o-mini");
+        } else if (provider === 'openrouter' && settings.geminiApiKey) {
+          console.log(`[SEO] Tentando fallback para Gemini...`);
+          const fallbackKey = settings.geminiApiKey.split(/\r?\n|,/)[0].trim();
+          responseText = await executeGemini(fallbackKey, "gemini-1.5-flash");
+        } else {
+          throw primaryError; // Se não tem chave secundária, repassa o erro original
+        }
+      } catch (fallbackError: any) {
+        console.error(`[SEO] Fallback também falhou:`, fallbackError.message);
+        throw primaryError; // Mostra o erro do provedor principal para o usuário
+      }
     }
 
     const cleanText = responseText.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
