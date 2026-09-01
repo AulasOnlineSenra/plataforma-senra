@@ -76,7 +76,7 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       if (activeAgents.length > 0) {
         let savedAgentId = null;
         if (typeof window !== 'undefined') {
-          savedAgentId = localStorage.getItem('lastUsedBlogAgentId');
+          savedAgentId = localStorage.getItem(`lastUsedBlogAgentId_${mode}`);
         }
         if (savedAgentId && activeAgents.find((a: any) => a.id === savedAgentId)) {
           setSelectedAgent(savedAgentId);
@@ -287,7 +287,7 @@ ${currentContent || ''}
                 onValueChange={(val) => {
                   setSelectedAgent(val);
                   if (typeof window !== 'undefined') {
-                    localStorage.setItem('lastUsedBlogAgentId', val);
+                    localStorage.setItem(`lastUsedBlogAgentId_${mode}`, val);
                   }
                 }}
               >
