@@ -644,7 +644,7 @@ export function IaManager() {
 
             {/* ABA: SANDBOX INTERATIVO */}
             <TabsContent value="sandbox" className="mt-0">
-              <Card className="flex flex-col h-[565px]">
+              <Card className="flex flex-col h-[535px]">
                 {/* Header do Sandbox com Agente, Medidor de Tokens & Controles */}
                 <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between space-y-0 bg-slate-50/50">
                   <div className="flex items-center gap-3">

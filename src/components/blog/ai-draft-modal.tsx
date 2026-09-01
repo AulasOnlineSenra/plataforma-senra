@@ -1,17 +1,17 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Bot, Loader2, Sparkles, Wand2, Plus, PenTool, Image as ImageIcon } from 'lucide-react';
+import { Bot, Loader2, Sparkles, PenTool, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAiAgents, runAiAgentTest } from '@/app/actions/ia';
 import { toast } from '@/hooks/use-toast';
-import { execute as htmlDiff } from 'htmldiff-js';
+import htmldiff from 'htmldiff-js';
 
 interface AiDraftModalProps {
   currentTitle: string;
@@ -39,7 +39,7 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
   const diffHtml = useMemo(() => {
     if (mode === 'REVIEW' && currentContent && generatedHtml) {
       try {
-        return htmlDiff(currentContent, generatedHtml);
+        return htmldiff.execute(currentContent, generatedHtml);
       } catch (e) {
         console.error('Diff error', e);
         return null;
@@ -117,6 +117,7 @@ IMPORTANTE: Formate todo o conteúdo do artigo APENAS EM HTML VÁLIDO (use tags 
       prompt = `
 Você é um Revisor e Editor Chefe experiente.
 Revise e reescreva o artigo abaixo para melhorar a escaneabilidade, corrigir erros gramaticais, melhorar o tom de voz e adicionar formatação (negritos, listas) onde apropriado.
+Tamanho desejado do texto: aproximadamente ${wordCount} palavras.
 ${extraInstructions ? '\nInstruções do usuário:\n' + extraInstructions + '\n' : ''}
 
 ${generateSeo ? 'MUITO IMPORTANTE: No final da sua resposta, após fechar o HTML do artigo, inclua OBRIGATORIAMENTE um bloco JSON isolado com uma `metaDescription` (resumo chamativo de até 160 caracteres) e `tags` (array de strings). Formate exatamente assim:\n```json\n{"metaDescription": "...", "tags": ["tag1", "tag2"]}\n```\n' : ''}
@@ -304,30 +305,31 @@ ${currentContent || ''}
             </div>
 
             {mode === 'DRAFT' && (
-              <>
-                <div className="space-y-2">
-                  <Label className="font-bold text-slate-700">Tema do Artigo</Label>
-                  <Input 
-                    value={topic}
-                    onChange={e => setTopic(e.target.value)}
-                    placeholder="Ex: Como organizar os estudos para o ENEM"
-                    className="rounded-xl border-slate-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-bold text-slate-700">Tamanho do Texto</Label>
-                  <Select value={wordCount} onValueChange={setWordCount}>
-                    <SelectTrigger className="rounded-xl border-slate-200 h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1400">Curto (~1400 palavras)</SelectItem>
-                      <SelectItem value="1950">Médio (~1950 palavras)</SelectItem>
-                      <SelectItem value="2500">Longo (~2500 palavras)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
+              <div className="space-y-2">
+                <Label className="font-bold text-slate-700">Tema do Artigo</Label>
+                <Input 
+                  value={topic}
+                  onChange={e => setTopic(e.target.value)}
+                  placeholder="Ex: Como organizar os estudos para o ENEM"
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+            )}
+
+            {(mode === 'DRAFT' || mode === 'REVIEW') && (
+              <div className="space-y-2">
+                <Label className="font-bold text-slate-700">Tamanho do Texto</Label>
+                <Select value={wordCount} onValueChange={setWordCount}>
+                  <SelectTrigger className="rounded-xl border-slate-200 h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1400">Curto (~1400 palavras)</SelectItem>
+                    <SelectItem value="1950">Médio (~1950 palavras)</SelectItem>
+                    <SelectItem value="2500">Longo (~2500 palavras)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {(mode === 'DRAFT' || mode === 'REVIEW') && (
