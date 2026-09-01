@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { AiSeoAssistant } from '@/components/blog/ai-seo-assistant';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => {
@@ -564,7 +565,10 @@ export default function NewBlogPostPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="excerpt" className="text-slate-700 font-bold">Resumo *</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="excerpt" className="text-slate-700 font-bold">Resumo *</Label>
+                    <AiSeoAssistant content={formData.content} type="excerpt" onApply={(text) => handleChange('excerpt', text)} />
+                  </div>
                   <Textarea
                     id="excerpt"
                     placeholder="Breve descrição do artigo (aparece na listagem)"
@@ -576,9 +580,12 @@ export default function NewBlogPostPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" /> Capa do Artigo
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-slate-700 font-bold flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" /> Capa do Artigo
+                    </Label>
+                    <AiSeoAssistant content={formData.content} type="cover" />
+                  </div>
                   {formData.image ? (
                     <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                       <img src={formData.image} alt="Capa" className="w-full h-36 object-cover" />
@@ -852,17 +859,22 @@ export default function NewBlogPostPage() {
             </div>
           )}
 
-          <textarea
-            ref={titleRef}
-            placeholder="Título do Artigo"
-            value={formData.title}
-            onChange={(e) => {
-              handleChange('title', e.target.value);
-            }}
-            rows={1}
-            className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight resize-none bg-transparent overflow-hidden"
-            style={{ minHeight: '80px' }}
-          />
+          <div className="relative">
+            <textarea
+              ref={titleRef}
+              placeholder="Título do Artigo"
+              value={formData.title}
+              onChange={(e) => {
+                handleChange('title', e.target.value);
+              }}
+              rows={1}
+              className="w-full text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 placeholder:text-slate-300 border-0 shadow-none focus-visible:ring-0 px-0 h-auto py-4 rounded-none font-headline tracking-tight resize-none bg-transparent overflow-hidden"
+              style={{ minHeight: '80px', paddingRight: '120px' }}
+            />
+            <div className="absolute right-0 top-6">
+              <AiSeoAssistant content={formData.content} type="title" onApply={(text) => handleChange('title', text)} />
+            </div>
+          </div>
 
           <div className="w-full h-px bg-slate-100 my-8"></div>
 
