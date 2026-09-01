@@ -163,7 +163,7 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
     agentRef = agent;
 
     // Normalizar nome do modelo aqui (fora do escopo interno) para o catch poder ler
-    modelName = (agent.model || 'gemini-1.5-flash').replace(/^googleai\//, '');
+    modelName = (agent.model || 'gemini-3.6-flash').replace(/^googleai\//, '');
 
     // Buscar a chave diretamente do banco — sem tocar em process.env
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });

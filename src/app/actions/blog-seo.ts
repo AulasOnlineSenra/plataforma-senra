@@ -125,7 +125,7 @@ Não coloque \`\`\`json ou qualquer outro texto antes ou depois. APENAS o objeto
         } else if (provider === 'openrouter' && settings.geminiApiKey) {
           console.log(`[SEO] Tentando fallback para Gemini...`);
           const fallbackKey = settings.geminiApiKey.split(/\r?\n|,/)[0].trim();
-          responseText = await executeGemini(fallbackKey, "gemini-1.5-flash");
+          responseText = await executeGemini(fallbackKey, "gemini-3.6-flash");
         } else {
           throw primaryError; // Se não tem chave secundária, repassa o erro original
         }
