@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Bot, Loader2, Sparkles, PenTool, Image as ImageIcon, Wand2 } from 'lucide-react';
+import { Bot, Loader2, Sparkles, PenTool, Image as ImageIcon, Wand2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -101,6 +101,13 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
     setIsGenerating(true);
     setGeneratedHtml(null);
 
+    // Strip HTML tags from the article content before sending to the AI to avoid
+    // malformed role errors caused by raw HTML tags or backticks in the prompt.
+    const plainContent = (currentContent || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     let prompt = '';
 
     if (mode === 'DRAFT') {
@@ -124,7 +131,7 @@ ${generateSeo ? 'MUITO IMPORTANTE: No final da sua resposta, após fechar o HTML
 
 Título Original: ${topic}
 Conteúdo Original:
-${currentContent || ''}
+${plainContent}
 
 IMPORTANTE: Retorne TODO O ARTIGO reescrito e formatado APENAS EM HTML VÁLIDO (use tags <h2>, <h3>, <p>, <ul>, <li>, <strong>). Não use formatação markdown para o texto do artigo.
 `;
@@ -140,7 +147,7 @@ Instrução CRÍTICA: Você DEVE retornar EXATAMENTE o mesmo código HTML que vo
 
 Título Original: ${topic}
 Conteúdo Original:
-${currentContent || ''}
+${plainContent}
 `;
     }
 
