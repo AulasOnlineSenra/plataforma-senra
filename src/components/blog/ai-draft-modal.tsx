@@ -36,10 +36,26 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
   const [generatedSeo, setGeneratedSeo] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'diff' | 'final'>('final');
 
+  // Strip HTML tags to plain text so htmldiff compares content words, not markup structure.
+  // Without this, every tag difference (e.g. <p> vs <h2>) is flagged as a change, 
+  // making the diff view unreadable.
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<\/(p|h[1-6]|li|div|tr|td|th|blockquote)>/gi, ' ')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
   const diffHtml = useMemo(() => {
     if (mode === 'REVIEW' && currentContent && generatedHtml) {
       try {
-        return htmldiff.execute(currentContent, generatedHtml);
+        const plainOld = stripHtml(currentContent);
+        const plainNew = stripHtml(generatedHtml);
+        return htmldiff.execute(plainOld, plainNew);
       } catch (e) {
         console.error('Diff error', e);
         return null;
