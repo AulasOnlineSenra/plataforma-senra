@@ -168,6 +168,15 @@ ${currentContent || ''}
 
         contentHtml = contentHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
 
+        // Quill native table module doesn't support thead, tbody, or th.
+        // It strips them, causing headers to be dumped as text outside the table.
+        // We replace them with td and strong to maintain visual structure.
+        contentHtml = contentHtml
+          .replace(/<\/?thead>/gi, '')
+          .replace(/<\/?tbody>/gi, '')
+          .replace(/<th([^>]*)>/gi, '<td$1><strong>')
+          .replace(/<\/th>/gi, '</strong></td>');
+
         setGeneratedHtml(contentHtml);
         setGeneratedSeo(seoData);
         
