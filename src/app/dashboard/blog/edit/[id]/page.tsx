@@ -686,16 +686,6 @@ export default function EditBlogPostPage() {
                   }
                 }
               }}
-              onClose={() => {
-                if (quillRef.current) {
-                  const quill = quillRef.current.getEditor();
-                  let currentHtml = quill.root.innerHTML;
-                  currentHtml = currentHtml.replace(/background-color:\s*(rgb\(254,\s*240,\s*138\)|#fef08a);?/gi, '');
-                  currentHtml = currentHtml.replace(/style="\s*"/gi, '');
-                  quill.root.innerHTML = currentHtml;
-                  setFormData(prev => ({ ...prev, content: currentHtml }));
-                }
-              }}
             />
           ) : (
             <AiDraftModal 
