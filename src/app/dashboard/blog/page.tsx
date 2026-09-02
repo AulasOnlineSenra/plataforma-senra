@@ -446,7 +446,7 @@ export default function BlogAdminPage() {
           >
             <Input 
               placeholder="Digite uma nova ideia..." 
-              className="h-8 text-[8px]" 
+              className="h-8 !text-[8px] placeholder:!text-[8px]" 
               value={newIdeaTitle}
               onChange={(e) => setNewIdeaTitle(e.target.value)}
               disabled={addingIdeaId === 'manual'}
@@ -543,7 +543,7 @@ export default function BlogAdminPage() {
               </h1>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800 text-white text-[10px]">
+          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800 text-white !text-[10px]">
             <Link href="/dashboard/blog/new">
               <Plus className="h-4 w-4 mr-2" /> Novo Artigo
             </Link>
