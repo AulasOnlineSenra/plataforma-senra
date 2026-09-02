@@ -5,7 +5,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { Button } from '@/components/ui/button';
 import { ImageIcon, Trash2, Wand2, Loader2, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { runAiAgentTest } from '@/app/actions/ia';
+import { getAiAgents, runAiAgentTest } from '@/app/actions/ia';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface AiImagePromptsSheetProps {
   articleTitle: string;
@@ -79,9 +81,54 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
   const [result, setResult] = useState<{ recommended: boolean; reason: string; prompt: string; altText: string } | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedAlt, setCopiedAlt] = useState(false);
+  
+  const [agents, setAgents] = useState<any[]>([]);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState('');
+  
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    if (isOpen) {
+      if (agents.length === 0) {
+        loadAgents();
+      } else {
+        if (typeof window !== 'undefined') {
+          const savedAgentId = localStorage.getItem('lastUsedBlogAgentId_IMAGES');
+          if (savedAgentId && agents.find((a: any) => a.id === savedAgentId)) {
+            setSelectedAgent(savedAgentId);
+          }
+        }
+      }
+    }
+  }, [isOpen]);
+
+  const loadAgents = async () => {
+    setIsLoadingAgents(true);
+    const result = await getAiAgents();
+    if (result.success && result.data) {
+      const activeAgents = result.data.filter((a: any) => a.status === 'active');
+      setAgents(activeAgents);
+      if (activeAgents.length > 0) {
+        let savedAgentId = null;
+        if (typeof window !== 'undefined') {
+          savedAgentId = localStorage.getItem('lastUsedBlogAgentId_IMAGES');
+        }
+        if (savedAgentId && activeAgents.find((a: any) => a.id === savedAgentId)) {
+          setSelectedAgent(savedAgentId);
+        } else {
+          setSelectedAgent(activeAgents[0].id);
+        }
+      }
+    }
+    setIsLoadingAgents(false);
+  };
+
   const handleGenerate = async () => {
+    if (!selectedAgent) {
+      toast({ variant: 'destructive', title: 'Selecione um agente' });
+      return;
+    }
     if (blocks.length === 0) {
       toast({ variant: 'destructive', title: 'Nenhum bloco', description: 'Adicione pelo menos um trecho de texto do artigo.' });
       return;
@@ -95,7 +142,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
     try {
       const userContent = `Título do artigo:\n${articleTitle}\n\nTrechos selecionados pelo usuário:\n${blocks.map((b, i) => `[${i + 1}] ${b}`).join('\n\n')}`;
       
-      const res = await runAiAgentTest(SYSTEM_PROMPT, userContent);
+      const res = await runAiAgentTest(selectedAgent, SYSTEM_PROMPT + '\n\n' + userContent, undefined, { disableTools: true });
       
       if (res.success && res.text) {
         let jsonStr = res.text.trim();
@@ -180,6 +227,38 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="space-y-2 border-t border-slate-100 pt-6 mt-2">
+            <Label className="font-bold text-slate-700">Agente de IA</Label>
+            {isLoadingAgents ? (
+              <div className="h-10 border rounded-xl flex items-center px-3 text-sm text-slate-500 bg-slate-50">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando agentes...
+              </div>
+            ) : (
+            <Select 
+              value={selectedAgent} 
+              onValueChange={(val) => {
+                setSelectedAgent(val);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('lastUsedBlogAgentId_IMAGES', val);
+                }
+              }}
+            >
+                <SelectTrigger className="rounded-xl border-slate-200 h-10 bg-white">
+                  <SelectValue placeholder="Selecione um agente..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map(agent => (
+                    <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                  ))}
+                  {agents.length === 0 && <div className="p-2 text-sm text-slate-500 text-center">Nenhum agente ativo encontrado.</div>}
+                </SelectContent>
+              </Select>
+            )}
+            <div className="p-3 bg-fuchsia-50 text-fuchsia-800 rounded-xl text-xs border border-fuchsia-100 mt-3">
+              A IA vai ler os trechos acima e sugerir o prompt de imagem mais adequado.
+            </div>
           </div>
 
           {/* Botão de Ação */}
