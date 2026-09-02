@@ -134,7 +134,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className={\`rounded-xl \${triggerColorClass}\`}>
+        <Button variant="outline" size="sm" className={`rounded-xl ${triggerColorClass}`}>
           <ImageIcon className="h-4 w-4 mr-2" />
           Criar Prompts
         </Button>
