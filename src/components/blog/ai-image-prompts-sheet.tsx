@@ -144,8 +144,8 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
       
       const res = await runAiAgentTest(selectedAgent, SYSTEM_PROMPT + '\n\n' + userContent, undefined, { disableTools: true });
       
-      if (res.success && res.text) {
-        let jsonStr = res.text.trim();
+      if (res.success && res.response) {
+        let jsonStr = res.response.trim();
         if (jsonStr.startsWith('\`\`\`json')) jsonStr = jsonStr.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
         else if (jsonStr.startsWith('\`\`\`')) jsonStr = jsonStr.replace(/\`\`\`/g, '');
         
