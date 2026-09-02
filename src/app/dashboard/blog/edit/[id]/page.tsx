@@ -1094,6 +1094,10 @@ export default function EditBlogPostPage() {
                   onClick={() => {
                     if (selectedTextData.text) {
                       setImageContextBlocks(prev => [...prev, selectedTextData.text]);
+                      if (quillRef.current) {
+                        const editor = quillRef.current.getEditor();
+                        editor.format('background', '#fef08a');
+                      }
                       toast({ title: 'Trecho adicionado', description: 'O texto foi enviado para a Pauta Visual.', className: 'bg-emerald-600 text-white border-none' });
                       setSelectedTextData(null);
                     }
