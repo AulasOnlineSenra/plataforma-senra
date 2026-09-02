@@ -93,7 +93,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
     setCopiedAlt(false);
 
     try {
-      const userContent = \`Título do artigo:\n\${articleTitle}\n\nTrechos selecionados pelo usuário:\n\${blocks.map((b, i) => \`[\${i + 1}] \${b}\`).join('\n\n')}\`;
+      const userContent = `Título do artigo:\n${articleTitle}\n\nTrechos selecionados pelo usuário:\n${blocks.map((b, i) => `[${i + 1}] ${b}`).join('\n\n')}`;
       
       const res = await runAiAgentTest(SYSTEM_PROMPT, userContent);
       
