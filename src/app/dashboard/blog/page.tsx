@@ -552,7 +552,7 @@ export default function BlogAdminPage() {
 
         {/* Colunas do Kanban */}
         <div className="flex-1 overflow-x-auto">
-          <div className="flex h-full p-6 gap-6 min-w-[700px]">
+          <div className="flex h-full px-4 py-6 gap-4 min-w-[700px]">
             
             {/* Coluna 1: Redação */}
             <div className="flex-1 flex flex-col max-w-[370px]">
