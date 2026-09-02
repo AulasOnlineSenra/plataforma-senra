@@ -434,7 +434,7 @@ ${plainContent}
         )}
 
         <DialogFooter>
-          {generatedHtml ? (
+          {generatedHtml && !isGenerating ? (
             <>
               <Button 
                 variant="outline" 
