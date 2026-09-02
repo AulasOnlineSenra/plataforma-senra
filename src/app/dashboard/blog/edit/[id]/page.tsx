@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AiDraftModal } from '@/components/blog/ai-draft-modal';
+import { AiImagePromptsSheet } from '@/components/blog/ai-image-prompts-sheet';
 import { AiSeoAssistant } from '@/components/blog/ai-seo-assistant';
 import 'react-quill-new/dist/quill.snow.css';
 const ReactQuill = dynamic(() => {
@@ -84,6 +85,7 @@ export default function EditBlogPostPage() {
 
   const [selectedTextData, setSelectedTextData] = useState<{ text: string; top: number; left: number } | null>(null);
   const [isSendingIdea, setIsSendingIdea] = useState(false);
+  const [imageContextBlocks, setImageContextBlocks] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -664,10 +666,17 @@ export default function EditBlogPostPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <AiDraftModal 
-            currentTitle={formData.title} 
-            currentContent={formData.content}
-            mode={(formData.status as 'DRAFT' | 'REVIEW' | 'IMAGES') || 'DRAFT'}
+          {formData.status === 'IMAGES' ? (
+            <AiImagePromptsSheet 
+              articleTitle={formData.title}
+              blocks={imageContextBlocks}
+              onRemoveBlock={(index) => setImageContextBlocks(prev => prev.filter((_, i) => i !== index))}
+            />
+          ) : (
+            <AiDraftModal 
+              currentTitle={formData.title} 
+              currentContent={formData.content}
+              mode={(formData.status as 'DRAFT' | 'REVIEW') || 'DRAFT'}
             onDraftGenerated={(contentHtml, seo) => {
               if (contentHtml) {
                 const quill = quillRef.current?.getEditor();
@@ -1077,6 +1086,21 @@ export default function EditBlogPostPage() {
                 >
                   {isSendingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Type className="w-3.5 h-3.5" />}
                   Nova Ideia (Blog)
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (selectedTextData.text) {
+                      setImageContextBlocks(prev => [...prev, selectedTextData.text]);
+                      toast({ title: 'Trecho adicionado', description: 'O texto foi enviado para a Pauta Visual.', className: 'bg-emerald-600 text-white border-none' });
+                      setSelectedTextData(null);
+                    }
+                  }}
+                  className="px-2 py-1.5 ml-2 rounded-full bg-slate-900 hover:bg-fuchsia-600 text-white shadow-lg flex items-center gap-1 transition-colors border border-slate-700 hover:border-fuchsia-600 text-xs font-medium cursor-pointer"
+                  title="Adicionar à Pauta Visual de Imagens"
+                >
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
