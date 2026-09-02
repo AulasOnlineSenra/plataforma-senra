@@ -292,7 +292,7 @@ export default function BlogAdminPage() {
         <div className="flex justify-between items-start gap-2 mb-2">
           <div className="flex items-start gap-2">
             {isScheduled && <Clock className="w-4 h-4 text-[#f5b000] shrink-0" title="Publicação Agendada" />}
-            <h3 className="font-semibold text-xs line-clamp-2 leading-tight" title={post.title}>
+            <h3 className="font-semibold text-[10px] line-clamp-2 leading-tight" title={post.title}>
               {post.title}
             </h3>
           </div>
@@ -486,7 +486,7 @@ export default function BlogAdminPage() {
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <a href={idea.link} target="_blank" rel="noopener noreferrer" className={`text-xs font-semibold leading-snug mb-1 hover:text-amber-600 block line-clamp-3 ${added ? 'text-amber-900' : 'text-slate-800'}`}>
+                      <a href={idea.link} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-semibold leading-snug mb-1 hover:text-amber-600 block line-clamp-3 ${added ? 'text-amber-900' : 'text-slate-800'}`}>
                         {idea.title}
                       </a>
                       <p className={`text-[10px] flex items-center flex-wrap gap-x-2 mt-1 ${added ? 'text-amber-700/70' : 'text-slate-400'}`}>
