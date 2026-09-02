@@ -51,6 +51,7 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       .trim();
 
   const diffHtml = useMemo(() => {
+    if (isGenerating) return null;
     if (mode === 'REVIEW' && currentContent && generatedHtml) {
       try {
         const plainOld = stripHtml(currentContent);
@@ -62,7 +63,7 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       }
     }
     return null;
-  }, [mode, currentContent, generatedHtml]);
+  }, [mode, currentContent, generatedHtml, isGenerating]);
 
   useEffect(() => {
     if (generatedHtml && diffHtml) {
@@ -178,53 +179,84 @@ ${plainContent}
     }
 
     try {
-      const result = await runAiAgentTest(selectedAgent, prompt, undefined, { disableTools: true });
-      
-      if (result.success && result.response) {
-        let contentHtml = result.response;
-        let seoData = undefined;
+      const response = await fetch('/api/ai/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: selectedAgent,
+          userPrompt: prompt,
+          options: { disableTools: true }
+        })
+      });
 
-        if ((mode === 'DRAFT' || mode === 'REVIEW') && generateSeo) {
-          const jsonMatch = contentHtml.match(/```json\n([\s\S]*?)\n```/);
-          if (jsonMatch && jsonMatch[1]) {
-            try {
-              const parsedSeo = JSON.parse(jsonMatch[1]);
-              seoData = {
-                metaDescription: parsedSeo.metaDescription || '',
-                tags: Array.isArray(parsedSeo.tags) ? parsedSeo.tags.join(', ') : '',
-              };
-              contentHtml = contentHtml.replace(/```json\n[\s\S]*?\n```/, '').trim();
-            } catch (e) {
-              console.error('Erro ao fazer parse do JSON de SEO', e);
-            }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro na requisição da IA');
+      }
+
+      if (!response.body) throw new Error('Streaming não suportado pelo navegador');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let done = false;
+      let fullHtml = '';
+
+      setGeneratedHtml(''); // Limpa a view antes de começar
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          fullHtml += chunk;
+          setGeneratedHtml(fullHtml);
+        }
+      }
+
+      // Final decoding
+      const finalChunk = decoder.decode();
+      if (finalChunk) {
+        fullHtml += finalChunk;
+      }
+
+      let seoData = undefined;
+
+      if ((mode === 'DRAFT' || mode === 'REVIEW') && generateSeo) {
+        const jsonMatch = fullHtml.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch && jsonMatch[1]) {
+          try {
+            const parsedSeo = JSON.parse(jsonMatch[1]);
+            seoData = {
+              metaDescription: parsedSeo.metaDescription || '',
+              tags: Array.isArray(parsedSeo.tags) ? parsedSeo.tags.join(', ') : '',
+            };
+            fullHtml = fullHtml.replace(/```json\n[\s\S]*?\n```/, '').trim();
+          } catch (e) {
+            console.error('Erro ao fazer parse do JSON de SEO', e);
           }
         }
-
-        contentHtml = contentHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
-
-        // Quill native table module doesn't support thead, tbody, or th.
-        // It strips them, causing headers to be dumped as text outside the table.
-        // We replace them with td and strong to maintain visual structure.
-        contentHtml = contentHtml
-          .replace(/<\/?thead>/gi, '')
-          .replace(/<\/?tbody>/gi, '')
-          .replace(/<th([^>]*)>/gi, '<td$1><strong>')
-          .replace(/<\/th>/gi, '</strong></td>');
-
-        setGeneratedHtml(contentHtml);
-        setGeneratedSeo(seoData);
-        
-        let successTitle = 'Análise concluída!';
-        let successMsg = 'Valide o resultado antes de aplicar.';
-        if (mode === 'REVIEW') successMsg = 'O texto foi revisado e reescrito com sucesso!';
-        if (mode === 'IMAGES') successMsg = 'Os prompts de imagem foram criados e inseridos no texto.';
-        
-        toast({ title: successTitle, description: successMsg, className: 'bg-emerald-600 text-white border-none' });
-      } else {
-        toast({ variant: 'destructive', title: 'Erro na geração', description: result.error || 'Tente novamente mais tarde.' });
       }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Não foi possível comunicar com a IA.' });
+
+      fullHtml = fullHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
+
+      // Fix quill table support
+      fullHtml = fullHtml
+        .replace(/<\/?thead>/gi, '')
+        .replace(/<\/?tbody>/gi, '')
+        .replace(/<th([^>]*)>/gi, '<td$1><strong>')
+        .replace(/<\/th>/gi, '</strong></td>');
+
+      setGeneratedHtml(fullHtml);
+      setGeneratedSeo(seoData);
+      
+      let successTitle = 'Análise concluída!';
+      let successMsg = 'Valide o resultado antes de aplicar.';
+      if (mode === 'REVIEW') successMsg = 'O texto foi revisado e reescrito com sucesso!';
+      if (mode === 'IMAGES') successMsg = 'Os prompts de imagem foram criados e inseridos no texto.';
+      
+      toast({ title: successTitle, description: successMsg, className: 'bg-emerald-600 text-white border-none' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro inesperado', description: error.message || 'Não foi possível comunicar com a IA.' });
     } finally {
       setIsGenerating(false);
     }
