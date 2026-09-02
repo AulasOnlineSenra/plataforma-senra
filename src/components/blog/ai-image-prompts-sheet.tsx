@@ -14,6 +14,7 @@ interface AiImagePromptsSheetProps {
   blocks: string[];
   onRemoveBlock: (index: number) => void;
   triggerColorClass?: string;
+  onClose?: () => void;
 }
 
 const SYSTEM_PROMPT = `Você é um Diretor de Arte Editorial, Especialista em Comunicação Visual, Acessibilidade e SEO para um portal brasileiro de educação premium.
@@ -76,7 +77,7 @@ Retorne ESTRITAMENTE um ARRAY JSON válido, onde cada elemento corresponde a um 
 
 Nunca utilize markdown. Nunca utilize \`\`\`json. Nunca escreva qualquer texto antes ou depois do array JSON.`;
 
-export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, triggerColorClass = 'text-fuchsia-700 bg-fuchsia-50 hover:bg-fuchsia-100 hover:text-fuchsia-800 border-fuchsia-200' }: AiImagePromptsSheetProps) {
+export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClose, triggerColorClass = 'text-fuchsia-700 bg-fuchsia-50 hover:bg-fuchsia-100 hover:text-fuchsia-800 border-fuchsia-200' }: AiImagePromptsSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState<Array<{ recommended: boolean; reason: string; prompt: string; altText: string }> | null>(null);
@@ -181,7 +182,10 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, trigg
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) onClose?.();
+    }}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className={`rounded-xl ${triggerColorClass}`}>
           <ImageIcon className="h-4 w-4 mr-2" />

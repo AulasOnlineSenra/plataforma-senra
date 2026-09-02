@@ -594,8 +594,12 @@ export default function EditBlogPostPage() {
         publishedValue = isScheduled ? true : formData.published;
       }
 
+      let cleanContent = formData.content.replace(/background-color:\s*(rgb\(254,\s*240,\s*138\)|#fef08a);?/gi, '');
+      cleanContent = cleanContent.replace(/style="\s*"/gi, '');
+
       const result = await updatePost(id, {
         ...formData,
+        content: cleanContent,
         published: publishedValue,
         ...(finalCreatedAt && { createdAt: finalCreatedAt }),
         ...(statusValue && { status: statusValue }),
@@ -670,7 +674,28 @@ export default function EditBlogPostPage() {
             <AiImagePromptsSheet 
               articleTitle={formData.title}
               blocks={imageContextBlocks}
-              onRemoveBlock={(index) => setImageContextBlocks(prev => prev.filter((_, i) => i !== index))}
+              onRemoveBlock={(index) => {
+                const removedText = imageContextBlocks[index];
+                setImageContextBlocks(prev => prev.filter((_, i) => i !== index));
+                if (quillRef.current && removedText) {
+                  const quill = quillRef.current.getEditor();
+                  const fullText = quill.getText();
+                  const matchIndex = fullText.indexOf(removedText);
+                  if (matchIndex !== -1) {
+                    quill.formatText(matchIndex, removedText.length, 'background', false);
+                  }
+                }
+              }}
+              onClose={() => {
+                if (quillRef.current) {
+                  const quill = quillRef.current.getEditor();
+                  let currentHtml = quill.root.innerHTML;
+                  currentHtml = currentHtml.replace(/background-color:\s*(rgb\(254,\s*240,\s*138\)|#fef08a);?/gi, '');
+                  currentHtml = currentHtml.replace(/style="\s*"/gi, '');
+                  quill.root.innerHTML = currentHtml;
+                  setFormData(prev => ({ ...prev, content: currentHtml }));
+                }
+              }}
             />
           ) : (
             <AiDraftModal 
