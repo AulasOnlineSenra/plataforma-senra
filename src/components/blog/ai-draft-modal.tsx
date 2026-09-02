@@ -275,6 +275,7 @@ ${plainContent}
       case 'DRAFT': return { text: 'Gerar com IA', icon: Sparkles, color: 'text-amber-700 bg-amber-50 hover:bg-amber-100 hover:text-amber-800 border-amber-200' };
       case 'REVIEW': return { text: 'Revisar com IA', icon: PenTool, color: 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 border-blue-200' };
       case 'IMAGES': return { text: 'Criar Prompts', icon: ImageIcon, color: 'text-fuchsia-700 bg-fuchsia-50 hover:bg-fuchsia-100 hover:text-fuchsia-800 border-fuchsia-200' };
+      default: return { text: 'Revisar com IA', icon: PenTool, color: 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 border-blue-200' };
     }
   };
 
