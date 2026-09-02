@@ -704,6 +704,7 @@ export default function EditBlogPostPage() {
               }
             }}
           />
+          )}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-600">
