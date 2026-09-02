@@ -425,7 +425,7 @@ export default function BlogAdminPage() {
         }`}
       >
         <div className="py-3 px-4 border-b flex items-center justify-between">
-          <h2 className="font-bold flex items-center gap-2">
+          <h2 className="font-bold text-xs flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-500" />
             Pesquisa & Pauta
           </h2>
@@ -446,7 +446,7 @@ export default function BlogAdminPage() {
           >
             <Input 
               placeholder="Digite uma nova ideia..." 
-              className="h-8 text-xs" 
+              className="h-8 text-[8px]" 
               value={newIdeaTitle}
               onChange={(e) => setNewIdeaTitle(e.target.value)}
               disabled={addingIdeaId === 'manual'}
@@ -537,13 +537,13 @@ export default function BlogAdminPage() {
               {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
             </Button>
             <div>
-              <h1 className="font-bold text-lg font-headline flex items-center gap-2">
+              <h1 className="font-bold text-sm font-headline flex items-center gap-2">
                 <Newspaper className="h-5 w-5 text-brand-yellow" />
                 Pipeline de Conteúdo
               </h1>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800 text-white">
+          <Button asChild size="sm" className="bg-slate-900 hover:bg-slate-800 text-white text-[10px]">
             <Link href="/dashboard/blog/new">
               <Plus className="h-4 w-4 mr-2" /> Novo Artigo
             </Link>
@@ -557,7 +557,7 @@ export default function BlogAdminPage() {
             {/* Coluna 1: Redação */}
             <div className="flex-1 flex flex-col max-w-[370px]">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <h3 className="font-bold text-xs text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-slate-300"></div>
                   Redação
                 </h3>
@@ -577,7 +577,7 @@ export default function BlogAdminPage() {
             {/* Coluna 2: Revisão */}
             <div className="flex-1 flex flex-col max-w-[370px]">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <h3 className="font-bold text-xs text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                   Revisão & Edição
                 </h3>
@@ -595,7 +595,7 @@ export default function BlogAdminPage() {
             {/* Coluna 3: Imagens */}
             <div className="flex-1 flex flex-col max-w-[370px]">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <h3 className="font-bold text-xs text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-fuchsia-500"></div>
                   Imagens
                 </h3>
@@ -613,7 +613,7 @@ export default function BlogAdminPage() {
             {/* Coluna 4: Publicação */}
             <div className="flex-1 flex flex-col max-w-[340px]">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <h3 className="font-bold text-xs text-slate-700 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                   Publicados
                 </h3>
