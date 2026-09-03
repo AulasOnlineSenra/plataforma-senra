@@ -963,16 +963,18 @@ export default function EditBlogPostPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              {(formData.status === 'REVIEW' || formData.status === 'IMAGES') ? (
-                <DropdownMenuItem onClick={() => handleSubmit(null, 'images')} className="gap-2 font-medium">
-                  <ImageIcon className="h-4 w-4 text-emerald-600" />
-                  Atualizar (Imagens)
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => handleSubmit(null, 'review')} className="gap-2 font-medium">
-                  <Save className="h-4 w-4 text-emerald-600" />
-                  Atualizar (Revisão)
-                </DropdownMenuItem>
+              {formData.status !== 'IMAGES' && (
+                formData.status === 'REVIEW' ? (
+                  <DropdownMenuItem onClick={() => handleSubmit(null, 'images')} className="gap-2 font-medium">
+                    <ImageIcon className="h-4 w-4 text-emerald-600" />
+                    Avançar para Imagens
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => handleSubmit(null, 'review')} className="gap-2 font-medium">
+                    <Save className="h-4 w-4 text-emerald-600" />
+                    Avançar para Revisão
+                  </DropdownMenuItem>
+                )
               )}
               <DropdownMenuItem onClick={() => handleSubmit(null, 'now')} className="gap-2 font-medium">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
