@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Bot, Loader2, Sparkles, PenTool, Image as ImageIcon, Wand2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,14 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
   const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
   const [generatedSeo, setGeneratedSeo] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'diff' | 'final'>('final');
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isGenerating && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [generatedHtml, isGenerating]);
 
   // Strip HTML tags to plain text so htmldiff compares content words, not markup structure.
   // Without this, every tag difference (e.g. <p> vs <h2>) is flagged as a change, 
@@ -335,6 +343,7 @@ ${plainContent}
             `}} />
 
             <div 
+              ref={scrollRef}
               className={`prose prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-slate-50 border rounded-xl ${viewMode === 'diff' ? 'diff-viewer' : ''}`}
               dangerouslySetInnerHTML={{ __html: viewMode === 'diff' && diffHtml ? diffHtml : generatedHtml }}
             />
