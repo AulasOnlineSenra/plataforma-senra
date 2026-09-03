@@ -73,22 +73,38 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Chave de API do Google não configurada." }, { status: 400 });
       }
 
-      const currentKey = apiKeys[0]; 
-      const genAI = new GoogleGenerativeAI(currentKey);
-      const modelName = (agent.model || 'gemini-3.6-flash').replace(/^googleai\//, '');
+      const modelName = (agent.model || 'gemini-1.5-flash').replace(/^googleai\//, '');
       
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: agent.instructions || undefined,
-      });
-
       const sdkHistory = (history || []).map((h: any) => ({
         role: h.role === 'model' ? 'model' : 'user',
         parts: [{ text: h.content }]
       }));
 
-      const chat = model.startChat({ history: sdkHistory });
-      const responseStream = await chat.sendMessageStream(userPrompt);
+      let responseStream: any = null;
+      let lastError: any = null;
+
+      for (let i = 0; i < apiKeys.length; i++) {
+        const currentKey = apiKeys[i];
+        try {
+          const genAI = new GoogleGenerativeAI(currentKey);
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: agent.instructions || undefined,
+          });
+
+          const chat = model.startChat({ history: sdkHistory });
+          responseStream = await chat.sendMessageStream(userPrompt);
+          break; // Sucesso! Sai do loop e continua a execução
+        } catch (e: any) {
+          lastError = e;
+          console.warn(`[IA Stream] Erro com a chave Gemini #${i + 1}: ${e.message}`);
+          // O loop continua e tenta a próxima chave
+        }
+      }
+
+      if (!responseStream) {
+        throw new Error(`Todas as chaves do Google Gemini falharam. Último erro: ${lastError?.message || 'Desconhecido'}`);
+      }
 
       const encoder = new TextEncoder();
       stream = new ReadableStream({
