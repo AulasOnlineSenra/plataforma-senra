@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ImageIcon, Trash2, Wand2, Loader2, Copy, Check } from 'lucide-react';
+import { ImageIcon, Trash2, Wand2, Loader2, Copy, Check, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiAgents, runAiAgentTest } from '@/app/actions/ia';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -103,6 +103,7 @@ Não utilize Markdown. Não utilize \`\`\`json. Não escreva qualquer explicaç�
 export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClose, triggerColorClass = 'text-fuchsia-700 bg-fuchsia-50 hover:bg-fuchsia-100 hover:text-fuchsia-800 border-fuchsia-200' }: AiImagePromptsSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [results, setResults] = useState<Array<{ recommended: boolean; reason: string; prompt: string; altText: string }> | null>(null);
   const [copiedPrompts, setCopiedPrompts] = useState<{ [index: number]: boolean }>({});
   const [copiedAlts, setCopiedAlts] = useState<{ [index: number]: boolean }>({});
@@ -112,6 +113,46 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
   const [selectedAgent, setSelectedAgent] = useState('');
   
   const { toast } = useToast();
+
+  const handleRegenerateSingle = async (index: number) => {
+    if (!selectedAgent) {
+      toast({ variant: 'destructive', title: 'Selecione um agente' });
+      return;
+    }
+    setGeneratingIndex(index);
+    try {
+      const singleBlock = blocks[index];
+      const userContent = `Título do artigo:\n${articleTitle}\n\nTrechos selecionados pelo usuário:\n[1] ${singleBlock}`;
+      
+      const res = await runAiAgentTest(selectedAgent, SYSTEM_PROMPT + '\n\n' + userContent, undefined, { disableTools: true });
+      
+      if (res.success && res.response) {
+        let jsonStr = res.response.trim();
+        if (jsonStr.startsWith('\`\`\`json')) jsonStr = jsonStr.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
+        else if (jsonStr.startsWith('\`\`\`')) jsonStr = jsonStr.replace(/\`\`\`/g, '');
+        
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const parsedArray = Array.isArray(parsed) ? parsed : [parsed];
+          
+          if (results) {
+            const newResults = [...results];
+            newResults[index] = parsedArray[0];
+            setResults(newResults);
+          }
+          toast({ title: 'Prompt atualizado!', className: 'bg-emerald-600 text-white border-none' });
+        } catch (e) {
+          toast({ variant: 'destructive', title: 'Erro de formatação', description: 'A IA não retornou um formato válido.' });
+        }
+      } else {
+        toast({ variant: 'destructive', title: 'Erro', description: res.error || 'Falha na IA' });
+      }
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Ocorreu um erro ao recarregar o prompt.' });
+    } finally {
+      setGeneratingIndex(null);
+    }
+  };
 
   React.useEffect(() => {
     if (isOpen) {
@@ -224,7 +265,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
               Pauta Visual (IA)
             </SheetTitle>
             <SheetDescription>
-              Selecione trechos no artigo e adicione-os aqui. A IA analisará o contexto para criar um prompt editorial.
+              Selecione trechos no artigo e adicione-os aqui.
             </SheetDescription>
           </SheetHeader>
         </div>
@@ -246,13 +287,23 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
                   <div key={index} className="space-y-3">
                     <div className="relative group bg-white border border-slate-200 rounded-xl p-4 shadow-sm text-sm text-slate-600 pr-10 leading-relaxed">
                       "{block}"
-                      <button 
-                        onClick={() => onRemoveBlock(index)}
-                        className="absolute top-3 right-3 p-1.5 rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Remover trecho"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleRegenerateSingle(index)}
+                          disabled={generatingIndex === index}
+                          className="p-1.5 rounded-md text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
+                          title="Recarregar prompt"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${generatingIndex === index ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button 
+                          onClick={() => onRemoveBlock(index)}
+                          className="p-1.5 rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Remover trecho"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     {results && results[index] && (
                       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pl-4 border-l-2 border-fuchsia-200">
@@ -268,9 +319,8 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
                             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                               <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Prompt (Inglês)</span>
-                                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-medium text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].prompt, 'prompt', index)}>
-                                  {copiedPrompts[index] ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                                  Copiar
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].prompt, 'prompt', index)}>
+                                  {copiedPrompts[index] ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                                 </Button>
                               </div>
                               <div className="p-3 text-xs text-slate-700 leading-relaxed font-mono">
@@ -280,9 +330,8 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
                             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                               <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Alt Text (Português)</span>
-                                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-medium text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].altText, 'alt', index)}>
-                                  {copiedAlts[index] ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                                  Copiar
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].altText, 'alt', index)}>
+                                  {copiedAlts[index] ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                                 </Button>
                               </div>
                               <div className="p-3 text-xs text-slate-700 leading-relaxed">
@@ -298,23 +347,25 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
               </div>
             )}
           </div>
+        </div>
 
-          <div className="space-y-2 border-t border-slate-100 pt-6 mt-2">
+        <div className="p-6 bg-white border-t border-slate-100 shrink-0 space-y-4">
+          <div className="space-y-2">
             <Label className="font-bold text-slate-700">Agente de IA</Label>
             {isLoadingAgents ? (
               <div className="h-10 border rounded-xl flex items-center px-3 text-sm text-slate-500 bg-slate-50">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando agentes...
               </div>
             ) : (
-            <Select 
-              value={selectedAgent} 
-              onValueChange={(val) => {
-                setSelectedAgent(val);
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('lastUsedBlogAgentId_IMAGES', val);
-                }
-              }}
-            >
+              <Select 
+                value={selectedAgent} 
+                onValueChange={(val) => {
+                  setSelectedAgent(val);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('lastUsedBlogAgentId_IMAGES', val);
+                  }
+                }}
+              >
                 <SelectTrigger className="rounded-xl border-slate-200 h-10 bg-white">
                   <SelectValue placeholder="Selecione um agente..." />
                 </SelectTrigger>
@@ -326,12 +377,8 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
                 </SelectContent>
               </Select>
             )}
-            <div className="p-3 bg-fuchsia-50 text-fuchsia-800 rounded-xl text-xs border border-fuchsia-100 mt-3">
-              A IA vai ler os trechos acima e sugerir o prompt de imagem mais adequado.
-            </div>
           </div>
 
-          {/* Botão de Ação */}
           <Button 
             onClick={handleGenerate} 
             disabled={isGenerating || blocks.length === 0}
@@ -343,7 +390,6 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
               <><Wand2 className="w-5 h-5 mr-2" /> Gerar Direção de Arte</>
             )}
           </Button>
-
         </div>
       </SheetContent>
     </Sheet>
