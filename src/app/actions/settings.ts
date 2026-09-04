@@ -169,3 +169,31 @@ export async function updateAvailabilityType(availabilityType: string) {
     return { success: false, error: 'Falha ao atualizar tipo de disponibilidade.' };
   }
 }
+
+export async function getAiVisualPrompt() {
+  try {
+    const settings = await prisma.appSetting.findUnique({
+      where: { id: 'global' },
+      select: { aiVisualPrompt: true }
+    });
+    return { success: true, prompt: settings?.aiVisualPrompt || null };
+  } catch (error) {
+    console.error('Erro ao buscar aiVisualPrompt:', error);
+    return { success: false, error: 'Erro ao buscar prompt' };
+  }
+}
+
+export async function updateAiVisualPrompt(prompt: string) {
+  try {
+    const settings = await prisma.appSetting.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', aiVisualPrompt: prompt },
+      update: { aiVisualPrompt: prompt },
+    });
+    revalidatePath('/dashboard/blog');
+    return { success: true, prompt: settings.aiVisualPrompt };
+  } catch (error) {
+    console.error('Erro ao atualizar aiVisualPrompt:', error);
+    return { success: false, error: 'Erro ao atualizar prompt' };
+  }
+}

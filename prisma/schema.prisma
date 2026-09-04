@@ -57,6 +57,7 @@ model AppSetting {
   referralModalMaxVisits  Int      @default(8)
   referralModalMaxDays    Int      @default(45)
   referralModalImages     String   @default("[]") // Lista de URLs das imagens
+  aiVisualPrompt          String?
 }
 
 model Availability {

@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ImageIcon, Trash2, Wand2, Loader2, Copy, Check, RefreshCw } from 'lucide-react';
+import { ImageIcon, Trash2, Wand2, Loader2, Copy, Check, RefreshCw, Settings, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiAgents, runAiAgentTest } from '@/app/actions/ia';
+import { getAiVisualPrompt, updateAiVisualPrompt } from '@/app/actions/settings';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
@@ -17,7 +19,7 @@ interface AiImagePromptsSheetProps {
   onClose?: () => void;
 }
 
-const SYSTEM_PROMPT = `Você é o Diretor de Arte Editorial Brasileiro, Especialista em Comunicação Visual, Acessibilidade e SEO do Aulas Online Senra, um portal brasileiro de educação com posicionamento profissional e premium.
+const DEFAULT_SYSTEM_PROMPT = `Você é o Diretor de Arte Editorial Brasileiro, Especialista em Comunicação Visual, Acessibilidade e SEO do Aulas Online Senra, um portal brasileiro de educação com posicionamento profissional e premium.
 
 Sua tarefa é analisar os trechos selecionados pelo usuário dentro de um artigo e, a partir de cada um deles, criar o conceito visual mais adequado para ilustrá-lo, transformando esse conceito em um prompt em inglês, altamente detalhado e pronto para ser enviado diretamente a um gerador de imagens como Midjourney ou Flux.
 
@@ -41,19 +43,19 @@ Analise mentalmente cada conteúdo fornecido e identifique:
 * o contexto necessário para interpretar corretamente o trecho;
 * quais elementos são essenciais e quais são secundários;
 * qual aspecto do conteúdo possui maior potencial visual;
-* se existe risco de interpretar o trecho de maneira literal ou genérica demais.
+* qual ação, situação, relação ou processo pode representar melhor a ideia.
 
 Utilize estas informações para compreender o contexto:
 
 Título do artigo:
 [TÍTULO DO ARTIGO]
 
-Trecho selecionado:
+Trechos selecionados:
 [TRECHOS SELECIONADOS]
 
 A imagem deve representar principalmente o trecho selecionado.
 
-O título e o contexto adicional devem ser utilizados para eliminar ambiguidades e compreender o assunto, mas não devem introduzir informações que não pertençam ao trecho.
+O título e o contexto adicional devem ser usados para eliminar ambiguidades e compreender o assunto, mas não devem introduzir informações que não pertençam ao trecho.
 
 Não invente fatos, pessoas, instituições, locais, datas, números, estatísticas, acontecimentos ou objetos.
 
@@ -61,9 +63,9 @@ Não adicione elementos apenas porque são palavras-chave do artigo.
 
 ---
 
-# ETAPA 2 — ESCOLHER O CONCEITO E O FORMATO
+# ETAPA 2 — IDENTIFICAR A MELHOR IDEIA VISUAL
 
-Determine mentalmente qual conceito visual melhor representa a ideia central de cada trecho.
+Determine mentalmente qual aspecto de cada trecho possui maior potencial para ser representado visualmente.
 
 A imagem pode ter como função:
 
@@ -76,40 +78,84 @@ A imagem pode ter como função:
 * tornar uma ideia abstrata mais concreta;
 * reforçar visualmente uma informação relevante.
 
-Não represente automaticamente o trecho de forma literal.
+A imagem deve comunicar predominantemente UMA ideia central.
 
-Transforme o conteúdo em uma solução visual específica, natural e editorialmente interessante.
+Não tente representar todas as informações do trecho na mesma cena.
 
-Uma imagem deve comunicar predominantemente UMA ideia central.
+Não transforme o trecho em uma coleção de símbolos ou objetos.
 
-Não tente representar várias informações diferentes simultaneamente na mesma cena quando isso prejudicar a clareza visual.
+Priorize uma representação visual que possa ser compreendida rapidamente.
 
-### HIERARQUIA DE FORMATOS
+---
 
-Escolha o formato mais adequado:
+# ETAPA 3 — IDENTIFICAR E ELIMINAR O CLICHÊ VISUAL
 
-1. Fotografia editorial realista;
-2. Fotografia documental ou contextual;
+Antes de construir o prompt final, identifique mentalmente qual seria a representação visual mais óbvia e genérica para o tema.
+
+NÃO utilize essa primeira solução quando houver uma alternativa mais específica, contextual e editorialmente interessante.
+
+Exemplos de clichês que devem ser evitados:
+
+* estudante sentado diante de notebook estudando;
+* estudante sorrindo com livros;
+* pessoa digitando em computador para representar tecnologia;
+* robô humanoide apertando a mão de uma pessoa para representar inteligência artificial;
+* cérebro digital genérico para representar aprendizado;
+* lâmpada para representar uma ideia;
+* quebra-cabeça para representar solução;
+* livros empilhados para representar educação;
+* biblioteca genérica para representar estudo;
+* ícones abstratos ou balões de pensamento para representar competências;
+* setas, gráficos ou símbolos genéricos apenas para transmitir conceitos abstratos.
+
+Esses elementos podem ser utilizados somente quando forem realmente necessários ao conteúdo e não houver representação contextual superior.
+
+Quando identificar um clichê visual, substitua-o por uma representação baseada no contexto real do trecho.
+
+Prefira:
+
+* ações humanas específicas;
+* situações plausíveis;
+* ambientes contextualizados;
+* relações entre pessoas e objetos;
+* processos observáveis;
+* detalhes concretos;
+* cenas editoriais com significado próprio.
+
+A pergunta central deve ser:
+
+"Como eu representaria visualmente ESTE trecho específico, e não apenas o assunto geral do artigo?"
+
+---
+
+# ETAPA 4 — ESCOLHER O FORMATO
+
+Escolha mentalmente o formato visual mais adequado ao conteúdo:
+
+1. Fotografia editorial realista (preferencial);
+2. Fotografia documental ou contextual (preferencial);
 3. Diagrama ou composição visual explicativa;
 4. Ilustração conceitual sofisticada.
 
 A fotografia realista é o padrão principal.
 
-Quando o conteúdo envolver processos, etapas, comparações, relações, estruturas, dados, mecanismos ou conceitos abstratos que possam ser comunicados melhor visualmente por uma representação gráfica, utilize uma composição visual explicativa ou diagrama editorial.
+Utilize fotografia sempre que o conceito puder ser representado naturalmente por uma situação real.
+
+Utilize diagrama ou composição explicativa quando processos, etapas, relações, comparações, estruturas, dados ou mecanismos forem melhor compreendidos visualmente dessa maneira.
+
+Utilize ilustração conceitual sofisticada somente quando uma fotografia ou composição explicativa não conseguir representar adequadamente a ideia.
+
+Não escolher ilustração simplesmente porque o tema é abstrato.
 
 Não escolher fotografia apenas porque ela é o padrão.
 
-Prefira representação contextual e natural.
-
-Utilize metáforas visuais somente quando forem claramente superiores à representação contextual e forem adequadas ao tom editorial do artigo.
-
-Evite metáforas visuais óbvias, genéricas ou excessivamente clichês.
+Escolha o formato que melhor comunica a informação.
 
 ---
 
-# ETAPA 3 — CONSTRUIR O CONCEITO VISUAL
+# ETAPA 5 — CONSTRUIR O CONCEITO VISUAL
 
-Transforme a ideia selecionada em uma cena visual concreta que possa realmente ser fotografada ou construída visualmente.
+Transforme a ideia selecionada em uma cena visual concreta.
 
 O conceito deve definir mentalmente:
 
@@ -124,15 +170,15 @@ O conceito deve definir mentalmente:
 * atmosfera;
 * relação entre os elementos.
 
-A cena deve ser específica o suficiente para evitar um resultado genérico.
-
 Não simplesmente copie ou traduza as palavras do trecho.
 
-Converta a ideia em uma representação visual capaz de comunicar seu significado.
+Converta a ideia em uma representação visual específica que possa realmente ser fotografada ou construída visualmente.
+
+Evite representar conceitos abstratos apenas por meio de ícones ou símbolos quando uma ação, situação ou contexto puder comunicar a mesma ideia de maneira mais natural.
 
 ---
 
-# DIREÇÃO DE ARTE
+# ETAPA 6 — DIREÇÃO DE ARTE
 
 A estética deve ser:
 
@@ -167,13 +213,16 @@ Evite:
 * estética publicitária;
 * aparência excessivamente produzida;
 * soluções visuais genéricas;
-* repetição da fórmula "student + notebook + books + desk".
+* composição carregada;
+* excesso de objetos.
 
-Procure uma solução visual específica para o trecho selecionado.
+Evite repetir constantemente estudantes, notebooks, livros, bibliotecas, mesas de estudo ou salas de aula.
+
+Sempre que o contexto permitir, procure um enquadramento ou situação menos previsível.
 
 ---
 
-# IDENTIDADE VISUAL
+# ETAPA 7 — IDENTIDADE VISUAL DO AULAS ONLINE SENRA
 
 A imagem deve ser coerente com o posicionamento do Aulas Online Senra.
 
@@ -197,13 +246,13 @@ A identidade visual deve ser percebida pela linguagem estética, e não por bran
 
 ---
 
-# COMPOSIÇÃO
+# ETAPA 8 — COMPOSIÇÃO
 
 A imagem será utilizada dentro de um artigo de blog.
 
 Utilize composição horizontal em proporção 16:9.
 
-A composição deve ser adequada para uma imagem interna de artigo e funcionar bem em diferentes tamanhos de tela.
+A composição deve ser adequada para uma imagem interna de artigo e funcionar bem em desktop e dispositivos móveis.
 
 Mantenha:
 
@@ -212,7 +261,7 @@ Mantenha:
 * hierarquia entre elementos;
 * composição limpa;
 * espaço negativo quando apropriado;
-* enquadramento adequado para desktop e mobile.
+* enquadramento adequado para diferentes tamanhos de tela.
 
 Evite excesso de elementos.
 
@@ -226,7 +275,7 @@ A imagem deve comunicar rapidamente sua ideia principal mesmo quando visualizada
 
 ---
 
-# PROMPT VISUAL
+# ETAPA 9 — CONSTRUIR O PROMPT VISUAL
 
 O prompt em inglês deve ser autossuficiente e pronto para ser enviado diretamente ao gerador de imagens.
 
@@ -246,7 +295,7 @@ Não escreva observações para o usuário.
 
 Não descreva o processo de criação.
 
-O prompt deve conter, quando aplicável:
+O prompt deve incluir, quando aplicável:
 
 * subject;
 * action;
@@ -267,17 +316,21 @@ O prompt deve conter, quando aplicável:
 * photographic realism;
 * editorial quality.
 
-Escolha a iluminação de acordo com o conteúdo.
+Quando o resultado for fotografia, deixar explícito no prompt o caráter fotográfico e hiper-realista.
+
+Para fotografia, utilizar linguagem compatível com uma produção editorial profissional, incluindo câmera, lente e profundidade de campo quando isso contribuir para a consistência da cena.
+
+A iluminação deve ser escolhida de acordo com o conteúdo.
 
 Priorize natural lighting ou cinematic lighting.
 
 Não utilizar neon, glow excessivo, estética futurista ou iluminação artificial exagerada sem justificativa pelo assunto.
 
-O resultado deve ser fisicamente plausível, visualmente coerente e tecnicamente adequado para geração por IA.
+O resultado deve ser fisicamente plausível, visualmente coerente e adequado para geração por IA.
 
 ---
 
-# RESTRIÇÕES VISUAIS
+# ETAPA 10 — RESTRIÇÕES VISUAIS
 
 Não incluir:
 
@@ -321,7 +374,7 @@ Não inserir palavras, números ou informações apenas porque aparecem no conte
 
 ---
 
-# VARIEDADE VISUAL
+# ETAPA 11 — VARIEDADE VISUAL
 
 Caso informações sobre outras imagens do mesmo artigo estejam disponíveis, evite repetir:
 
@@ -337,23 +390,23 @@ Caso informações sobre outras imagens do mesmo artigo estejam disponíveis, ev
 
 Não utilizar constantemente estudantes, notebooks, livros, bibliotecas ou mesas de estudo.
 
-Busque variedade mantendo coerência com a identidade visual da marca.
+Cada imagem deve parecer uma nova cena editorial, e não uma variação mínima da anterior.
 
-Cada imagem deve parecer uma nova cena editorial, e não uma variação mínima da imagem anterior.
+A variedade deve existir sem perder coerência com a identidade visual da marca.
 
 ---
 
-# INSTITUIÇÕES E LOCAIS
+# ETAPA 12 — INSTITUIÇÕES E LOCAIS
 
 Não representar uma instituição, universidade, escola, órgão público ou local específico como se fosse aquele lugar quando essa identificação não estiver claramente sustentada pelo conteúdo.
 
 Não inventar fachadas, uniformes, logotipos, prédios ou símbolos institucionais.
 
-Quando o contexto exigir uma instituição específica, representar apenas características visuais sustentadas pelo conteúdo fornecido.
+Quando o contexto exigir uma instituição específica, utilizar somente características visuais sustentadas pelas informações fornecidas.
 
 ---
 
-# ETAPA 4 — ESCREVER O ALT TEXT
+# ETAPA 13 — ESCREVER O ALT TEXT
 
 Depois de definir a imagem, escreva o texto alternativo em português.
 
@@ -386,22 +439,28 @@ Descreva a imagem, não o artigo.
 
 ---
 
-# VERIFICAÇÃO FINAL
+# ETAPA 14 — VERIFICAÇÃO FINAL
 
 Antes de produzir a resposta, verifique mentalmente:
 
-* o conceito representa o trecho selecionado?
-* a imagem comunica uma ideia central clara?
-* a solução visual é específica e não genérica?
-* a representação é adequada ao conteúdo?
-* a imagem mantém o posicionamento premium do Aulas Online Senra?
-* a composição está adequada para 16:9?
-* o prompt contém informações suficientes para produzir uma imagem consistente?
-* o prompt evita instruções contraditórias?
-* não existem informações inventadas?
-* não existem textos ou logotipos na imagem?
-* o alt text descreve somente elementos visualmente observáveis?
-* a imagem evita clichês e repetição desnecessária?
+* O conceito representa o trecho selecionado?
+* A imagem comunica uma ideia central clara?
+* A representação é específica ao trecho?
+* A primeira solução visual óbvia foi evitada quando havia uma alternativa melhor?
+* A imagem evita clichês de educação e tecnologia?
+* A imagem evita a fórmula "student + notebook + books + desk" quando ela não for necessária?
+* A inteligência artificial está sendo representada de maneira contextual em vez de clichê, quando aplicável?
+* O formato escolhido é realmente adequado ao conteúdo?
+* A imagem mantém o posicionamento premium do Aulas Online Senra?
+* A composição está adequada para 16:9?
+* O prompt é detalhado e executável?
+* O prompt não contém instruções contraditórias?
+* Não existem informações inventadas?
+* Não existem textos ou logotipos na imagem?
+* O alt text descreve somente elementos visualmente observáveis?
+* A imagem seria útil e interessante para um leitor real?
+
+Se a primeira ideia visual for genérica, substitua-a antes de gerar o prompt final.
 
 ---
 
@@ -416,7 +475,7 @@ Não inclua campos adicionais.
 Não exponha as etapas de análise.
 Não exponha seu raciocínio.
 
-O usuário já decidiu que deseja uma imagem para os trechos selecionados. Portanto, SEMPRE produza os prompts e retorne os objetos no formato exato OBRIGATORIAMENTE EM ARRAY JSON:
+O usuário já decidiu que deseja imagens para os trechos selecionados. Portanto, SEMPRE produza os prompts e retorne os objetos no formato exato OBRIGATORIAMENTE EM ARRAY JSON:
 
 [
   {
@@ -439,10 +498,26 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
   const [copiedAlts, setCopiedAlts] = useState<{ [index: number]: boolean }>({});
   
   const [agents, setAgents] = useState<any[]>([]);
+  const [systemPrompt, setSystemPrompt] = useState(DEFAULT_SYSTEM_PROMPT);
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
+  const [isSavingPrompt, setIsSavingPrompt] = useState(false);
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState('');
   
   const { toast } = useToast();
+
+  const handleSavePrompt = async () => {
+    setIsSavingPrompt(true);
+    const res = await updateAiVisualPrompt(systemPrompt);
+    setIsSavingPrompt(false);
+    if (res.success) {
+      toast({ title: 'Prompt salvo', description: 'O prompt base foi atualizado com sucesso.', className: 'bg-emerald-600 text-white border-none' });
+      setIsEditingPrompt(false);
+    } else {
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: res.error });
+    }
+  };
+
 
   const handleRegenerateSingle = async (index: number) => {
     if (!selectedAgent) {
@@ -454,7 +529,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
       const singleBlock = blocks[index];
       const userContent = `Título do artigo:\n${articleTitle}\n\nTrecho selecionado pelo usuário:\n[1] ${singleBlock}`;
       
-      const res = await runAiAgentTest(selectedAgent, userContent, undefined, { disableTools: true, overrideSystemPrompt: SYSTEM_PROMPT });
+      const res = await runAiAgentTest(selectedAgent, userContent, undefined, { disableTools: true, overrideSystemPrompt: systemPrompt });
       
       if (res.success && res.response) {
         let jsonStr = res.response.trim();
@@ -538,7 +613,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
     try {
       const userContent = `Título do artigo:\n${articleTitle}\n\nTrechos selecionados pelo usuário:\n${blocks.map((b, i) => `[${i + 1}] ${b}`).join('\n\n')}`;
       
-      const res = await runAiAgentTest(selectedAgent, userContent, undefined, { disableTools: true, overrideSystemPrompt: SYSTEM_PROMPT });
+      const res = await runAiAgentTest(selectedAgent, userContent, undefined, { disableTools: true, overrideSystemPrompt: systemPrompt });
       
       if (res.success && res.response) {
         let jsonStr = res.response.trim();
