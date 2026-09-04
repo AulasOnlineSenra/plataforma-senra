@@ -671,9 +671,8 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
                   <Wand2 className="h-6 w-6 text-fuchsia-500" />
                   Pauta Visual (IA)
                 </SheetTitle>
-                <Button variant="ghost" size="sm" onClick={() => setIsEditingPrompt(!isEditingPrompt)} className="text-slate-500 hover:text-fuchsia-700 h-8 gap-1">
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingPrompt(!isEditingPrompt)} className="text-slate-500 hover:text-fuchsia-700 h-8 w-8">
                   <Settings className="w-4 h-4" />
-                  Configurar
                 </Button>
               </div>
               <SheetDescription>
