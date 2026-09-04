@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThumbsUp, ThumbsDown, MessageSquare, MoreHorizontal, Share2, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { likePost, dislikePost } from '@/app/actions/blog';
 import { toast } from 'sonner';
 import { formatDistanceStrict } from 'date-fns';
@@ -163,6 +163,24 @@ export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], c
     setIsLoadingMore(false);
   };
 
+  const observerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!observerRef.current || !hasMore || isLoadingMore) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        loadMore();
+      }
+    }, { rootMargin: '400px' });
+
+    observer.observe(observerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoadingMore, allPosts]);
+
   if (!allPosts || allPosts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
@@ -210,19 +228,13 @@ export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], c
       </div>
       
       {context === 'home' && hasMore && (
-        <div className="flex justify-center mt-4 mb-8">
-          <button
-            onClick={loadMore}
-            disabled={isLoadingMore}
-            className="flex items-center gap-2 px-8 py-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-full transition-all shadow-md hover:shadow-lg disabled:opacity-70"
-          >
-            {isLoadingMore ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            )}
-            Carregar mais artigos
-          </button>
+        <div ref={observerRef} className="flex justify-center mt-4 mb-8 h-20 items-center">
+          {isLoadingMore && (
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <span className="text-sm font-medium">Carregando mais artigos...</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -346,7 +358,7 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
       className={`group flex flex-row md:flex-col items-center md:items-stretch bg-transparent md:bg-card md:rounded-xl border-b border-border/40 md:border md:border-border/40 md:overflow-hidden md:shadow-sm hover:bg-slate-50/50 md:hover:bg-card md:hover:shadow-md transition-all duration-300 py-4 md:py-0 md:${containerHeight}`}
     >
       {/* Conteúdo - Textos */}
-      <div className="flex flex-col flex-1 pl-[5px] md:pl-3 pr-4 md:pr-3 py-0 md:py-3 order-1 md:order-2 h-full justify-center md:justify-start">
+      <div className="flex flex-col flex-1 pl-[10px] md:pl-3 pr-4 md:pr-3 py-0 md:py-3 order-1 md:order-2 h-full justify-center md:justify-start">
         {/* Metadados: Autor e Data */}
         <div className="flex items-center gap-1.5 mb-2 md:mb-1.5">
           <div className="relative w-4 h-4 rounded flex-shrink-0 overflow-hidden border border-border/50">
