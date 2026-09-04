@@ -345,15 +345,11 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
       rel="noopener noreferrer"
       className={`group flex flex-row md:flex-col items-center md:items-stretch bg-transparent md:bg-card md:rounded-xl border-b border-border/40 md:border md:border-border/40 md:overflow-hidden md:shadow-sm hover:bg-slate-50/50 md:hover:bg-card md:hover:shadow-md transition-all duration-300 py-4 md:py-0 md:${containerHeight}`}
     >
-      {/* Conteúdo - Textos (No mobile vem primeiro por causa da ordem natural, no desktop a ordem normal mantém embaixo da foto) */}
-      <div className="flex flex-col flex-1 pr-4 md:pr-0 md:p-3 order-1 md:order-2 h-full justify-center md:justify-start">
-        {/* Metadados: Categoria e Data no mobile, Autor e Data no desktop */}
+      {/* Conteúdo - Textos */}
+      <div className="flex flex-col flex-1 pl-[5px] md:pl-3 pr-4 md:pr-3 py-0 md:py-3 order-1 md:order-2 h-full justify-center md:justify-start">
+        {/* Metadados: Autor e Data */}
         <div className="flex items-center gap-1.5 mb-2 md:mb-1.5">
-          {/* Mobile: Mostra Categoria */}
-          <span className="md:hidden text-[10px] font-bold text-emerald-600 uppercase tracking-wider truncate max-w-[80px]">{category}</span>
-          
-          {/* Desktop: Mostra Foto do autor e nome */}
-          <div className="hidden md:block relative w-4 h-4 rounded flex-shrink-0 overflow-hidden border border-border/50">
+          <div className="relative w-4 h-4 rounded flex-shrink-0 overflow-hidden border border-border/50">
             <Image
               src="/Logo_AOS_fundo_claro.png"
               alt={post.author}
@@ -361,9 +357,8 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
               className="object-cover"
             />
           </div>
-          <span className="hidden md:inline text-[8px] font-semibold text-foreground/80 leading-tight truncate max-w-[80px]">{post.author}</span>
-          
-          <span className="text-muted-foreground/50 text-[10px] md:text-[7px] whitespace-nowrap md:ml-0 ml-1">• {timeLabel}</span>
+          <span className="text-[10px] md:text-[8px] font-semibold text-foreground/80 leading-tight truncate max-w-[100px] md:max-w-[80px]">{post.author}</span>
+          <span className="text-muted-foreground/50 text-[10px] md:text-[7px] whitespace-nowrap ml-1 md:ml-0">• {timeLabel}</span>
         </div>
 
         <h3 className={`${titleSize} font-bold text-foreground leading-snug line-clamp-3 md:mb-1 group-hover:text-amber-600 transition-colors`}>
@@ -376,8 +371,8 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
         </div>
       </div>
 
-      {/* Imagem (No mobile vai para a direita usando order-2, no desktop fica no topo com order-1) */}
-      <div className={`relative w-24 h-24 rounded-lg md:rounded-none md:w-full ${imgHeightDesktop} overflow-hidden flex-shrink-0 order-2 md:order-1`}>
+      {/* Imagem */}
+      <div className={`relative w-24 h-24 rounded-[13px] md:rounded-none mr-[3px] md:mr-0 md:w-full ${imgHeightDesktop} overflow-hidden flex-shrink-0 order-2 md:order-1`}>
         {post.image ? (
           <Image
             src={post.image}
