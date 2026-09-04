@@ -292,7 +292,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         {post.title}
       </h1>
 
-      <div className="flex flex-wrap gap-4 mb-6 text-sm text-muted-foreground">
+      <div className="flex flex-wrap gap-4 mb-6 text-xs text-muted-foreground">
         <span>{post.author}</span>
         <span>{formatDate(post.createdAt)}</span>
       </div>
@@ -756,7 +756,7 @@ export default function BlogPostPage() {
   return (
     <div className="min-h-[calc(100vh-160px)] bg-background overflow-x-hidden relative">
 
-      <div className="mx-auto w-full max-w-2xl px-4 sm:px-8 pt-[220px] pb-[15px]">
+      <div className="mx-auto w-full max-w-2xl px-4 sm:px-8 pt-[50px] md:pt-[220px] pb-[15px]">
         <div className="mb-8 flex items-center gap-4">
           <Link href="/blog" className="text-sm text-muted-foreground hover:text-amber-500">
             ← Voltar para o Blog
