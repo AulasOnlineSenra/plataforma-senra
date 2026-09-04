@@ -324,8 +324,19 @@ function BlogCard({ post, context = 'home' }: { post: Post, context?: 'home' | '
   const imgHeightDesktop = context === 'home' ? 'md:h-24' : 'md:h-24';
   const titleSize = context === 'home' ? 'text-sm md:text-xs' : 'text-sm md:text-xs';
 
-  // O category pode vir das tags, pegamos a primeira
-  const category = post.tags ? post.tags.split(',')[0].trim() : 'Artigo';
+  let category = 'Artigo';
+  if (post.tags) {
+    try {
+      const parsedTags = JSON.parse(post.tags);
+      if (Array.isArray(parsedTags) && parsedTags.length > 0) {
+        category = parsedTags[0];
+      } else if (typeof post.tags === 'string' && post.tags.length > 0 && !post.tags.startsWith('[')) {
+        category = post.tags.split(',')[0].trim();
+      }
+    } catch (e) {
+      category = post.tags.replace(/[\[\]"]/g, '').split(',')[0].trim() || 'Artigo';
+    }
+  }
 
   return (
     <Link
