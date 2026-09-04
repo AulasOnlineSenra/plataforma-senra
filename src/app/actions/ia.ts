@@ -153,7 +153,7 @@ function zodToGoogleSchema(schema: any): any {
   return { type: SchemaType.STRING };
 }
 
-export async function runAiAgentTest(agentId: string, userPrompt: string, history?: { role: 'user' | 'model', content: string }[], options?: { disableTools?: boolean }) {
+export async function runAiAgentTest(agentId: string, userPrompt: string, history?: { role: 'user' | 'model', content: string }[], options?: { disableTools?: boolean, overrideSystemPrompt?: string }) {
   let agentRef: any = null;
   let modelName = '';
   const startTime = Date.now();
@@ -242,7 +242,9 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
       });
 
       const messages: any[] = [];
-      if (agent.instructions) {
+      if (options?.overrideSystemPrompt) {
+        messages.push({ role: "system", content: options.overrideSystemPrompt });
+      } else if (agent.instructions) {
         messages.push({ role: "system", content: agent.instructions });
       }
       
@@ -291,7 +293,7 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
         
         const model = genAI.getGenerativeModel({
           model: modelName,
-          systemInstruction: agent.instructions || "Você é um assistente útil da Plataforma Senra.",
+          systemInstruction: options?.overrideSystemPrompt || agent.instructions || "Você é um assistente útil da Plataforma Senra.",
           ...(googleTools.length > 0 ? { tools: googleTools } : {}),
         });
 

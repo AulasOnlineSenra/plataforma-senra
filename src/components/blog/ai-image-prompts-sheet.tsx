@@ -452,9 +452,9 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
     setGeneratingIndex(index);
     try {
       const singleBlock = blocks[index];
-      const userContent = `Título do artigo:\n${articleTitle}\n\nTrechos selecionados pelo usuário:\n[1] ${singleBlock}`;
+      const userContent = `Título do artigo:\n${articleTitle}\n\nTrecho selecionado pelo usuário:\n[1] ${singleBlock}`;
       
-      const res = await runAiAgentTest(selectedAgent, SYSTEM_PROMPT + '\n\n' + userContent, undefined, { disableTools: true });
+      const res = await runAiAgentTest(selectedAgent, userContent, undefined, { disableTools: true, overrideSystemPrompt: SYSTEM_PROMPT });
       
       if (res.success && res.response) {
         let jsonStr = res.response.trim();
@@ -538,7 +538,7 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
     try {
       const userContent = `Título do artigo:\n${articleTitle}\n\nTrechos selecionados pelo usuário:\n${blocks.map((b, i) => `[${i + 1}] ${b}`).join('\n\n')}`;
       
-      const res = await runAiAgentTest(selectedAgent, SYSTEM_PROMPT + '\n\n' + userContent, undefined, { disableTools: true });
+      const res = await runAiAgentTest(selectedAgent, userContent, undefined, { disableTools: true, overrideSystemPrompt: SYSTEM_PROMPT });
       
       if (res.success && res.response) {
         let jsonStr = res.response.trim();
