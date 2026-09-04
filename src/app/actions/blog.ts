@@ -15,6 +15,35 @@ function slugify(text: string) {
     .replace(/\-\-+/g, '-'); // replace multiple - with single -
 }
 
+async function notifyIndexNow(slug: string) {
+  try {
+    const host = "aulasonlinesenra.com.br";
+    const key = "0a3ae369dd9846e9a6182a764a2d010a";
+    const url = `https://${host}/blog/${slug}`;
+    
+    const response = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({
+        host,
+        key,
+        keyLocation: `https://${host}/${key}.txt`,
+        urlList: [url]
+      })
+    });
+    
+    if (!response.ok) {
+      console.error(`Falha no IndexNow para ${url}: ${response.status} ${response.statusText}`);
+    } else {
+      console.log(`[IndexNow] URL notificada com sucesso: ${url}`);
+    }
+  } catch (error) {
+    console.error("Erro ao notificar IndexNow:", error);
+  }
+}
+
 export async function getBlogPosts() {
   try {
     const posts = await prisma.blogPost.findMany({
@@ -203,6 +232,11 @@ export async function createPost(data: {
         updatedAt: new Date(),
       },
     });
+    
+    if (post.published || data.status === 'PUBLISHED') {
+      notifyIndexNow(post.slug);
+    }
+    
     revalidatePath('/dashboard/blog');
     revalidatePath('/blog');
     return { success: true, data: post };
@@ -243,6 +277,11 @@ export async function updatePost(
         ...(data.status && { status: data.status }),
       },
     });
+    
+    if (post.published || data.status === 'PUBLISHED') {
+      notifyIndexNow(post.slug);
+    }
+    
     revalidatePath('/dashboard/blog');
     revalidatePath('/blog');
     return { success: true, data: post };
@@ -278,6 +317,11 @@ export async function togglePublishPost(id: string) {
       where: { id },
       data: { published: !post.published },
     });
+    
+    if (updated.published) {
+      notifyIndexNow(updated.slug);
+    }
+    
     revalidatePath('/dashboard/blog');
     revalidatePath('/blog');
     return { success: true, data: updated };
@@ -359,6 +403,11 @@ export async function updatePostStatus(id: string, newStatus: 'DRAFT' | 'REVIEW'
         published: newStatus === 'PUBLISHED',
       },
     });
+    
+    if (post.published) {
+      notifyIndexNow(post.slug);
+    }
+    
     revalidatePath('/dashboard/blog');
     revalidatePath('/blog');
     return { success: true, data: post };
