@@ -665,17 +665,51 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
       <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl overflow-y-auto bg-slate-50 flex flex-col p-0">
         <div className="p-6 bg-white border-b sticky top-0 z-10">
           <SheetHeader>
-            <SheetTitle className="font-headline text-2xl flex items-center gap-2">
-              <ImageIcon className="h-6 w-6 text-fuchsia-500" />
-              Pauta Visual (IA)
-            </SheetTitle>
-            <SheetDescription>
-              Selecione trechos no artigo e adicione-os aqui.
-            </SheetDescription>
+            <div className="flex flex-col gap-1 pr-6">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="font-headline text-2xl flex items-center gap-2">
+                  <Wand2 className="h-6 w-6 text-fuchsia-500" />
+                  Pauta Visual (IA)
+                </SheetTitle>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditingPrompt(!isEditingPrompt)} className="text-slate-500 hover:text-fuchsia-700 h-8 gap-1">
+                  <Settings className="w-4 h-4" />
+                  Configurar
+                </Button>
+              </div>
+              <SheetDescription>
+                Selecione trechos no artigo e adicione-os aqui.
+              </SheetDescription>
+            </div>
           </SheetHeader>
         </div>
         
         <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
+            {isEditingPrompt && (
+              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 flex flex-col gap-3">
+                <Label className="text-slate-700 font-medium flex items-center justify-between">
+                  <span>Editar Prompt Base</span>
+                  <Button variant="outline" size="sm" onClick={() => setSystemPrompt(DEFAULT_SYSTEM_PROMPT)} className="h-7 text-xs">
+                    Restaurar Padrão
+                  </Button>
+                </Label>
+                <Textarea 
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  className="min-h-[300px] text-xs font-mono bg-white"
+                  placeholder="Cole ou edite o prompt aqui..."
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditingPrompt(false)}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" onClick={handleSavePrompt} disabled={isSavingPrompt} className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white">
+                    {isSavingPrompt ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    Salvar Prompt
+                  </Button>
+                </div>
+              </div>
+            )}
+            
           {/* Blocos Adicionados */}
           <div className="space-y-3">
             <h3 className="font-bold text-sm text-slate-700 flex items-center justify-between">
