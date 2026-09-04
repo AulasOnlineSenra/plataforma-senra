@@ -288,7 +288,7 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         </nav>
       )}
 
-      <h1 className="mb-6 text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
+      <h1 className="mb-6 text-3xl md:text-4xl font-bold font-headline text-slate-900 dark:text-foreground">
         {post.title}
       </h1>
 
@@ -393,6 +393,13 @@ function BlogPostContent({ post }: { post: BlogPost }) {
         .blog-content h2 { font-size: 1.8em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.3; }
         .blog-content h3 { font-size: 1.4em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.4; }
         .blog-content h4 { font-size: 1.2em !important; font-weight: bold; margin-bottom: 0.5em; }
+
+        @media (max-width: 640px) {
+          .blog-content h1 { font-size: 1.8em !important; }
+          .blog-content h2 { font-size: 1.45em !important; }
+          .blog-content h3 { font-size: 1.2em !important; }
+          .blog-content h4 { font-size: 1.1em !important; }
+        }
 
         /* Images: scale down proportionally */
         .blog-content img {
