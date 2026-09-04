@@ -54,7 +54,7 @@ export default function HomeJourney() {
         {/* Bloco Superior: Copy + Mockup 3D */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-[68px]">
           <div className="order-2 lg:order-1">
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-black font-headline text-slate-900 leading-[1.1] mb-6 tracking-tight">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black font-headline text-slate-900 leading-[1.1] mb-6 tracking-tight">
               Do seu objetivo <br />
               <span className="text-amber-500">ao seu resultado</span>
             </h2>

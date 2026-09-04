@@ -73,7 +73,7 @@ export default function HomePainPoints() {
         
         {/* Title Area */}
         <div className="mb-10 text-center lg:text-left">
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 leading-tight">
+          <h2 className="text-2xl md:text-5xl font-black text-slate-900 leading-tight">
             Sinais de que estudar sozinho <br className="hidden lg:block" />
             já <span className="text-amber-500">não está funcionando</span> para você
           </h2>

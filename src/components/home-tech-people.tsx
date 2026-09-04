@@ -39,7 +39,7 @@ export default function HomeTechPeople() {
         <div className="flex flex-col items-center text-center mb-16">
 
           
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
+          <h2 className="text-2xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
             Você estuda. <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Nós cuidamos de todo o resto.</span>
           </h2>
           
