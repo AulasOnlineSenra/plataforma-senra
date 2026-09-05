@@ -72,7 +72,7 @@ export default function HomePainPoints() {
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Title Area */}
-        <div className="mb-10 text-center lg:text-left">
+        <div className="mb-5 lg:mb-10 text-center lg:text-left">
           <h2 className="text-2xl md:text-5xl font-black text-slate-900 leading-tight">
             Sinais de que estudar sozinho <br className="hidden lg:block" />
             já <span className="text-amber-500">não está funcionando</span> para você
@@ -84,7 +84,7 @@ export default function HomePainPoints() {
           
           {/* Left Column: Checklist */}
           <Card className="lg:col-span-7 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex flex-col p-[38px]">
+            <div className="flex flex-col pt-[18px] pb-[18px] pl-[7px] pr-[5px] lg:p-[38px]">
               {painPoints.map((item, index) => {
                 const Icon = item.icon;
                 const isChecked = checkedItems[item.id];

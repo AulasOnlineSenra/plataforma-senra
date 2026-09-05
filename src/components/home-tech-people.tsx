@@ -32,7 +32,7 @@ export default function HomeTechPeople() {
   };
 
   return (
-    <div className="w-full bg-[#fcfcfd] pt-20 pb-[10px] overflow-hidden font-sans">
+    <div className="w-full bg-[#fcfcfd] pt-[60px] lg:pt-20 pb-[10px] overflow-hidden font-sans">
       <div className="container mx-auto px-4 max-w-7xl">
         
         {/* Header Section */}
@@ -195,7 +195,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Bottom Authority Box */}
-        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
+        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
             <button 
               onClick={handleWhatsAppClick}
