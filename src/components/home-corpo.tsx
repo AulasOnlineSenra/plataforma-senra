@@ -60,7 +60,7 @@ export default function HomeCorpo() {
             </div>
             <div className="p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">ENEM & Vestibulares</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-6 flex-1">
+              <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Sua prova está chegando. Saiba onde concentrar seu tempo e prepare-se com direção.
               </p>
               <button 
@@ -82,7 +82,7 @@ export default function HomeCorpo() {
             </div>
             <div className="p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">Reforço Escolar</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-6 flex-1">
+              <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Você sabe onde está a dificuldade. Agora tenha ajuda para finalmente evoluir.
               </p>
               <button 
@@ -104,7 +104,7 @@ export default function HomeCorpo() {
             </div>
             <div className="p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">Concursos</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-6 flex-1">
+              <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Transforme um edital extenso em uma rotina de estudos organizada e consistente.
               </p>
               <button 
@@ -126,7 +126,7 @@ export default function HomeCorpo() {
             </div>
             <div className="p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">Inglês & Idiomas</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-6 flex-1">
+              <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Desenvolva novos idiomas para entrevistas, viagens, trabalho e oportunidades.
               </p>
               <button 
@@ -146,8 +146,8 @@ export default function HomeCorpo() {
               <MessageSquare className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-base md:text-lg mb-1">Não encontrou seu objetivo?</h4>
-              <p className="text-xs md:text-sm text-slate-500">Fale com nossa equipe e descubra como podemos te ajudar.</p>
+              <h4 className="font-bold text-slate-900 text-[13px] md:text-lg mb-1">Não encontrou seu objetivo?</h4>
+              <p className="text-[11px] md:text-sm text-slate-500">Fale com nossa equipe e descubra como podemos te ajudar.</p>
             </div>
           </div>
           <button 

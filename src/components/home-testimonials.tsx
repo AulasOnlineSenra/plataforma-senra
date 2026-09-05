@@ -92,10 +92,10 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
   }, [src]);
 
   return (
-    <div className="w-full flex flex-row items-center gap-4 mt-4">
+    <div className="w-full flex flex-row items-center relative mt-4 px-2">
       <button 
         onClick={togglePlay}
-        className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400"
+        className="relative z-10 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400"
       >
         {isPlaying ? (
           <div className="w-6 h-6 bg-slate-900 rounded-sm" />
@@ -104,7 +104,7 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
         )}
       </button>
       
-      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer">
+      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer relative z-0 -ml-8 md:ml-4">
         {waveHeights.map((h, i) => {
           const isPlayed = (i / waveHeights.length) * 100 <= progress;
           return (
@@ -183,7 +183,7 @@ export default function HomeTestimonials() {
           Quem já passou por aqui <span className="text-amber-500">recomenda</span>
         </h2>
         <p className="text-base sm:text-lg text-white/80 mx-auto font-medium drop-shadow-md text-center max-w-xl md:max-w-[846px]">
-          Histórias reais de quem encontrou na Senra uma forma mais organizada de estudar
+          Histórias <span className="hidden md:inline">reais </span>de quem encontrou na Senra uma forma mais organizada de estudar
         </p>
       </div>
 
@@ -274,7 +274,7 @@ export default function HomeTestimonials() {
             </div>
 
             {/* Microproofs */}
-            <div className="mt-6 flex flex-wrap gap-2 md:gap-3 justify-center lg:justify-start">
+            <div className="mt-6 hidden md:flex flex-wrap gap-2 md:gap-3 justify-center lg:justify-start">
               {microproofs.map((proof, idx) => (
                 <div key={idx} className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-[10px] md:text-xs font-medium text-white/90 shadow-sm flex items-center gap-1">
                   {proof}
@@ -308,7 +308,7 @@ export default function HomeTestimonials() {
                 <Star key={star} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <span className="text-white font-bold text-sm mt-0.5">+1.000 alunos já estudaram com a Senra</span>
+            <span className="text-white font-bold text-sm mt-0.5">Dezenas de alunos já estudaram com a Senra!</span>
           </div>
         </div>
 
