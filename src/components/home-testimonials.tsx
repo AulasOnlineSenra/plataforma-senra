@@ -92,7 +92,7 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
   }, [src]);
 
   return (
-    <div className="w-full flex flex-col md:flex-row items-center gap-6 mt-4">
+    <div className="w-full flex flex-row items-center gap-4 mt-4">
       <button 
         onClick={togglePlay}
         className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400"

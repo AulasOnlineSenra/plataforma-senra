@@ -146,14 +146,16 @@ export default function PlatformJourney() {
           ))}
 
           {/* Fechamento Mobile */}
-          <div className="pt-10 border-t border-slate-800 text-center">
-            <div className="inline-flex items-center justify-center p-3 bg-amber-500/10 rounded-xl mb-4">
-              <MonitorPlay className="w-8 h-8 text-amber-500" />
+          <div className="pt-10 border-t border-slate-800">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="inline-flex items-center justify-center p-2 bg-amber-500/10 rounded-xl">
+                <MonitorPlay className="w-6 h-6 text-amber-500" />
+              </div>
+              <h3 className="text-2xl font-bold font-headline leading-tight text-white">
+                Tudo conectado
+              </h3>
             </div>
-            <h3 className="text-2xl font-bold font-headline leading-tight mb-3 text-white">
-              Tudo conectado
-            </h3>
-            <p className="text-slate-400 mb-8 text-sm">
+            <p className="text-slate-400 mb-8 text-sm text-center">
               Tudo conectado para você estudar com mais organização e direção.
             </p>
             <Button asChild className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl py-6 text-base shadow-[0_0_20px_rgba(245,158,11,0.3)]">

@@ -219,18 +219,20 @@ export default function HomeTechPeople() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:flex md:flex-row md:flex-nowrap justify-center gap-6 md:gap-10 xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-10">
+          <div className="flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0">
             {[
               { icon: Target, label: 'Mais direção' },
               { icon: ShieldCheck, label: 'Mais segurança' },
               { icon: BarChart2, label: 'Mais evolução' },
               { icon: Trophy, label: 'Mais resultados' },
             ].map((stat, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
-                  <stat.icon className="w-6 h-6 text-slate-800" strokeWidth={1.5} />
+              <div key={i} className={`flex flex-col items-center gap-2 text-center flex-1 md:flex-none ${stat.label === 'Mais evolução' ? 'hidden md:flex' : ''}`}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                  <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-slate-700" />
                 </div>
-                <span className="text-[7px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider">{stat.label}</span>
+                <span className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap md:whitespace-normal">
+                  {stat.label}
+                </span>
               </div>
             ))}
           </div>

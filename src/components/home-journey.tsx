@@ -91,13 +91,20 @@ export default function HomeJourney() {
             </div>
           </div>
           
-          <div className="order-1 lg:order-2 perspective-1000 w-full flex justify-center lg:justify-end">
+          <div className="order-1 lg:order-2 w-full flex justify-center lg:justify-end">
+            <style>{`
+              .dashboard-mockup {
+                transform: perspective(1200px) rotateY(-12deg) rotateX(4deg) scale(0.93);
+                box-shadow: -20px 30px 60px rgba(0,0,0,0.25), -1px 1px 0px rgba(255,255,255,0.5) inset;
+              }
+              @media (min-width: 1024px) {
+                .dashboard-mockup {
+                  transform: perspective(1200px) translateX(-135px) rotateY(-12deg) rotateX(4deg) scale(0.93);
+                }
+              }
+            `}</style>
             <div 
-              className="relative w-full lg:w-[750px] lg:max-w-none lg:-mr-[150px] xl:-mr-[250px] rounded-2xl overflow-hidden bg-white border border-slate-200"
-              style={{ 
-                transform: 'perspective(1200px) translateX(-135px) rotateY(-12deg) rotateX(4deg) scale(0.93)',
-                boxShadow: '-20px 30px 60px rgba(0,0,0,0.25), -1px 1px 0px rgba(255,255,255,0.5) inset'
-              }}
+              className="relative w-full lg:w-[750px] lg:max-w-none lg:-mr-[150px] xl:-mr-[250px] rounded-2xl overflow-hidden bg-white border border-slate-200 dashboard-mockup"
             >
               {/* Fallback temporário para a imagem do painel, caso /images/dashboard-senra.png não exista, o alt salva. */}
               {/* É recomendado subir a screenshot real no repositório para o caminho abaixo */}
