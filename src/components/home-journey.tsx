@@ -51,34 +51,42 @@ export default function HomeJourney() {
     <section className="pt-[81px] pb-[66px] bg-white overflow-hidden">
       <div className="container mx-auto px-4 max-w-6xl">
         
+        {/* Title for mobile only, placed above the grid */}
+        <div className="mb-6 block lg:hidden">
+          <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 leading-[1.1] tracking-tight">
+            Do seu objetivo <br />
+            <span className="text-amber-500">ao seu resultado</span>
+          </h2>
+        </div>
+
         {/* Bloco Superior: Copy + Mockup 3D */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-[68px]">
           <div className="order-2 lg:order-1">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black font-headline text-slate-900 leading-[1.1] mb-6 tracking-tight">
+            <h2 className="hidden lg:block text-4xl md:text-5xl lg:text-6xl font-black font-headline text-slate-900 leading-[1.1] mb-6 tracking-tight">
               Do seu objetivo <br />
               <span className="text-amber-500">ao seu resultado</span>
             </h2>
-            <p className="text-base md:text-lg text-slate-600 mb-10 max-w-lg leading-relaxed">
+            <p className="hidden lg:block text-base md:text-lg text-slate-600 mb-10 max-w-lg leading-relaxed">
               A Senra organiza cada etapa da sua jornada de estudos para que você saiba exatamente o que fazer e possa focar no que realmente importa: <span className="font-bold text-slate-900">aprender e evoluir.</span>
             </p>
-            <div className="flex flex-col gap-0 -space-y-1">
+            <div className="flex flex-col gap-0 -space-y-1 mt-6 lg:mt-0">
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <Target className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-lg">Tudo conectado em um único lugar</p>
+                <p className="text-slate-800 font-semibold text-base lg:text-lg">Tudo conectado em um único lugar</p>
               </div>
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <User className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-lg">Acompanhamento humano de verdade</p>
+                <p className="text-slate-800 font-semibold text-base lg:text-lg">Acompanhamento humano de verdade</p>
               </div>
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-lg">Mais organização, foco e resultados</p>
+                <p className="text-slate-800 font-semibold text-base lg:text-lg">Mais organização, foco e resultados</p>
               </div>
             </div>
           </div>

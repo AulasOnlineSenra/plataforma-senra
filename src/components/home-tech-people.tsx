@@ -43,7 +43,7 @@ export default function HomeTechPeople() {
             Você estuda. <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Nós cuidamos de todo o resto.</span>
           </h2>
           
-          <p className="text-[18px] text-slate-600 font-body max-w-3xl leading-relaxed">
+          <p className="hidden md:block text-[18px] text-slate-600 font-body max-w-3xl leading-relaxed">
             Enquanto a plataforma organiza sua rotina, nossa equipe acompanha sua evolução<br className="hidden md:block" />
             para que você tenha apenas uma preocupação: <strong className="text-slate-900">aprender.</strong>
           </p>
