@@ -60,7 +60,7 @@ export default function HomeJourney() {
         </div>
 
         {/* Bloco Superior: Copy + Mockup 3D */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-[68px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-10 lg:mb-[68px]">
           <div className="order-2 lg:order-1">
             <h2 className="hidden lg:block text-4xl md:text-5xl lg:text-6xl font-black font-headline text-slate-900 leading-[1.1] mb-6 tracking-tight">
               Do seu objetivo <br />
@@ -121,8 +121,8 @@ export default function HomeJourney() {
         </div>
 
         {/* Bloco Central: Timeline / Jornada */}
-        <div className="relative mb-24">
-          <div className="flex items-center justify-center gap-2 md:gap-4 mb-16 px-2">
+        <div className="relative mb-12 md:mb-24">
+          <div className="flex items-center justify-center gap-2 md:gap-4 mb-6 md:mb-16 px-2">
             <div className="h-px bg-slate-300 w-6 sm:w-12 lg:w-32 rounded-full relative shrink-0">
               <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300"></div>
             </div>
@@ -134,7 +134,7 @@ export default function HomeJourney() {
             </div>
           </div>
 
-          <div className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-4">
+          <div className="relative flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-6 gap-4 pb-4 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 lg:mx-0 lg:px-0">
             {/* Linha pontilhada de fundo (desktop apenas) */}
             <div className="hidden lg:block absolute top-[60px] left-[8%] right-[8%] h-[2px] border-t-2 border-dashed border-amber-300 z-0 opacity-60" />
             
@@ -143,9 +143,9 @@ export default function HomeJourney() {
               return (
                 <div 
                   key={step.num} 
-                  className={`relative z-10 flex flex-col items-center text-center p-6 lg:px-4 bg-white rounded-[20px] transition-all duration-300
+                  className={`relative z-10 flex flex-col items-center text-center p-6 lg:px-4 bg-white rounded-[20px] transition-all duration-300 min-w-[70vw] sm:min-w-[40vw] lg:min-w-0 snap-center shrink-0 lg:shrink
                   ${step.highlighted 
-                    ? 'border-2 border-amber-500 shadow-[0_10px_30px_rgba(245,176,0,0.15)] scale-105' 
+                    ? 'border-2 border-amber-500 shadow-[0_10px_30px_rgba(245,176,0,0.15)] scale-100 lg:scale-105' 
                     : 'border border-transparent'}`}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm absolute -top-4 left-6 shadow-md

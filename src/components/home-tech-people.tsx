@@ -50,7 +50,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Main Layout Section */}
-        <div className="relative flex flex-col lg:flex-row items-stretch justify-center gap-10 lg:gap-6 xl:gap-8 mb-20 max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-stretch justify-center relative mb-16 gap-4 lg:gap-0 lg:max-h-[600px] lg:-translate-y-[60px]">
           
           {/* LEFT PANEL: Plataforma Senra */}
           <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-10 shrink-0 flex flex-col lg:translate-x-[15px] lg:-translate-y-[30px]">
@@ -106,7 +106,7 @@ export default function HomeTechPeople() {
           </div>
 
           {/* CENTER COMPONENT */}
-          <div className="flex flex-col items-center justify-start pt-10 shrink-0 relative z-10 w-full lg:w-auto translate-y-[90px]">
+          <div className="flex flex-col items-center justify-start pt-4 lg:pt-10 shrink-0 relative z-10 w-full lg:w-auto translate-y-4 lg:translate-y-[90px]">
             {/* The Main Circle */}
             <div className="relative z-10 mb-8 flex items-center justify-center">
               {/* Outer dashed orbit */}
@@ -195,7 +195,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Bottom Authority Box */}
-        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
+        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
             <button 
               onClick={handleWhatsAppClick}
@@ -219,7 +219,7 @@ export default function HomeTechPeople() {
             </button>
           </div>
 
-          <div className="flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0">
+          <div className="flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0">
             {[
               { icon: Target, label: 'Mais direção' },
               { icon: ShieldCheck, label: 'Mais segurança' },

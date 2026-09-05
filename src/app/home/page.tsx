@@ -504,13 +504,13 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-black/80" />
 
           <div className="relative z-10 p-4 max-w-4xl mx-auto">
-            <p className="text-lg md:text-xl font-medium mb-4 text-white/90">
+            <p className="text-[15px] md:text-xl font-medium mb-4 text-white/90">
               Do reforço escolar ao vestibular
             </p>
             <h1 className="mt-[31px] text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Aulas particulares <span className="hidden md:inline">online </span><span className="text-amber-500 md:whitespace-nowrap block md:inline mt-2 md:mt-0">feitas sob medida para você</span>
             </h1>
-            <div className="mt-[34px] text-lg md:text-xl max-w-3xl mx-auto text-white/90">
+            <div className="mt-[34px] text-[14px] md:text-xl max-w-3xl mx-auto text-white/90">
               <p className="hidden">Acompanhamento 100% personalizado com os melhores especialistas.</p>
               <p>Organize toda a sua jornada de estudos em uma única plataforma</p>
             </div>
@@ -556,7 +556,7 @@ export default function HomePage() {
         {/* SEÇÃO CORPO DOCENTE */}
         <section className="py-16 pt-[94px] bg-white">
           <div className="container mx-auto px-4">
-            <div className="text-center pt-[20px] pb-[90px] lg:pb-[110px] w-full flex justify-center">
+            <div className="text-center pt-[20px] pb-6 lg:pb-[110px] w-full flex justify-center">
               <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] leading-[calc(1.25em+2px)]">
                 <span className="text-slate-900">O professor certo faz diferença</span><br />
                 <span className="text-amber-500">Mas quem organiza tudo é a Senra</span>
