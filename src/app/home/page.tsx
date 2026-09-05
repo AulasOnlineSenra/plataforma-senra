@@ -508,7 +508,7 @@ export default function HomePage() {
               Do reforço escolar ao vestibular
             </p>
             <h1 className="mt-[31px] text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              Aulas particulares <span className="text-amber-500 md:whitespace-nowrap block md:inline mt-2 md:mt-0">feitas sob medida para você</span>
+              Aulas particulares <span className="hidden md:inline">online </span><span className="text-amber-500 md:whitespace-nowrap block md:inline mt-2 md:mt-0">feitas sob medida para você</span>
             </h1>
             <div className="mt-[34px] text-lg md:text-xl max-w-3xl mx-auto text-white/90">
               <p className="hidden">Acompanhamento 100% personalizado com os melhores especialistas.</p>
