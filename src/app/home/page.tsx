@@ -562,7 +562,7 @@ export default function HomePage() {
                 <span className="text-amber-500">Mas quem organiza tudo é a Senra</span>
               </h2>
             </div>
-            <div className="flex justify-center gap-6 flex-wrap">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 md:flex-wrap md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 md:mx-auto md:px-0">
               {teachers.map((teacher: any) => {
                 const rating = teacherRatings[teacher.id] || { average: 5.0, count: 0 };
                 const avatarUrl = teacher.avatarUrl || teacher.avatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&h=400&fit=crop';
@@ -581,7 +581,7 @@ export default function HomePage() {
                 return (
                   <div
                     key={teacher.id}
-                    className="relative w-48 h-64 rounded-2xl overflow-hidden shadow-lg group cursor-pointer bg-slate-200"
+                    className="relative w-48 h-64 rounded-2xl overflow-hidden shadow-lg group cursor-pointer bg-slate-200 shrink-0 snap-center"
                   >
                     {/* Imagem com next/image para carregamento confiável */}
                     <Image

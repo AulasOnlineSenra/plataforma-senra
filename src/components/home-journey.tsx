@@ -74,19 +74,19 @@ export default function HomeJourney() {
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <Target className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-base lg:text-lg">Tudo conectado em um único lugar</p>
+                <p className="text-slate-800 font-semibold text-sm lg:text-lg">Tudo conectado em um único lugar</p>
               </div>
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <User className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-base lg:text-lg">Acompanhamento humano de verdade</p>
+                <p className="text-slate-800 font-semibold text-sm lg:text-lg">Acompanhamento humano de verdade</p>
               </div>
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-base lg:text-lg">Mais organização, foco e resultados</p>
+                <p className="text-slate-800 font-semibold text-sm lg:text-lg">Mais organização, foco e resultados</p>
               </div>
             </div>
           </div>
@@ -115,10 +115,16 @@ export default function HomeJourney() {
 
         {/* Bloco Central: Timeline / Jornada */}
         <div className="relative mb-24">
-          <div className="flex items-center justify-center gap-4 mb-16">
-            <div className="h-[2px] bg-slate-300 w-16 md:w-32 relative"><div className="absolute right-0 -top-1 w-2.5 h-2.5 rounded-full bg-slate-300"></div></div>
-            <h3 className="text-slate-900 font-bold uppercase tracking-widest text-sm text-center">Sua jornada na Senra</h3>
-            <div className="h-[2px] bg-slate-300 w-16 md:w-32 relative"><div className="absolute left-0 -top-1 w-2.5 h-2.5 rounded-full bg-slate-300"></div></div>
+          <div className="flex items-center justify-center gap-2 md:gap-4 mb-16 px-2">
+            <div className="h-px bg-slate-300 w-6 sm:w-12 lg:w-32 rounded-full relative shrink-0">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300"></div>
+            </div>
+            <h3 className="font-black text-[11px] md:text-sm uppercase tracking-[0.1em] md:tracking-[0.2em] text-slate-900 whitespace-nowrap shrink-0">
+              SUA JORNADA NA SENRA
+            </h3>
+            <div className="h-px bg-slate-300 w-6 sm:w-12 lg:w-32 rounded-full relative shrink-0">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300"></div>
+            </div>
           </div>
 
           <div className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-4">

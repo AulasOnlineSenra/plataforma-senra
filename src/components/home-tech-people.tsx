@@ -187,7 +187,7 @@ export default function HomeTechPeople() {
             </div>
 
             <div className="mt-6 pt-2 pb-0 border-t border-slate-100 text-center">
-              <p className="text-[13px] text-slate-500 font-medium leading-relaxed px-2">
+              <p className="hidden md:block text-[13px] text-slate-500 font-medium leading-relaxed px-2">
                 Quando surgir uma dúvida ou imprevisto, existe uma <span className="text-amber-500 font-bold">equipe de verdade</span> pronta para ajudar.
               </p>
             </div>
@@ -202,14 +202,14 @@ export default function HomeTechPeople() {
               className="group flex items-center justify-between gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[6px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
-                  <Star className="w-10 h-10 text-amber-400 fill-amber-400" />
+                <div className="w-6 h-6 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-5 h-5 md:w-10 md:h-10 text-amber-400 fill-amber-400" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-white text-base md:text-lg leading-tight">
+                  <span className="font-bold text-white text-[13px] md:text-lg leading-tight">
                     Conheça a plataforma na prática
                   </span>
-                  <span className="flex items-center gap-1.5 text-slate-300 text-[11px] font-medium mt-[1px]">
+                  <span className="flex items-center gap-1.5 text-slate-300 text-[8px] md:text-[11px] font-medium mt-[1px]">
                     <Lock className="w-3 h-3" />
                     Ambiente seguro e confiável
                   </span>
