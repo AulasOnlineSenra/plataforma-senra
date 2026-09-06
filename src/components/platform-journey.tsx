@@ -158,7 +158,7 @@ export default function PlatformJourney() {
             <p className="text-slate-400 mb-8 text-sm text-center">
               Tudo conectado para você estudar com mais organização e direção.
             </p>
-            <Button asChild className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl py-6 text-base shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+            <Button asChild className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl py-6 text-base shadow-[0_0_20px_rgba(245,158,11,0.3)] mb-[10px]">
               <Link href="/register">
                 Quero conhecer a plataforma <ArrowRight className="ml-2 w-5 h-5" />
               </Link>

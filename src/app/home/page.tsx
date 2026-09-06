@@ -533,12 +533,12 @@ export default function HomePage() {
 
 
             <div className="mt-[42px] flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button asChild className="h-[46px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[12px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
+              <Button asChild className="h-[36px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[12px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
                 <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
                   Quero organizar meus estudos
                 </a>
               </Button>
-              <Button asChild className="h-[46px] md:h-14 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-full text-[14px] md:text-[17px] transition-all hover:scale-105">
+              <Button asChild className="h-[36px] md:h-14 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-full text-[14px] md:text-[17px] transition-all hover:scale-105">
                 <Link href="/register">
                   Conheça a plataforma
                 </Link>
@@ -691,25 +691,25 @@ export default function HomePage() {
               <ul className="space-y-1 text-xs">
                 <li>
                   <Link href="#como-funciona" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="hidden md:block h-4 w-4" />
                     <EditableText storageKey="home-footer-nav-how">Como funciona</EditableText>
                   </Link>
                 </li>
                 <li>
                   <Link href="#sobre-nos" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="hidden md:block h-4 w-4" />
                     <EditableText storageKey="home-footer-nav-about">Sobre nós</EditableText>
                   </Link>
                 </li>
                 <li>
                   <Link href="/blog" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="hidden md:block h-4 w-4" />
                     <EditableText storageKey="home-footer-nav-blog">Blog</EditableText>
                   </Link>
                 </li>
                 <li>
                   <Link href="#" className="hover:text-amber-400 transition-colors inline-flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="hidden md:block h-4 w-4" />
                     <EditableText storageKey="home-footer-nav-terms">Contato</EditableText>
                   </Link>
                 </li>

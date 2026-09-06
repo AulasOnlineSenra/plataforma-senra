@@ -52,7 +52,7 @@ export default function HomeJourney() {
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Title for mobile only, placed above the grid */}
-        <div className="mb-6 block lg:hidden">
+        <div className="mb-6 block lg:hidden pl-[10px]">
           <h2 className="text-4xl md:text-5xl font-black font-headline text-slate-900 leading-[1.1] tracking-tight">
             Do seu objetivo <br />
             <span className="text-amber-500">ao seu resultado</span>
@@ -183,10 +183,10 @@ export default function HomeJourney() {
                   </svg>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-slate-900 text-xs md:text-sm leading-tight group-hover:text-black">
+                  <span className="font-bold text-slate-900 text-[15px] md:text-sm leading-tight group-hover:text-black">
                     Quero organizar minha jornada
                   </span>
-                  <span className="text-slate-800 text-[11px] md:text-xs font-medium mt-0.5">
+                  <span className="hidden md:block text-slate-800 text-[11px] md:text-xs font-medium mt-0.5">
                     Falar com especialista
                   </span>
                 </div>
