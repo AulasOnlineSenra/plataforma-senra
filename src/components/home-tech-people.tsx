@@ -82,13 +82,13 @@ export default function HomeTechPeople() {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-[15px] mb-[2px]">{item.title}</h4>
-                    <p className="text-slate-500 text-[13px] leading-tight">{item.desc}</p>
+                    <p className="text-slate-500 text-[11px] md:text-[13px] leading-tight">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 pt-2 pb-0 border-t border-slate-100 text-center">
+            <div className="hidden md:block mt-6 pt-2 pb-0 border-t border-slate-100 text-center">
               <p className="text-[13px] text-slate-500 font-medium leading-relaxed px-4">
                 Tudo o que você precisa para estudar fica organizado em um <span className="text-blue-600 font-bold">único ambiente</span>.
               </p>
@@ -180,7 +180,7 @@ export default function HomeTechPeople() {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-[15px] mb-[2px]">{item.title}</h4>
-                    <p className="text-slate-500 text-[13px] leading-tight">{item.desc}</p>
+                    <p className="text-slate-500 text-[11px] md:text-[13px] leading-tight">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -230,7 +230,7 @@ export default function HomeTechPeople() {
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-50 flex items-center justify-center">
                   <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-slate-700" />
                 </div>
-                <span className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap md:whitespace-normal">
+                <span className="text-[7px] md:text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap md:whitespace-normal">
                   {stat.label}
                 </span>
               </div>
