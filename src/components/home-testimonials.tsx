@@ -293,7 +293,7 @@ export default function HomeTestimonials() {
         transition={{ delay: 0.5, duration: 0.6 }}
         className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-center gap-3 text-center md:text-left">
           <div className="flex -space-x-3">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 overflow-hidden bg-slate-800">
@@ -301,7 +301,7 @@ export default function HomeTestimonials() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col items-center md:items-start">
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map(star => (
                 <Star key={star} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />

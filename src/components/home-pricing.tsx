@@ -155,7 +155,7 @@ export default function HomePricing() {
         <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           Invista no ritmo que <span className="text-amber-500">faz sentido para você</span>
         </h2>
-        <p className="mt-4 text-base md:text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-tight">
+        <p className="mt-4 text-sm md:text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-tight">
           <span className="hidden md:inline">Aulas individuais ao vivo de 90 minutos, acompanhamento personalizado e uma </span>
           <span className="md:hidden">Uma </span>plataforma completa para você estudar com mais direção e consistência.
         </p>

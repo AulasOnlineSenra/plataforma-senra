@@ -42,7 +42,7 @@ export default function HomeFaq() {
     <section className="py-[29px] md:py-[61px] bg-slate-50 border-y border-slate-100">
       <div className="container mx-auto px-4 max-w-[798px]">
         <div className="text-center mb-[83px] mt-[30px]">
-          <h2 className="text-3xl md:text-5xl xl:text-6xl font-black font-headline text-slate-900 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h2 className="text-3xl md:text-5xl xl:text-6xl font-black font-headline text-slate-900 tracking-tight md:drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             Perguntas frequentes
           </h2>
         </div>
@@ -65,7 +65,7 @@ export default function HomeFaq() {
                     isOpen ? "py-[13px]" : "py-[8px]"
                   )}
                 >
-                  <span className="font-bold text-slate-900 pr-4 text-sm md:text-base">{faq.question}</span>
+                  <span className="font-bold text-slate-900 pr-4 text-xs md:text-base">{faq.question}</span>
                   <div className={cn(
                     "flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors",
                     isOpen ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"
