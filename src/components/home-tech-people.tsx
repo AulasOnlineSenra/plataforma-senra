@@ -196,30 +196,9 @@ export default function HomeTechPeople() {
 
         {/* Bottom Authority Box */}
         <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[60px] md:-translate-y-0">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
-            <button 
-              onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[6px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-6 h-6 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
-                  <Star className="w-5 h-5 md:w-10 md:h-10 text-amber-400 fill-amber-400" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-white text-[13px] md:text-lg leading-tight">
-                    Conheça a plataforma na prática
-                  </span>
-                  <span className="flex items-center gap-1.5 text-slate-300 text-[8px] md:text-[11px] font-medium mt-[1px]">
-                    <Lock className="w-3 h-3" />
-                    Ambiente seguro e confiável
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="w-6 h-6 text-white ml-2 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          <div className="flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0 translate-y-[50px] md:translate-y-0">
+          
+          {/* Circled Stats - Swapped to top on mobile (order-1 xl:order-2) */}
+          <div className="order-1 xl:order-2 flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-b xl:border-b-0 xl:border-l border-slate-100 pb-3 xl:pb-0 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0">
             {[
               { icon: Target, label: 'Mais direção' },
               { icon: ShieldCheck, label: 'Mais segurança' },
@@ -236,6 +215,31 @@ export default function HomeTechPeople() {
               </div>
             ))}
           </div>
+
+          {/* Button Container - Swapped to bottom on mobile (order-2 xl:order-1) */}
+          <div className="order-2 xl:order-1 flex flex-col md:flex-row items-center justify-center gap-6 w-full xl:w-1/2 text-center md:text-left">
+            <button 
+              onClick={handleWhatsAppClick}
+              className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[6px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-6 h-6 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-5 h-5 md:w-10 md:h-10 text-amber-400 fill-amber-400" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-white text-[15px] md:text-lg leading-tight">
+                    Conheça a plataforma na prática
+                  </span>
+                  <span className="flex items-center gap-1.5 text-slate-300 text-[8px] md:text-[11px] font-medium mt-[1px]">
+                    <Lock className="w-3 h-3" />
+                    Ambiente seguro e confiável
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-6 h-6 text-white ml-2 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+
         </div>
 
       </div>

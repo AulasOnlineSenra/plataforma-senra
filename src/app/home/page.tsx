@@ -517,7 +517,7 @@ export default function HomePage() {
       <main className="flex-1">
         <section className="relative w-full h-[80vh] md:h-[90vh] flex items-center justify-center text-center text-white bg-black">
           <HeroCarousel />
-          <div className="absolute inset-0 bg-black/80" />
+          <div className="absolute inset-0 bg-black/60 md:bg-black/80" />
 
           <div className="relative z-10 p-4 max-w-4xl mx-auto">
             <p className="text-[13px] md:text-xl font-medium mb-4 text-white/90">
@@ -744,10 +744,10 @@ export default function HomePage() {
               <div className="space-y-3">
                 <div className="flex items-start gap-3 text-sm text-slate-300">
                   <div>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-white pl-[15px] md:pl-0">
                       <EditableText storageKey="home-footer-security-ssl-title">Site Seguro SSL</EditableText>
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="hidden md:block text-xs text-slate-400">
                       <EditableText storageKey="home-footer-security-ssl-text">Dados protegidos com criptografia.</EditableText>
                     </p>
                   </div>

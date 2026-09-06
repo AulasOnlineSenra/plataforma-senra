@@ -68,7 +68,7 @@ export default function HomePainPoints() {
   };
 
   return (
-    <section className="pt-16 pb-[94px] bg-[#FAFAFA]">
+    <section className="pt-16 pb-[74px] md:pb-[94px] bg-[#FAFAFA]">
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Title Area */}
