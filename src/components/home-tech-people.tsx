@@ -151,7 +151,7 @@ export default function HomeTechPeople() {
           </div>
 
           {/* RIGHT PANEL: Equipe Senra */}
-          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-10 shrink-0 flex flex-col -translate-y-[15px] lg:-translate-x-[15px] lg:-translate-y-[30px]">
+          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-10 shrink-0 flex flex-col translate-y-[5px] lg:-translate-x-[15px] lg:-translate-y-[30px]">
             <div className="flex items-center gap-5 mb-10">
               <div className="w-16 h-16 rounded-full bg-amber-50/80 flex items-center justify-center shrink-0 border border-amber-100">
                 <Users className="w-8 h-8 text-amber-500" strokeWidth={1.5} />
@@ -195,7 +195,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Bottom Authority Box */}
-        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[100px]">
+        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[60px] md:-translate-y-0">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 xl:w-1/2 text-center md:text-left">
             <button 
               onClick={handleWhatsAppClick}

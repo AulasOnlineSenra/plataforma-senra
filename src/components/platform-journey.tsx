@@ -104,7 +104,7 @@ export default function PlatformJourney() {
     <section className="bg-[#0A0F1C] text-white">
 
       {/* MOBILE EXPERIENCE (Fluxo Vertical) */}
-      <div className="block lg:hidden pt-20 pb-24 px-4">
+      <div className="block lg:hidden pt-12 pb-[15px] px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-black font-headline tracking-tight mb-4">
             Conheça a <span className="text-amber-500">plataforma</span>

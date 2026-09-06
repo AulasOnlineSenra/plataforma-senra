@@ -167,7 +167,7 @@ export default function HomePainPoints() {
           </div>
           
           {/* Mobile CTA Button (Visible only on Mobile) */}
-          <div className="block lg:hidden w-full mt-4 mb-[20px]">
+          <div className="block lg:hidden w-full mt-4 mb-[15px]">
             <Button 
               onClick={handleWhatsAppClick}
               className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-[46px] md:h-[68px] md:py-6 rounded-2xl text-[15px] md:text-lg flex items-center justify-center gap-2 shadow-lg mb-[20px]"
@@ -175,7 +175,7 @@ export default function HomePainPoints() {
               Quero ajuda agora!
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <div className="flex items-center justify-center gap-2 -mt-1 md:mt-4 mb-[20px] md:mb-0 text-slate-500 text-[10px] md:text-xs -translate-y-2 md:translate-y-0">
+            <div className="flex items-center justify-center gap-2 -mt-1 md:mt-4 mb-[15px] md:mb-0 text-slate-500 text-[10px] md:text-xs -translate-y-2 md:translate-y-0">
               <Lock className="w-3 h-3" />
               <span>Fale com um especialista, sem compromisso</span>
             </div>

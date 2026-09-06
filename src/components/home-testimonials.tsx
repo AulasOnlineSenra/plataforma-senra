@@ -187,11 +187,11 @@ export default function HomeTestimonials() {
       </div>
 
       {/* Main Grid */}
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-[17px] lg:gap-12 items-center lg:items-start">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-[15px] lg:gap-12 items-center lg:items-start">
         
         {/* Left Column: WhatsApp */}
         <div className="w-full lg:col-span-5 relative">
-          <div ref={containerRef} className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-[15px] lg:pb-10 pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
+          <div ref={containerRef} className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-0 lg:pb-10 pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}

@@ -38,7 +38,7 @@ export default function HomeCorpo() {
   };
 
   return (
-    <div className="w-full bg-[#f8fafc] py-20 font-sans">
+    <div className="w-full bg-[#f8fafc] pt-12 pb-[15px] md:py-20 font-sans">
       <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight drop-shadow-sm">

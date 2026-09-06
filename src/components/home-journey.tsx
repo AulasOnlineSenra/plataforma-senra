@@ -69,7 +69,7 @@ export default function HomeJourney() {
             <p className="hidden lg:block text-base md:text-lg text-slate-600 mb-10 max-w-lg leading-relaxed">
               A Senra organiza cada etapa da sua jornada de estudos para que você saiba exatamente o que fazer e possa focar no que realmente importa: <span className="font-bold text-slate-900">aprender e evoluir.</span>
             </p>
-            <div className="flex flex-col gap-0 -space-y-1 mt-6 lg:mt-0">
+            <div className="flex flex-col gap-0 -space-y-1 mt-[15px] lg:mt-0">
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <Target className="w-6 h-6 text-amber-500" />
