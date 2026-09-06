@@ -64,7 +64,7 @@ export default function HomeFinalCTA() {
           Deixe a Senra montar um plano <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">feito para você</span>
         </h2>
 
-        <p className="text-[14px] md:text-[18px] text-slate-600 font-body max-w-[960px] mx-auto leading-relaxed mb-[65px]">
+        <p className="text-[14px] md:text-[18px] text-slate-300 md:text-slate-600 font-body max-w-[960px] mx-auto leading-relaxed mb-[65px]">
           <span className="hidden md:inline">A Senra reúne organização, professores especialistas e acompanhamento humano para que você </span>
           <span className="md:hidden">Estude </span><span className="hidden md:inline">estude </span>com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
@@ -77,7 +77,7 @@ export default function HomeFinalCTA() {
               <Gift className="w-7 h-7 text-amber-500" />
             </div>
             <h4 className="text-sm font-bold text-white mb-1">Aula experimental</h4>
-            <p className="text-sm text-slate-400">gratuita</p>
+            <p className="text-xs md:text-sm text-slate-400">gratuita</p>
           </div>
 
           {/* Feature 2 */}
@@ -86,7 +86,7 @@ export default function HomeFinalCTA() {
               <ShieldCheck className="w-7 h-7 text-amber-500" />
             </div>
             <h4 className="text-sm font-bold text-white mb-1">Sem fidelidade</h4>
-            <p className="text-sm text-slate-400">cancele quando quiser</p>
+            <p className="text-xs md:text-sm text-slate-400">cancele quando quiser</p>
           </div>
 
           {/* Feature 3 */}
@@ -95,7 +95,7 @@ export default function HomeFinalCTA() {
               <Headset className="w-7 h-7 text-amber-500" />
             </div>
             <h4 className="text-sm font-bold text-white mb-1">Atendimento humano</h4>
-            <p className="text-sm text-slate-400">pelo WhatsApp</p>
+            <p className="text-xs md:text-sm text-slate-400">pelo WhatsApp</p>
           </div>
 
           {/* Feature 4 */}
@@ -104,7 +104,7 @@ export default function HomeFinalCTA() {
               <Clock className="w-7 h-7 text-amber-500" />
             </div>
             <h4 className="text-sm font-bold text-white mb-1">Horários flexíveis</h4>
-            <p className="text-sm text-slate-400">você escolhe</p>
+            <p className="text-xs md:text-sm text-slate-400">você escolhe</p>
           </div>
         </div>
 
@@ -125,7 +125,7 @@ export default function HomeFinalCTA() {
             <Lock className="hidden md:block w-3.5 h-3.5 opacity-70" />
             <span className="hidden md:inline">Sem cartão de crédito</span>
             <span className="hidden md:inline-block w-1 h-1 rounded-full bg-slate-600 mx-1.5" />
-            <span>Agendamento em poucos minutos</span>
+            <span className="hidden md:inline">Agendamento em poucos minutos</span>
           </div>
         </div>
       </div>

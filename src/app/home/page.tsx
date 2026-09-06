@@ -507,7 +507,7 @@ export default function HomePage() {
             <p className="text-[13px] md:text-xl font-medium mb-4 text-white/90">
               Do reforço escolar ao vestibular
             </p>
-            <h1 className="mt-[31px] text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <h1 className="mt-[31px] text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 leading-tight md:leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Aulas particulares <span className="hidden md:inline">online </span><span className="text-amber-500 md:whitespace-nowrap block md:inline mt-2 md:mt-0">feitas sob medida para você</span>
             </h1>
             <div className="mt-[34px] text-[12px] md:text-xl max-w-3xl mx-auto text-white/90">
@@ -557,7 +557,7 @@ export default function HomePage() {
         <section className="py-16 pt-[94px] bg-white">
           <div className="container mx-auto px-4">
             <div className="text-center pt-[20px] pb-[34px] lg:pb-[110px] w-full flex justify-center">
-              <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] leading-[calc(1.25em+2px)]">
+              <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] leading-tight md:leading-[calc(1.25em+2px)]">
                 <span className="text-slate-900">O professor certo faz diferença</span><br className="hidden md:block" />
                 <span className="text-amber-500 hidden md:inline">Mas quem organiza tudo é a Senra</span>
               </h2>
