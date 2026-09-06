@@ -60,16 +60,17 @@ export default function HomeFinalCTA() {
       <div className="container relative z-10 mx-auto px-4 max-w-6xl flex flex-col items-center justify-center text-center">
         {/* Headings */}
         <h2 className="mt-[15px] text-3xl md:text-5xl font-bold text-white mb-[9px] md:mb-[17px] font-headline tracking-tight max-w-[1000px] mx-auto">
-          Pare de tentar organizar tudo sozinho<br />
+          <span className="hidden md:inline">Pare de tentar organizar tudo sozinho<br /></span>
           Deixe a Senra montar um plano <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">feito para você</span>
         </h2>
 
-        <p className="text-[18px] text-slate-600 font-body max-w-[960px] mx-auto leading-relaxed mb-[65px]">
-          A Senra reúne organização, professores especialistas e acompanhamento humano para que você estude com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
+        <p className="text-[16px] md:text-[18px] text-slate-600 font-body max-w-[960px] mx-auto leading-relaxed mb-[65px]">
+          <span className="hidden md:inline">A Senra reúne organização, professores especialistas e acompanhamento humano para que você </span>
+          <span className="md:hidden">Estude </span><span className="hidden md:inline">estude </span>com mais <span className="text-amber-500 font-semibold">clareza, consistência</span> e <span className="text-amber-500 font-semibold">confiança</span> até alcançar seu objetivo.
         </p>
 
         {/* Features Grid */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-0 w-full mb-[40px]">
+        <div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-y-8 gap-x-2 md:gap-0 w-full mb-[40px]">
           {/* Feature 1 */}
           <div className="flex flex-col items-center flex-1 w-full md:border-r md:border-slate-800/80 px-4">
             <div className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center mb-5 shadow-lg">
@@ -120,10 +121,10 @@ export default function HomeFinalCTA() {
             <ChevronRight className="w-6 h-6 stroke-[3] group-hover:translate-x-1 transition-transform" />
           </button>
 
-          <div className="flex items-center gap-2 mt-[4px] mb-[20px] text-[13px] font-medium text-slate-400">
-            <Lock className="w-3.5 h-3.5 opacity-70" />
-            <span>Sem cartão de crédito</span>
-            <span className="w-1 h-1 rounded-full bg-slate-600 mx-1.5" />
+          <div className="flex items-center justify-center gap-2 mt-[4px] mb-[20px] text-[13px] font-medium text-slate-400">
+            <Lock className="hidden md:block w-3.5 h-3.5 opacity-70" />
+            <span className="hidden md:inline">Sem cartão de crédito</span>
+            <span className="hidden md:inline-block w-1 h-1 rounded-full bg-slate-600 mx-1.5" />
             <span>Agendamento em poucos minutos</span>
           </div>
         </div>
