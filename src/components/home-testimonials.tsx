@@ -92,7 +92,7 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
   }, [src]);
 
   return (
-    <div className="w-full flex flex-row items-center relative mt-4 px-2">
+    <div className="w-full flex flex-row items-center relative mt-0 md:mt-4 px-2">
       <button 
         onClick={togglePlay}
         className="relative z-10 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400 -translate-y-[30px] -translate-x-[25px] md:translate-y-0 md:translate-x-0"
@@ -254,7 +254,7 @@ export default function HomeTestimonials() {
                 </div>
               </div>
 
-              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
+              <div className="hidden md:block w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
               
               {(activeTestimonial as any).audioUrl ? (
                 <BigAudioPlayer key={activeTestimonial.id} src={(activeTestimonial as any).audioUrl} />

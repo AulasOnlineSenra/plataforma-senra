@@ -556,7 +556,7 @@ export default function HomePage() {
         {/* SEÇÃO CORPO DOCENTE */}
         <section className="py-16 pt-[94px] bg-white">
           <div className="container mx-auto px-4">
-            <div className="text-center pt-[20px] pb-[34px] lg:pb-[110px] w-full flex justify-center">
+            <div className="text-center pt-[20px] pb-[44px] lg:pb-[110px] w-full flex justify-center">
               <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] leading-[1.05] md:leading-[calc(1.25em+2px)]">
                 <span className="text-slate-900">O professor certo faz diferença</span><br className="hidden md:block" />
                 <span className="text-amber-500 hidden md:inline">Mas quem organiza tudo é a Senra</span>
