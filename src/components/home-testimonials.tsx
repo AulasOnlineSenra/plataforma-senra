@@ -189,8 +189,8 @@ export default function HomeTestimonials() {
       {/* Main Grid */}
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-center lg:items-start">
         
-        {/* Left Column: WhatsApp (Order 2 on Mobile, Order 1 on Desktop) */}
-        <div className="w-full lg:col-span-5 order-2 lg:order-1 relative">
+        {/* Left Column: WhatsApp */}
+        <div className="w-full lg:col-span-5 relative">
           <div ref={containerRef} className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-10 pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
@@ -229,8 +229,8 @@ export default function HomeTestimonials() {
           </div>
         </div>
 
-        {/* Right Column: Audio (Order 1 on Mobile, Order 2 on Desktop) */}
-        <div className="w-full lg:col-span-7 flex flex-col items-center lg:items-start order-1 lg:order-2">
+        {/* Right Column: Audio */}
+        <div className="w-full lg:col-span-7 flex flex-col items-center lg:items-start">
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -241,14 +241,14 @@ export default function HomeTestimonials() {
           >
             {/* Audio Box */}
             <div 
-              className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 p-8 md:p-12 flex flex-col justify-center gap-6"
+              className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 py-[22px] px-8 md:p-12 flex flex-col justify-center gap-6"
             >
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
                 <div className="flex flex-col justify-center">
-                  <h3 className="text-white font-black text-2xl md:text-3xl drop-shadow-md">
+                  <h3 className="text-white font-black text-[21px] md:text-3xl drop-shadow-md">
                     {(activeTestimonial as any).audioUrl ? "Ouça este depoimento" : "Mensagem de texto"}
                   </h3>
-                  <p className="text-amber-400 text-base md:text-lg font-semibold mt-1">
+                  <p className="text-amber-400 text-[13px] md:text-lg font-semibold mt-1">
                     {activeTestimonial.name} · {activeTestimonial.profile}
                   </p>
                 </div>

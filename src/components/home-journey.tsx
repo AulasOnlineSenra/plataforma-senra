@@ -143,7 +143,7 @@ export default function HomeJourney() {
               return (
                 <div 
                   key={step.num} 
-                  className={`relative z-10 flex flex-col items-center text-center p-6 lg:px-4 bg-white rounded-[20px] transition-all duration-300 min-w-[70vw] sm:min-w-[40vw] lg:min-w-0 snap-center shrink-0 lg:shrink
+                  className={`relative z-10 flex flex-col items-center text-center py-6 px-[10px] md:p-6 lg:px-4 bg-white rounded-[20px] transition-all duration-300 w-[280px] md:min-w-[40vw] md:w-auto lg:min-w-0 snap-center shrink-0 lg:shrink
                   ${step.highlighted 
                     ? 'border-2 border-amber-500 shadow-[0_10px_30px_rgba(245,176,0,0.15)] scale-100 lg:scale-105' 
                     : 'border border-transparent'}`}

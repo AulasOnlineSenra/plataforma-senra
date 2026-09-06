@@ -58,7 +58,7 @@ export default function HomeCorpo() {
                 <GraduationCap className="w-6 h-6 text-amber-500" />
               </div>
             </div>
-            <div className="p-6 flex flex-col flex-1">
+            <div className="py-6 pl-6 pr-2 md:p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">ENEM & Vestibulares</h3>
               <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Sua prova está chegando. Saiba onde concentrar seu tempo e prepare-se com direção.
@@ -80,7 +80,7 @@ export default function HomeCorpo() {
                 <BookOpen className="w-6 h-6 text-amber-500" />
               </div>
             </div>
-            <div className="p-6 flex flex-col flex-1">
+            <div className="py-6 pl-6 pr-2 md:p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">Reforço Escolar</h3>
               <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Você sabe onde está a dificuldade. Agora tenha ajuda para finalmente evoluir.
@@ -102,7 +102,7 @@ export default function HomeCorpo() {
                 <Target className="w-6 h-6 text-amber-500" />
               </div>
             </div>
-            <div className="p-6 flex flex-col flex-1">
+            <div className="py-6 pl-6 pr-2 md:p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">Concursos</h3>
               <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Transforme um edital extenso em uma rotina de estudos organizada e consistente.
@@ -124,7 +124,7 @@ export default function HomeCorpo() {
                 <Globe className="w-6 h-6 text-amber-500" />
               </div>
             </div>
-            <div className="p-6 flex flex-col flex-1">
+            <div className="py-6 pl-6 pr-2 md:p-6 flex flex-col flex-1">
               <h3 className="text-xl font-bold text-slate-900 mb-3">Inglês & Idiomas</h3>
               <p className="text-[12px] md:text-sm text-slate-500 leading-relaxed mb-6 flex-1">
                 Desenvolva novos idiomas para entrevistas, viagens, trabalho e oportunidades.
@@ -142,7 +142,7 @@ export default function HomeCorpo() {
         {/* Banner Final */}
         <div className="bg-slate-50 rounded-3xl border border-slate-200 py-3 px-6 md:py-3 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden max-h-max md:max-h-[90px]">
           <div className="flex items-center gap-5 text-center md:text-left">
-            <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mx-auto md:mx-0">
+            <div className="hidden md:flex w-14 h-14 rounded-full bg-amber-100 items-center justify-center shrink-0 mx-auto md:mx-0">
               <MessageSquare className="w-6 h-6 text-amber-600" />
             </div>
             <div>

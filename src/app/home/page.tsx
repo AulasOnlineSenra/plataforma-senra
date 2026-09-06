@@ -558,8 +558,8 @@ export default function HomePage() {
           <div className="container mx-auto px-4">
             <div className="text-center pt-[20px] pb-6 lg:pb-[110px] w-full flex justify-center">
               <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] leading-[calc(1.25em+2px)]">
-                <span className="text-slate-900">O professor certo faz diferença</span><br />
-                <span className="text-amber-500">Mas quem organiza tudo é a Senra</span>
+                <span className="text-slate-900">O professor certo faz diferença</span><br className="hidden md:block" />
+                <span className="text-amber-500 hidden md:inline">Mas quem organiza tudo é a Senra</span>
               </h2>
             </div>
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 md:flex-wrap md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 md:mx-auto md:px-0">
