@@ -73,6 +73,7 @@ const STEPS = [
 export default function PlatformJourney() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [mobileActiveStep, setMobileActiveStep] = useState(0);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -103,9 +104,9 @@ export default function PlatformJourney() {
   return (
     <section className="bg-[#0A0F1C] text-white">
 
-      {/* MOBILE EXPERIENCE (Fluxo Vertical) */}
+      {/* MOBILE EXPERIENCE (Fluxo Vertical com Tela Única Sticky) */}
       <div className="block lg:hidden pt-12 pb-[15px] px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-3xl font-black font-headline tracking-tight mb-4">
             Conheça a <span className="text-amber-500">plataforma</span>
           </h2>
@@ -114,14 +115,65 @@ export default function PlatformJourney() {
           </p>
         </div>
 
+        {/* Tela Única Fixo Sticky no topo do mobile */}
+        <div className="sticky top-16 z-30 bg-[#0A0F1C]/95 backdrop-blur-md pb-4 pt-2 mb-8 border-b border-slate-800/80 shadow-2xl">
+          <div className="w-full aspect-[16/9] bg-[#1a1f2e] rounded-xl shadow-2xl border-4 border-[#2a3143] overflow-hidden flex items-center justify-center relative mx-auto max-w-md">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mobileActiveStep}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.04 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C]"
+              >
+                {STEPS[mobileActiveStep]?.videoSrc ? (
+                  <video
+                    key={STEPS[mobileActiveStep].videoSrc}
+                    src={STEPS[mobileActiveStep].videoSrc}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    defaultMuted
+                    preload="auto"
+                    className="w-full h-full object-contain pointer-events-none"
+                  />
+                ) : (
+                  <div className={`w-full h-full flex items-center justify-center ${STEPS[mobileActiveStep]?.imgClass}`}>
+                    <span className="text-slate-400 text-xs opacity-50">Vídeo Pendente: {STEPS[mobileActiveStep]?.label}</span>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+            
+            {/* Tag indicando o módulo atual na tela */}
+            <div className="absolute bottom-2 left-2 z-10 px-2.5 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-sm border border-slate-700/60 text-[10px] font-bold text-amber-400 flex items-center gap-1.5 shadow-md">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>{STEPS[mobileActiveStep]?.label}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-16">
           {STEPS.map((step, idx) => (
-            <div key={step.id} className="relative pl-6 border-l-2 border-slate-800">
+            <motion.div 
+              key={step.id}
+              viewport={{ amount: 0.4 }}
+              onViewportEnter={() => setMobileActiveStep(idx)}
+              className="relative pl-6 border-l-2 border-slate-800"
+            >
               {/* Ponto no eixo */}
-              <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-[#0A0F1C] border-2 border-slate-700 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
+              <div className={`absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-[#0A0F1C] border-2 transition-colors duration-300 flex items-center justify-center ${
+                mobileActiveStep === idx ? 'border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]' : 'border-slate-700'
+              }`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  mobileActiveStep === idx ? 'bg-amber-500' : 'bg-slate-600'
+                }`} />
               </div>
-              <h3 className="text-2xl font-bold font-headline leading-tight mb-3">
+              <h3 className={`text-2xl font-bold font-headline leading-tight mb-3 transition-colors duration-300 ${
+                mobileActiveStep === idx ? 'text-amber-400' : 'text-white'
+              }`}>
                 {step.title}
               </h3>
               <p className="text-slate-400 mb-6 text-sm">
@@ -135,27 +187,7 @@ export default function PlatformJourney() {
                   </li>
                 ))}
               </ul>
-
-              {/* Video Mockup Mobile */}
-              <div className="mt-5 mb-2 w-full aspect-[16/9] bg-[#1a1f2e] rounded-xl shadow-xl border-2 border-[#2a3143] overflow-hidden flex items-center justify-center relative">
-                {step.videoSrc ? (
-                  <video
-                    src={step.videoSrc}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    defaultMuted
-                    preload="auto"
-                    className="w-full h-full object-contain pointer-events-none"
-                  />
-                ) : (
-                  <div className={`w-full h-full flex items-center justify-center ${step.imgClass}`}>
-                    <span className="text-slate-400 text-xs opacity-50">Vídeo Pendente: {step.label}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            </motion.div>
           ))}
 
           {/* Fechamento Mobile */}
