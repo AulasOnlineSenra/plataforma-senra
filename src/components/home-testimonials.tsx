@@ -200,7 +200,7 @@ export default function HomeTestimonials() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
               className={cn(
-                "bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 relative group hover:-translate-y-1 transition-all duration-300 mr-4 lg:mr-[20px] w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center lg:snap-align-none",
+                "bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 relative z-10 h-auto pb-[10px] group hover:-translate-y-1 transition-all duration-300 mr-4 lg:mr-[20px] w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center lg:snap-align-none",
                 activeIndex === index 
                   ? "border-2 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.8)] scale-[1.02]" 
                   : "border-2 border-transparent shadow-sm opacity-80"
@@ -308,7 +308,7 @@ export default function HomeTestimonials() {
               ))}
             </div>
           </div>
-          <span className="text-white font-bold text-xs md:text-sm mt-0.5 max-w-[150px]">Dezenas de alunos já estudaram com a Senra!</span>
+          <span className="text-white font-bold text-[10px] md:text-sm mt-0.5 max-w-[150px]">Dezenas de alunos já estudaram com a Senra!</span>
         </div>
 
         {/* Optional subtle CTA transition */}

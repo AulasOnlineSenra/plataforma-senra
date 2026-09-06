@@ -533,7 +533,7 @@ export default function HomePage() {
 
 
             <div className="mt-[42px] flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button asChild className="h-[46px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[14px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
+              <Button asChild className="h-[46px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[12px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
                 <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
                   Quero organizar meus estudos
                 </a>

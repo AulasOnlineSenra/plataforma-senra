@@ -126,7 +126,7 @@ export default function HomeTechPeople() {
             </div>
             
             {/* Shield & Text outside */}
-            <div className="relative flex flex-col items-center justify-start pt-[40px] w-full max-w-[260px]">
+            <div className="hidden md:flex relative flex-col items-center justify-start pt-[40px] w-full max-w-[260px]">
               {/* Connector */}
               <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 w-px h-[54px] bg-slate-300">
                 <div className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-[10px] h-[10px] rounded-full bg-slate-400 shadow-[0_0_0_2px_rgba(255,255,255,1)]"></div>
@@ -151,7 +151,7 @@ export default function HomeTechPeople() {
           </div>
 
           {/* RIGHT PANEL: Equipe Senra */}
-          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-10 shrink-0 flex flex-col -translate-y-[5px] lg:-translate-x-[15px] lg:-translate-y-[30px]">
+          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-10 shrink-0 flex flex-col -translate-y-[35px] lg:-translate-x-[15px] lg:-translate-y-[30px]">
             <div className="flex items-center gap-5 mb-10">
               <div className="w-16 h-16 rounded-full bg-amber-50/80 flex items-center justify-center shrink-0 border border-amber-100">
                 <Users className="w-8 h-8 text-amber-500" strokeWidth={1.5} />

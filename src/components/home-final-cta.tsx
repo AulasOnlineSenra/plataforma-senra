@@ -117,7 +117,7 @@ export default function HomeFinalCTA() {
             className="relative z-10 w-full h-[45px] bg-amber-500 hover:bg-amber-400 transition-all duration-300 hover:-translate-y-1 rounded-[20px] flex items-center justify-center gap-4 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.25)] hover:shadow-[0_0_50px_rgba(245,158,11,0.4)] border border-amber-400/50"
           >
             <ExternalLink className="w-[22px] h-[22px] stroke-[2.5]" />
-            <span className="font-bold text-lg md:text-[20px] tracking-tight">Quero organizar meus estudos</span>
+            <span className="font-bold text-[16px] md:text-[20px] tracking-tight">Quero organizar meus estudos</span>
             <ChevronRight className="w-6 h-6 stroke-[3] group-hover:translate-x-1 transition-transform" />
           </button>
 
