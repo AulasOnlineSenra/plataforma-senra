@@ -114,13 +114,6 @@ export default function PlatformJourney() {
           </p>
         </div>
 
-        {/* Notebook Fixo no topo do mobile (Opcional, aqui deixamos ele fluir junto ou ser sticky) */}
-        <div className="sticky top-20 z-40 bg-[#0A0F1C] pb-6 pt-2 mb-10 border-b border-slate-800">
-          <div className="w-full aspect-[16/8] bg-[#1a1f2e] rounded-xl shadow-2xl border-4 border-[#2a3143] overflow-hidden flex items-center justify-center relative mx-auto">
-            <span className="text-slate-500 text-sm">Interface do Sistema</span>
-          </div>
-        </div>
-
         <div className="space-y-16">
           {STEPS.map((step, idx) => (
             <div key={step.id} className="relative pl-6 border-l-2 border-slate-800">
@@ -134,7 +127,7 @@ export default function PlatformJourney() {
               <p className="text-slate-400 mb-6 text-sm">
                 {step.description}
               </p>
-              <ul className="space-y-[10px]">
+              <ul className="space-y-[10px] mb-4">
                 {step.benefits.map((benefit, i) => (
                   <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
@@ -142,6 +135,26 @@ export default function PlatformJourney() {
                   </li>
                 ))}
               </ul>
+
+              {/* Video Mockup Mobile */}
+              <div className="mt-5 mb-2 w-full aspect-[16/9] bg-[#1a1f2e] rounded-xl shadow-xl border-2 border-[#2a3143] overflow-hidden flex items-center justify-center relative">
+                {step.videoSrc ? (
+                  <video
+                    src={step.videoSrc}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    defaultMuted
+                    preload="auto"
+                    className="w-full h-full object-contain pointer-events-none"
+                  />
+                ) : (
+                  <div className={`w-full h-full flex items-center justify-center ${step.imgClass}`}>
+                    <span className="text-slate-400 text-xs opacity-50">Vídeo Pendente: {step.label}</span>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
 
