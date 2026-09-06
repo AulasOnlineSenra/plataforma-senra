@@ -187,11 +187,11 @@ export default function HomeTestimonials() {
       </div>
 
       {/* Main Grid */}
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-center lg:items-start">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-[17px] lg:gap-12 items-center lg:items-start">
         
         {/* Left Column: WhatsApp */}
         <div className="w-full lg:col-span-5 relative">
-          <div ref={containerRef} className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-10 pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
+          <div ref={containerRef} className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-[15px] lg:pb-10 pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}
@@ -200,7 +200,7 @@ export default function HomeTestimonials() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
               className={cn(
-                "bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 py-2 md:px-6 md:py-3 relative z-10 h-auto pb-[10px] group hover:-translate-y-1 transition-all duration-300 mr-4 lg:mr-[20px] w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center lg:snap-align-none",
+                "bg-[#dcf8c6] rounded-2xl rounded-tl-sm px-5 pt-3 pb-[10px] md:px-6 md:pt-4 md:pb-3 relative z-10 h-auto self-start group hover:-translate-y-1 transition-all duration-300 mr-4 lg:mr-[20px] w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center lg:snap-align-none",
                 activeIndex === index 
                   ? "border-2 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.8)] scale-[1.02]" 
                   : "border-2 border-transparent shadow-sm opacity-80"
