@@ -45,7 +45,7 @@ export default function SubjectCarouselHero() {
   const duplicatedSubjects = [...subjects, ...subjects, ...subjects];
 
   return (
-    <div className="relative w-full overflow-hidden py-4 bg-slate-900 max-w-[90%] mx-auto rounded-[30px] -mt-8 z-10 -translate-y-4">
+    <div className="relative w-full overflow-hidden py-2 md:py-4 bg-slate-900 max-w-full md:max-w-[90%] mx-auto md:rounded-[30px] -mt-8 z-10 -translate-y-4 rounded-none">
       <style>{`
         @keyframes scrollLeft {
           0% { transform: translateX(0); }
@@ -69,7 +69,7 @@ export default function SubjectCarouselHero() {
           </p>
         </div>
         
-        <div className="flex gap-[47px] carousel-scroll">
+        <div className="flex gap-4 md:gap-[47px] carousel-scroll">
           {duplicatedSubjects.map((subject, index) => {
             const Icon = getSubjectIcon(subject.name);
             return (
@@ -77,10 +77,10 @@ export default function SubjectCarouselHero() {
                 key={`${subject.id}-${index}`}
                 className="flex-shrink-0 flex flex-col items-center -mt-5"
               >
-                <div className="w-20 h-20 flex items-center justify-center hover:scale-110 transition-all duration-300 cursor-pointer group">
-                  <Icon className="h-10 w-10 text-amber-400 group-hover:text-amber-300" />
+                <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center hover:scale-110 transition-all duration-300 cursor-pointer group">
+                  <Icon className="h-6 w-6 md:h-10 md:w-10 text-amber-400 group-hover:text-amber-300" />
                 </div>
-                <span className="text-sm font-medium text-slate-300 text-center max-w-[90px] truncate -mt-4">
+                <span className="text-[10px] md:text-sm font-medium text-slate-300 text-center max-w-[70px] md:max-w-[90px] truncate -mt-2 md:-mt-4">
                   {subject.name}
                 </span>
               </div>

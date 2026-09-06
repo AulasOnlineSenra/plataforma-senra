@@ -103,8 +103,7 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
           <Play className="w-8 h-8 ml-1" fill="currentColor" />
         )}
       </button>
-      
-      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer relative z-0 -ml-8 md:ml-4">
+      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer relative z-0 ml-2 md:ml-4 pr-[10px]">
         {waveHeights.map((h, i) => {
           const isPlayed = (i / waveHeights.length) * 100 <= progress;
           return (

@@ -134,7 +134,7 @@ export default function HomeJourney() {
             </div>
           </div>
 
-          <div className="relative flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-6 gap-4 pb-4 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 lg:mx-0 lg:px-0">
+          <div className="relative flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-6 gap-4 pb-4 lg:pb-0 pt-6 lg:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 lg:mx-0 lg:px-0">
             {/* Linha pontilhada de fundo (desktop apenas) */}
             <div className="hidden lg:block absolute top-[60px] left-[8%] right-[8%] h-[2px] border-t-2 border-dashed border-amber-300 z-0 opacity-60" />
             

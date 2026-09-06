@@ -258,7 +258,9 @@ export default function PlatformJourney() {
                             loop
                             muted
                             playsInline
-                            className="w-full h-full object-contain"
+                            defaultMuted
+                            preload="auto"
+                            className="w-full h-full object-contain pointer-events-none"
                           />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${STEPS[activeStep].imgClass}`}>
