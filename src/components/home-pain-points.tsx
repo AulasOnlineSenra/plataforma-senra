@@ -175,7 +175,7 @@ export default function HomePainPoints() {
               Quero ajuda agora!
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <div className="flex items-center justify-center gap-2 mt-2 md:mt-4 text-slate-500 text-[10px] md:text-xs">
+            <div className="flex items-center justify-center gap-2 -mt-1 md:mt-4 mb-[20px] md:mb-0 text-slate-500 text-[10px] md:text-xs -translate-y-2 md:translate-y-0">
               <Lock className="w-3 h-3" />
               <span>Fale com um especialista, sem compromisso</span>
             </div>
