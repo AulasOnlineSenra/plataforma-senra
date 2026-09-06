@@ -243,7 +243,7 @@ export default function HomeTestimonials() {
             <div 
               className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 py-[10px] px-8 md:p-12 flex flex-col justify-center gap-3 md:gap-6"
             >
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left mb-[10px] md:mb-0">
                 <div className="flex flex-col justify-center">
                   <h3 className="text-white font-black text-[21px] md:text-3xl drop-shadow-md">
                     {(activeTestimonial as any).audioUrl ? "Ouça este depoimento" : "Mensagem de texto"}
@@ -308,7 +308,7 @@ export default function HomeTestimonials() {
               ))}
             </div>
           </div>
-          <span className="text-white font-bold text-sm mt-0.5 max-w-[150px]">Dezenas de alunos já estudaram com a Senra!</span>
+          <span className="text-white font-bold text-xs md:text-sm mt-0.5 max-w-[150px]">Dezenas de alunos já estudaram com a Senra!</span>
         </div>
 
         {/* Optional subtle CTA transition */}
