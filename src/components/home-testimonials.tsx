@@ -241,7 +241,7 @@ export default function HomeTestimonials() {
           >
             {/* Audio Box */}
             <div 
-              className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 py-[22px] px-8 md:p-12 flex flex-col justify-center gap-6"
+              className="relative w-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-900 py-[10px] px-8 md:p-12 flex flex-col justify-center gap-3 md:gap-6"
             >
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
                 <div className="flex flex-col justify-center">
@@ -293,22 +293,22 @@ export default function HomeTestimonials() {
         transition={{ delay: 0.5, duration: 0.6 }}
         className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6"
       >
-        <div className="flex flex-col md:flex-row items-center gap-3 text-center md:text-left">
-          <div className="flex -space-x-3">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 overflow-hidden bg-slate-800">
-                <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="User" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col items-center md:items-start">
+        <div className="flex flex-row items-center gap-3 text-left">
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 overflow-hidden bg-slate-800">
+                  <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="User" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map(star => (
                 <Star key={star} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <span className="text-white font-bold text-sm mt-0.5">Dezenas de alunos já estudaram com a Senra!</span>
           </div>
+          <span className="text-white font-bold text-sm mt-0.5 max-w-[150px]">Dezenas de alunos já estudaram com a Senra!</span>
         </div>
 
         {/* Optional subtle CTA transition */}
