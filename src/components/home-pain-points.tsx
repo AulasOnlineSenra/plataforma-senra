@@ -170,7 +170,7 @@ export default function HomePainPoints() {
           <div className="block lg:hidden w-full mt-4">
             <Button 
               onClick={handleWhatsAppClick}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-6 rounded-2xl text-lg flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-[46px] md:h-[68px] md:py-6 rounded-2xl text-[15px] md:text-lg flex items-center justify-center gap-2 shadow-lg"
             >
               Quero ajuda agora!
               <ArrowRight className="w-5 h-5" />

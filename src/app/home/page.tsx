@@ -451,7 +451,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-card">
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-2 lg:px-4 lg:py-[2px] bg-card border-b h-[60px] lg:h-[47px]">
+      <header className="sticky top-0 z-50 flex items-center justify-between pr-4 pl-[10px] py-2 md:px-4 md:py-[2px] bg-card border-b h-[50px] lg:h-[47px]">
         <SenraLogo className="h-8 sm:h-10" />
 
         <nav className="hidden md:flex items-center gap-6">
@@ -512,17 +512,17 @@ export default function HomePage() {
             </h1>
             <div className="mt-[34px] text-[14px] md:text-xl max-w-3xl mx-auto text-white/90">
               <p className="hidden">Acompanhamento 100% personalizado com os melhores especialistas.</p>
-              <p>Organize toda a sua jornada de estudos em uma única plataforma</p>
+              <p>Organize toda a sua jornada de estudos<span className="hidden md:inline"> em uma única plataforma</span></p>
             </div>
 
 
             <div className="mt-[42px] flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button asChild className="h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
+              <Button asChild className="h-[46px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[14px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
                 <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
                   Quero organizar meus estudos
                 </a>
               </Button>
-              <Button asChild className="h-14 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-full text-[17px] transition-all hover:scale-105">
+              <Button asChild className="h-[46px] md:h-14 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-full text-[14px] md:text-[17px] transition-all hover:scale-105">
                 <Link href="/register">
                   Conheça a plataforma
                 </Link>
@@ -785,7 +785,7 @@ export default function HomePage() {
 
       {/* Mobile Sticky CTA */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 z-50 bg-white/80 backdrop-blur-md border-t border-slate-200" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-        <Button asChild className="w-full h-14 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all">
+        <Button asChild className="w-full h-[46px] bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl text-[14px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all">
           <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de começar na Senra.')}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
             Quero começar na Senra <ArrowRight className="w-5 h-5" />
           </a>
