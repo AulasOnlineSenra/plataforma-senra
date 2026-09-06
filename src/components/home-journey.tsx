@@ -80,7 +80,7 @@ export default function HomeJourney() {
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <User className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-slate-800 font-semibold text-sm lg:text-lg">Acompanhamento humano de verdade</p>
+                <p className="text-slate-800 font-semibold text-sm lg:text-lg">Acompanhamento humano</p>
               </div>
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">

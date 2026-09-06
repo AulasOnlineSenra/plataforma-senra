@@ -95,7 +95,7 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
     <div className="w-full flex flex-row items-center relative mt-4 px-2">
       <button 
         onClick={togglePlay}
-        className="relative z-10 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400 -translate-y-5 -translate-x-[10px] md:translate-y-0 md:translate-x-0"
+        className="relative z-10 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-amber-500 text-slate-900 rounded-full shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-110 hover:bg-amber-400 -translate-y-[30px] -translate-x-[25px] md:translate-y-0 md:translate-x-0"
       >
         {isPlaying ? (
           <div className="w-6 h-6 bg-slate-900 rounded-sm" />
@@ -103,7 +103,7 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
           <Play className="w-8 h-8 ml-1" fill="currentColor" />
         )}
       </button>
-      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer relative z-0 ml-2 md:ml-4 pr-[10px] -translate-y-5 md:translate-y-0">
+      <div className="flex-1 flex items-center justify-center gap-[3px] h-16 w-full opacity-90 cursor-pointer relative z-0 ml-2 md:ml-4 pr-[10px] -translate-y-[30px] md:translate-y-0">
         {waveHeights.map((h, i) => {
           const isPlayed = (i / waveHeights.length) * 100 <= progress;
           return (
@@ -293,7 +293,7 @@ export default function HomeTestimonials() {
         transition={{ delay: 0.5, duration: 0.6 }}
         className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6"
       >
-        <div className="flex flex-row items-center gap-3 text-left -ml-[10px] md:ml-0">
+        <div className="flex flex-row items-center gap-3 text-left -ml-[25px] md:ml-0">
           <div className="flex flex-col items-center gap-1 shrink-0">
             <div className="flex -space-x-3">
               {[1, 2, 3, 4].map(i => (

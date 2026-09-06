@@ -39,7 +39,7 @@ export default function HomeTechPeople() {
         <div className="flex flex-col items-center text-center mb-16">
 
           
-          <h2 className="text-2xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
+          <h2 className="text-[27px] md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
             Você estuda. <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Nós cuidamos de todo o resto.</span>
           </h2>
           
@@ -62,7 +62,7 @@ export default function HomeTechPeople() {
                 <h3 className="text-[22px] font-bold text-slate-900 leading-tight mb-1">
                   Plataforma Senra
                 </h3>
-                <p className="text-blue-600 text-sm font-semibold">Organização que reduz o esforço.</p>
+                <p className="text-blue-600 text-xs md:text-sm font-semibold">Organização que reduz o esforço.</p>
               </div>
             </div>
 
@@ -82,7 +82,7 @@ export default function HomeTechPeople() {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-[15px] mb-[2px]">{item.title}</h4>
-                    <p className="text-slate-500 text-[11px] md:text-[13px] leading-tight">{item.desc}</p>
+                    <p className="text-slate-500 text-[9px] md:text-[13px] leading-tight">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -160,7 +160,7 @@ export default function HomeTechPeople() {
                 <h3 className="text-[22px] font-bold text-slate-900 leading-tight mb-1">
                   Equipe Senra
                 </h3>
-                <p className="text-amber-500 text-sm font-semibold">Acompanhamento que gera confiança.</p>
+                <p className="text-amber-500 text-xs md:text-sm font-semibold">Acompanhamento que gera confiança.</p>
               </div>
             </div>
 
