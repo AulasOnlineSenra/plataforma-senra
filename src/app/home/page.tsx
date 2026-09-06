@@ -87,7 +87,23 @@ const navLinks = [
 type TeacherRating = { average: number; count: number };
 
 export default function HomePage() {
-  const router = useRouter();
+  const [showMobileStickyCta, setShowMobileStickyCta] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      if (scrollPosition >= documentHeight - 650) {
+        setShowMobileStickyCta(true);
+      } else {
+        setShowMobileStickyCta(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const [leadEmail, setLeadEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -786,7 +802,7 @@ export default function HomePage() {
       </footer>
 
       {/* Mobile Sticky CTA */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 z-50 bg-white/80 backdrop-blur-md border-t border-slate-200" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 p-4 z-50 bg-white/80 backdrop-blur-md border-t border-slate-200 transition-all duration-300 ${showMobileStickyCta ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`} style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         <Button asChild className="w-full h-[46px] bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl text-[14px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all">
           <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de começar na Senra.')}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
             Quero começar na Senra <ArrowRight className="w-5 h-5" />

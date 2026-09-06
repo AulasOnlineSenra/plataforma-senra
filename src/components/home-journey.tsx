@@ -122,7 +122,7 @@ export default function HomeJourney() {
 
         {/* Bloco Central: Timeline / Jornada */}
         <div className="relative mb-12 md:mb-24">
-          <div className="flex items-center justify-center gap-2 md:gap-4 mb-6 md:mb-16 px-2">
+          <div className="flex items-center justify-center gap-2 md:gap-4 mb-6 md:mb-16 px-2 pt-[10px] md:pt-0">
             <div className="h-px bg-slate-300 w-6 sm:w-12 lg:w-32 rounded-full relative shrink-0">
               <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300"></div>
             </div>
@@ -173,7 +173,7 @@ export default function HomeJourney() {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 w-full lg:w-auto">
             <button 
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-2xl py-[3px] px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-2xl py-[3px] px-6 md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
