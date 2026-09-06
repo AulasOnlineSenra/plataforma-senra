@@ -146,8 +146,8 @@ export default function HomeCorpo() {
               <MessageSquare className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-[13px] md:text-lg mb-1">Não encontrou seu objetivo?</h4>
-              <p className="text-[11px] md:text-sm text-slate-500">Fale com nossa equipe e descubra como podemos te ajudar.</p>
+              <h4 className="font-bold text-slate-900 text-[16px] md:text-lg mb-1">Não encontrou seu objetivo?</h4>
+              <p className="text-[11px] md:text-sm text-slate-500 px-[5px] md:px-0">Fale com nossa equipe e descubra como podemos te ajudar.</p>
             </div>
           </div>
           <button 

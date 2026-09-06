@@ -219,7 +219,7 @@ export default function HomeTechPeople() {
             </button>
           </div>
 
-          <div className="flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0">
+          <div className="flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-slate-100 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0 translate-y-[50px] md:translate-y-0">
             {[
               { icon: Target, label: 'Mais direção' },
               { icon: ShieldCheck, label: 'Mais segurança' },

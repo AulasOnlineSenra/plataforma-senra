@@ -452,7 +452,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-card">
       <header className="sticky top-0 z-50 flex items-center justify-between pr-4 pl-0 py-2 md:px-4 md:py-[2px] bg-card border-b h-[50px] lg:h-[47px]">
-        <SenraLogo className="h-8 sm:h-10 -ml-[5px] md:ml-0" />
+        <SenraLogo className="h-8 sm:h-10 -ml-[15px] md:ml-0" />
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
@@ -616,7 +616,9 @@ export default function HomePage() {
         </section>
 
         {/* MAPA CIRCLE - Escada */}
-        <MapaCircle />
+        <div className="hidden md:block">
+          <MapaCircle />
+        </div>
 
         {/* SEÇÃO CORPO: Problema e Solução */}
         <HomeCorpo />

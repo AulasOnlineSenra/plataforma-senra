@@ -195,7 +195,7 @@ export default function HomeJourney() {
             </button>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-8 lg:gap-10 relative z-10">
+          <div className="hidden md:flex flex-col sm:flex-row gap-8 lg:gap-10 relative z-10">
             <div className="flex items-center gap-4">
               <Users className="w-7 h-7 text-amber-500 flex-shrink-0" />
               <span className="text-xs font-medium max-w-[120px] leading-snug text-slate-300">Equipe humana sempre ao seu lado</span>
