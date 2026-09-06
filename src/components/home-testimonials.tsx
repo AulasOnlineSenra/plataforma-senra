@@ -131,7 +131,9 @@ const BigAudioPlayer = ({ src }: { src: string }) => {
 export default function HomeTestimonials() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeHeight, setActiveHeight] = useState<number | null>(null);
 
   const activeTestimonial = whatsappTestimonials[activeIndex] || whatsappTestimonials[0];
 
@@ -174,6 +176,23 @@ export default function HomeTestimonials() {
     };
   }, []);
 
+  useEffect(() => {
+    const updateActiveHeight = () => {
+      if (window.innerWidth < 1024) {
+        const currentCard = cardRefs.current[activeIndex];
+        if (currentCard) {
+          setActiveHeight(currentCard.offsetHeight + 4);
+        }
+      } else {
+        setActiveHeight(null);
+      }
+    };
+
+    updateActiveHeight();
+    window.addEventListener('resize', updateActiveHeight);
+    return () => window.removeEventListener('resize', updateActiveHeight);
+  }, [activeIndex]);
+
   return (
     <div className="w-full max-w-5xl mx-auto">
       {/* Header */}
@@ -187,14 +206,23 @@ export default function HomeTestimonials() {
       </div>
 
       {/* Main Grid */}
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-[15px] lg:gap-12 items-center lg:items-start">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-[5px] lg:gap-12 items-center lg:items-start">
         
         {/* Left Column: WhatsApp */}
         <div className="w-full lg:col-span-5 relative">
-          <div ref={containerRef} className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-0 lg:pb-10 pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
+          <div 
+            ref={containerRef} 
+            className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-1 lg:pb-10 pt-2 lg:pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[height] duration-300 ease-out" 
+            style={{ 
+              height: activeHeight ? `${activeHeight}px` : undefined,
+              WebkitMaskImage: activeHeight ? 'none' : 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)', 
+              maskImage: activeHeight ? 'none' : 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' 
+            }}
+          >
             {whatsappTestimonials.map((msg, index) => (
             <motion.div 
               key={msg.id}
+              ref={(el) => { cardRefs.current[index] = el; }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
