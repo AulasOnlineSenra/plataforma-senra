@@ -156,7 +156,8 @@ export default function HomePricing() {
           Invista no ritmo que <span className="text-amber-500">faz sentido para você</span>
         </h2>
         <p className="mt-4 text-base md:text-lg font-medium text-slate-600 max-w-3xl mx-auto leading-tight">
-          Aulas individuais ao vivo de 90 minutos, acompanhamento personalizado e uma plataforma completa para você estudar com mais direção e consistência.
+          <span className="hidden md:inline">Aulas individuais ao vivo de 90 minutos, acompanhamento personalizado e uma </span>
+          <span className="md:hidden">Uma </span>plataforma completa para você estudar com mais direção e consistência.
         </p>
       </div>
 
@@ -195,9 +196,24 @@ export default function HomePricing() {
                     {pkg.name}
                   </CardTitle>
                   <p className="mt-1 text-[11px] leading-tight font-medium text-slate-600 h-10 pr-2">
-                    {index === 0 && 'Ideal para quem tem uma prova e precisa intensificar a preparação.'}
-                    {index === 1 && 'Ideal para quem precisa de apoio e quer evoluir nas matérias.'}
-                    {index >= 2 && 'Ideal para quem precisa de consistência e flexibilidade.'}
+                    {index === 0 && (
+                      <>
+                        <span className="md:hidden">Ideal para quem precisa intensificar a preparação.</span>
+                        <span className="hidden md:inline">Ideal para quem tem uma prova e precisa intensificar a preparação.</span>
+                      </>
+                    )}
+                    {index === 1 && (
+                      <>
+                        <span className="md:hidden">Ideal para quem precisa de aumentar as notas.</span>
+                        <span className="hidden md:inline">Ideal para quem precisa de apoio e quer evoluir nas matérias.</span>
+                      </>
+                    )}
+                    {index >= 2 && (
+                      <>
+                        <span className="md:hidden">Ideal para quem tem metas altas.</span>
+                        <span className="hidden md:inline">Ideal para quem precisa de consistência e flexibilidade.</span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

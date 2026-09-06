@@ -109,7 +109,7 @@ export default function PlatformJourney() {
           <h2 className="text-3xl font-black font-headline tracking-tight mb-4">
             Conheça a <span className="text-amber-500">plataforma</span>
           </h2>
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-400 text-[12px] md:text-sm">
             Cada recurso foi pensado para organizar seus estudos, mostrar o próximo passo e acompanhar sua evolução.
           </p>
         </div>

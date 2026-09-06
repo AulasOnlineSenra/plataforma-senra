@@ -15,7 +15,7 @@ export default function HomeStats() {
               <span className="text-2xl md:text-5xl lg:text-[56px] font-black text-[#FFC107] mb-1 md:mb-2 tracking-tight drop-shadow-md">
                 {stat.value}
               </span>
-              <span className="text-[9px] sm:text-xs md:text-base text-slate-300 font-medium leading-tight px-1">
+              <span className="text-[7px] md:text-[9px] sm:text-xs lg:text-base text-slate-300 font-medium leading-tight px-1">
                 {stat.label}
               </span>
             </div>

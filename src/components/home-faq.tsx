@@ -65,7 +65,7 @@ export default function HomeFaq() {
                     isOpen ? "py-[13px]" : "py-[8px]"
                   )}
                 >
-                  <span className="font-bold text-slate-900 pr-4">{faq.question}</span>
+                  <span className="font-bold text-slate-900 pr-4 text-sm md:text-base">{faq.question}</span>
                   <div className={cn(
                     "flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors",
                     isOpen ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"
