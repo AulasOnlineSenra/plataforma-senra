@@ -173,13 +173,13 @@ export default function HomeJourney() {
         </div>
 
         {/* Bloco Inferior: Banner de Autoridade */}
-        <div className="bg-slate-950 rounded-[32px] py-[2px] px-[23px] lg:py-[20px] lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl overflow-hidden relative -mt-[50px] mb-[30px] z-20">
+        <div className="bg-slate-950 rounded-[32px] py-[4.5px] px-[23px] lg:py-[20px] lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl overflow-hidden relative -mt-[50px] mb-[30px] z-20">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]" />
           
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 w-full lg:w-auto">
             <button 
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-0 px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-[2.5px] px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-9.5 h-9.5 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
@@ -197,7 +197,7 @@ export default function HomeJourney() {
                   </span>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-slate-900 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-slate-900 ml-2 group-hover:translate-x-1 transition-transform hidden md:block" />
             </button>
           </div>
           

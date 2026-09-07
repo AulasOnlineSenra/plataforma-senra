@@ -114,7 +114,7 @@ export default function HomeTechPeople() {
               
               {/* Orbit Dots */}
               <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '-2px', left: '19px' }} />
-              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[160px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[162px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
 
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
                 <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />
@@ -217,7 +217,7 @@ export default function HomeTechPeople() {
           </div>
 
           {/* Button Container - Swapped to bottom on mobile (order-2 xl:order-1) */}
-          <div className="order-2 xl:order-1 flex flex-col md:flex-row items-center justify-center gap-6 w-full xl:w-1/2 text-center md:text-left">
+          <div className="order-2 xl:order-1 flex flex-col md:flex-row items-center justify-center gap-6 w-full xl:w-1/2 text-center md:text-left -translate-y-[10px] md:translate-y-0">
             <button 
               onClick={handleWhatsAppClick}
               className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[6px] px-4 sm:pr-6 sm:pl-4 -mx-[7.5px] w-[calc(100%+15px)] sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"

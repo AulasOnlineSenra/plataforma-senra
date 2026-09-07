@@ -477,7 +477,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-card">
       <header className="sticky top-0 z-50 flex items-center justify-between pr-4 pl-0 py-2 md:px-4 md:py-[2px] bg-card border-b h-[50px] lg:h-[47px]">
-        <SenraLogo className="h-8 sm:h-10 -ml-[25px] md:ml-0" />
+        <SenraLogo className="h-[26px] sm:h-10 -ml-[25px] md:ml-0 drop-shadow-[0_0_6px_#f5b000]" />
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
@@ -751,9 +751,9 @@ export default function HomePage() {
               </h4>
 
               <div className="space-y-3">
-                <div className="flex items-start gap-3 text-sm text-slate-300">
-                  <div>
-                    <p className="font-semibold text-white pl-[15px] md:pl-0">
+                <div className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
+                  <div className="text-center md:text-left">
+                    <p className="font-semibold text-white">
                       <EditableText storageKey="home-footer-security-ssl-title">Site Seguro SSL</EditableText>
                     </p>
                     <p className="hidden md:block text-xs text-slate-400">
@@ -763,11 +763,11 @@ export default function HomePage() {
                   <ShieldCheck className="h-5 w-5 text-amber-400 mt-0.5" />
                 </div>
 
-                <div className="space-y-2 text-sm text-slate-400">
+                <div className="space-y-2 text-sm text-slate-400 text-center md:text-left">
                   <p className="font-semibold text-white">
                     <EditableText storageKey="home-footer-payments-title">Pagamentos aceitos</EditableText>
                   </p>
-                  <div className="flex flex-col md:flex-row md:flex-wrap gap-2">
+                  <div className="flex flex-col md:flex-row md:flex-wrap items-center md:items-start justify-center md:justify-start gap-2">
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-900 text-xs text-slate-200 w-fit">
                       <Landmark className="h-4 w-4 text-amber-400" /> Pix
                     </span>

@@ -210,7 +210,10 @@ export default function HomeTestimonials() {
         
         {/* Left Column: WhatsApp */}
         <div className="w-full lg:col-span-5 relative">
-          <div 
+          <motion.div 
+            initial={{ x: 0 }}
+            animate={{ x: [0, -16, 0, -8, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3.5, ease: "easeInOut" }}
             ref={containerRef} 
             className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-1 lg:pb-10 pt-2 lg:pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-proximity lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[height] duration-300 ease-out" 
             style={{ 
@@ -254,7 +257,7 @@ export default function HomeTestimonials() {
               </div>
             </motion.div>
           ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Right Column: Audio */}
