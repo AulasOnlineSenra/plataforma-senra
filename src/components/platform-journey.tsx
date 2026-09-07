@@ -1,80 +1,11 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, ArrowRight, ArrowLeft, Calendar, CalendarDays, FolderOpen, User, Target, TrendingUp, MonitorPlay } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-
-function AutoPlayVideo({ src, className }: { src: string; className?: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.loop = true;
-
-    let intervalId: NodeJS.Timeout;
-
-    const tryPlay = () => {
-      if (video.paused) {
-        const promise = video.play();
-        if (promise !== undefined) {
-          promise.catch(() => {});
-        }
-      } else {
-        // If it's already playing, we can stop the interval
-        clearInterval(intervalId);
-      }
-    };
-
-    // Try immediately
-    tryPlay();
-
-    // Retry every 500ms (fixes iOS Safari ignoring play() when opacity is 0 during Framer Motion mount)
-    intervalId = setInterval(tryPlay, 500);
-
-    // Also try when enough data is available to play
-    video.addEventListener('canplay', tryPlay);
-    video.addEventListener('loadeddata', tryPlay);
-
-    return () => {
-      clearInterval(intervalId);
-      video.removeEventListener('canplay', tryPlay);
-      video.removeEventListener('loadeddata', tryPlay);
-      video.pause();
-    };
-  }, [src]);
-
-  const handleVideoClick = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  };
-
-  return (
-    <video
-      ref={videoRef}
-      src={src}
-      autoPlay
-      loop
-      muted
-      playsInline
-      preload="auto"
-      onClick={handleVideoClick}
-      className={className}
-    />
-  );
-}
 
 const STEPS = [
   {
@@ -197,10 +128,16 @@ export default function PlatformJourney() {
                 className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C]"
               >
                 {STEPS[mobileActiveStep]?.videoSrc ? (
-                  <AutoPlayVideo
-                    key={`mobile-video-${mobileActiveStep}-${STEPS[mobileActiveStep].videoSrc}`}
+                  <video
+                    key={STEPS[mobileActiveStep].videoSrc}
                     src={STEPS[mobileActiveStep].videoSrc}
-                    className="w-full h-full object-contain"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    defaultMuted
+                    preload="auto"
+                    className="w-full h-full object-contain pointer-events-none"
                   />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center ${STEPS[mobileActiveStep]?.imgClass}`}>
@@ -360,9 +297,15 @@ export default function PlatformJourney() {
                         className={`absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C] overflow-hidden`}
                       >
                         {STEPS[activeStep].videoSrc ? (
-                          <AutoPlayVideo
+                          <video
                             src={STEPS[activeStep].videoSrc}
-                            className="w-full h-full object-contain"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            defaultMuted
+                            preload="auto"
+                            className="w-full h-full object-contain pointer-events-none"
                           />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${STEPS[activeStep].imgClass}`}>
