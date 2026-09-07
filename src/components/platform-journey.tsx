@@ -1,11 +1,42 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, ArrowRight, ArrowLeft, Calendar, CalendarDays, FolderOpen, User, Target, TrendingUp, MonitorPlay } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+
+function AutoPlayVideo({ src, className }: { src: string; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.loop = true;
+      const playVideo = () => {
+        video.play().catch(() => {});
+      };
+      playVideo();
+    }
+  }, [src]);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="auto"
+      className={className}
+    />
+  );
+}
 
 const STEPS = [
   {
@@ -128,14 +159,9 @@ export default function PlatformJourney() {
                 className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C]"
               >
                 {STEPS[mobileActiveStep]?.videoSrc ? (
-                  <video
+                  <AutoPlayVideo
                     key={STEPS[mobileActiveStep].videoSrc}
                     src={STEPS[mobileActiveStep].videoSrc}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
                     className="w-full h-full object-contain pointer-events-none"
                   />
                 ) : (
@@ -296,14 +322,8 @@ export default function PlatformJourney() {
                         className={`absolute inset-0 w-full h-full flex items-center justify-center bg-[#0A0F1C] overflow-hidden`}
                       >
                         {STEPS[activeStep].videoSrc ? (
-                          <video
+                          <AutoPlayVideo
                             src={STEPS[activeStep].videoSrc}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            defaultMuted
-                            preload="auto"
                             className="w-full h-full object-contain pointer-events-none"
                           />
                         ) : (

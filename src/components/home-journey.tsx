@@ -70,7 +70,7 @@ export default function HomeJourney() {
             <p className="hidden lg:block text-base md:text-lg text-slate-600 mb-10 max-w-lg leading-relaxed">
               A Senra organiza cada etapa da sua jornada de estudos para que você saiba exatamente o que fazer e possa focar no que realmente importa: <span className="font-bold text-slate-900">aprender e evoluir.</span>
             </p>
-            <div className="flex flex-col gap-0 -space-y-1 -translate-y-[50px] lg:translate-y-0 mt-[15px] lg:mt-0">
+            <div className="flex flex-col gap-0 -space-y-1 -translate-y-[40px] lg:translate-y-0 mt-[15px] lg:mt-0">
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <Target className="w-6 h-6 text-amber-500" />
@@ -179,7 +179,7 @@ export default function HomeJourney() {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 w-full lg:w-auto">
             <button 
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-[2.5px] px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-0 md:py-[2.5px] px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-9.5 h-9.5 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">

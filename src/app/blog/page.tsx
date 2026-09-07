@@ -51,7 +51,7 @@ export default async function BlogPage() {
 
       <div className="relative" style={{ zIndex: 1 }}>
         {/* Back to Home button */}
-        <div className="absolute top-6 left-6 z-50">
+        <div className="absolute top-6 left-[9px] md:left-6 z-50">
           <Link
             href="/"
             className="flex items-center gap-2 text-white hover:text-white/80 px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all drop-shadow-md"
@@ -70,7 +70,7 @@ export default async function BlogPage() {
           <div className="mt-[50px] md:mt-0">
             <BlogSearchBar posts={posts} />
           </div>
-          <div className="bg-white rounded-[12px] p-[3px] -mt-[30px] md:mt-0">
+          <div className="bg-white rounded-[12px] p-[3px] -mt-[40px] md:mt-0">
             {posts && posts.length > 0 ? (
               <BlogGrid posts={posts} context="home" />
             ) : (
