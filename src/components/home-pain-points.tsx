@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { getSettings } from '@/app/actions/settings';
-import { trackPainPointClick } from '@/app/actions/track-click';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,12 +58,9 @@ export default function HomePainPoints() {
     window.open(url, '_blank');
   };
 
-  const handleCheck = async (id: string, text: string) => {
+  const handleCheck = (id: string) => {
     const newVal = !checkedItems[id];
     setCheckedItems(prev => ({ ...prev, [id]: newVal }));
-    if (newVal) {
-      await trackPainPointClick(text);
-    }
   };
 
   return (
