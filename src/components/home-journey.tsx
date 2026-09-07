@@ -173,7 +173,7 @@ export default function HomeJourney() {
         </div>
 
         {/* Bloco Inferior: Banner de Autoridade */}
-        <div className="bg-slate-950 rounded-[32px] py-[4.5px] px-[23px] lg:py-[20px] lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl overflow-hidden relative -mt-[50px] mb-[30px] z-20">
+        <div className="bg-slate-950 rounded-[32px] py-[7px] px-[23px] lg:py-[20px] lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl overflow-hidden relative -mt-[50px] mb-[30px] z-20">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]" />
           
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 w-full lg:w-auto">
@@ -189,7 +189,7 @@ export default function HomeJourney() {
                   </svg>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-slate-900 text-[13px] md:text-sm leading-tight group-hover:text-black">
+                  <span className="font-bold text-slate-900 text-[18px] md:text-sm leading-tight group-hover:text-black">
                     Quero organizar minha jornada
                   </span>
                   <span className="hidden md:block text-slate-800 text-[11px] md:text-xs font-medium mt-0.5">

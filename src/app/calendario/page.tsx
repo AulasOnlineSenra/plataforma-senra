@@ -583,7 +583,7 @@ export default function CalendarioVestibularesPage() {
 
       <section className="hero">
         <div className="hero-inner">
-          <div className="eyebrow">
+          <div className="eyebrow hidden md:inline-flex">
             📅 Atualizado regularmente
           </div>
           <h1>

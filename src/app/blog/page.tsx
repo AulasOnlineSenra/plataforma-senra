@@ -67,7 +67,9 @@ export default async function BlogPage() {
         <h2 className="sr-only">Últimos Artigos</h2>
 
         <div className="container mx-auto px-4 md:px-[150px] pt-[100px] pb-[25px]">
-          <BlogSearchBar posts={posts} />
+          <div className="mt-[25px] md:mt-0">
+            <BlogSearchBar posts={posts} />
+          </div>
           <div className="bg-white rounded-[12px] p-[3px]">
             {posts && posts.length > 0 ? (
               <BlogGrid posts={posts} context="home" />
