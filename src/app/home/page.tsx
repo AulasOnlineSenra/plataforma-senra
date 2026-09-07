@@ -55,6 +55,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { getSubjects, getTeachers } from '@/app/actions/users';
 import { getTeacherAverageRating } from '@/app/actions/ratings';
 import { getQuizQuestions } from '@/app/actions/quiz';
+import { getSettings } from '@/app/actions/settings';
 import QuizCarousel from '@/components/quiz-carousel';
 
 import { format, startOfWeek, endOfWeek, addDays, isBefore } from "date-fns";
@@ -113,6 +114,21 @@ export default function HomePage() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const [whatsappNumber, setWhatsappNumber] = useState(
+    (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '').replace(/\D/g, '') || '5521997321590'
+  );
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const res = await getSettings();
+      if (res.success && res.data?.whatsapp) {
+        setWhatsappNumber(res.data.whatsapp.replace(/\D/g, ''));
+      }
+    };
+    fetchSettings();
+  }, []);
+
   const [leadEmail, setLeadEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -543,7 +559,7 @@ export default function HomePage() {
 
             <div className="mt-[42px] flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button asChild className="h-[36px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[12px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105 translate-y-[10px] md:translate-y-0">
-                <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
                   Quero organizar meus estudos
                 </a>
               </Button>
@@ -813,7 +829,7 @@ export default function HomePage() {
       {/* Mobile Sticky CTA */}
       <div className={`lg:hidden fixed bottom-0 left-0 right-0 p-4 z-50 bg-white/80 backdrop-blur-md border-t border-slate-200 transition-all duration-300 ${showMobileStickyCta ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`} style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         <Button asChild className="w-full h-[46px] bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl text-[14px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all">
-          <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de começar na Senra.')}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+          <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Olá! Gostaria de começar na Senra.')}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
             Quero começar na Senra <ArrowRight className="w-5 h-5" />
           </a>
         </Button>
