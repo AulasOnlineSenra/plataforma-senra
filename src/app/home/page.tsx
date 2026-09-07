@@ -542,7 +542,7 @@ export default function HomePage() {
 
 
             <div className="mt-[42px] flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button asChild className="h-[36px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[12px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105">
+              <Button asChild className="h-[36px] md:h-14 px-8 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-full text-[12px] md:text-[17px] shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-105 translate-y-[10px] md:translate-y-0">
                 <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '5521997321590'}?text=${encodeURIComponent('Olá! Gostaria de organizar meus estudos.')}`} target="_blank" rel="noopener noreferrer">
                   Quero organizar meus estudos
                 </a>
@@ -767,11 +767,11 @@ export default function HomePage() {
                   <p className="font-semibold text-white">
                     <EditableText storageKey="home-footer-payments-title">Pagamentos aceitos</EditableText>
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-900 text-xs text-slate-200">
+                  <div className="flex flex-col md:flex-row md:flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-900 text-xs text-slate-200 w-fit">
                       <Landmark className="h-4 w-4 text-amber-400" /> Pix
                     </span>
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-900 text-xs text-slate-200">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700 bg-slate-900 text-xs text-slate-200 w-fit">
                       <Landmark className="h-4 w-4 text-amber-400" /> Transferência bancária
                     </span>
                   </div>

@@ -114,7 +114,7 @@ export default function HomeTechPeople() {
               
               {/* Orbit Dots */}
               <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '-2px', left: '19px' }} />
-              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[80px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[160px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
 
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
                 <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />
@@ -231,12 +231,12 @@ export default function HomeTechPeople() {
                     Conheça a plataforma na prática
                   </span>
                   <span className="flex items-center gap-1.5 text-slate-300 text-[6px] md:text-[11px] font-medium mt-[1px]">
-                    <Lock className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                    <Lock className="w-2 h-2 md:w-3 md:h-3" />
                     Ambiente seguro e confiável
                   </span>
                 </div>
               </div>
-              <ChevronRight className="w-6 h-6 text-white ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-6 h-6 text-white ml-2 group-hover:translate-x-1 transition-transform hidden md:block" />
             </button>
           </div>
 
