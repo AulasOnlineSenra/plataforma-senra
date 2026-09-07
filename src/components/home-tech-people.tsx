@@ -114,7 +114,7 @@ export default function HomeTechPeople() {
               
               {/* Orbit Dots */}
               <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '-2px', left: '19px' }} />
-              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[164px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[166px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
 
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
                 <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />

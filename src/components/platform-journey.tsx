@@ -131,6 +131,7 @@ export default function PlatformJourney() {
                   <video
                     key={STEPS[mobileActiveStep].videoSrc}
                     src={STEPS[mobileActiveStep].videoSrc}
+                    ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); } }}
                     autoPlay
                     loop
                     muted
