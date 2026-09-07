@@ -179,7 +179,7 @@ export default function HomeJourney() {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 w-full lg:w-auto">
             <button 
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-[10px] md:py-[2.5px] px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-[12.5px] md:py-[2.5px] px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-9.5 h-9.5 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">

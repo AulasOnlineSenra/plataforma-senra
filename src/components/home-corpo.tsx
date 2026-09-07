@@ -152,7 +152,7 @@ export default function HomeCorpo() {
           </div>
           <button 
             onClick={() => handleWhatsAppClick('Olá! Gostaria de falar com um especialista sobre meu objetivo de estudos.')}
-            className="shrink-0 bg-slate-950 hover:bg-slate-900 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-3 transition-colors shadow-lg shadow-slate-900/20"
+            className="shrink-0 bg-slate-950 hover:bg-slate-900 text-white font-bold px-6 py-[9px] md:py-3 rounded-xl flex items-center gap-3 transition-colors shadow-lg shadow-slate-900/20"
           >
             <MessageCircle className="w-5 h-5" />
             Falar com especialista <ChevronRight className="w-4 h-4" />

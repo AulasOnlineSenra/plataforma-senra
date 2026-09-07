@@ -26,7 +26,7 @@ export default function BlogSearchBar({ posts }: { posts: Post[] }) {
           placeholder="Buscar posts..."
           className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
         />
-        <Search className="h-5 w-5 text-muted-foreground flex-shrink-0 -translate-x-[60px] md:translate-x-0" />
+        <Search className="h-5 w-5 text-muted-foreground flex-shrink-0 -translate-x-[80px] md:translate-x-0" />
       </div>
     </div>
   );

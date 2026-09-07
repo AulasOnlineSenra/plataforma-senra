@@ -651,7 +651,7 @@ export default function HomePage() {
         {/* SEÇÃO DEPOIMENTOS */}
         <section
           id="depoimentos"
-          className="py-16 md:py-24 relative overflow-hidden"
+          className="py-16 md:py-24 relative"
           style={{
             backgroundImage: 'url(/depoimentos_pano_de_fundo_site.png)',
             backgroundSize: 'cover',

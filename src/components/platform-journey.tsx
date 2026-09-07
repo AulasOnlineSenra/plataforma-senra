@@ -12,16 +12,29 @@ function AutoPlayVideo({ src, className }: { src: string; className?: string }) 
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-      video.loop = true;
-      const playVideo = () => {
-        video.play().catch(() => {});
-      };
-      playVideo();
-    }
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.loop = true;
+
+    const tryPlay = () => {
+      video.play().catch(() => {});
+    };
+
+    // Try immediately
+    tryPlay();
+
+    // Also try when enough data is available to play
+    video.addEventListener('canplay', tryPlay, { once: true });
+    video.addEventListener('loadeddata', tryPlay, { once: true });
+
+    return () => {
+      video.removeEventListener('canplay', tryPlay);
+      video.removeEventListener('loadeddata', tryPlay);
+      video.pause();
+    };
   }, [src]);
 
   return (
@@ -160,7 +173,7 @@ export default function PlatformJourney() {
               >
                 {STEPS[mobileActiveStep]?.videoSrc ? (
                   <AutoPlayVideo
-                    key={STEPS[mobileActiveStep].videoSrc}
+                    key={`mobile-video-${mobileActiveStep}-${STEPS[mobileActiveStep].videoSrc}`}
                     src={STEPS[mobileActiveStep].videoSrc}
                     className="w-full h-full object-contain pointer-events-none"
                   />
