@@ -83,6 +83,15 @@ const navLinks = [
   { href: '/contato', label: 'Contato', storageKey: 'home-nav-contato' },
 ];
 
+const mobileNavLinks = [
+  { href: '/', label: 'Inicio', storageKey: 'home-nav-inicio-mob' },
+  { href: '/blog', label: 'Blog', storageKey: 'home-nav-blog-mob' },
+  { href: '/calendario', label: 'Calendário', storageKey: 'home-nav-calendario-mob' },
+  { href: '/dashboard/booking', label: 'Agendar aulas', storageKey: 'home-nav-agendar-mob' },
+  { href: '/cronograma', label: 'Montar cronograma', storageKey: 'home-nav-cronograma-mob' },
+  { href: '/contato', label: 'Contato', storageKey: 'home-nav-contato-mob' },
+];
+
 
 type TeacherRating = { average: number; count: number };
 
@@ -468,7 +477,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-card">
       <header className="sticky top-0 z-50 flex items-center justify-between pr-4 pl-0 py-2 md:px-4 md:py-[2px] bg-card border-b h-[50px] lg:h-[47px]">
-        <SenraLogo className="h-8 sm:h-10 -ml-[15px] md:ml-0" />
+        <SenraLogo className="h-8 sm:h-10 -ml-[25px] md:ml-0" />
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
@@ -488,14 +497,14 @@ export default function HomePage() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
+              <Button variant="outline" size="icon" className="md:hidden border-[5px] border-slate-300">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Abrir menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="grid gap-6 text-lg font-medium mt-12">
-                {navLinks.map((link) => (
+                {mobileNavLinks.map((link) => (
                   <Link key={link.href} href={link.href} className="text-muted-foreground font-bold hover:text-foreground">
                     <EditableText storageKey={link.storageKey}>{link.label}</EditableText>
                   </Link>
