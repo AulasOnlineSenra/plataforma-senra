@@ -497,7 +497,7 @@ export default function HomePage() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden border-[5px] border-slate-300">
+              <Button variant="outline" size="icon" className="md:hidden rounded-[5px] border">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Abrir menu</span>
               </Button>

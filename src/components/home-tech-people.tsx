@@ -114,7 +114,7 @@ export default function HomeTechPeople() {
               
               {/* Orbit Dots */}
               <div className="absolute w-[10px] h-[10px] rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20" style={{ top: '-2px', left: '19px' }} />
-              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[40px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
+              <div className="absolute w-[10px] h-[10px] rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(255,255,255,1)] z-20 translate-y-[80px] md:translate-y-0" style={{ top: '-2px', right: '19px' }} />
 
               <div className="w-[172px] h-[172px] rounded-full bg-white border-2 border-slate-200 shadow-[0_8px_40px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative z-10 p-6">
                 <User className="w-[116px] h-[116px] text-[#2563eb] mb-2" strokeWidth={1.2} />
@@ -223,15 +223,15 @@ export default function HomeTechPeople() {
               className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[6px] px-4 sm:pr-6 sm:pl-4 -mx-[7.5px] w-[calc(100%+15px)] sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
             >
               <div className="flex items-center gap-4">
-                <div className="w-6 h-6 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
-                  <Star className="w-5 h-5 md:w-10 md:h-10 text-amber-400 fill-amber-400" />
+                <div className="w-4 h-4 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-3.5 h-3.5 md:w-10 md:h-10 text-amber-400 fill-amber-400" />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-white text-[13px] md:text-lg leading-tight">
                     Conheça a plataforma na prática
                   </span>
                   <span className="flex items-center gap-1.5 text-slate-300 text-[6px] md:text-[11px] font-medium mt-[1px]">
-                    <Lock className="w-3 h-3" />
+                    <Lock className="w-2.5 h-2.5 md:w-3 md:h-3" />
                     Ambiente seguro e confiável
                   </span>
                 </div>

@@ -167,17 +167,17 @@ export default function HomeJourney() {
         </div>
 
         {/* Bloco Inferior: Banner de Autoridade */}
-        <div className="bg-slate-950 rounded-[32px] py-[7px] px-8 lg:py-[20px] lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl overflow-hidden relative -mt-[50px] mb-[30px] z-20">
+        <div className="bg-slate-950 rounded-[32px] py-[2px] px-[23px] lg:py-[20px] lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl overflow-hidden relative -mt-[50px] mb-[30px] z-20">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]" />
           
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 w-full lg:w-auto">
             <button 
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-[3px] px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
+              className="group flex items-center justify-between gap-4 sm:gap-6 bg-amber-500 hover:bg-amber-400 transition-colors rounded-[26px] md:rounded-2xl py-0 px-[28.5px] md:px-4 sm:pr-6 sm:pl-4 w-full sm:w-auto text-left shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 text-slate-900">
+                <div className="w-9.5 h-9.5 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7.5 h-7.5 md:w-10 md:h-10 text-slate-900">
                     <path d="M16.6 14c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.2-.5-.5-1-1.1-1.4-1.7-.1-.2 0-.4.1-.5.1-.1.2-.3.4-.4.1-.1.2-.3.2-.4.1-.2 0-.4 0-.5C10 9.5 9.4 8 9.3 7.8c-.1-.2-.2-.2-.4-.2h-.3c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.1 2 3.1 4.9 4.3.7.3 1.3.5 1.7.6.6.2 1.3.2 1.8.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3z"/>
                     <path fillRule="evenodd" d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.1-1.3C8.5 21.5 10.2 22 12 22c5.5 22 10-4.5 10-10S17.5 2 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.1l-.3-.2-3.2.8.9-3.1-.2-.3C4.2 15 3.8 13.5 3.8 12c0-4.5 3.7-8.2 8.2-8.2s8.2 3.7 8.2 8.2-3.7 8.2-8.2 8.2z" clipRule="evenodd"/>
                   </svg>
@@ -191,7 +191,7 @@ export default function HomeJourney() {
                   </span>
                 </div>
               </div>
-              <ChevronRight className="w-6 h-6 text-slate-900 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-slate-900 ml-2 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
           
