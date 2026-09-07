@@ -237,6 +237,11 @@ export default function CalendarioVestibularesPage() {
           margin: auto;
           text-align: center;
         }
+        @media (max-width: 767px) {
+          .eyebrow {
+            display: none !important;
+          }
+        }
         .eyebrow {
           display: inline-flex;
           align-items: center;
@@ -583,7 +588,7 @@ export default function CalendarioVestibularesPage() {
 
       <section className="hero">
         <div className="hero-inner">
-          <div className="eyebrow hidden md:inline-flex">
+          <div className="eyebrow !hidden md:!inline-flex">
             📅 Atualizado regularmente
           </div>
           <h1>
