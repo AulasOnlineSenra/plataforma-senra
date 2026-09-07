@@ -53,7 +53,7 @@ export default function HomeTechPeople() {
         <div className="flex flex-col lg:flex-row items-stretch justify-center relative mb-16 gap-4 lg:gap-0 lg:max-h-[600px] lg:-translate-y-[60px]">
 
           {/* LEFT PANEL: Plataforma Senra */}
-          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-20 shrink-0 flex flex-col lg:-translate-x-[60px] lg:-translate-y-[30px]">
+          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-[2rem] p-8 pb-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-20 shrink-0 flex flex-col lg:-translate-x-[50px] lg:-translate-y-[30px]">
             <div className="flex items-center gap-5 mb-10">
               <div className="w-16 h-16 rounded-full bg-blue-50/50 flex items-center justify-center shrink-0 border border-blue-100">
                 <Monitor className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
