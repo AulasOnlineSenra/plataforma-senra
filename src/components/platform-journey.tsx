@@ -19,23 +19,47 @@ function AutoPlayVideo({ src, className }: { src: string; className?: string }) 
     video.playsInline = true;
     video.loop = true;
 
+    let intervalId: NodeJS.Timeout;
+
     const tryPlay = () => {
-      video.play().catch(() => {});
+      if (video.paused) {
+        const promise = video.play();
+        if (promise !== undefined) {
+          promise.catch(() => {});
+        }
+      } else {
+        // If it's already playing, we can stop the interval
+        clearInterval(intervalId);
+      }
     };
 
     // Try immediately
     tryPlay();
 
+    // Retry every 500ms (fixes iOS Safari ignoring play() when opacity is 0 during Framer Motion mount)
+    intervalId = setInterval(tryPlay, 500);
+
     // Also try when enough data is available to play
-    video.addEventListener('canplay', tryPlay, { once: true });
-    video.addEventListener('loadeddata', tryPlay, { once: true });
+    video.addEventListener('canplay', tryPlay);
+    video.addEventListener('loadeddata', tryPlay);
 
     return () => {
+      clearInterval(intervalId);
       video.removeEventListener('canplay', tryPlay);
       video.removeEventListener('loadeddata', tryPlay);
       video.pause();
     };
   }, [src]);
+
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  };
 
   return (
     <video
@@ -46,6 +70,7 @@ function AutoPlayVideo({ src, className }: { src: string; className?: string }) 
       muted
       playsInline
       preload="auto"
+      onClick={handleVideoClick}
       className={className}
     />
   );
@@ -175,7 +200,7 @@ export default function PlatformJourney() {
                   <AutoPlayVideo
                     key={`mobile-video-${mobileActiveStep}-${STEPS[mobileActiveStep].videoSrc}`}
                     src={STEPS[mobileActiveStep].videoSrc}
-                    className="w-full h-full object-contain pointer-events-none"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center ${STEPS[mobileActiveStep]?.imgClass}`}>
@@ -337,7 +362,7 @@ export default function PlatformJourney() {
                         {STEPS[activeStep].videoSrc ? (
                           <AutoPlayVideo
                             src={STEPS[activeStep].videoSrc}
-                            className="w-full h-full object-contain pointer-events-none"
+                            className="w-full h-full object-contain"
                           />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${STEPS[activeStep].imgClass}`}>

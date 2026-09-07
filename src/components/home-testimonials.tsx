@@ -196,7 +196,7 @@ export default function HomeTestimonials() {
   return (
     <div className="w-full max-w-5xl mx-auto">
       {/* Header */}
-      <div className="sticky top-[50px] z-20 bg-[#0A0F1C]/95 backdrop-blur-sm py-4 md:static md:bg-transparent md:py-0 flex flex-col items-center text-center mb-6 lg:mb-20 px-4">
+      <div className="sticky top-[50px] z-20 bg-[#0A0F1C]/50 backdrop-blur-sm rounded-[15px] py-4 md:static md:bg-transparent md:py-0 flex flex-col items-center text-center mb-6 lg:mb-20 px-4">
         <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center">
           Quem já passou por aqui <span className="text-amber-500">recomenda</span>
         </h2>
