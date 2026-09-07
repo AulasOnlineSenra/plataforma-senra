@@ -213,7 +213,7 @@ export default function HomeTestimonials() {
           <motion.div 
             initial={{ x: 0 }}
             animate={{ x: [0, -16, 0, -8, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 6, ease: "easeInOut" }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 11, ease: "easeInOut" }}
             ref={containerRef} 
             className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-1 lg:pb-10 pt-2 lg:pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[height] duration-300 ease-out" 
             style={{ 
