@@ -38,14 +38,14 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen relative">
       {/* Imagem de fundo fixa na tela (Parallax effect de alta performance via next/image) */}
-      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none transform-gpu translate-z-0">
+      <div className="fixed inset-0 w-full h-[100vh] -z-10 pointer-events-none overflow-hidden touch-none select-none transform-gpu translate-z-0">
         <Image
           src="/imagem-fundo-blog.png"
           alt="Fundo Blog"
           fill
           priority
           quality={85}
-          className="object-cover object-center"
+          className="object-cover object-center pointer-events-none"
         />
       </div>
 

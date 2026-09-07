@@ -218,7 +218,7 @@ export default function BlogGrid({ posts, context = 'home' }: { posts: Post[], c
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-0 sm:gap-4">
         {carouselPosts.length > 0 && (
-          <div className={`col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 mb-4 sm:mb-0 ${context === 'home' ? 'min-h-[160px]' : 'min-h-[224px]'}`}>
+          <div className={`col-span-1 sm:col-span-2 xl:col-span-2 row-span-1 mb-4 sm:mb-0 ${context === 'home' ? 'min-h-[175px]' : 'min-h-[224px]'}`}>
             <HeroCarousel posts={carouselPosts} context={context} />
           </div>
         )}

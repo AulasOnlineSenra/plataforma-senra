@@ -163,10 +163,10 @@ export default function HomePainPoints() {
           </div>
           
           {/* Mobile CTA Button (Visible only on Mobile) */}
-          <div className="block lg:hidden w-full mt-4 mb-0">
+          <div className="block lg:hidden w-full mt-4 mb-0 -translate-y-[15px]">
             <Button 
               onClick={handleWhatsAppClick}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-[46px] md:h-[68px] md:py-6 rounded-2xl text-[15px] md:text-lg flex items-center justify-center gap-2 shadow-lg mb-[20px]"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-[41px] md:h-[68px] md:py-6 rounded-2xl text-[15px] md:text-lg flex items-center justify-center gap-2 shadow-lg mb-[20px]"
             >
               <span className="lg:hidden">Quero ajuda agora</span>
               <span className="hidden lg:inline">Quero ajuda agora!</span>
