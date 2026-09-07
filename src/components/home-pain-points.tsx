@@ -172,7 +172,7 @@ export default function HomePainPoints() {
               <span className="hidden lg:inline">Quero ajuda agora!</span>
               <ArrowRight className="w-5 h-5 hidden lg:inline-block" />
             </Button>
-            <div className="flex items-center justify-center gap-2 -mt-1 md:mt-4 mb-[-10px] md:mb-0 text-slate-500 text-[10px] md:text-xs -translate-y-2 md:translate-y-0">
+            <div className="flex items-center justify-center gap-2 -mt-1 md:mt-4 mb-[-10px] md:mb-0 text-slate-500 text-[10px] md:text-xs translate-y-[2px] md:translate-y-0">
               <Lock className="w-3 h-3" />
               <span>Fale com um especialista, sem compromisso</span>
             </div>

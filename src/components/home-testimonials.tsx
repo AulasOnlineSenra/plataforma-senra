@@ -200,7 +200,7 @@ export default function HomeTestimonials() {
         <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center">
           Quem já passou por aqui <span className="text-amber-500">recomenda</span>
         </h2>
-        <p className="text-base sm:text-lg text-white/80 mx-auto font-medium drop-shadow-md text-center max-w-xl md:max-w-[846px]">
+        <p className="text-[14px] md:text-lg text-white/80 mx-auto font-medium drop-shadow-md text-center max-w-xl md:max-w-[846px]">
           Histórias <span className="hidden md:inline">reais </span>de quem encontrou na Senra uma forma mais organizada de estudar
         </p>
       </div>
@@ -213,7 +213,7 @@ export default function HomeTestimonials() {
           <motion.div 
             initial={{ x: 0 }}
             animate={{ x: [0, -16, 0, -8, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3.5, ease: "easeInOut" }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 6, ease: "easeInOut" }}
             ref={containerRef} 
             className="flex flex-row lg:flex-col gap-5 overflow-x-auto lg:overflow-x-hidden overflow-y-hidden lg:overflow-y-auto max-h-none lg:max-h-[386px] pb-1 lg:pb-10 pt-2 lg:pt-4 px-4 lg:px-8 -mx-4 lg:-mx-8 snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[height] duration-300 ease-out" 
             style={{ 
