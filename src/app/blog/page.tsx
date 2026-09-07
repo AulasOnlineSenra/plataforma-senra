@@ -70,7 +70,7 @@ export default async function BlogPage() {
           <div className="mt-[50px] md:mt-0">
             <BlogSearchBar posts={posts} />
           </div>
-          <div className="bg-white/50 md:bg-white rounded-[12px] p-[3px] -mt-[100px] md:mt-0">
+          <div className="bg-white/80 md:bg-white rounded-[12px] p-[3px] -mt-[100px] md:mt-0">
             {posts && posts.length > 0 ? (
               <BlogGrid posts={posts} context="home" />
             ) : (
