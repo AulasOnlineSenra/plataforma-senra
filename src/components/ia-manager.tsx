@@ -464,32 +464,35 @@ export function IaManager() {
             <Plus className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="grid gap-2 p-4 pt-0">
-          {agents.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhum agente criado.</p>
-          )}
-          {agents.map((agent) => (
-            <button
-              key={agent.id}
-              onClick={() => setSelectedAgent({
-                ...agent,
-                tools: typeof agent.tools === 'string' ? JSON.parse(agent.tools) : agent.tools
-              })}
-              className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all w-full overflow-hidden ${
-                selectedAgent?.id === agent.id
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'hover:bg-accent text-muted-foreground'
-              }`}
-            >
-              <Bot className="h-5 w-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold truncate text-sm">{agent.name}</p>
-                <p className={`text-xs truncate ${selectedAgent?.id === agent.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                  {agent.model}
-                </p>
-              </div>
-            </button>
-          ))}
+        <CardContent className="flex flex-col p-4 pt-0">
+          <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+            {agents.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum agente criado.</p>
+            )}
+            {agents.map((agent) => (
+              <button
+                key={agent.id}
+                title={`${agent.name} (${agent.model})`}
+                onClick={() => setSelectedAgent({
+                  ...agent,
+                  tools: typeof agent.tools === 'string' ? JSON.parse(agent.tools) : agent.tools
+                })}
+                className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all w-full overflow-hidden shrink-0 ${
+                  selectedAgent?.id === agent.id
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'hover:bg-accent text-muted-foreground'
+                }`}
+              >
+                <Bot className="h-5 w-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold truncate text-sm">{agent.name}</p>
+                  <p className={`text-xs truncate ${selectedAgent?.id === agent.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    {agent.model}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
 
           {/* Templates Rápidos */}
           <div className="pt-4 border-t mt-2">
