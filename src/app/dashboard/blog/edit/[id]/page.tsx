@@ -199,7 +199,43 @@ export default function EditBlogPostPage() {
       const quill = quillRef.current?.getEditor();
       if (!quill?.root) return false;
 
-      const handlePaste = (e: ClipboardEvent) => {
+      const handlePaste = async (e: ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (items) {
+          let hasImage = false;
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              hasImage = true;
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const file = items[i].getAsFile();
+              if (!file) continue;
+              
+              toast({ title: 'Salvando imagem...', description: 'A imagem colada está sendo enviada para o servidor.' });
+              const formData = new FormData();
+              formData.append('file', file);
+              
+              try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const result = await res.json();
+                if (result.success && result.data?.url) {
+                  const range = quill.getSelection(true);
+                  quill.insertEmbed(range.index, 'image', result.data.url);
+                  quill.setSelection(range.index + 1);
+                  toast({ title: 'Imagem inserida com sucesso!', className: 'bg-emerald-600 text-white border-none' });
+                } else {
+                  toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao salvar a imagem colada.' });
+                }
+              } catch (err) {
+                console.error(err);
+                toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao enviar a imagem colada.' });
+              }
+            }
+          }
+          if (hasImage) return; // Stop processing if images were handled
+        }
+
         const html = e.clipboardData?.getData('text/html');
         if (!html || !/<th[\s>]/i.test(html)) return; // Only intervene when <th> is present
 

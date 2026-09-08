@@ -137,6 +137,98 @@ export default function NewBlogPostPage() {
     return () => document.removeEventListener('dblclick', handleDblClick);
   }, []);
 
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    const attach = () => {
+      const quill = quillRef.current?.getEditor();
+      if (!quill?.root) return false;
+
+      const handlePaste = async (e: ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (items) {
+          let hasImage = false;
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              hasImage = true;
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const file = items[i].getAsFile();
+              if (!file) continue;
+              
+              toast({ title: 'Salvando imagem...', description: 'A imagem colada está sendo enviada para o servidor.' });
+              const formData = new FormData();
+              formData.append('file', file);
+              
+              try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const result = await res.json();
+                if (result.success && result.data?.url) {
+                  const range = quill.getSelection(true);
+                  quill.insertEmbed(range.index, 'image', result.data.url);
+                  quill.setSelection(range.index + 1);
+                  toast({ title: 'Imagem inserida com sucesso!', className: 'bg-emerald-600 text-white border-none' });
+                } else {
+                  toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao salvar a imagem colada.' });
+                }
+              } catch (err) {
+                console.error(err);
+                toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao enviar a imagem colada.' });
+              }
+            }
+          }
+          if (hasImage) return; // Stop processing if images were handled
+        }
+
+        const html = e.clipboardData?.getData('text/html');
+        if (!html || !/<th[\s>]/i.test(html)) return; // Only intervene when <th> is present
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Convert <th> → <td><strong>...</strong></td>
+        doc.querySelectorAll('th').forEach((th) => {
+          const td = doc.createElement('td');
+          const strong = doc.createElement('strong');
+          strong.innerHTML = th.innerHTML;
+          td.appendChild(strong);
+          th.parentNode?.replaceChild(td, th);
+        });
+
+        // Convert <thead> → <tbody> so Quill treats header rows like body rows
+        doc.querySelectorAll('thead').forEach((thead) => {
+          const tbody = doc.createElement('tbody');
+          tbody.innerHTML = thead.innerHTML;
+          thead.parentNode?.replaceChild(tbody, thead);
+        });
+
+        const fixedHtml = doc.body.innerHTML;
+        const range = quill.getSelection(true);
+        quill.clipboard.dangerouslyPasteHTML(range?.index ?? 0, fixedHtml);
+      };
+
+      quill.root.addEventListener('paste', handlePaste, true);
+      cleanup = () => quill.root.removeEventListener('paste', handlePaste, true);
+      return true;
+    };
+
+    if (!attach()) {
+      const timer = setInterval(() => {
+        if (attach()) clearInterval(timer);
+      }, 300);
+      return () => {
+        clearInterval(timer);
+        cleanup?.();
+      };
+    }
+
+    return () => cleanup?.();
+  }, [toast]);
+
   const imageHandler = useCallback(() => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
