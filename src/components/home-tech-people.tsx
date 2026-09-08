@@ -202,7 +202,7 @@ export default function HomeTechPeople() {
         <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[60px] md:-translate-y-0">
 
           {/* Circled Stats - Swapped to top on mobile (order-1 xl:order-2) */}
-          <div className="order-1 xl:order-2 flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-b xl:border-b-0 xl:border-l border-slate-100 pb-3 xl:pb-0 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0">
+          <div className="order-1 xl:order-2 flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-b xl:border-b-0 xl:border-l border-slate-100 pb-3 xl:pb-0 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0 md:-translate-x-[15px]">
             {[
               { icon: Target, label: 'Mais direção' },
               { icon: ShieldCheck, label: 'Mais segurança' },
@@ -224,7 +224,7 @@ export default function HomeTechPeople() {
           <div className="order-2 xl:order-1 flex flex-col md:flex-row items-center justify-center gap-6 w-full xl:w-1/2 text-center md:text-left -translate-y-[10px] md:translate-y-0">
             <button
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[8.5px] md:py-[6px] px-4 sm:pr-6 sm:pl-4 -mx-[7.5px] w-[calc(100%+15px)] sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl md:-translate-x-[20px]"
+              className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[8.5px] md:py-[6px] px-4 sm:pr-6 sm:pl-4 -mx-[7.5px] w-[calc(100%+15px)] sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl md:-translate-x-[30px]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-4 h-4 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
