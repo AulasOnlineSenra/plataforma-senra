@@ -666,6 +666,11 @@ export default function BlogPostPage() {
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !hasMore || loadedPosts.length === 0 || allPosts.length === 0) return;
 
+    if (typeof window !== 'undefined' && /bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent)) {
+      setHasMore(false);
+      return;
+    }
+
     setIsLoadingMore(true);
 
     const newUsedIds = new Set(usedPostIds);
