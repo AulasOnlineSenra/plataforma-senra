@@ -475,14 +475,14 @@ export function IaManager() {
                 ...agent,
                 tools: typeof agent.tools === 'string' ? JSON.parse(agent.tools) : agent.tools
               })}
-              className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+              className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all w-full overflow-hidden ${
                 selectedAgent?.id === agent.id
                   ? 'bg-primary text-primary-foreground shadow-md'
                   : 'hover:bg-accent text-muted-foreground'
               }`}
             >
               <Bot className="h-5 w-5 shrink-0" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold truncate text-sm">{agent.name}</p>
                 <p className={`text-xs truncate ${selectedAgent?.id === agent.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                   {agent.model}
@@ -562,24 +562,17 @@ export function IaManager() {
                           {availableProviders.length === 0 ? (
                             <SelectItem value="none" disabled>Configure as chaves API</SelectItem>
                           ) : (
-                            activeProviderKeys.map(provider => {
-                              const providerModels = modelsByProvider[provider]?.models.filter(m => !hiddenModels.includes(m)) || [];
-                              // Sort to put favorites at the top
-                              const sortedModels = [...providerModels].sort((a, b) => {
-                                const aFav = favoriteModels.includes(a);
-                                const bFav = favoriteModels.includes(b);
-                                if (aFav && !bFav) return -1;
-                                if (!aFav && bFav) return 1;
-                                return 0;
-                              });
-
-                              return (
-                                <SelectGroup key={provider}>
-                                  <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
-                                  {sortedModels.map(m => (
-                                    <SelectItem key={m} value={m} className="group relative pr-8">
+                            <>
+                              {/* GRUPO DE FAVORITOS */}
+                              {favoriteModels.filter(m => !hiddenModels.includes(m)).length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel className="font-bold text-amber-700 bg-amber-50 sticky top-0 z-10 border-b border-amber-100 flex items-center gap-2">
+                                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> Favoritos
+                                  </SelectLabel>
+                                  {favoriteModels.filter(m => !hiddenModels.includes(m)).map(m => (
+                                    <SelectItem key={`fav-${m}`} value={m} className="group relative pr-8">
                                       <div className="flex items-center justify-between w-full">
-                                        <span className="truncate">{m.replace('openrouter:', '')}</span>
+                                        <span className="truncate font-medium text-amber-950">{m.replace('openrouter:', '')}</span>
                                         <div className="opacity-0 group-hover:opacity-100 flex gap-1 absolute right-2 z-50 pointer-events-auto cursor-pointer transition-opacity">
                                           <button
                                             type="button"
@@ -590,30 +583,66 @@ export function IaManager() {
                                               e.stopPropagation();
                                               handleToggleFavorite(m);
                                             }}
-                                            className="p-0.5 rounded hover:bg-slate-200 transition-colors"
+                                            className="p-0.5 rounded hover:bg-amber-100 transition-colors"
                                           >
-                                            <Star className={`h-3.5 w-3.5 ${favoriteModels.includes(m) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400 hover:text-yellow-400'}`} />
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                            onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              handleHideModel(m);
-                                            }}
-                                            className="p-0.5 rounded hover:bg-slate-200 transition-colors"
-                                          >
-                                            <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
+                                            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                                           </button>
                                         </div>
                                       </div>
                                     </SelectItem>
                                   ))}
                                 </SelectGroup>
-                              );
-                            })
+                              )}
+
+                              {/* OUTROS PROVEDORES */}
+                              {activeProviderKeys.map(provider => {
+                                // Filtra modelos que NÃO estão ocultos E NÃO estão nos favoritos
+                                const providerModels = modelsByProvider[provider]?.models.filter(m => !hiddenModels.includes(m) && !favoriteModels.includes(m)) || [];
+                                
+                                if (providerModels.length === 0) return null;
+
+                                return (
+                                  <SelectGroup key={provider}>
+                                    <SelectLabel className="font-bold text-slate-800 bg-slate-50 sticky top-0">{modelsByProvider[provider]?.label}</SelectLabel>
+                                    {providerModels.map(m => (
+                                      <SelectItem key={m} value={m} className="group relative pr-8">
+                                        <div className="flex items-center justify-between w-full">
+                                          <span className="truncate">{m.replace('openrouter:', '')}</span>
+                                          <div className="opacity-0 group-hover:opacity-100 flex gap-1 absolute right-2 z-50 pointer-events-auto cursor-pointer transition-opacity">
+                                            <button
+                                              type="button"
+                                              onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                              onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleToggleFavorite(m);
+                                              }}
+                                              className="p-0.5 rounded hover:bg-slate-200 transition-colors"
+                                            >
+                                              <Star className="h-3.5 w-3.5 text-slate-400 hover:text-amber-500" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                              onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleHideModel(m);
+                                              }}
+                                              className="p-0.5 rounded hover:bg-slate-200 transition-colors"
+                                            >
+                                              <X className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                );
+                              })}
+                            </>
                           )}
                         </SelectContent>
                       </Select>
