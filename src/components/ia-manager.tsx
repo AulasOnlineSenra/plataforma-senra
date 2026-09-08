@@ -531,17 +531,17 @@ export function IaManager() {
               <Card>
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Button variant="outline" size="sm" onClick={() => setActiveTab('sandbox')} className="h-7 text-xs">
-                        ← Voltar ao Sandbox
-                      </Button>
-                    </div>
                     <CardTitle>Perfil e Instruções do Agente</CardTitle>
                     <CardDescription>Defina a personalidade, modelo e permissões de ferramentas.</CardDescription>
                   </div>
-                  <Button variant="destructive" size="sm" onClick={() => handleDeleteAgent(selectedAgent.id)}>
-                    <Trash2 className="h-4 w-4 mr-1" /> Excluir
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setActiveTab('sandbox')} title="Testar no Sandbox (Chat)">
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" className="h-8" onClick={() => handleDeleteAgent(selectedAgent.id)}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-2">
