@@ -213,7 +213,7 @@ export default function HomeTechPeople() {
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-50 flex items-center justify-center">
                   <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-slate-700" />
                 </div>
-                <span className="text-[7px] md:text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap md:whitespace-normal">
+                <span className="text-[7px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap md:whitespace-normal">
                   {stat.label}
                 </span>
               </div>
