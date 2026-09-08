@@ -224,7 +224,7 @@ export default function HomeTechPeople() {
           <div className="order-2 xl:order-1 flex flex-col md:flex-row items-center justify-center gap-6 w-full xl:w-1/2 text-center md:text-left -translate-y-[10px] md:translate-y-0">
             <button
               onClick={handleWhatsAppClick}
-              className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[8.5px] md:py-[6px] px-4 sm:pr-6 sm:pl-4 -mx-[7.5px] w-[calc(100%+15px)] sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl"
+              className="group flex items-center justify-center mx-auto gap-4 sm:gap-6 bg-slate-950 hover:bg-slate-900 transition-all duration-300 hover:-translate-y-1 rounded-2xl py-[8.5px] md:py-[6px] px-4 sm:pr-6 sm:pl-4 -mx-[7.5px] w-[calc(100%+15px)] sm:w-auto text-left shadow-lg shadow-slate-900/20 hover:shadow-xl md:-translate-x-[20px]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-4 h-4 md:w-12 md:h-12 flex items-center justify-center flex-shrink-0">
