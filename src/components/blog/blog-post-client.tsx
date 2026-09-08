@@ -341,6 +341,11 @@ export default function BlogPostClient({ initialPost, allPosts }: BlogPostClient
     return convertToCardPost(postsForGrid.slice(0, 13));
   }, [allPosts]);
 
+  // Incrementa visualizações do artigo inicial ao montar (client-side para não interferir no SSR cache)
+  useEffect(() => {
+    import('@/app/actions/blog').then(m => m.incrementPostViews(initialPost.id));
+  }, [initialPost.id]);
+
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !hasMore || allPosts.length === 0) return;
 
