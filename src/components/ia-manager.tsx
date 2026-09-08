@@ -457,7 +457,7 @@ export function IaManager() {
   return (
     <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
       {/* Sidebar: Lista de Agentes */}
-      <Card className="h-fit">
+      <Card className="h-fit rounded-[15px]">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-bold">Meus Agentes</CardTitle>
           <Button variant="ghost" size="icon" onClick={() => setIsCreateDialogOpen(true)}>
@@ -528,7 +528,7 @@ export function IaManager() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* ABA: CONFIGURAÇÕES */}
             <TabsContent value="config" className="mt-0">
-              <Card>
+              <Card className="rounded-[15px]">
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
                     <CardTitle>Perfil e Instruções do Agente</CardTitle>
@@ -538,8 +538,8 @@ export function IaManager() {
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setActiveTab('sandbox')} title="Testar no Sandbox (Chat)">
                       <MessageSquare className="h-4 w-4" />
                     </Button>
-                    <Button variant="destructive" size="sm" className="h-8" onClick={() => handleDeleteAgent(selectedAgent.id)}>
-                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteAgent(selectedAgent.id)} title="Excluir Agente">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
