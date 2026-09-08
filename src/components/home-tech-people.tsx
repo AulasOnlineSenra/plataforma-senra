@@ -199,7 +199,7 @@ export default function HomeTechPeople() {
         </div>
 
         {/* Bottom Authority Box */}
-        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[60px] md:-translate-y-0">
+        <div className="w-full max-w-[1064px] mx-auto bg-white rounded-3xl border-2 border-blue-50 px-6 py-[2.5px] md:px-8 md:py-[10.5px] flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-8 mb-5 lg:mb-10 shadow-sm hover:border-blue-100 transition-colors -translate-y-[60px] md:-translate-y-[35px]">
 
           {/* Circled Stats - Swapped to top on mobile (order-1 xl:order-2) */}
           <div className="order-1 xl:order-2 flex flex-row justify-between md:flex-nowrap md:justify-center gap-2 md:gap-10 w-full xl:w-1/2 border-b xl:border-b-0 xl:border-l border-slate-100 pb-3 xl:pb-0 pt-2 md:pt-6 xl:pt-0 xl:pl-10 px-2 md:px-0 md:-translate-x-[30px]">
