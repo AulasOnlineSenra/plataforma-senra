@@ -212,23 +212,36 @@ export default function EditBlogPostPage() {
               const file = items[i].getAsFile();
               if (!file) continue;
               
-              toast({ title: 'Salvando imagem...', description: 'A imagem colada está sendo enviada para o servidor.' });
+              const placeholderId = `uploading-${Date.now()}-${i}`;
+              const placeholderSvg = "data:image/svg+xml;charset=utf-8,%3Csvg width='400' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='300' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='16' font-weight='bold' fill='%2364748b'%3ECarregando imagem...%3C/text%3E%3C/svg%3E";
+              
+              const range = quill.getSelection(true) || { index: quill.getLength() };
+              quill.insertEmbed(range.index, 'image', placeholderSvg);
+              quill.formatText(range.index, 1, 'alt', placeholderId);
+              quill.setSelection(range.index + 1);
+
               const formData = new FormData();
               formData.append('file', file);
               
               try {
                 const res = await fetch('/api/upload', { method: 'POST', body: formData });
                 const result = await res.json();
-                if (result.success && result.data?.url) {
-                  const range = quill.getSelection(true);
-                  quill.insertEmbed(range.index, 'image', result.data.url);
-                  quill.setSelection(range.index + 1);
-                  toast({ title: 'Imagem inserida com sucesso!', className: 'bg-emerald-600 text-white border-none' });
-                } else {
-                  toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao salvar a imagem colada.' });
+                
+                const img = quill.root.querySelector(`img[alt="${placeholderId}"]`);
+                if (img) {
+                  if (result.success && result.data?.url) {
+                    img.setAttribute('src', result.data.url);
+                    img.removeAttribute('alt');
+                  } else {
+                    img.remove();
+                    toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao salvar a imagem colada.' });
+                  }
+                  setFormData(prev => ({ ...prev, content: quill.root.innerHTML }));
                 }
               } catch (err) {
                 console.error(err);
+                const img = quill.root.querySelector(`img[alt="${placeholderId}"]`);
+                if (img) img.remove();
                 toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao enviar a imagem colada.' });
               }
             }
