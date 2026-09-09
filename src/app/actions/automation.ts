@@ -1,8 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { generateText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
  * runAiSupervisor
@@ -43,7 +42,7 @@ export async function runAiSupervisor() {
     if (!settings?.geminiApiKey) {
       throw new Error("Chave de API do Gemini não configurada.");
     }
-    const google = createGoogleGenerativeAI({ apiKey: settings.geminiApiKey });
+    const genAI = new GoogleGenerativeAI(settings.geminiApiKey);
 
     // ---------------------------------------------------------
     // PASSO 1: DRAFT -> REVIEW (Redação)
@@ -87,11 +86,13 @@ Notas/Ideias Atuais: ${draft.excerpt || "Nenhuma anotação."}
 Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 `;
 
-          const { text } = await generateText({
-            model: google(redatorAgent.model || 'gemini-2.0-flash'),
-            system: systemPrompt,
-            prompt: userPrompt,
+          const aiModel = genAI.getModel({
+            model: redatorAgent.model?.replace("openrouter:", "") || 'gemini-2.5-flash-preview-04-17',
+            systemInstruction: systemPrompt
           });
+
+          const result = await aiModel.generateContent(userPrompt);
+          const text = result.response.text();
 
           // Limpar blockticks se vier como markdown de código (ex: ```json ... ```)
           let cleanJson = text.trim();
@@ -163,11 +164,13 @@ Conteúdo HTML Atual:
 ${rev.content}
 `;
 
-          const { text } = await generateText({
-            model: google(revisorAgent.model || 'gemini-2.0-flash'),
-            system: systemPrompt,
-            prompt: userPrompt,
+          const aiModel = genAI.getModel({
+            model: revisorAgent.model?.replace("openrouter:", "") || 'gemini-2.5-flash-preview-04-17',
+            systemInstruction: systemPrompt
           });
+
+          const result = await aiModel.generateContent(userPrompt);
+          const text = result.response.text();
 
           let cleanJson = text.trim();
           if (cleanJson.startsWith("```json")) {
