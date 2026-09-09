@@ -32,7 +32,7 @@ export async function runAiSupervisor() {
       return { success: false, message: "Workflow inativo (Kill-Switch ligado)." };
     }
 
-    const { batchSize, queueOrder, steps } = workflow;
+    const { batchSize, queueOrder, steps, id: workflowId } = workflow;
     const orderDirection = queueOrder === "LIFO" ? "desc" : "asc";
 
     let actionsPerformed = 0;
@@ -44,12 +44,20 @@ export async function runAiSupervisor() {
     }
     const genAI = new GoogleGenerativeAI(settings.geminiApiKey);
 
+    const redatorId = settings?.blogRedatorAgentId;
+    const revisorId = settings?.blogRevisorAgentId;
+    
+    if (!redatorId || !revisorId) {
+      return { success: false, message: "Os Agentes do Blog (Redator ou Revisor) não foram configurados. Configure-os no Editor de Texto usando o botão 'Gerar com IA' primeiro." };
+    }
+
+    const redatorAgent = await prisma.aiAgent.findUnique({ where: { id: redatorId } });
+    const revisorAgent = await prisma.aiAgent.findUnique({ where: { id: revisorId } });
+
     // ---------------------------------------------------------
     // PASSO 1: DRAFT -> REVIEW (Redação)
     // ---------------------------------------------------------
     const stepDraft = steps.find(s => s.triggerState === "DRAFT" && s.actionState === "REVIEW");
-    const redatorId = settings?.blogRedatorAgentId;
-    const redatorAgent = redatorId ? await prisma.aiAgent.findUnique({ where: { id: redatorId } }) : null;
     
     if (stepDraft && redatorAgent) {
       const drafts = await prisma.blogPost.findMany({
@@ -59,6 +67,17 @@ export async function runAiSupervisor() {
       });
 
       console.log(`[MAESTRO] Encontrados ${drafts.length} rascunhos.`);
+
+      if (drafts.length > 0) {
+        await prisma.automationWorkflow.update({
+          where: { id: workflowId },
+          data: { currentProcessingStep: "DRAFT" }
+        });
+        await prisma.blogPost.updateMany({
+          where: { id: { in: drafts.map(d => d.id) } },
+          data: { isProcessingAi: true }
+        });
+      }
 
       for (const draft of drafts) {
         console.log(`[MAESTRO] Redigindo artigo: ${draft.title}`);
@@ -111,6 +130,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
               content: parsedData.content || draft.content,
               metaDescription: parsedData.metaDescription || draft.metaDescription,
               status: "REVIEW", // Avança a esteira
+              isProcessingAi: false
             }
           });
 
@@ -118,6 +138,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
           console.log(`[MAESTRO] Sucesso! ${draft.title} movido para REVIEW.`);
         } catch (e) {
           console.error(`[MAESTRO] Falha ao processar rascunho ${draft.title}:`, e);
+          await prisma.blogPost.update({ where: { id: draft.id }, data: { isProcessingAi: false } });
           // O Retry Policy (Máx 2 falhas) requereria uma tabela de tentativas por post
           // Como MVP, apenas ignoramos para tentar na próxima rodada
         }
@@ -128,8 +149,6 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
     // PASSO 2: REVIEW -> IMAGES (Revisão)
     // ---------------------------------------------------------
     const stepReview = steps.find(s => s.triggerState === "REVIEW" && s.actionState === "IMAGES");
-    const revisorId = settings?.blogRevisorAgentId;
-    const revisorAgent = revisorId ? await prisma.aiAgent.findUnique({ where: { id: revisorId } }) : null;
     
     if (stepReview && revisorAgent) {
       const reviews = await prisma.blogPost.findMany({
@@ -139,6 +158,17 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
       });
 
       console.log(`[MAESTRO] Encontrados ${reviews.length} artigos para revisão.`);
+
+      if (reviews.length > 0) {
+        await prisma.automationWorkflow.update({
+          where: { id: workflowId },
+          data: { currentProcessingStep: "REVIEW" }
+        });
+        await prisma.blogPost.updateMany({
+          where: { id: { in: reviews.map(r => r.id) } },
+          data: { isProcessingAi: true }
+        });
+      }
 
       for (const rev of reviews) {
         console.log(`[MAESTRO] Revisando artigo: ${rev.title}`);
@@ -186,6 +216,7 @@ ${rev.content}
               content: parsedData.content || rev.content,
               tags: parsedData.tags || rev.tags,
               status: "IMAGES", // Avança para a parada obrigatória humana
+              isProcessingAi: false
             }
           });
 
@@ -193,9 +224,16 @@ ${rev.content}
           console.log(`[MAESTRO] Sucesso! ${rev.title} movido para IMAGES.`);
         } catch (e) {
           console.error(`[MAESTRO] Falha ao revisar artigo ${rev.title}:`, e);
+          await prisma.blogPost.update({ where: { id: rev.id }, data: { isProcessingAi: false } });
         }
       }
     }
+
+    // Limpa o status do workflow
+    await prisma.automationWorkflow.update({
+      where: { id: workflowId },
+      data: { currentProcessingStep: null }
+    });
 
     return { 
       success: true, 

@@ -295,10 +295,16 @@ export function AutomationManager() {
           </CardHeader>
           <CardContent className="space-y-4 relative z-10">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex flex-col gap-1 p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+              <div key={step.id} className={`flex flex-col gap-1 p-3 rounded-xl border ${selectedWorkflow?.currentProcessingStep === step.triggerState ? 'bg-blue-900/40 border-blue-500 ring-1 ring-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-slate-800/80 border-slate-700'}`}>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passo {index + 1}</span>
-                  <Bot className="h-3.5 w-3.5 text-primary" />
+                  {selectedWorkflow?.currentProcessingStep === step.triggerState ? (
+                    <span className="flex items-center gap-1 text-[10px] text-blue-400 font-bold bg-blue-900/50 px-2 py-0.5 rounded-full">
+                      <Loader2 className="h-3 w-3 animate-spin" /> PROCESSANDO
+                    </span>
+                  ) : (
+                    <Bot className="h-3.5 w-3.5 text-primary" />
+                  )}
                 </div>
                 <p className="text-sm font-semibold flex items-center gap-2">
                   {step.triggerState} <ArrowRight className="h-3 w-3 text-slate-500" /> {step.actionState}

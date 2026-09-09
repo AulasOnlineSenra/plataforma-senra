@@ -94,6 +94,7 @@ model BlogPost {
   commentsCount Int      @default(0)
   views         Int      @default(0)
   metaDescription String?
+  isProcessingAi  Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -455,6 +456,7 @@ model AutomationWorkflow {
   maxRetries   Int      @default(2)
   queueOrder   String   @default("FIFO")
   isActive     Boolean  @default(false)
+  currentProcessingStep String?
   
   supervisorAgentId String?
   supervisorAgent   AiAgent? @relation("SupervisorAgent", fields: [supervisorAgentId], references: [id])

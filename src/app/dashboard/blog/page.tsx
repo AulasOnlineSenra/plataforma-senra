@@ -287,8 +287,11 @@ export default function BlogAdminPage() {
     };
     
     return (
-    <Card className="mb-3 hover:shadow-md transition-shadow group">
-      <CardContent className="p-4">
+    <Card className={`mb-3 transition-all duration-500 group relative overflow-hidden ${post.isProcessingAi ? 'animate-pulse ring-2 ring-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] bg-blue-50/10' : 'hover:shadow-md'}`}>
+      {post.isProcessingAi && (
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-400 animate-gradient-x" />
+      )}
+      <CardContent className="p-4 relative">
         <div className="flex justify-between items-start gap-2 mb-2">
           <div className="flex items-start gap-2">
             {isScheduled && <Clock className="w-4 h-4 text-[#f5b000] shrink-0" title="Publicação Agendada" />}
