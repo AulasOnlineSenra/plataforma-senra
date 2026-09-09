@@ -401,3 +401,34 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
     return { success: false, error: error.message || "Erro desconhecido." };
   }
 }
+
+export async function getBlogAgentDefaults() {
+  try {
+    const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
+    return { 
+      success: true, 
+      data: {
+        blogRedatorAgentId: settings?.blogRedatorAgentId || null,
+        blogRevisorAgentId: settings?.blogRevisorAgentId || null
+      }
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function setBlogAgentDefaults(mode: 'DRAFT' | 'REVIEW', agentId: string) {
+  try {
+    const data: any = {};
+    if (mode === 'DRAFT') data.blogRedatorAgentId = agentId;
+    if (mode === 'REVIEW') data.blogRevisorAgentId = agentId;
+    
+    await prisma.appSetting.update({
+      where: { id: "global" },
+      data
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

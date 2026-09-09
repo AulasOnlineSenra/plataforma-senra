@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAiAgents, runAiAgentTest } from '@/app/actions/ia';
+import { getAiAgents, runAiAgentTest, getBlogAgentDefaults, setBlogAgentDefaults } from '@/app/actions/ia';
 import { toast } from '@/hooks/use-toast';
 import htmldiff from 'htmldiff-js';
 
@@ -89,18 +89,23 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       if (agents.length === 0) {
         loadAgents();
       } else {
-        // Modal already has agents loaded — re-sync selected agent from localStorage
-        // so that all sections (title, cover, excerpt, body) within the same pipeline
-        // stage always share the same last-saved agent.
-        if (typeof window !== 'undefined') {
-          const savedAgentId = localStorage.getItem(`lastUsedBlogAgentId_${mode}`);
-          if (savedAgentId && agents.find((a: any) => a.id === savedAgentId)) {
-            setSelectedAgent(savedAgentId);
-          }
-        }
+        // Modal already has agents loaded — re-sync selected agent from BD
+        syncDefaultAgent(agents);
       }
     }
   }, [isOpen, currentTitle]);
+
+  const syncDefaultAgent = async (activeAgents: any[]) => {
+    const defaultsRes = await getBlogAgentDefaults();
+    if (defaultsRes.success && defaultsRes.data) {
+      const savedAgentId = mode === 'DRAFT' ? defaultsRes.data.blogRedatorAgentId : defaultsRes.data.blogRevisorAgentId;
+      if (savedAgentId && activeAgents.find((a: any) => a.id === savedAgentId)) {
+        setSelectedAgent(savedAgentId);
+        return;
+      }
+    }
+    setSelectedAgent(activeAgents[0]?.id || '');
+  };
 
   const loadAgents = async () => {
     setIsLoadingAgents(true);
@@ -109,15 +114,7 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
       const activeAgents = result.data.filter((a: any) => a.status === 'active');
       setAgents(activeAgents);
       if (activeAgents.length > 0) {
-        let savedAgentId = null;
-        if (typeof window !== 'undefined') {
-          savedAgentId = localStorage.getItem(`lastUsedBlogAgentId_${mode}`);
-        }
-        if (savedAgentId && activeAgents.find((a: any) => a.id === savedAgentId)) {
-          setSelectedAgent(savedAgentId);
-        } else {
-          setSelectedAgent(activeAgents[0].id);
-        }
+        await syncDefaultAgent(activeAgents);
       }
     }
     setIsLoadingAgents(false);
@@ -359,10 +356,10 @@ ${plainContent}
               ) : (
               <Select 
                 value={selectedAgent} 
-                onValueChange={(val) => {
+                onValueChange={async (val) => {
                   setSelectedAgent(val);
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem(`lastUsedBlogAgentId_${mode}`, val);
+                  if (mode === 'DRAFT' || mode === 'REVIEW') {
+                    await setBlogAgentDefaults(mode, val);
                   }
                 }}
               >

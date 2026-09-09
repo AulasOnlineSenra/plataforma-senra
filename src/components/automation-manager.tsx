@@ -54,17 +54,22 @@ export function AutomationManager() {
     setBatchSize(workflow.batchSize.toString());
     setQueueOrder(workflow.queueOrder);
     setSteps(workflow.steps || []);
+    // Guardamos o supervisor provisoriamente num state
   };
 
   const handleSave = async () => {
     if (!selectedWorkflowId) return;
     setIsSaving(true);
     
+    // Precisamos de um estado para supervisorAgentId se fôssemos editá-lo
+    // Mas se o usuário atualiza direto, ok.
+    
     const result = await updateAutomationWorkflow(selectedWorkflowId, {
       isActive,
       frequency,
       batchSize,
-      queueOrder
+      queueOrder,
+      supervisorAgentId: workflows.find(w => w.id === selectedWorkflowId)?.supervisorAgentId
     }, steps);
 
     if (result.success) {
@@ -135,12 +140,6 @@ export function AutomationManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-2">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedWorkflowId(null)} className="text-muted-foreground">
-          &larr; Voltar para Automações
-        </Button>
-      </div>
-
       {/* HEADER PRINCIPAL */}
       <Card className="rounded-[15px] border-primary/20 bg-primary/5">
         <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -149,13 +148,29 @@ export function AutomationManager() {
               {isActive ? <Activity className="h-6 w-6 animate-pulse" /> : <Pause className="h-6 w-6" />}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                {selectedWorkflow?.name}
+              <div className="flex items-center gap-3">
+                <Select 
+                  value={selectedWorkflow?.supervisorAgentId || "none"} 
+                  onValueChange={(val) => {
+                    const newId = val === "none" ? null : val;
+                    setWorkflows(prev => prev.map(w => w.id === selectedWorkflowId ? { ...w, supervisorAgentId: newId } : w));
+                  }}
+                >
+                  <SelectTrigger className="text-xl font-bold text-slate-900 border-none bg-transparent hover:bg-black/5 rounded-xl h-auto py-1 px-2 -ml-2 w-fit gap-2">
+                    <SelectValue placeholder="Selecione o Maestro..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum Agente</SelectItem>
+                    {agents.map(a => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-600'}`}>
                   {isActive ? 'Ativo' : 'Pausado'}
                 </span>
-              </h2>
-              <p className="text-sm text-slate-600">{selectedWorkflow?.description}</p>
+              </div>
+              <p className="text-sm text-slate-600 ml-2">{selectedWorkflow?.description}</p>
             </div>
           </div>
           
@@ -288,19 +303,10 @@ export function AutomationManager() {
                 <p className="text-sm font-semibold flex items-center gap-2">
                   {step.triggerState} <ArrowRight className="h-3 w-3 text-slate-500" /> {step.actionState}
                 </p>
-                <div className="mt-2">
-                  <Label className="text-[10px] text-slate-400 mb-1 block">Agente Acionado:</Label>
-                  <Select value={step.agentId || "none"} onValueChange={(val) => updateStepAgent(step.id, val)}>
-                    <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-300 h-8 text-xs">
-                      <SelectValue placeholder="Selecione um agente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum Agente</SelectItem>
-                      {agents.map(a => (
-                        <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="mt-1">
+                  <p className="text-[10px] text-emerald-400">
+                    Sincronizado com Assistente do Blog
+                  </p>
                 </div>
               </div>
             ))}

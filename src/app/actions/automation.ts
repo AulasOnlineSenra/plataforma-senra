@@ -48,11 +48,13 @@ export async function runAiSupervisor() {
     // PASSO 1: DRAFT -> REVIEW (Redação)
     // ---------------------------------------------------------
     const stepDraft = steps.find(s => s.triggerState === "DRAFT" && s.actionState === "REVIEW");
+    const redatorId = settings?.blogRedatorAgentId;
+    const redatorAgent = redatorId ? await prisma.aiAgent.findUnique({ where: { id: redatorId } }) : null;
     
-    if (stepDraft && stepDraft.agent) {
+    if (stepDraft && redatorAgent) {
       const drafts = await prisma.blogPost.findMany({
         where: { status: "DRAFT" },
-        orderBy: { updatedAt: orderDirection },
+        orderBy: { updatedAt: orderDirection as any },
         take: batchSize
       });
 
@@ -60,9 +62,7 @@ export async function runAiSupervisor() {
 
       for (const draft of drafts) {
         console.log(`[MAESTRO] Redigindo artigo: ${draft.title}`);
-        
         try {
-          const redatorAgent = stepDraft.agent;
           const systemPrompt = `
 Você é o agente: ${redatorAgent.name}.
 Papel: ${redatorAgent.role || "Redator Especialista"}
@@ -128,11 +128,13 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
     // PASSO 2: REVIEW -> IMAGES (Revisão)
     // ---------------------------------------------------------
     const stepReview = steps.find(s => s.triggerState === "REVIEW" && s.actionState === "IMAGES");
+    const revisorId = settings?.blogRevisorAgentId;
+    const revisorAgent = revisorId ? await prisma.aiAgent.findUnique({ where: { id: revisorId } }) : null;
     
-    if (stepReview && stepReview.agent) {
+    if (stepReview && revisorAgent) {
       const reviews = await prisma.blogPost.findMany({
         where: { status: "REVIEW" },
-        orderBy: { updatedAt: orderDirection },
+        orderBy: { updatedAt: orderDirection as any },
         take: batchSize
       });
 
@@ -140,9 +142,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 
       for (const rev of reviews) {
         console.log(`[MAESTRO] Revisando artigo: ${rev.title}`);
-        
         try {
-          const revisorAgent = stepReview.agent;
           const systemPrompt = `
 Você é o agente: ${revisorAgent.name}.
 Papel: ${revisorAgent.role || "Revisor Técnico de SEO"}

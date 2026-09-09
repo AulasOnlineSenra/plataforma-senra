@@ -58,6 +58,10 @@ model AppSetting {
   referralModalMaxDays    Int      @default(45)
   referralModalImages     String   @default("[]") // Lista de URLs das imagens
   aiVisualPrompt          String?
+  
+  // Agentes Padrão (Assistente de IA do Blog)
+  blogRedatorAgentId      String?
+  blogRevisorAgentId      String?
 }
 
 model Availability {
@@ -438,6 +442,7 @@ model AiAgent {
   updatedAt    DateTime @updatedAt
   
   workflowSteps WorkflowStep[]
+  supervisedWorkflows AutomationWorkflow[] @relation("SupervisorAgent")
 }
 
 model AutomationWorkflow {
@@ -450,6 +455,10 @@ model AutomationWorkflow {
   maxRetries   Int      @default(2)
   queueOrder   String   @default("FIFO")
   isActive     Boolean  @default(false)
+  
+  supervisorAgentId String?
+  supervisorAgent   AiAgent? @relation("SupervisorAgent", fields: [supervisorAgentId], references: [id])
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
