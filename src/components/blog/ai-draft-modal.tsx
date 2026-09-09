@@ -104,7 +104,12 @@ export function AiDraftModal({ currentTitle, currentContent, mode = 'DRAFT', onD
         return;
       }
     }
-    setSelectedAgent(activeAgents[0]?.id || '');
+    const fallbackAgent = activeAgents[0]?.id || '';
+    setSelectedAgent(fallbackAgent);
+    // Se não havia agente salvo, e estamos definindo um fallback, salva silenciosamente
+    if (fallbackAgent && (mode === 'DRAFT' || mode === 'REVIEW')) {
+      await setBlogAgentDefaults(mode, fallbackAgent);
+    }
   };
 
   const loadAgents = async () => {

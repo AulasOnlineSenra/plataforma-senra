@@ -423,9 +423,13 @@ export async function setBlogAgentDefaults(mode: 'DRAFT' | 'REVIEW', agentId: st
     if (mode === 'DRAFT') data.blogRedatorAgentId = agentId;
     if (mode === 'REVIEW') data.blogRevisorAgentId = agentId;
     
-    await prisma.appSetting.update({
+    await prisma.appSetting.upsert({
       where: { id: "global" },
-      data
+      update: data,
+      create: {
+        id: "global",
+        ...data
+      }
     });
     return { success: true };
   } catch (error: any) {
