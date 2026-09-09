@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Play, Pause, Activity, Bot, ArrowRight, ShieldAlert, LayoutDashboard, Loader2, PlayCircle, Plus } from "lucide-react";
+import { Settings, Play, Pause, Activity, Bot, ArrowRight, ShieldAlert, LayoutDashboard, Loader2, PlayCircle, Plus, Sparkles } from "lucide-react";
 import { runAiSupervisor, getAutomationWorkflows, updateAutomationWorkflow } from "@/app/actions/automation";
 import { getAiAgents } from "@/app/actions/ia";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +25,7 @@ export function AutomationManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [stepMessage, setStepMessage] = useState<{ step: string, text: string, type: 'error' | 'success' } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -83,14 +84,22 @@ export function AutomationManager() {
 
   const handleRunManualTest = async () => {
     setIsTesting(true);
-    toast({ title: "Maestro iniciando", description: "O Maestro está girando a esteira... Isso pode levar alguns segundos." });
+    setStepMessage(null); // Limpa mensagens anteriores
     
     try {
       const result = await runAiSupervisor();
       if (result.success) {
-        toast({ title: "Ciclo finalizado", description: result.message, className: "bg-emerald-600 text-white" });
+        if (result.step === "GLOBAL") {
+          toast({ title: "Ciclo finalizado", description: result.message, className: "bg-emerald-600 text-white" });
+        } else if (result.step) {
+          setStepMessage({ step: result.step, text: result.message || "Concluído", type: 'success' });
+        }
       } else {
-        toast({ variant: "destructive", title: "Aviso do Maestro", description: result.message || result.error });
+        if (result.step === "GLOBAL") {
+          toast({ variant: "destructive", title: "Aviso do Maestro", description: result.message || result.error });
+        } else if (result.step) {
+          setStepMessage({ step: result.step, text: result.message || result.error, type: 'error' });
+        }
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro crítico", description: error.message });
@@ -309,10 +318,18 @@ export function AutomationManager() {
                 <p className="text-sm font-semibold flex items-center gap-2">
                   {step.triggerState} <ArrowRight className="h-3 w-3 text-slate-500" /> {step.actionState}
                 </p>
-                <div className="mt-1">
+                <div className="mt-1 flex flex-col gap-2">
                   <p className="text-[10px] text-emerald-400">
                     Sincronizado com Assistente do Blog
                   </p>
+                  
+                  {/* ALERTA OU SUCESSO INLINE */}
+                  {stepMessage && stepMessage.step === step.triggerState && (
+                    <div className={`text-[10px] p-2 rounded-md font-medium flex items-start gap-1.5 ${stepMessage.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                      {stepMessage.type === 'error' ? <ShieldAlert className="w-3 h-3 shrink-0 mt-0.5" /> : <Sparkles className="w-3 h-3 shrink-0 mt-0.5" />}
+                      <span className="leading-tight">{stepMessage.text}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

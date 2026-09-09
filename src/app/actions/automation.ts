@@ -24,12 +24,12 @@ export async function runAiSupervisor() {
 
     if (!workflow) {
       console.log("[MAESTRO] Nenhum workflow do BLOG configurado.");
-      return { success: false, message: "Nenhum workflow configurado." };
+      return { success: false, message: "Nenhum workflow configurado.", step: "GLOBAL" };
     }
 
     if (!workflow.isActive) {
       console.log("[MAESTRO] Workflow pausado pelo Kill-Switch.");
-      return { success: false, message: "Workflow inativo (Kill-Switch ligado)." };
+      return { success: false, message: "Workflow inativo (Kill-Switch ligado).", step: "GLOBAL" };
     }
 
     const { batchSize, queueOrder, steps, id: workflowId } = workflow;
@@ -47,8 +47,12 @@ export async function runAiSupervisor() {
     const redatorId = settings?.blogRedatorAgentId;
     const revisorId = settings?.blogRevisorAgentId;
     
-    if (!redatorId || !revisorId) {
-      return { success: false, message: "Os Agentes do Blog (Redator ou Revisor) não foram configurados. Configure-os no Editor de Texto usando o botão 'Gerar com IA' primeiro." };
+    if (!redatorId) {
+      return { success: false, message: "Agente Redator não configurado. Vá no Editor de Texto e escolha um agente em 'Gerar com IA'.", step: "DRAFT" };
+    }
+    
+    if (!revisorId) {
+      return { success: false, message: "Agente Revisor não configurado. Vá no Editor de Texto e escolha um agente em 'Revisar com IA'.", step: "REVIEW" };
     }
 
     const redatorAgent = await prisma.aiAgent.findUnique({ where: { id: redatorId } });
@@ -237,12 +241,15 @@ ${rev.content}
 
     return { 
       success: true, 
-      message: `Ciclo concluído. ${actionsPerformed} ações realizadas.` 
+      message: `Ciclo concluído. ${actionsPerformed} ações realizadas.`,
+      step: "GLOBAL"
     };
 
   } catch (error: any) {
     console.error("[MAESTRO] Erro crítico:", error);
-    return { success: false, error: error.message };
+    
+    // Tentamos recuperar o step atual caso tenha quebrado no meio
+    return { success: false, error: error.message, step: "GLOBAL" };
   }
 }
 
