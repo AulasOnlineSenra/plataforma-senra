@@ -207,3 +207,70 @@ ${rev.content}
     return { success: false, error: error.message };
   }
 }
+
+export async function getAutomationWorkflows() {
+  try {
+    // Se não existir nenhum, vamos criar o padrão do Supervisor de Blog
+    let workflows = await prisma.automationWorkflow.findMany({
+      include: { steps: { include: { agent: true }, orderBy: { order: 'asc' } } }
+    });
+
+    if (workflows.length === 0) {
+      const defaultWorkflow = await prisma.automationWorkflow.create({
+        data: {
+          name: "Supervisor de Blog (Maestro)",
+          description: "Orquestrador de IA que move automaticamente artigos pelo Kanban.",
+          entity: "BLOG",
+          frequency: "hourly",
+          batchSize: 2,
+          maxRetries: 2,
+          queueOrder: "FIFO",
+          isActive: false
+        }
+      });
+      // Cria passos padrão sem agentes definidos
+      await prisma.workflowStep.createMany({
+        data: [
+          { workflowId: defaultWorkflow.id, agentId: null, triggerState: "DRAFT", actionState: "REVIEW", order: 1 },
+          { workflowId: defaultWorkflow.id, agentId: null, triggerState: "REVIEW", actionState: "IMAGES", order: 2 }
+        ]
+      });
+      workflows = await prisma.automationWorkflow.findMany({
+        include: { steps: { include: { agent: true }, orderBy: { order: 'asc' } } }
+      });
+    }
+
+    return { success: true, data: workflows };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateAutomationWorkflow(id: string, data: any, steps: any[]) {
+  try {
+    await prisma.automationWorkflow.update({
+      where: { id },
+      data: {
+        isActive: data.isActive,
+        frequency: data.frequency,
+        batchSize: parseInt(data.batchSize),
+        queueOrder: data.queueOrder,
+      }
+    });
+
+    // Atualizar agentes de cada passo
+    for (const step of steps) {
+      if (step.agentId) {
+        await prisma.workflowStep.update({
+          where: { id: step.id },
+          data: { agentId: step.agentId }
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+

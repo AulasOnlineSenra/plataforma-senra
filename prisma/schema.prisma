@@ -459,14 +459,14 @@ model AutomationWorkflow {
 model WorkflowStep {
   id           String   @id @default(cuid())
   workflowId   String
-  agentId      String
+  agentId      String?
   order        Int      @default(0)
   
   triggerState String
   actionState  String
   
   workflow     AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  agent        AiAgent            @relation(fields: [agentId], references: [id])
+  agent        AiAgent?           @relation(fields: [agentId], references: [id])
 }
 
 model PageVisit {

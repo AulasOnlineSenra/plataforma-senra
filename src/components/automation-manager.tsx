@@ -1,21 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Play, Pause, Activity, Bot, ArrowRight, ShieldAlert, LayoutDashboard, Loader2, PlayCircle } from "lucide-react";
-import { runAiSupervisor } from "@/app/actions/automation";
+import { Settings, Play, Pause, Activity, Bot, ArrowRight, ShieldAlert, LayoutDashboard, Loader2, PlayCircle, Plus } from "lucide-react";
+import { runAiSupervisor, getAutomationWorkflows, updateAutomationWorkflow } from "@/app/actions/automation";
+import { getAiAgents } from "@/app/actions/ia";
 import { toast } from "sonner";
 
 export function AutomationManager() {
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
+  
   const [isActive, setIsActive] = useState(false);
   const [frequency, setFrequency] = useState("hourly");
   const [batchSize, setBatchSize] = useState("2");
   const [queueOrder, setQueueOrder] = useState("FIFO");
+  const [steps, setSteps] = useState<any[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    const [workflowsRes, agentsRes] = await Promise.all([
+      getAutomationWorkflows(),
+      getAiAgents()
+    ]);
+    
+    if (agentsRes.success) setAgents(agentsRes.data);
+    if (workflowsRes.success) {
+      setWorkflows(workflowsRes.data);
+      if (workflowsRes.data.length > 0) {
+        selectWorkflow(workflowsRes.data[0]);
+      }
+    }
+    setIsLoading(false);
+  };
+
+  const selectWorkflow = (workflow: any) => {
+    setSelectedWorkflowId(workflow.id);
+    setIsActive(workflow.isActive);
+    setFrequency(workflow.frequency);
+    setBatchSize(workflow.batchSize.toString());
+    setQueueOrder(workflow.queueOrder);
+    setSteps(workflow.steps || []);
+  };
+
+  const handleSave = async () => {
+    if (!selectedWorkflowId) return;
+    setIsSaving(true);
+    
+    const result = await updateAutomationWorkflow(selectedWorkflowId, {
+      isActive,
+      frequency,
+      batchSize,
+      queueOrder
+    }, steps);
+
+    if (result.success) {
+      toast.success("Configurações salvas com sucesso!");
+      loadData();
+    } else {
+      toast.error("Erro ao salvar", { description: result.error });
+    }
+    setIsSaving(false);
+  };
 
   const handleRunManualTest = async () => {
     setIsTesting(true);
@@ -35,8 +94,53 @@ export function AutomationManager() {
     setIsTesting(false);
   };
 
+  const updateStepAgent = (stepId: string, agentId: string) => {
+    setSteps(prev => prev.map(s => s.id === stepId ? { ...s, agentId: agentId === "none" ? null : agentId } : s));
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  // Se não tem workflow selecionado, mostra lista
+  if (!selectedWorkflowId) {
+    return (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {workflows.map(wf => (
+          <Card key={wf.id} className="cursor-pointer hover:border-primary transition-all overflow-hidden" onClick={() => selectWorkflow(wf)}>
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                {wf.name}
+              </CardTitle>
+              <CardDescription>{wf.description}</CardDescription>
+            </CardHeader>
+            <CardFooter className="pt-4">
+              <div className={`px-2 py-1 rounded text-xs font-bold ${wf.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                {wf.isActive ? 'Ativo' : 'Pausado'}
+              </div>
+            </CardFooter>
+          </Card>
+        ))}
+        <Card className="cursor-pointer border-dashed hover:border-primary transition-all flex flex-col items-center justify-center p-6 text-center text-muted-foreground hover:text-primary">
+          <Plus className="h-8 w-8 mb-2 opacity-50" />
+          <span className="font-medium">Criar Nova Automação</span>
+          <span className="text-xs opacity-70">Em breve</span>
+        </Card>
+      </div>
+    );
+  }
+
+  const selectedWorkflow = workflows.find(w => w.id === selectedWorkflowId);
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-2">
+        <Button variant="ghost" size="sm" onClick={() => setSelectedWorkflowId(null)} className="text-muted-foreground">
+          &larr; Voltar para Automações
+        </Button>
+      </div>
+
       {/* HEADER PRINCIPAL */}
       <Card className="rounded-[15px] border-primary/20 bg-primary/5">
         <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -46,12 +150,12 @@ export function AutomationManager() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                Supervisor de Blog (Maestro)
+                {selectedWorkflow?.name}
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-600'}`}>
                   {isActive ? 'Ativo' : 'Pausado'}
                 </span>
               </h2>
-              <p className="text-sm text-slate-600">Orquestrador de IA que move automaticamente artigos pelo Kanban.</p>
+              <p className="text-sm text-slate-600">{selectedWorkflow?.description}</p>
             </div>
           </div>
           
@@ -150,7 +254,14 @@ export function AutomationManager() {
               {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
               {isTesting ? "Rodando..." : "Rodar Maestro Agora"}
             </Button>
-            <Button className="w-full sm:w-fit rounded-xl">Salvar Configurações</Button>
+            <Button 
+              className="w-full sm:w-fit rounded-xl"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Salvar Configurações
+            </Button>
           </CardFooter>
         </Card>
 
@@ -168,29 +279,31 @@ export function AutomationManager() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 relative z-10">
-            {/* Passo 1 */}
-            <div className="flex flex-col gap-1 p-3 bg-slate-800/80 rounded-xl border border-slate-700">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passo 1</span>
-                <Bot className="h-3.5 w-3.5 text-primary" />
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex flex-col gap-1 p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passo {index + 1}</span>
+                  <Bot className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  {step.triggerState} <ArrowRight className="h-3 w-3 text-slate-500" /> {step.actionState}
+                </p>
+                <div className="mt-2">
+                  <Label className="text-[10px] text-slate-400 mb-1 block">Agente Acionado:</Label>
+                  <Select value={step.agentId || "none"} onValueChange={(val) => updateStepAgent(step.id, val)}>
+                    <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-300 h-8 text-xs">
+                      <SelectValue placeholder="Selecione um agente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum Agente</SelectItem>
+                      {agents.map(a => (
+                        <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <p className="text-sm font-semibold flex items-center gap-2">
-                DRAFT <ArrowRight className="h-3 w-3 text-slate-500" /> REVIEW
-              </p>
-              <p className="text-xs text-slate-400">Aciona: <span className="text-emerald-400 font-medium">Agente Redator</span></p>
-            </div>
-
-            {/* Passo 2 */}
-            <div className="flex flex-col gap-1 p-3 bg-slate-800/80 rounded-xl border border-slate-700">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passo 2</span>
-                <Bot className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <p className="text-sm font-semibold flex items-center gap-2">
-                REVIEW <ArrowRight className="h-3 w-3 text-slate-500" /> IMAGES
-              </p>
-              <p className="text-xs text-slate-400">Aciona: <span className="text-blue-400 font-medium">Agente Revisor</span></p>
-            </div>
+            ))}
 
             {/* Fim da Linha */}
             <div className="flex flex-col gap-1 p-3 bg-primary/10 rounded-xl border border-primary/20">
@@ -198,8 +311,8 @@ export function AutomationManager() {
                 <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Parada Obrigatória</span>
                 <ShieldAlert className="h-3.5 w-3.5 text-primary" />
               </div>
-              <p className="text-sm font-semibold">Coluna IMAGES</p>
-              <p className="text-[11px] text-slate-300">A partir daqui, a intervenção humana é necessária para gerar artes e publicar.</p>
+              <p className="text-sm font-semibold">Coluna Final</p>
+              <p className="text-[11px] text-slate-300">A partir daqui, a intervenção humana é necessária.</p>
             </div>
           </CardContent>
         </Card>
