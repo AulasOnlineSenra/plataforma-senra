@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Settings, Play, Pause, Activity, Bot, ArrowRight, ShieldAlert, LayoutDashboard, Loader2, PlayCircle, Plus } from "lucide-react";
 import { runAiSupervisor, getAutomationWorkflows, updateAutomationWorkflow } from "@/app/actions/automation";
 import { getAiAgents } from "@/app/actions/ia";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 export function AutomationManager() {
   const [workflows, setWorkflows] = useState<any[]>([]);
@@ -73,27 +73,27 @@ export function AutomationManager() {
     }, steps);
 
     if (result.success) {
-      toast.success("Configurações salvas com sucesso!");
+      toast({ title: "Configurações salvas", description: "As configurações foram atualizadas com sucesso.", className: "bg-emerald-600 text-white" });
       loadData();
     } else {
-      toast.error("Erro ao salvar", { description: result.error });
+      toast({ variant: "destructive", title: "Erro ao salvar", description: result.error });
     }
     setIsSaving(false);
   };
 
   const handleRunManualTest = async () => {
     setIsTesting(true);
-    toast("O Maestro está girando a esteira...", { description: "Isso pode levar alguns segundos dependendo dos artigos." });
+    toast({ title: "Maestro iniciando", description: "O Maestro está girando a esteira... Isso pode levar alguns segundos." });
     
     try {
       const result = await runAiSupervisor();
       if (result.success) {
-        toast.success("Ciclo finalizado com sucesso!", { description: result.message });
+        toast({ title: "Ciclo finalizado", description: result.message, className: "bg-emerald-600 text-white" });
       } else {
-        toast.error("Aviso do Maestro", { description: result.message || result.error });
+        toast({ variant: "destructive", title: "Aviso do Maestro", description: result.message || result.error });
       }
     } catch (error: any) {
-      toast.error("Erro crítico", { description: error.message });
+      toast({ variant: "destructive", title: "Erro crítico", description: error.message });
     }
     
     setIsTesting(false);

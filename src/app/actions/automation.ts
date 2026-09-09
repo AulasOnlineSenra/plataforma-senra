@@ -293,6 +293,7 @@ export async function updateAutomationWorkflow(id: string, data: any, steps: any
         frequency: data.frequency,
         batchSize: parseInt(data.batchSize),
         queueOrder: data.queueOrder,
+        supervisorAgentId: data.supervisorAgentId,
       }
     });
 
