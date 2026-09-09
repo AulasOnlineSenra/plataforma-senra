@@ -41,6 +41,9 @@ export async function runAiSupervisor() {
 
     let actionsPerformed = 0;
 
+    // Buscar chaves de API e Agentes
+    const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
+
     const rawGeminiKey = settings?.geminiApiKey || "";
     const geminiApiKeys = rawGeminiKey.split(/\r?\n|,/).map(k => k.trim()).filter(k => k.length > 0);
     const geminiKey = geminiApiKeys[0]; // Usa a primeira chave válida do pool
@@ -61,8 +64,16 @@ export async function runAiSupervisor() {
       return { success: false, message: "Agente Revisor não configurado. Vá no Editor de Texto e escolha um agente em 'Revisar com IA'.", step: "REVIEW" };
     }
 
-    const redatorAgent = await prisma.aiAgent.findUnique({ where: { id: redatorId } });
-    const revisorAgent = await prisma.aiAgent.findUnique({ where: { id: revisorId } });
+    const redatorAgent = redatorId ? await prisma.aiAgent.findUnique({ where: { id: redatorId } }) : null;
+    const revisorAgent = revisorId ? await prisma.aiAgent.findUnique({ where: { id: revisorId } }) : null;
+
+    if (!redatorAgent) {
+      return { success: false, message: "O Agente Redator configurado não existe mais no banco de dados.", step: "DRAFT" };
+    }
+
+    if (!revisorAgent) {
+      return { success: false, message: "O Agente Revisor configurado não existe mais no banco de dados.", step: "REVIEW" };
+    }
 
     // ---------------------------------------------------------
     // PASSO 1: DRAFT -> REVIEW (Redação)
@@ -157,10 +168,12 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
             text = result.response.text();
           }
 
-          // Limpar blockticks se vier como markdown de código (ex: ```json ... ```)
+          // Sanitização ultra-robusta de JSON (extrai entre a primeira { e a última })
           let cleanJson = text.trim();
-          if (cleanJson.startsWith("```json")) {
-            cleanJson = cleanJson.replace(/```json/g, "").replace(/```/g, "").trim();
+          const firstBrace = cleanJson.indexOf("{");
+          const lastBrace = cleanJson.lastIndexOf("}");
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
           }
 
           const parsedData = JSON.parse(cleanJson);
@@ -277,9 +290,12 @@ ${rev.content}
             text = result.response.text();
           }
 
+          // Sanitização ultra-robusta de JSON (extrai entre a primeira { e a última })
           let cleanJson = text.trim();
-          if (cleanJson.startsWith("```json")) {
-            cleanJson = cleanJson.replace(/```json/g, "").replace(/```/g, "").trim();
+          const firstBrace = cleanJson.indexOf("{");
+          const lastBrace = cleanJson.lastIndexOf("}");
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
           }
 
           const parsedData = JSON.parse(cleanJson);
