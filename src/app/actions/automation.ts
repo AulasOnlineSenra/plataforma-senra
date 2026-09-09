@@ -139,8 +139,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
               messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt }
-              ],
-              response_format: { type: "json_object" }
+              ]
             });
             text = response.choices[0]?.message?.content || "";
           } else {
@@ -263,8 +262,7 @@ ${rev.content}
               messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt }
-              ],
-              response_format: { type: "json_object" }
+              ]
             });
             text = response.choices[0]?.message?.content || "";
           } else {
