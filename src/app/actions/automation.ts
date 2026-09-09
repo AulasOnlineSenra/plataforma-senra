@@ -109,7 +109,7 @@ Notas/Ideias Atuais: ${draft.excerpt || "Nenhuma anotação."}
 Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 `;
 
-          const aiModel = genAI.getModel({
+          const aiModel = genAI.getGenerativeModel({
             model: redatorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
             systemInstruction: systemPrompt,
             generationConfig: {
@@ -210,7 +210,7 @@ Conteúdo HTML Atual:
 ${rev.content}
 `;
 
-          const aiModel = genAI.getModel({
+          const aiModel = genAI.getGenerativeModel({
             model: revisorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
             systemInstruction: systemPrompt,
             generationConfig: {
