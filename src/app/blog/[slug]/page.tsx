@@ -813,5 +813,3 @@ export default function BlogPostPage() {
     </div>
   );
 }
-return <BlogPostClient initialPost={initialPost} allPosts={allPosts} />;
-}
