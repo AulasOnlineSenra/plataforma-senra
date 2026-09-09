@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import OpenAI from "openai";
 
 /**
  * runAiSupervisor
@@ -40,12 +41,14 @@ export async function runAiSupervisor() {
 
     let actionsPerformed = 0;
 
-    // Buscar chaves de API para os Agentes
-    const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
-    if (!settings?.geminiApiKey) {
-      throw new Error("Chave de API do Gemini não configurada.");
+    const rawGeminiKey = settings?.geminiApiKey || "";
+    const geminiApiKeys = rawGeminiKey.split(/\r?\n|,/).map(k => k.trim()).filter(k => k.length > 0);
+    const geminiKey = geminiApiKeys[0]; // Usa a primeira chave válida do pool
+    const orApiKey = settings?.openRouterApiKey || process.env.OPENROUTER_API_KEY;
+
+    if (!geminiKey && !orApiKey) {
+      throw new Error("Nenhuma chave de API configurada (Gemini ou OpenRouter).");
     }
-    const genAI = new GoogleGenerativeAI(settings.geminiApiKey.trim());
 
     const redatorId = settings?.blogRedatorAgentId;
     const revisorId = settings?.blogRevisorAgentId;
@@ -112,26 +115,47 @@ Notas/Ideias Atuais: ${draft.excerpt || "Nenhuma anotação."}
 Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 `;
 
-          const aiModel = genAI.getGenerativeModel({
-            model: redatorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
-            systemInstruction: systemPrompt,
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  title: { type: SchemaType.STRING },
-                  excerpt: { type: SchemaType.STRING },
-                  content: { type: SchemaType.STRING },
-                  metaDescription: { type: SchemaType.STRING }
-                },
-                required: ["title", "excerpt", "content", "metaDescription"]
-              }
-            }
-          });
+          const isOpenRouter = redatorAgent.model?.startsWith('openrouter:');
+          let text = "";
 
-          const result = await aiModel.generateContent(userPrompt);
-          const text = result.response.text();
+          if (isOpenRouter) {
+            if (!orApiKey) throw new Error("Chave de API do OpenRouter não configurada.");
+            const orModelName = redatorAgent.model!.replace('openrouter:', '');
+            const openai = new OpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: orApiKey });
+            
+            const response = await openai.chat.completions.create({
+              model: orModelName,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+              ],
+              response_format: { type: "json_object" }
+            });
+            text = response.choices[0]?.message?.content || "";
+          } else {
+            if (!geminiKey) throw new Error("Chave de API do Gemini não configurada.");
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const aiModel = genAI.getGenerativeModel({
+              model: redatorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
+              systemInstruction: systemPrompt,
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: SchemaType.OBJECT,
+                  properties: {
+                    title: { type: SchemaType.STRING },
+                    excerpt: { type: SchemaType.STRING },
+                    content: { type: SchemaType.STRING },
+                    metaDescription: { type: SchemaType.STRING }
+                  },
+                  required: ["title", "excerpt", "content", "metaDescription"]
+                }
+              }
+            });
+
+            const result = await aiModel.generateContent(userPrompt);
+            text = result.response.text();
+          }
 
           // Limpar blockticks se vier como markdown de código (ex: ```json ... ```)
           let cleanJson = text.trim();
@@ -213,24 +237,45 @@ Conteúdo HTML Atual:
 ${rev.content}
 `;
 
-          const aiModel = genAI.getGenerativeModel({
-            model: revisorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
-            systemInstruction: systemPrompt,
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  content: { type: SchemaType.STRING },
-                  tags: { type: SchemaType.STRING }
-                },
-                required: ["content", "tags"]
-              }
-            }
-          });
+          const isOpenRouter = revisorAgent.model?.startsWith('openrouter:');
+          let text = "";
 
-          const result = await aiModel.generateContent(userPrompt);
-          const text = result.response.text();
+          if (isOpenRouter) {
+            if (!orApiKey) throw new Error("Chave de API do OpenRouter não configurada.");
+            const orModelName = revisorAgent.model!.replace('openrouter:', '');
+            const openai = new OpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: orApiKey });
+            
+            const response = await openai.chat.completions.create({
+              model: orModelName,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+              ],
+              response_format: { type: "json_object" }
+            });
+            text = response.choices[0]?.message?.content || "";
+          } else {
+            if (!geminiKey) throw new Error("Chave de API do Gemini não configurada.");
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const aiModel = genAI.getGenerativeModel({
+              model: revisorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
+              systemInstruction: systemPrompt,
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: SchemaType.OBJECT,
+                  properties: {
+                    content: { type: SchemaType.STRING },
+                    tags: { type: SchemaType.STRING }
+                  },
+                  required: ["content", "tags"]
+                }
+              }
+            });
+
+            const result = await aiModel.generateContent(userPrompt);
+            text = result.response.text();
+          }
 
           let cleanJson = text.trim();
           if (cleanJson.startsWith("```json")) {
