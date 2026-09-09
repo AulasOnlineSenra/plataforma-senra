@@ -9,6 +9,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
  * Ela funciona como o "Maestro" da automação do Kanban do Blog.
  */
 export async function runAiSupervisor() {
+  let globalWorkflowId: string | null = null;
   try {
     console.log("[MAESTRO] Iniciando rotina de verificação...");
 
@@ -33,6 +34,7 @@ export async function runAiSupervisor() {
     }
 
     const { batchSize, queueOrder, steps, id: workflowId } = workflow;
+    globalWorkflowId = workflowId;
     const orderDirection = queueOrder === "LIFO" ? "desc" : "asc";
 
     let actionsPerformed = 0;
@@ -42,7 +44,7 @@ export async function runAiSupervisor() {
     if (!settings?.geminiApiKey) {
       throw new Error("Chave de API do Gemini não configurada.");
     }
-    const genAI = new GoogleGenerativeAI(settings.geminiApiKey);
+    const genAI = new GoogleGenerativeAI(settings.geminiApiKey.trim());
 
     const redatorId = settings?.blogRedatorAgentId;
     const revisorId = settings?.blogRevisorAgentId;
@@ -153,7 +155,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 
           actionsPerformed++;
           console.log(`[MAESTRO] Sucesso! ${draft.title} movido para REVIEW.`);
-        } catch (e) {
+        } catch (e: any) {
           console.error(`[MAESTRO] Falha ao processar rascunho ${draft.title}:`, e);
           await prisma.blogPost.update({ where: { id: draft.id }, data: { isProcessingAi: false } });
           return { success: false, message: `O agente falhou ao redigir o artigo "${draft.title}". Detalhes: ${e.message}`, step: "DRAFT" };
@@ -249,7 +251,7 @@ ${rev.content}
 
           actionsPerformed++;
           console.log(`[MAESTRO] Sucesso! ${rev.title} movido para IMAGES.`);
-        } catch (e) {
+        } catch (e: any) {
           console.error(`[MAESTRO] Falha ao revisar artigo ${rev.title}:`, e);
           await prisma.blogPost.update({ where: { id: rev.id }, data: { isProcessingAi: false } });
           return { success: false, message: `O agente falhou ao revisar o artigo "${rev.title}". Detalhes: ${e.message}`, step: "REVIEW" };
@@ -272,8 +274,19 @@ ${rev.content}
   } catch (error: any) {
     console.error("[MAESTRO] Erro crítico:", error);
     
-    // Tentamos recuperar o step atual caso tenha quebrado no meio
     return { success: false, error: error.message, step: "GLOBAL" };
+  } finally {
+    // Garante que o status seja limpo independentemente de falhas ou retornos antecipados
+    if (globalWorkflowId) {
+      try {
+        await prisma.automationWorkflow.update({
+          where: { id: globalWorkflowId },
+          data: { currentProcessingStep: null }
+        });
+      } catch (e) {
+        console.error("[MAESTRO] Falha ao limpar status do workflow:", e);
+      }
+    }
   }
 }
 
