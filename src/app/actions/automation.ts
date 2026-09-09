@@ -40,6 +40,8 @@ export async function runAiSupervisor() {
     const orderDirection = queueOrder === "LIFO" ? "desc" : "asc";
 
     let actionsPerformed = 0;
+    let draftsProcessed = 0;
+    let reviewsProcessed = 0;
 
     // Buscar chaves de API e Agentes
     const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
@@ -190,6 +192,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
             }
           });
 
+          draftsProcessed++;
           actionsPerformed++;
           console.log(`[MAESTRO] Sucesso! ${draft.title} movido para REVIEW.`);
         } catch (e: any) {
@@ -309,6 +312,7 @@ ${rev.content}
             }
           });
 
+          reviewsProcessed++;
           actionsPerformed++;
           console.log(`[MAESTRO] Sucesso! ${rev.title} movido para IMAGES.`);
         } catch (e: any) {
@@ -327,8 +331,12 @@ ${rev.content}
 
     return { 
       success: true, 
-      message: `Ciclo concluído. ${actionsPerformed} ações realizadas.`,
-      step: "GLOBAL"
+      message: `Ciclo concluído. ${actionsPerformed} ação(ões) realizada(s).`,
+      step: "GLOBAL",
+      stepResults: {
+        DRAFT: draftsProcessed > 0 ? `${draftsProcessed} artigo(s) redigido(s) e movido(s) para Revisão.` : "Nenhum rascunho processado.",
+        REVIEW: reviewsProcessed > 0 ? `${reviewsProcessed} artigo(s) revisado(s) e movido(s) para Imagens.` : "Nenhum artigo revisado."
+      }
     };
 
   } catch (error: any) {

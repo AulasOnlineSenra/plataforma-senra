@@ -25,7 +25,7 @@ export function AutomationManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [stepMessage, setStepMessage] = useState<{ step: string, text: string, type: 'error' | 'success' } | null>(null);
+  const [stepMessages, setStepMessages] = useState<Record<string, { text: string, type: 'error' | 'success' }>>({});
 
   useEffect(() => {
     loadData();
@@ -84,21 +84,25 @@ export function AutomationManager() {
 
   const handleRunManualTest = async () => {
     setIsTesting(true);
-    setStepMessage(null); // Limpa mensagens anteriores
-    
     try {
       const result = await runAiSupervisor();
       if (result.success) {
-        if (result.step === "GLOBAL") {
-          toast({ title: "Ciclo finalizado", description: result.message, className: "bg-emerald-600 text-white" });
-        } else if (result.step) {
-          setStepMessage({ step: result.step, text: result.message || "Concluído", type: 'success' });
+        if ((result as any).stepResults) {
+          const res = (result as any).stepResults;
+          const newMsgs: Record<string, { text: string, type: 'success' | 'error' }> = {};
+          if (res.DRAFT) newMsgs['DRAFT'] = { text: res.DRAFT, type: 'success' };
+          if (res.REVIEW) newMsgs['REVIEW'] = { text: res.REVIEW, type: 'success' };
+          setStepMessages(newMsgs);
         }
+        toast({ title: "Ciclo finalizado", description: result.message, className: "bg-emerald-600 text-white" });
       } else {
         if (result.step === "GLOBAL") {
           toast({ variant: "destructive", title: "Aviso do Maestro", description: result.message || result.error });
         } else if (result.step) {
-          setStepMessage({ step: result.step, text: result.message || result.error, type: 'error' });
+          setStepMessages(prev => ({
+            ...prev,
+            [result.step]: { text: result.message || result.error || "Erro no passo", type: 'error' }
+          }));
         }
       }
     } catch (error: any) {
@@ -303,36 +307,52 @@ export function AutomationManager() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 relative z-10">
-            {steps.map((step, index) => (
-              <div key={step.id} className={`flex flex-col gap-1 p-3 rounded-xl border ${selectedWorkflow?.currentProcessingStep === step.triggerState ? 'bg-blue-900/40 border-blue-500 ring-1 ring-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-slate-800/80 border-slate-700'}`}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passo {index + 1}</span>
-                  {selectedWorkflow?.currentProcessingStep === step.triggerState ? (
-                    <span className="flex items-center gap-1 text-[10px] text-blue-400 font-bold bg-blue-900/50 px-2 py-0.5 rounded-full">
-                      <Loader2 className="h-3 w-3 animate-spin" /> PROCESSANDO
-                    </span>
-                  ) : (
-                    <Bot className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </div>
-                <p className="text-sm font-semibold flex items-center gap-2">
-                  {step.triggerState} <ArrowRight className="h-3 w-3 text-slate-500" /> {step.actionState}
-                </p>
-                <div className="mt-1 flex flex-col gap-2">
-                  <p className="text-[10px] text-emerald-400">
-                    Sincronizado com Assistente do Blog
+            {steps.map((step, index) => {
+              const isStepProcessing = isTesting || selectedWorkflow?.currentProcessingStep === step.triggerState;
+              const msg = stepMessages[step.triggerState];
+              
+              return (
+                <div 
+                  key={step.id} 
+                  className={`flex flex-col gap-1.5 p-3.5 rounded-xl border transition-all duration-300 ${
+                    isStepProcessing 
+                      ? 'bg-blue-950/70 border-blue-500 ring-2 ring-blue-500/80 shadow-[0_0_20px_rgba(59,130,246,0.5)] animate-pulse' 
+                      : 'bg-slate-800/80 border-slate-700'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passo {index + 1}</span>
+                    {isStepProcessing ? (
+                      <span className="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-900/80 border border-blue-500/50 px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.4)] animate-pulse">
+                        <Loader2 className="h-3 w-3 animate-spin" /> PROCESSANDO
+                      </span>
+                    ) : (
+                      <Bot className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold flex items-center gap-2">
+                    {step.triggerState} <ArrowRight className="h-3 w-3 text-slate-500" /> {step.actionState}
                   </p>
-                  
-                  {/* ALERTA OU SUCESSO INLINE */}
-                  {stepMessage && stepMessage.step === step.triggerState && (
-                    <div className={`text-[10px] p-2 rounded-md font-medium flex items-start gap-1.5 ${stepMessage.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-                      {stepMessage.type === 'error' ? <ShieldAlert className="w-3 h-3 shrink-0 mt-0.5" /> : <Sparkles className="w-3 h-3 shrink-0 mt-0.5" />}
-                      <span className="leading-tight">{stepMessage.text}</span>
-                    </div>
-                  )}
+                  <div className="mt-1 flex flex-col gap-2">
+                    <p className="text-[10px] text-slate-400">
+                      Sincronizado com Assistente do Blog
+                    </p>
+                    
+                    {/* ALERTA OU SUCESSO INLINE POR ETAPA */}
+                    {msg && (
+                      <div className={`text-[11px] p-2.5 rounded-lg font-medium flex items-start gap-2 ${
+                        msg.type === 'error' 
+                          ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      }`}>
+                        {msg.type === 'error' ? <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" /> : <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" />}
+                        <span className="leading-snug">{msg.text}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Fim da Linha */}
             <div className="flex flex-col gap-1 p-3 bg-primary/10 rounded-xl border border-primary/20">
