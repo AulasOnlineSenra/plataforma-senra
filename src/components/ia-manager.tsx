@@ -662,6 +662,22 @@ export function IaManager() {
 
                   <div className="space-y-4 pt-2 border-t mt-4">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Database className="h-4 w-4 text-primary" />
+                      Base de Conhecimento (RAG)
+                    </h3>
+                    <div className="space-y-2">
+                      <Label>URL do Documento (PDF/TXT/Docs)</Label>
+                      <Input 
+                        placeholder="Ex: https://meuservidor.com/manual-editorial.pdf"
+                        value={selectedAgent.knowledgeUrl || ""}
+                        onChange={e => setSelectedAgent({...selectedAgent, knowledgeUrl: e.target.value})}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">O agente consultará este documento como fonte da verdade antes de responder.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-2 border-t mt-4">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
                       <Bot className="h-4 w-4 text-primary" />
                       Estrutura do Prompt (V2)
                     </h3>
