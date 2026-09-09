@@ -660,17 +660,107 @@ export function IaManager() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Instruções de Personalidade (System Prompt)</Label>
-                    <Textarea 
-                      placeholder="Ex: Você é um assistente focado em CRM. Sua missão é garantir que todos os leads..."
-                      className="min-h-[150px] font-mono text-sm"
-                      value={selectedAgent.instructions || ""}
-                      onChange={e => setSelectedAgent({...selectedAgent, instructions: e.target.value})}
-                    />
-                    <p className="text-xs text-muted-foreground italic">
-                      Dica: Descreva o tom de voz, o que ele deve priorizar e o que ele NÃO deve fazer.
-                    </p>
+                  <div className="space-y-4 pt-2 border-t mt-4">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Bot className="h-4 w-4 text-primary" />
+                      Estrutura do Prompt (V2)
+                    </h3>
+                    
+                    <div className="space-y-2">
+                      <Label>Papel (Role)</Label>
+                      <Input 
+                        placeholder="Ex: Você é um Editor Especialista em SEO Educacional."
+                        value={selectedAgent.role || ""}
+                        onChange={e => setSelectedAgent({...selectedAgent, role: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Objetivo (Goal)</Label>
+                      <Textarea 
+                        placeholder="Ex: Produzir artigos úteis e confiáveis otimizados para mecanismos de busca."
+                        className="min-h-[60px]"
+                        value={selectedAgent.goal || ""}
+                        onChange={e => setSelectedAgent({...selectedAgent, goal: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Regras Rígidas (Guardrails de Comportamento)</Label>
+                      <Textarea 
+                        placeholder="Ex: - Não invente dados.&#10;- Não altere informações corretas sem necessidade."
+                        className="min-h-[80px]"
+                        value={selectedAgent.rules || ""}
+                        onChange={e => setSelectedAgent({...selectedAgent, rules: e.target.value})}
+                      />
+                    </div>
+
+                    {/* Mantém as instruções antigas escondidas caso haja conteúdo legado */}
+                    {selectedAgent.instructions && !selectedAgent.role && !selectedAgent.goal && !selectedAgent.rules && (
+                      <div className="space-y-2 p-3 bg-amber-50 border border-amber-200 rounded-xl mt-2">
+                        <Label className="text-amber-800">System Prompt Legado (V1)</Label>
+                        <Textarea 
+                          className="min-h-[100px] text-xs"
+                          value={selectedAgent.instructions || ""}
+                          onChange={e => setSelectedAgent({...selectedAgent, instructions: e.target.value})}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 pt-2 border-t mt-4">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Guardrails e Saída (Segurança)
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Formato de Saída (Output)</Label>
+                        <Select 
+                          value={selectedAgent.outputFormat || "TEXT"} 
+                          onValueChange={value => setSelectedAgent({...selectedAgent, outputFormat: value})}
+                        >
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Selecione o formato" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="TEXT">Texto Livre (Markdown)</SelectItem>
+                            <SelectItem value="JSON">Estrutura JSON</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground mt-1">O formato JSON é obrigatório para Automações.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Permissões de Ação</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {['read', 'create', 'update', 'delete', 'publish'].map(perm => {
+                            let currentPerms = { read: true, create: true, update: true, delete: false, publish: false };
+                            try {
+                              if (selectedAgent.permissions) {
+                                currentPerms = typeof selectedAgent.permissions === 'string' ? JSON.parse(selectedAgent.permissions) : selectedAgent.permissions;
+                              }
+                            } catch (e) {}
+                            
+                            const labels: Record<string, string> = { read: 'Ler', create: 'Criar', update: 'Editar', delete: 'Excluir', publish: 'Publicar' };
+                            return (
+                              <label key={perm} className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-slate-50 p-1 rounded">
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                                  checked={!!(currentPerms as any)[perm]}
+                                  onChange={e => {
+                                    const newPerms = { ...currentPerms, [perm]: e.target.checked };
+                                    setSelectedAgent({...selectedAgent, permissions: JSON.stringify(newPerms)});
+                                  }}
+                                />
+                                <span className={!(currentPerms as any)[perm] ? "text-slate-400" : "font-medium"}>{labels[perm]}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-4">

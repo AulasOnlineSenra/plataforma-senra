@@ -47,6 +47,12 @@ export async function updateAiAgent(id: string, data: {
   model?: string;
   tools?: string;
   status?: string;
+  role?: string;
+  goal?: string;
+  rules?: string;
+  permissions?: string;
+  outputFormat?: string;
+  knowledgeUrl?: string;
 }) {
   try {
     const agent = await prisma.aiAgent.update({

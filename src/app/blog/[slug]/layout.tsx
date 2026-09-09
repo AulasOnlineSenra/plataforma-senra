@@ -2,14 +2,13 @@ import { Metadata, ResolvingMetadata } from 'next';
 import { getBlogPostBySlug } from '@/app/actions/blog';
 
 type Props = {
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 };
 
 export async function generateMetadata(
-  props: Props,
+  { params }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const params = await props.params;
   const slug = params.slug;
   const postResult = await getBlogPostBySlug(slug);
 
@@ -20,7 +19,7 @@ export async function generateMetadata(
   }
 
   const post = postResult.data;
-  
+
   return {
     title: `${post.title} | Plataforma Senra`,
     description: (post as any).metaDescription || post.excerpt,

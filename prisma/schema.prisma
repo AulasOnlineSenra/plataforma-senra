@@ -424,9 +424,49 @@ model AiAgent {
   instructions String?
   model        String   @default("gemini-2.0-flash")
   tools        String?  @default("[]") // JSON array of enabled tool IDs
+  
+  // V2 Upgrades
+  role         String?
+  goal         String?
+  rules        String?
+  permissions  String?  @default("{\"read\":true,\"create\":true,\"update\":true,\"delete\":false,\"publish\":false}")
+  outputFormat String?  @default("TEXT")
+  knowledgeUrl String?
+  
   status       String   @default("active")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  
+  workflowSteps WorkflowStep[]
+}
+
+model AutomationWorkflow {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  entity       String   @default("BLOG")
+  frequency    String   @default("hourly")
+  batchSize    Int      @default(2)
+  maxRetries   Int      @default(2)
+  queueOrder   String   @default("FIFO")
+  isActive     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  steps        WorkflowStep[]
+}
+
+model WorkflowStep {
+  id           String   @id @default(cuid())
+  workflowId   String
+  agentId      String
+  order        Int      @default(0)
+  
+  triggerState String
+  actionState  String
+  
+  workflow     AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  agent        AiAgent            @relation(fields: [agentId], references: [id])
 }
 
 model PageVisit {
