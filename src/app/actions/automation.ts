@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 /**
  * runAiSupervisor
@@ -65,7 +65,7 @@ export async function runAiSupervisor() {
     
     if (stepDraft && redatorAgent) {
       const drafts = await prisma.blogPost.findMany({
-        where: { status: "DRAFT" },
+        where: { OR: [{ status: "DRAFT" }, { status: "", published: false }, { status: null, published: false }] },
         orderBy: { updatedAt: orderDirection as any },
         take: batchSize
       });
@@ -110,8 +110,21 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 `;
 
           const aiModel = genAI.getModel({
-            model: redatorAgent.model?.replace("openrouter:", "") || 'gemini-2.5-flash-preview-04-17',
-            systemInstruction: systemPrompt
+            model: redatorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
+            systemInstruction: systemPrompt,
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  title: { type: SchemaType.STRING },
+                  excerpt: { type: SchemaType.STRING },
+                  content: { type: SchemaType.STRING },
+                  metaDescription: { type: SchemaType.STRING }
+                },
+                required: ["title", "excerpt", "content", "metaDescription"]
+              }
+            }
           });
 
           const result = await aiModel.generateContent(userPrompt);
@@ -143,8 +156,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
         } catch (e) {
           console.error(`[MAESTRO] Falha ao processar rascunho ${draft.title}:`, e);
           await prisma.blogPost.update({ where: { id: draft.id }, data: { isProcessingAi: false } });
-          // O Retry Policy (Máx 2 falhas) requereria uma tabela de tentativas por post
-          // Como MVP, apenas ignoramos para tentar na próxima rodada
+          return { success: false, message: `O agente falhou ao redigir o artigo "${draft.title}". Detalhes: ${e.message}`, step: "DRAFT" };
         }
       }
     }
@@ -199,8 +211,19 @@ ${rev.content}
 `;
 
           const aiModel = genAI.getModel({
-            model: revisorAgent.model?.replace("openrouter:", "") || 'gemini-2.5-flash-preview-04-17',
-            systemInstruction: systemPrompt
+            model: revisorAgent.model?.replace("openrouter:", "") || 'gemini-1.5-pro',
+            systemInstruction: systemPrompt,
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  content: { type: SchemaType.STRING },
+                  tags: { type: SchemaType.STRING }
+                },
+                required: ["content", "tags"]
+              }
+            }
           });
 
           const result = await aiModel.generateContent(userPrompt);
@@ -229,6 +252,7 @@ ${rev.content}
         } catch (e) {
           console.error(`[MAESTRO] Falha ao revisar artigo ${rev.title}:`, e);
           await prisma.blogPost.update({ where: { id: rev.id }, data: { isProcessingAi: false } });
+          return { success: false, message: `O agente falhou ao revisar o artigo "${rev.title}". Detalhes: ${e.message}`, step: "REVIEW" };
         }
       }
     }
