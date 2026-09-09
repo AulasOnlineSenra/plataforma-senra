@@ -65,7 +65,7 @@ export async function runAiSupervisor() {
     
     if (stepDraft && redatorAgent) {
       const drafts = await prisma.blogPost.findMany({
-        where: { OR: [{ status: "DRAFT" }, { status: "", published: false }, { status: null, published: false }] },
+        where: { OR: [{ status: "DRAFT" }, { status: "", published: false }] },
         orderBy: { updatedAt: orderDirection as any },
         take: batchSize
       });
