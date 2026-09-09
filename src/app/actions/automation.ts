@@ -28,13 +28,14 @@ export async function runAiSupervisor() {
       return { success: false, message: "Nenhum workflow configurado.", step: "GLOBAL" };
     }
 
+    globalWorkflowId = workflow.id;
+
     if (!workflow.isActive) {
       console.log("[MAESTRO] Workflow pausado pelo Kill-Switch.");
       return { success: false, message: "Workflow inativo (Kill-Switch ligado).", step: "GLOBAL" };
     }
 
     const { batchSize, queueOrder, steps, id: workflowId } = workflow;
-    globalWorkflowId = workflowId;
     const orderDirection = queueOrder === "LIFO" ? "desc" : "asc";
 
     let actionsPerformed = 0;
