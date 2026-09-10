@@ -331,6 +331,27 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
               });
               continue;
             }
+
+            // Validar Permissões de Ação (RBAC/CRUD) do Agente
+            let agentPermissions = { read: true, create: true, update: true, delete: false, publish: false };
+            try {
+              if (agent.permissions) {
+                agentPermissions = typeof agent.permissions === 'string' ? JSON.parse(agent.permissions) : agent.permissions;
+              }
+            } catch (e) {}
+
+            const requiredAction = tool.actionType || 'read';
+            if (!(agentPermissions as any)[requiredAction]) {
+              console.warn(`[IA PERMISSÕES] Ação '${requiredAction}' bloqueada para o agente ${agent.name}`);
+              functionResponses.push({
+                functionResponse: { 
+                  name: call.name, 
+                  response: { error: `Ação bloqueada: O agente não possui permissão de '${requiredAction.toUpperCase()}' ativada nas suas configurações.` } 
+                }
+              });
+              continue;
+            }
+
             try {
               const toolResult = await tool.execute(call.args);
               toolCallsMade.push({ name: call.name, args: call.args, result: toolResult });

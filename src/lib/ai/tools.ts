@@ -4,6 +4,7 @@ import { z } from 'zod';
 export interface NativeTool {
   name: string;
   description: string;
+  actionType: 'read' | 'create' | 'update' | 'delete' | 'publish';
   inputSchema: z.ZodType<any, any, any>;
   execute: (input: any) => Promise<any>;
 }
@@ -12,6 +13,7 @@ export interface NativeTool {
 export const searchLeadsTool: NativeTool = {
   name: 'searchLeads',
   description: 'Busca leads no banco de dados do CRM por nome, email ou telefone.',
+  actionType: 'read',
   inputSchema: z.object({
     query: z.string().describe('O termo de busca (nome, email ou parte do telefone)'),
   }),
@@ -37,6 +39,7 @@ export const searchLeadsTool: NativeTool = {
 export const createLeadTool: NativeTool = {
   name: 'createLead',
   description: 'Cria um novo lead no CRM.',
+  actionType: 'create',
   inputSchema: z.object({
     name: z.string().describe('Nome completo do lead'),
     email: z.string().email().optional().describe('Email de contato'),
@@ -70,6 +73,7 @@ export const createLeadTool: NativeTool = {
 export const generateBlogPostTool: NativeTool = {
   name: 'generateBlogPost',
   description: 'Cria um rascunho de postagem para o blog da plataforma.',
+  actionType: 'create',
   inputSchema: z.object({
     title: z.string().describe('Título da postagem'),
     excerpt: z.string().describe('Resumo curto para atração'),
@@ -96,6 +100,7 @@ export const generateBlogPostTool: NativeTool = {
 export const moveLeadTool: NativeTool = {
   name: 'moveLead',
   description: 'Move um lead para uma coluna diferente no CRM.',
+  actionType: 'update',
   inputSchema: z.object({
     leadId: z.string().describe('ID do lead a ser movido'),
     columnId: z.string().describe('ID da coluna de destino'),
@@ -113,6 +118,7 @@ export const moveLeadTool: NativeTool = {
 export const updateLeadTool: NativeTool = {
   name: 'updateLead',
   description: 'Atualiza informações de um lead existente.',
+  actionType: 'update',
   inputSchema: z.object({
     leadId: z.string().describe('ID do lead'),
     name: z.string().optional(),
@@ -134,6 +140,7 @@ export const updateLeadTool: NativeTool = {
 export const searchBlogPostsTool: NativeTool = {
   name: 'searchBlogPosts',
   description: 'Busca postagens existentes no blog.',
+  actionType: 'read',
   inputSchema: z.object({
     query: z.string().describe('Termo de busca no título ou conteúdo'),
   }),
@@ -155,6 +162,7 @@ export const searchBlogPostsTool: NativeTool = {
 export const getSystemStatsTool: NativeTool = {
   name: 'getSystemStats',
   description: 'Retorna estatísticas gerais da plataforma (leads, alunos, professores).',
+  actionType: 'read',
   inputSchema: z.object({}),
   execute: async () => {
     const [leadsCount, studentsCount, teachersCount, postsCount] = await Promise.all([
@@ -176,6 +184,7 @@ export const getSystemStatsTool: NativeTool = {
 export const webSearchTool: NativeTool = {
   name: 'webSearch',
   description: 'Busca informações atualizadas na internet (notícias, artigos, dados recentes).',
+  actionType: 'read',
   inputSchema: z.object({
     query: z.string().describe('O que você deseja pesquisar na web'),
   }),
@@ -207,6 +216,7 @@ export const webSearchTool: NativeTool = {
 export const sendEmailTool: NativeTool = {
   name: 'sendEmail',
   description: 'Envia uma notificação por e-mail para um destinatário.',
+  actionType: 'create',
   inputSchema: z.object({
     to: z.string().email().describe('E-mail do destinatário'),
     subject: z.string().describe('Assunto do e-mail'),

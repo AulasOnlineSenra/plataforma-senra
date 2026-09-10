@@ -724,87 +724,120 @@ export function IaManager() {
                     )}
                   </div>
 
-                  <div className="space-y-4 pt-2 border-t mt-4">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      Guardrails e Saída (Segurança)
-                    </h3>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Formato de Saída (Output)</Label>
-                        <Select 
-                          value={selectedAgent.outputFormat || "TEXT"} 
-                          onValueChange={value => setSelectedAgent({...selectedAgent, outputFormat: value})}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder="Selecione o formato" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="TEXT">Texto Livre (Markdown)</SelectItem>
-                            <SelectItem value="JSON">Estrutura JSON</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-[10px] text-muted-foreground mt-1">O formato JSON é obrigatório para Automações.</p>
-                      </div>
+                  {/* SEÇÃO DE SEGURANÇA, CAPABILITIES E PERMISSÕES */}
+                  <div className="space-y-6 pt-4 border-t mt-4">
+                    <div>
+                      <h3 className="text-base font-bold flex items-center gap-2 text-slate-900">
+                        <ShieldCheck className="h-5 w-5 text-primary" />
+                        Módulos de Acesso & Permissões (Capabilities & Security)
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Defina quais ferramentas o agente pode utilizar e quais ações ele tem autorização para executar no banco de dados.
+                      </p>
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label>Permissões de Ação</Label>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {['read', 'create', 'update', 'delete', 'publish'].map(perm => {
-                            let currentPerms = { read: true, create: true, update: true, delete: false, publish: false };
-                            try {
-                              if (selectedAgent.permissions) {
-                                currentPerms = typeof selectedAgent.permissions === 'string' ? JSON.parse(selectedAgent.permissions) : selectedAgent.permissions;
-                              }
-                            } catch (e) {}
-                            
-                            const labels: Record<string, string> = { read: 'Ler', create: 'Criar', update: 'Editar', delete: 'Excluir', publish: 'Publicar' };
-                            return (
-                              <label key={perm} className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-slate-50 p-1 rounded">
+                    {/* SUB-BLOCO 1: FERRAMENTAS HABILITADAS */}
+                    <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border">
+                      <Label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <Cpu className="h-4 w-4 text-emerald-600" />
+                        1. Ferramentas Habilitadas (Quais salas ele pode entrar?)
+                      </Label>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {AVAILABLE_TOOLS.map(tool => {
+                          const isEnabled = (selectedAgent.tools || []).includes(tool.id);
+                          return (
+                            <button
+                              key={tool.id}
+                              type="button"
+                              onClick={() => toggleTool(tool.id)}
+                              className={`flex items-start gap-3 p-3 border rounded-xl text-left transition-all ${
+                                isEnabled ? 'border-primary bg-white ring-2 ring-primary/20 shadow-sm' : 'bg-white/50 hover:bg-white opacity-50 border-slate-200'
+                              }`}
+                            >
+                              <div className={`p-2 rounded-lg ${isEnabled ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                <tool.icon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{tool.name}</p>
+                                <p className="text-xs text-muted-foreground">{tool.description}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* SUB-BLOCO 2: PERMISSÕES DE AÇÃO */}
+                    <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border">
+                      <div>
+                        <Label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-amber-600" />
+                          2. Permissões de Ação (O que ele pode fazer nas ferramentas ativas?)
+                        </Label>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Trava de segurança rígida: mesmo com uma ferramenta ativa, o agente só executará a ação se a permissão correspondente estiver marcada abaixo.
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-1">
+                        {[
+                          { key: 'read', label: 'Ler', desc: 'Consultar dados' },
+                          { key: 'create', label: 'Criar', desc: 'Novos rascunhos' },
+                          { key: 'update', label: 'Editar', desc: 'Alterar registros' },
+                          { key: 'delete', label: 'Excluir', desc: 'Remover itens' },
+                          { key: 'publish', label: 'Publicar', desc: 'Publicação direta' },
+                        ].map(perm => {
+                          let currentPerms = { read: true, create: true, update: true, delete: false, publish: false };
+                          try {
+                            if (selectedAgent.permissions) {
+                              currentPerms = typeof selectedAgent.permissions === 'string' ? JSON.parse(selectedAgent.permissions) : selectedAgent.permissions;
+                            }
+                          } catch (e) {}
+                          
+                          const isChecked = !!(currentPerms as any)[perm.key];
+                          return (
+                            <label 
+                              key={perm.key} 
+                              className={`flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+                                isChecked 
+                                  ? 'bg-white border-emerald-500/50 ring-1 ring-emerald-500/20 shadow-sm' 
+                                  : 'bg-white/40 border-slate-200 opacity-60 hover:opacity-100'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-2">
                                 <input 
                                   type="checkbox" 
-                                  className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                                  checked={!!(currentPerms as any)[perm]}
+                                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4 cursor-pointer"
+                                  checked={isChecked}
                                   onChange={e => {
-                                    const newPerms = { ...currentPerms, [perm]: e.target.checked };
+                                    const newPerms = { ...currentPerms, [perm.key]: e.target.checked };
                                     setSelectedAgent({...selectedAgent, permissions: JSON.stringify(newPerms)});
                                   }}
                                 />
-                                <span className={!(currentPerms as any)[perm] ? "text-slate-400" : "font-medium"}>{labels[perm]}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
+                                <span className={`text-sm font-bold ${isChecked ? "text-slate-900" : "text-slate-500"}`}>{perm.label}</span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground mt-1 ml-6">{perm.desc}</span>
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <Label className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-emerald-500" /> 
-                      Ferramentas Habilitadas (Capabilities)
-                    </Label>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {AVAILABLE_TOOLS.map(tool => {
-                        const isEnabled = (selectedAgent.tools || []).includes(tool.id);
-                        return (
-                          <button
-                            key={tool.id}
-                            onClick={() => toggleTool(tool.id)}
-                            className={`flex items-start gap-3 p-3 border rounded-xl text-left transition-all ${
-                              isEnabled ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-accent opacity-60'
-                            }`}
-                          >
-                            <div className={`p-2 rounded-lg ${isEnabled ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                              <tool.icon className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold">{tool.name}</p>
-                              <p className="text-xs text-muted-foreground">{tool.description}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
+                    {/* FORMATO DE SAÍDA */}
+                    <div className="space-y-2 pt-2">
+                      <Label className="font-semibold text-slate-800 text-sm">Formato de Saída (Output)</Label>
+                      <Select 
+                        value={selectedAgent.outputFormat || "TEXT"} 
+                        onValueChange={value => setSelectedAgent({...selectedAgent, outputFormat: value})}
+                      >
+                        <SelectTrigger className="rounded-xl max-w-md">
+                          <SelectValue placeholder="Selecione o formato" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="TEXT">Texto Livre (Markdown)</SelectItem>
+                          <SelectItem value="JSON">Estrutura JSON (Obrigatório para Automações)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </CardContent>
