@@ -10,6 +10,7 @@ import { getAiVisualPrompt, updateAiVisualPrompt } from '@/app/actions/settings'
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 interface AiImagePromptsSheetProps {
   articleTitle: string;
@@ -753,30 +754,40 @@ export function AiImagePromptsSheet({ articleTitle, blocks, onRemoveBlock, onClo
                             <p className="text-xs text-amber-700 leading-relaxed">{results[index].reason}</p>
                           </div>
                         ) : (
-                          <div className="space-y-3">
-                            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                              <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Prompt (Inglês)</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].prompt, 'prompt', index)}>
-                                  {copiedPrompts[index] ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                </Button>
-                              </div>
-                              <div className="p-3 text-xs text-slate-700 leading-relaxed font-mono">
-                                {results[index].prompt}
-                              </div>
+                          <Carousel className="w-full">
+                            <CarouselContent>
+                              <CarouselItem>
+                                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-full flex flex-col">
+                                  <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between shrink-0">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Prompt (Inglês)</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].prompt, 'prompt', index)}>
+                                      {copiedPrompts[index] ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                    </Button>
+                                  </div>
+                                  <div className="p-3 text-xs text-slate-700 leading-relaxed font-mono overflow-y-auto max-h-[300px]">
+                                    {results[index].prompt}
+                                  </div>
+                                </div>
+                              </CarouselItem>
+                              <CarouselItem>
+                                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-full flex flex-col">
+                                  <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between shrink-0">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Alt Text (Português)</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].altText, 'alt', index)}>
+                                      {copiedAlts[index] ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                    </Button>
+                                  </div>
+                                  <div className="p-3 text-xs text-slate-700 leading-relaxed overflow-y-auto max-h-[300px]">
+                                    {results[index].altText}
+                                  </div>
+                                </div>
+                              </CarouselItem>
+                            </CarouselContent>
+                            <div className="flex justify-center gap-2 mt-3">
+                              <CarouselPrevious className="static transform-none h-6 w-6 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-200" />
+                              <CarouselNext className="static transform-none h-6 w-6 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-200" />
                             </div>
-                            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                              <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Alt Text (Português)</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-fuchsia-600 hover:text-fuchsia-700 hover:bg-fuchsia-50" onClick={() => handleCopy(results[index].altText, 'alt', index)}>
-                                  {copiedAlts[index] ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                </Button>
-                              </div>
-                              <div className="p-3 text-xs text-slate-700 leading-relaxed">
-                                {results[index].altText}
-                              </div>
-                            </div>
-                          </div>
+                          </Carousel>
                         )}
                       </div>
                     )}

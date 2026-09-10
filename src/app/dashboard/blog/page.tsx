@@ -488,8 +488,8 @@ export default function BlogAdminPage() {
                         : 'bg-slate-50 border-slate-100 hover:border-amber-200 hover:bg-amber-50/30'
                     }`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <a href={idea.link} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-semibold leading-snug mb-1 hover:text-amber-600 block line-clamp-3 ${added ? 'text-amber-900' : 'text-slate-800'}`}>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <a href={idea.link} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-semibold leading-snug mb-1 hover:text-amber-600 block line-clamp-3 break-words ${added ? 'text-amber-900' : 'text-slate-800'}`}>
                         {idea.title}
                       </a>
                       <p className={`text-[10px] flex items-center flex-wrap gap-x-2 mt-1 ${added ? 'text-amber-700/70' : 'text-slate-400'}`}>
@@ -509,7 +509,7 @@ export default function BlogAdminPage() {
                       className={`h-6 w-6 shrink-0 shadow-sm transition-all ${
                         added 
                           ? 'bg-amber-500 hover:bg-amber-600 text-white' 
-                          : 'bg-white border border-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-amber-600 group-hover:border-amber-300'
+                          : 'bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-300'
                       }`}
                       title={added ? "Já adicionado" : "Transformar em Pauta"}
                       disabled={added || isAdding}
