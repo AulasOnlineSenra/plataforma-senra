@@ -232,6 +232,18 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
       parts: [{ text: h.content }]
     }));
 
+    // Construir o System Prompt combinando V2 (role, goal, rules) e V1 (instructions)
+    const promptParts: string[] = [];
+    if (agent.role) promptParts.push(`PAPEL DO AGENTE:\n${agent.role}`);
+    if (agent.goal) promptParts.push(`OBJETIVO PRINCIPAL:\n${agent.goal}`);
+    if (agent.rules) promptParts.push(`REGRAS RÍGIDAS E GUARDRAILS:\n${agent.rules}`);
+    if (agent.instructions) promptParts.push(`INSTRUÇÕES ADICIONAIS:\n${agent.instructions}`);
+    if (activeTools.length > 0) {
+      promptParts.push(`FERRAMENTAS HABILITADAS:\nVocê possui ferramentas nativas ativas (${activeTools.map(t => t.name).join(', ')}). Quando o usuário solicitar informações do banco, estatísticas ou ações do sistema, acione OBRIGATORIAMENTE as ferramentas correspondentes.`);
+    }
+
+    const finalSystemPrompt = options?.overrideSystemPrompt || (promptParts.length > 0 ? promptParts.join("\n\n") : "Você é um assistente útil da Plataforma Senra.");
+
     const isOpenRouter = agent.model?.startsWith('openrouter:');
     
     if (isOpenRouter) {
@@ -248,11 +260,7 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
       });
 
       const messages: any[] = [];
-      if (options?.overrideSystemPrompt) {
-        messages.push({ role: "system", content: options.overrideSystemPrompt });
-      } else if (agent.instructions) {
-        messages.push({ role: "system", content: agent.instructions });
-      }
+      messages.push({ role: "system", content: finalSystemPrompt });
       
       if (history) {
         for (const h of history) {
@@ -299,7 +307,7 @@ export async function runAiAgentTest(agentId: string, userPrompt: string, histor
         
         const model = genAI.getGenerativeModel({
           model: modelName,
-          systemInstruction: options?.overrideSystemPrompt || agent.instructions || "Você é um assistente útil da Plataforma Senra.",
+          systemInstruction: finalSystemPrompt,
           ...(googleTools.length > 0 ? { tools: googleTools } : {}),
         });
 
