@@ -506,7 +506,7 @@ export default function BlogAdminPage() {
                       onClick={() => {
                         if (!added) {
                           // Clean the title by removing the source name if it's appended at the end
-                          const sourcePattern = new RegExp(\`\\\\s+[-|]\\\\s+\${idea.source.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')}\\\\s*$\`, 'i');
+                          const sourcePattern = new RegExp(`\\s+[-|]\\s+${idea.source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i');
                           const cleanTitle = idea.title.replace(sourcePattern, '').trim();
                           handleCreateFromIdea(cleanTitle, idea.link, idea.id, idea.id.split('-')[0]);
                         }
