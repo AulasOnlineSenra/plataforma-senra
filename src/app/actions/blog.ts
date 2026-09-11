@@ -517,7 +517,7 @@ export async function getBlogScheduleTimes() {
     if (!setting || !setting.blogScheduleTimes) return { success: true, data: [] };
     return { success: true, data: JSON.parse(setting.blogScheduleTimes) };
   } catch (err) {
-    return { success: false, error: 'Erro ao buscar horários.' };
+    return { success: false, error: 'Erro ao buscar horï¿½rios.' };
   }
 }
 
@@ -535,7 +535,7 @@ export async function addBlogScheduleTime(time: string) {
     }
     return { success: true, data: times };
   } catch (err) {
-    return { success: false, error: 'Erro ao adicionar horário.' };
+    return { success: false, error: 'Erro ao adicionar horï¿½rio.' };
   }
 }
 
@@ -551,6 +551,6 @@ export async function removeBlogScheduleTime(time: string) {
     });
     return { success: true, data: times };
   } catch (err) {
-    return { success: false, error: 'Erro ao remover horário.' };
+    return { success: false, error: 'Erro ao remover horï¿½rio.' };
   }
 }
