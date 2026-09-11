@@ -247,12 +247,15 @@ ${plainContent}
 
       fullHtml = fullHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
 
-      // Fix quill table support
-      fullHtml = fullHtml
-        .replace(/<\/?thead>/gi, '')
-        .replace(/<\/?tbody>/gi, '')
-        .replace(/<th([^>]*)>/gi, '<td$1><strong>')
-        .replace(/<\/th>/gi, '</strong></td>');
+      // Fix quill table support (minify HTML to avoid whitespace breaking Quill tables)
+      fullHtml = fullHtml.replace(/<table[^>]*>[\s\S]*?<\/table>/gi, (match) => {
+        return match
+          .replace(/>\s+</g, '><')
+          .replace(/<\/?thead>/gi, '')
+          .replace(/<\/?tbody>/gi, '')
+          .replace(/<th([^>]*)>/gi, '<td$1><strong>')
+          .replace(/<\/th>/gi, '</strong></td>');
+      });
 
       setGeneratedHtml(fullHtml);
       setGeneratedSeo(seoData);

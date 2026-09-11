@@ -177,6 +177,11 @@ const blogContentStyles = `
   .blog-content h2 { font-size: 1.8em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.3; }
   .blog-content h3 { font-size: 1.4em !important; font-weight: bold; margin-bottom: 0.5em; line-height: 1.4; }
   .blog-content h4 { font-size: 1.2em !important; font-weight: bold; margin-bottom: 0.5em; }
+  .blog-content table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 1.5rem 0; }
+  .blog-content table td, .blog-content table th { border: 1px solid #e2e8f0; padding: 0.75rem; vertical-align: top; word-wrap: break-word; }
+  .blog-content table th { background-color: #f8fafc; font-weight: 600; }
+  .dark .blog-content table td, .dark .blog-content table th { border-color: #334155; }
+  .dark .blog-content table th { background-color: #1e293b; }
   @media (max-width: 640px) { .blog-content h1 { font-size: 1.8em !important; } .blog-content h2 { font-size: 1.45em !important; } .blog-content h3 { font-size: 1.2em !important; } .blog-content h4 { font-size: 1.1em !important; } }
   .blog-content img { border-radius: 15px; margin-top: 2rem; margin-bottom: 2rem; max-width: 100%; height: auto; display: block; }
   .blog-content table { max-width: 100%; overflow-x: auto; display: block; border-collapse: collapse; }

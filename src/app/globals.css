@@ -223,3 +223,22 @@ html {
   }
 }
 
+
+@layer base {
+  /* Quill Editor Table Styles */
+  .ql-editor table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+  }
+  .ql-editor td, .ql-editor th {
+    border: 1px solid hsl(var(--border));
+    padding: 8px 12px;
+    vertical-align: top;
+    word-break: break-word;
+  }
+  .ql-editor th {
+    background-color: hsl(var(--muted));
+    font-weight: 600;
+  }
+}
