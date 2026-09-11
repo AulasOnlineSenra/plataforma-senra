@@ -507,3 +507,50 @@ export async function getBlogKpis() {
     return { success: false, error: 'Falha ao buscar KPIs.' };
   }
 }
+
+export async function getBlogScheduleTimes() {
+  try {
+    const setting = await prisma.appSetting.findUnique({
+      where: { id: 'global' },
+      select: { blogScheduleTimes: true }
+    });
+    if (!setting || !setting.blogScheduleTimes) return { success: true, data: [] };
+    return { success: true, data: JSON.parse(setting.blogScheduleTimes) };
+  } catch (err) {
+    return { success: false, error: 'Erro ao buscar horários.' };
+  }
+}
+
+export async function addBlogScheduleTime(time: string) {
+  try {
+    const setting = await prisma.appSetting.findUnique({ where: { id: 'global' }});
+    if (!setting) return { success: false, error: 'Settings not found' };
+    const times: string[] = JSON.parse(setting.blogScheduleTimes || '[]');
+    if (!times.includes(time)) {
+      times.push(time);
+      await prisma.appSetting.update({
+        where: { id: 'global' },
+        data: { blogScheduleTimes: JSON.stringify(times) }
+      });
+    }
+    return { success: true, data: times };
+  } catch (err) {
+    return { success: false, error: 'Erro ao adicionar horário.' };
+  }
+}
+
+export async function removeBlogScheduleTime(time: string) {
+  try {
+    const setting = await prisma.appSetting.findUnique({ where: { id: 'global' }});
+    if (!setting) return { success: false, error: 'Settings not found' };
+    let times: string[] = JSON.parse(setting.blogScheduleTimes || '[]');
+    times = times.filter((t: string) => t !== time);
+    await prisma.appSetting.update({
+      where: { id: 'global' },
+      data: { blogScheduleTimes: JSON.stringify(times) }
+    });
+    return { success: true, data: times };
+  } catch (err) {
+    return { success: false, error: 'Erro ao remover horário.' };
+  }
+}

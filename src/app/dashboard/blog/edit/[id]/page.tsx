@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock, CheckCircle2, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Type, Image as ImageIcon, Settings, Save, CalendarIcon, ChevronDown, Clock, CheckCircle2, Plus, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getBlogPostById, updatePost, createDraftFromIdea } from '@/app/actions/blog';
+import { getBlogScheduleTimes, addBlogScheduleTime, removeBlogScheduleTime, getBlogPostById, updatePost, createDraftFromIdea, updatePostStatus } from '@/app/actions/blog';
+import { suggestRelatedLinks } from '@/app/actions/blog-links';
 import dynamic from 'next/dynamic';
 import {
   DropdownMenu,
@@ -74,6 +75,8 @@ export default function EditBlogPostPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuggestingLinks, setIsSuggestingLinks] = useState(false);
+  const [preferredTimes, setPreferredTimes] = useState<string[]>([]);
   const [altPrompt, setAltPrompt] = useState<{
     isOpen: boolean;
     initialAlt: string;
@@ -115,6 +118,10 @@ export default function EditBlogPostPage() {
   }, []);
 
   useEffect(() => {
+    getBlogScheduleTimes().then(res => {
+      if (res.success && res.data) setPreferredTimes(res.data);
+    });
+
     const loadPost = async () => {
       const id = params.id as string;
       const result = await getBlogPostById(id);
@@ -901,38 +908,103 @@ export default function EditBlogPostPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="published" className="text-base font-bold text-slate-800">Publicar Imediatamente</Label>
-                    <p className="text-sm text-slate-500">
-                      O artigo ficará visível publicamente de imediato.
-                    </p>
+                <div className="space-y-2 border border-slate-200 bg-slate-50 p-4 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="createdAt" className="text-slate-700 font-bold flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" /> Data de Agendamento
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-brand-blue font-medium"
+                      onClick={async () => {
+                        const time = formData.createdAt ? formData.createdAt.split('T')[1] : null;
+                        if (!time) {
+                          toast({ title: 'Aviso', description: 'Selecione uma hora antes de salvar.', variant: 'destructive' });
+                          return;
+                        }
+                        const res = await addBlogScheduleTime(time);
+                        if (res.success && res.data) {
+                          setPreferredTimes(res.data);
+                          toast({ title: 'Horário salvo!', className: 'bg-emerald-600 text-white border-none' });
+                        }
+                      }}
+                    >
+                      Salvar Horário
+                    </Button>
                   </div>
-                  <Switch
-                    id="published"
-                    checked={formData.published}
-                    onCheckedChange={(checked) => handleChange('published', checked)}
+                  <Input
+                    id="createdAt"
+                    type="datetime-local"
+                    value={formData.createdAt}
+                    onChange={(e) => handleChange('createdAt', e.target.value)}
+                    className="h-12 rounded-xl border-slate-300 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
                   />
+                  {preferredTimes.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {preferredTimes.map(time => (
+                        <div key={time} className="flex items-center bg-white border border-slate-200 rounded-md overflow-hidden shadow-sm">
+                          <button
+                            type="button"
+                            className="px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                            onClick={() => {
+                              const datePart = formData.createdAt ? formData.createdAt.split('T')[0] : new Date().toISOString().split('T')[0];
+                              handleChange('createdAt', `${datePart}T${time}`);
+                            }}
+                          >
+                            {time}
+                          </button>
+                          <button
+                            type="button"
+                            className="px-2 py-1 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 border-l border-slate-200"
+                            onClick={async () => {
+                              const res = await removeBlogScheduleTime(time);
+                              if (res.success && res.data) setPreferredTimes(res.data);
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {!formData.published && (
-                  <div className="space-y-2 border border-slate-200 bg-slate-50 p-4 rounded-2xl">
-                    <Label htmlFor="createdAt" className="text-slate-700 font-bold flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4" /> Data e Hora de Publicação
-                    </Label>
-                    <p className="text-xs text-slate-500 mb-2">Defina para quando o artigo deve ser agendado.</p>
-                    <Input
-                      id="createdAt"
-                      type="datetime-local"
-                      value={formData.createdAt}
-                      onChange={(e) => handleChange('createdAt', e.target.value)}
-                      className="h-12 rounded-xl border-slate-300 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
-                    />
-                  </div>
-                )}
-
                 <div className="space-y-3 pt-4 border-t border-slate-200">
-                  <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={isSuggestingLinks || publishedPosts.length === 0}
+                      className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 font-medium flex items-center gap-1"
+                      onClick={async () => {
+                        if (!formData.content) {
+                          toast({ title: 'Aviso', description: 'Escreva algum conteúdo primeiro.', variant: 'destructive' });
+                          return;
+                        }
+                        setIsSuggestingLinks(true);
+                        const wordCount = formData.content.replace(/<[^>]+>/g, '').trim().split(/\s+/).filter(Boolean).length;
+                        const maxLinks = wordCount < 1950 ? 3 : (wordCount < 2400 ? 4 : 5);
+                        toast({ title: 'IA Analisando...', description: `Buscando ${maxLinks} links...` });
+                        
+                        const res = await suggestRelatedLinks(formData.content, publishedPosts, maxLinks);
+                        setIsSuggestingLinks(false);
+                        
+                        if (res.success && res.data) {
+                          setSelectedLinks(res.data);
+                          toast({ title: 'Sucesso', description: `${res.data.length} links selecionados!`, className: 'bg-emerald-600 text-white border-none' });
+                        } else {
+                          toast({ title: 'Erro', description: res.error || 'Falha ao buscar links', variant: 'destructive' });
+                        }
+                      }}
+                    >
+                      {isSuggestingLinks ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                      Sugestão IA
+                    </Button>
+                  </div>
                   <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
                   
                   <div className="max-h-[278px] overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-white">

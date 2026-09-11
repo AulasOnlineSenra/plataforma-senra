@@ -30,6 +30,7 @@ model AppSetting {
   searchApiKey            String?
   backupAuto              Boolean  @default(false)
   backupFrequency         String   @default("weekly")
+  blogScheduleTimes       String   @default("[]")
   backupRetention         Int      @default(5)
   backupEmail             String?
   backupDrive             String?
