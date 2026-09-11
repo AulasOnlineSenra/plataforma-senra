@@ -153,8 +153,6 @@ Escreva um rascunho de artigo para blog sobre o seguinte tema: "${topic}".
 Tamanho desejado do texto: aproximadamente ${wordCount} palavras.
 ${extraInstructions ? '\nInstruções extras (Tópicos obrigatórios):\n' + extraInstructions + '\n' : ''}
 
-${generateSeo ? 'MUITO IMPORTANTE: No final do artigo, inclua OBRIGATORIAMENTE um bloco JSON com uma \`metaDescription\` (resumo chamativo com no máximo 160 caracteres) e \`tags\` (array de strings). Formate exatamente assim:\n```json\n{"metaDescription": "...", "tags": ["tag1", "tag2"]}\n```\n' : ''}
-
 IMPORTANTE: Formate todo o conteúdo do artigo APENAS EM HTML VÁLIDO (use tags <h2>, <h3>, <p>, <ul>, <li>, <strong>, etc.) para que possa ser inserido diretamente em um editor de texto (Rich Text). Não use formatação markdown (asteriscos ou hashes) para o texto do artigo.
 `;
     } else if (mode === 'REVIEW') {
@@ -231,7 +229,7 @@ ${plainContent}
 
       let seoData = undefined;
 
-      if ((mode === 'DRAFT' || mode === 'REVIEW') && generateSeo) {
+      if (mode === 'REVIEW' && generateSeo) {
         const jsonMatch = fullHtml.match(/```json\n([\s\S]*?)\n```/);
         if (jsonMatch && jsonMatch[1]) {
           try {
@@ -421,7 +419,7 @@ ${plainContent}
               </div>
             )}
 
-            {(mode === 'DRAFT' || mode === 'REVIEW') && (
+            {mode === 'REVIEW' && (
               <div className="flex items-center space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <Checkbox 
                   id="seo" 

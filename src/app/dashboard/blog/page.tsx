@@ -503,7 +503,14 @@ export default function BlogAdminPage() {
                       </p>
                     </div>
                     <Button 
-                      onClick={() => !added && handleCreateFromIdea(idea.title, idea.link, idea.id, idea.id.split('-')[0])}
+                      onClick={() => {
+                        if (!added) {
+                          // Clean the title by removing the source name if it's appended at the end
+                          const sourcePattern = new RegExp(\`\\\\s+[-|]\\\\s+\${idea.source.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')}\\\\s*$\`, 'i');
+                          const cleanTitle = idea.title.replace(sourcePattern, '').trim();
+                          handleCreateFromIdea(cleanTitle, idea.link, idea.id, idea.id.split('-')[0]);
+                        }
+                      }}
                       variant={added ? "default" : "ghost"}
                       size="icon" 
                       className={`h-6 w-6 shrink-0 shadow-sm transition-all ${
