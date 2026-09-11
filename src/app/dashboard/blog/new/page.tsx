@@ -641,7 +641,7 @@ export default function NewBlogPostPage() {
           
           <div className="w-px h-6 bg-slate-200 hidden sm:block shrink-0"></div>
 
-          <div id="custom-toolbar" className="hidden sm:flex items-center gap-1 shrink-0">
+          <div id="custom-toolbar" className="hidden sm:flex items-center gap-1 shrink-0 scale-[0.85] origin-left">
             <select className="ql-font border-slate-200 rounded-md h-8 text-xs" defaultValue="">
               <option value="">Padrão</option>
               <option value="arial">Arial</option>
@@ -892,15 +892,14 @@ export default function NewBlogPostPage() {
             <DropdownMenuTrigger asChild>
               <Button
                 disabled={isSubmitting}
-                className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-3 sm:px-4 h-9 shadow-md transition-all hover:shadow-lg gap-1.5"
+                className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-2 h-9 w-12 shadow-md transition-all hover:shadow-lg gap-0.5 justify-center"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    <span className="hidden sm:inline">Publicar</span>
-                    <ChevronDown className="h-4 w-4 opacity-70" />
+                    <ChevronDown className="h-3 w-3 opacity-70 ml-1" />
                   </>
                 )}
               </Button>
