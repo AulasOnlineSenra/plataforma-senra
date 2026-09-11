@@ -627,28 +627,63 @@ export default function NewBlogPostPage() {
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col">
       {/* Top Navbar */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
-        <div className="flex items-center gap-4">
+      <header className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white sticky top-0 z-20 shadow-sm w-full gap-4">
+        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full hover:bg-slate-100"
+            className="rounded-full hover:bg-slate-100 shrink-0"
             onClick={handleGoBack}
             disabled={isSubmitting}
           >
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin text-slate-600" /> : <ArrowLeft className="h-5 w-5 text-slate-600" />}
           </Button>
-          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-            <span className="bg-slate-100 px-2 py-1 rounded-md text-slate-600">Rascunho</span>
+          
+          <div className="w-px h-6 bg-slate-200 hidden sm:block shrink-0"></div>
+
+          <div id="custom-toolbar" className="hidden sm:flex items-center gap-1 shrink-0">
+            <select className="ql-font border-slate-200 rounded-md h-8 text-xs" defaultValue="">
+              <option value="">Padrão</option>
+              <option value="arial">Arial</option>
+              <option value="courier">Courier</option>
+              <option value="garamond">Garamond</option>
+              <option value="tahoma">Tahoma</option>
+              <option value="times-new-roman">Times New Roman</option>
+              <option value="verdana">Verdana</option>
+            </select>
+            <select className="ql-size border-slate-200 rounded-md h-8 text-xs" defaultValue="">
+              <option value="small">Pequeno</option>
+              <option value="">Normal</option>
+              <option value="large">Grande</option>
+              <option value="huge">Gigante</option>
+            </select>
+            <span className="w-px h-5 bg-slate-200 mx-1"></span>
+            <button className="ql-bold text-slate-700 hover:text-slate-900" />
+            <button className="ql-italic text-slate-700 hover:text-slate-900" />
+            <button className="ql-underline text-slate-700 hover:text-slate-900" />
+            <button className="ql-strike text-slate-700 hover:text-slate-900" />
+            <span className="w-px h-5 bg-slate-200 mx-1"></span>
+            <select className="ql-color border-slate-200 rounded-md h-8" />
+            <select className="ql-background border-slate-200 rounded-md h-8" />
+            <span className="w-px h-5 bg-slate-200 mx-1"></span>
+            <button className="ql-list text-slate-700 hover:text-slate-900" value="ordered" />
+            <button className="ql-list text-slate-700 hover:text-slate-900" value="bullet" />
+            <span className="w-px h-5 bg-slate-200 mx-1"></span>
+            <button className="ql-link text-slate-700 hover:text-slate-900" title="Inserir Link" />
+            <button className="ql-image text-slate-700 hover:text-slate-900" title="Inserir Imagem Simples" />
+            <button className="ql-carousel text-slate-700 hover:text-slate-900 flex items-center justify-center gap-1" title="Inserir Carrossel de Imagens">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            </button>
+            <button className="ql-video text-slate-700 hover:text-slate-900" title="Inserir Vídeo" />
+            <button className="ql-clean text-slate-700 hover:text-slate-900" title="Limpar Formatação" />
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-600">
-                <Settings className="h-4 w-4 mr-2" />
-                Configurações
+              <Button variant="outline" size="icon" className="rounded-xl border-slate-200 text-slate-600 h-9 w-9" title="Configurações">
+                <Settings className="h-4 w-4" />
               </Button>
             </SheetTrigger>
             <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl overflow-y-auto">
@@ -668,8 +703,6 @@ export default function NewBlogPostPage() {
                     className="h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0"
                   />
                 </div>
-
-                {/* Campo de Resumo Ocultado (redundante com a Meta Description) */}
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -774,7 +807,6 @@ export default function NewBlogPostPage() {
                   </div>
                 )}
 
-                {/* Related Links Injector */}
                 <div className="space-y-3 pt-4 border-t border-slate-200">
                   <Label className="text-slate-700 font-bold">Links de Apontamento</Label>
                   <p className="text-xs text-slate-500">Selecione posts para distribuir entre os parágrafos do artigo atual.</p>
@@ -844,7 +876,6 @@ export default function NewBlogPostPage() {
                       }
                       
                       handleChange('content', tempDiv.innerHTML);
-                      // Mark inserted links visually - keep checkboxes checked
                       setInsertedLinks(prev => new Set([...prev, ...selectedLinks]));
                       setSelectedLinks([]);
                       toast({ title: 'Sucesso', description: 'Links distribuídos no texto!', className: 'bg-emerald-600 text-white border-none' });
@@ -861,15 +892,15 @@ export default function NewBlogPostPage() {
             <DropdownMenuTrigger asChild>
               <Button
                 disabled={isSubmitting}
-                className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-5 shadow-md transition-all hover:shadow-lg gap-2"
+                className="rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white px-3 sm:px-4 h-9 shadow-md transition-all hover:shadow-lg gap-1.5"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    Publicar
-                    <ChevronDown className="h-4 w-4 ml-1" />
+                    <span className="hidden sm:inline">Publicar</span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
                   </>
                 )}
               </Button>
@@ -894,54 +925,15 @@ export default function NewBlogPostPage() {
       </header>
 
       {/* Editor Area */}
-      <main className="flex-1 w-full bg-[#f8fafc] flex flex-col relative">
-        {/* Custom Toolbar */}
-        <div id="custom-toolbar" className="sticky top-[72px] z-20 w-full bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2 mx-auto sm:mx-0">
-          <select className="ql-font border-slate-200 rounded-md" defaultValue="">
-            <option value="">Padrão</option>
-            <option value="arial">Arial</option>
-            <option value="courier">Courier</option>
-            <option value="garamond">Garamond</option>
-            <option value="tahoma">Tahoma</option>
-            <option value="times-new-roman">Times New Roman</option>
-            <option value="verdana">Verdana</option>
-          </select>
-          <select className="ql-size border-slate-200 rounded-md" defaultValue="">
-            <option value="small">Pequeno</option>
-            <option value="">Normal</option>
-            <option value="large">Grande</option>
-            <option value="huge">Gigante</option>
-          </select>
-          <span className="w-px h-6 bg-slate-200 mx-1"></span>
-          <button className="ql-bold text-slate-700 hover:text-slate-900" />
-          <button className="ql-italic text-slate-700 hover:text-slate-900" />
-          <button className="ql-underline text-slate-700 hover:text-slate-900" />
-          <button className="ql-strike text-slate-700 hover:text-slate-900" />
-          <span className="w-px h-6 bg-slate-200 mx-1"></span>
-          <select className="ql-color border-slate-200 rounded-md" />
-          <select className="ql-background border-slate-200 rounded-md" />
-          <span className="w-px h-6 bg-slate-200 mx-1"></span>
-          <button className="ql-list text-slate-700 hover:text-slate-900" value="ordered" />
-          <button className="ql-list text-slate-700 hover:text-slate-900" value="bullet" />
-          <span className="w-px h-6 bg-slate-200 mx-1"></span>
-          <button className="ql-link text-slate-700 hover:text-slate-900" title="Inserir Link" />
-          <button className="ql-image text-slate-700 hover:text-slate-900" title="Inserir Imagem Simples" />
-          <button className="ql-carousel text-slate-700 hover:text-slate-900 flex items-center justify-center gap-1" title="Inserir Carrossel de Imagens">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-          </button>
-          <button className="ql-video text-slate-700 hover:text-slate-900" title="Inserir Vídeo" />
-          <button className="ql-clean text-slate-700 hover:text-slate-900" title="Limpar Formatação" />
-          </div>
-
-          {/* Counters */}
-          <div className="text-[11px] font-semibold text-slate-400 hidden sm:flex items-center gap-3">
-            <span>{counters.words} <span className="font-normal">palavras</span></span>
-            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-            <span>{counters.chars} <span className="font-normal">caracteres</span></span>
-            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-            <span>{counters.lines} <span className="font-normal">linhas</span></span>
-          </div>
+      <main className="flex-1 w-full bg-[#f8fafc] flex flex-col relative pb-16">
+        
+        {/* Floating Word Counter */}
+        <div className="fixed bottom-6 right-6 z-30 bg-white/90 backdrop-blur-sm border border-slate-200 shadow-sm rounded-full px-4 py-1.5 text-[11px] font-semibold text-slate-500 hidden sm:flex items-center gap-3">
+          <span>{counters.words} <span className="font-normal">palavras</span></span>
+          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+          <span>{counters.chars} <span className="font-normal">caracteres</span></span>
+          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+          <span>{counters.lines} <span className="font-normal">linhas</span></span>
         </div>
 
         <div className="max-w-4xl w-full mx-auto p-8 md:p-12 lg:px-24 bg-white min-h-[800px] shadow-sm my-8 border border-slate-100 rounded-xl">
