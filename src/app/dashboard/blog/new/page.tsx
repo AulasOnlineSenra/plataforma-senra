@@ -533,7 +533,7 @@ export default function NewBlogPostPage() {
   const handleSubmit = async (e: React.FormEvent | null, publishMode?: 'now' | 'draft' | 'schedule') => {
     if (e) e.preventDefault();
 
-    if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.author.trim()) {
+    if (!formData.title.trim() || !formData.content.trim() || !formData.author.trim()) {
       toast({
         variant: 'destructive',
         title: 'Campos obrigatórios',
@@ -669,20 +669,7 @@ export default function NewBlogPostPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="excerpt" className="text-slate-700 font-bold">Resumo *</Label>
-                    <AiSeoAssistant content={formData.content} title={formData.title} type="excerpt" onApply={(text) => handleChange('excerpt', text)} />
-                  </div>
-                  <Textarea
-                    id="excerpt"
-                    placeholder="Breve descrição do artigo (aparece na listagem)"
-                    value={formData.excerpt}
-                    onChange={(e) => handleChange('excerpt', e.target.value)}
-                    rows={4}
-                    className="rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-brand-yellow focus-visible:ring-offset-0 resize-none"
-                  />
-                </div>
+                {/* Campo de Resumo Ocultado (redundante com a Meta Description) */}
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

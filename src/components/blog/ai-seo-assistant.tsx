@@ -410,7 +410,7 @@ export function AiSeoAssistant({ content, title, type, onApply, onApplyAlt }: Ai
           )}
         </div>
 
-        <div className="p-4 bg-white min-h-[100px] flex flex-col justify-center">
+        <div className="p-4 bg-white min-h-[100px] max-h-[75vh] overflow-y-auto flex flex-col justify-center">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-6 text-slate-400 gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-brand-yellow" />
@@ -476,7 +476,7 @@ export function AiSeoAssistant({ content, title, type, onApply, onApplyAlt }: Ai
                         {copiedPrompt ? 'Copiado' : 'Copiar'}
                       </Button>
                     </div>
-                    <div className="p-2.5 bg-slate-900 text-slate-300 font-mono text-[11px] rounded-lg border border-slate-800 leading-relaxed select-all">
+                    <div className="p-2.5 bg-slate-900 text-slate-300 font-mono text-[11px] rounded-lg border border-slate-800 leading-relaxed select-all max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                       {result.prompt}
                     </div>
                     <p className="text-[10px] text-slate-400">Cole no Midjourney, Flux, DALL-E ou Bing.</p>
@@ -494,7 +494,7 @@ export function AiSeoAssistant({ content, title, type, onApply, onApplyAlt }: Ai
                         {copiedAlt ? 'Copiado' : 'Copiar'}
                       </Button>
                     </div>
-                    <div className="p-2.5 bg-slate-50 text-slate-600 text-[11px] rounded-lg border border-slate-200 leading-relaxed">
+                    <div className="p-2.5 bg-slate-50 text-slate-600 text-[11px] rounded-lg border border-slate-200 leading-relaxed max-h-[150px] overflow-y-auto">
                       {result.alt}
                     </div>
                   </div>

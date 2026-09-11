@@ -78,10 +78,10 @@ const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-image-1');
 
 const navLinks = [
   { href: '/', label: 'Início', storageKey: 'home-nav-inicio' },
-  { href: '/cronograma', label: 'Cronograma', storageKey: 'home-nav-cronograma' },
-  { href: '/dashboard/booking', label: 'Agendar aulas', storageKey: 'home-nav-agendar' },
   { href: '/blog', label: 'Blog', storageKey: 'home-nav-blog' },
-  { href: '/contato', label: 'Contato', storageKey: 'home-nav-contato' },
+  { href: '/calendario', label: 'Calendário', storageKey: 'home-nav-calendario' },
+  { href: '/dashboard/booking', label: 'Agendar Aulas', storageKey: 'home-nav-agendar' },
+  { href: '/cronograma', label: 'Cronograma', storageKey: 'home-nav-cronograma' },
 ];
 
 const mobileNavLinks = [
@@ -504,10 +504,13 @@ export default function HomePage() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Button asChild className="hidden sm:inline-flex h-[32px] rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all hover:scale-105 active:scale-95 gap-2 font-bold border border-slate-800">
-            <Link href="/login" className="flex items-center">
-              <LogIn className="w-4 h-4 text-amber-400 -ml-1" />
-              <EditableText storageKey="home-login-button" className="text-[12px] -ml-1">Acessar</EditableText>
+          <Button asChild className="group hidden sm:inline-flex h-[32px] rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all hover:scale-105 active:scale-95 font-bold border border-slate-800 overflow-hidden relative px-4">
+            <Link href="/login" className="flex items-center justify-center w-full">
+              <span className="flex items-center transition-transform duration-300 ease-out group-hover:-translate-x-[22px]">
+                <LogIn className="w-4 h-4 text-amber-400 mr-1.5 transition-opacity duration-300 group-hover:opacity-0" />
+                <EditableText storageKey="home-login-button" className="text-[12px]">Acessar</EditableText>
+              </span>
+              <LogIn className="w-4 h-4 text-amber-400 absolute right-3 translate-x-6 opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:opacity-100" />
             </Link>
           </Button>
 
