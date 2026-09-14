@@ -438,7 +438,8 @@ export async function getBlogAgentDefaults() {
       success: true, 
       data: {
         blogRedatorAgentId: settings?.blogRedatorAgentId || null,
-        blogRevisorAgentId: settings?.blogRevisorAgentId || null
+        blogRevisorAgentId: settings?.blogRevisorAgentId || null,
+        blogAuditorAgentId: settings?.blogAuditorAgentId || null
       }
     };
   } catch (error: any) {
@@ -446,11 +447,12 @@ export async function getBlogAgentDefaults() {
   }
 }
 
-export async function setBlogAgentDefaults(mode: 'DRAFT' | 'REVIEW', agentId: string) {
+export async function setBlogAgentDefaults(mode: 'DRAFT' | 'REVIEW' | 'AUDITOR', agentId: string) {
   try {
     const data: any = {};
     if (mode === 'DRAFT') data.blogRedatorAgentId = agentId;
     if (mode === 'REVIEW') data.blogRevisorAgentId = agentId;
+    if (mode === 'AUDITOR') data.blogAuditorAgentId = agentId;
     
     await prisma.appSetting.upsert({
       where: { id: "global" },

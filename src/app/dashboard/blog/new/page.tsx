@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AiSeoAssistant } from '@/components/blog/ai-seo-assistant';
+import AiAuditorSheet from '@/components/blog/ai-auditor-sheet';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => {
@@ -687,6 +688,7 @@ export default function NewBlogPostPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <AiAuditorSheet currentContent={formData.content} />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="rounded-xl border-slate-200 text-slate-600 h-9 w-9" title="Configurações">

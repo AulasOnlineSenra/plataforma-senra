@@ -23,6 +23,7 @@ import {
 import { AiDraftModal } from '@/components/blog/ai-draft-modal';
 import { AiImagePromptsSheet } from '@/components/blog/ai-image-prompts-sheet';
 import { AiSeoAssistant } from '@/components/blog/ai-seo-assistant';
+import AiAuditorSheet from '@/components/blog/ai-auditor-sheet';
 import 'react-quill-new/dist/quill.snow.css';
 const ReactQuill = dynamic(() => {
   return import('react-quill-new').then((mod) => {
@@ -811,6 +812,7 @@ export default function EditBlogPostPage() {
             }}
           />
           )}
+          <AiAuditorSheet currentContent={formData.content} />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="rounded-xl border-slate-200 text-slate-600 h-9 w-9" title="Configurações">
