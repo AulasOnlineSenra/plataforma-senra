@@ -150,7 +150,7 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
             <div className="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-slate-100 shadow-sm bg-white">
                 <div className="text-sm font-medium text-slate-500 mb-2 uppercase tracking-wider">Probabilidade de IA</div>
-                <div className={\`flex items-center gap-3 px-6 py-3 rounded-2xl \${getScoreColor(auditResult.finalPercentage)}\`}>
+                <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl ${getScoreColor(auditResult.finalPercentage)}`}>
                   {getScoreIcon(auditResult.finalPercentage)}
                   <span className="text-4xl font-bold font-headline">{auditResult.finalPercentage}%</span>
                 </div>
@@ -165,7 +165,7 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
                   <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                     <div className="flex items-center justify-between p-3 bg-white border-b border-slate-100">
                       <div className="font-medium text-sm text-slate-700 flex-1">{item.etapa}. {item.nome}</div>
-                      <div className={\`text-xs font-bold px-2 py-1 rounded-md \${item.nota_ia > 6 ? 'bg-red-100 text-red-700' : item.nota_ia > 3 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}\`}>
+                      <div className={`text-xs font-bold px-2 py-1 rounded-md ${item.nota_ia > 6 ? 'bg-red-100 text-red-700' : item.nota_ia > 3 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                         Nota: {item.nota_ia}/10
                       </div>
                     </div>
