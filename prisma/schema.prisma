@@ -63,6 +63,7 @@ model AppSetting {
   // Agentes Padrão (Assistente de IA do Blog)
   blogRedatorAgentId      String?
   blogRevisorAgentId      String?
+  blogAuditorAgentId      String?
 }
 
 model Availability {
