@@ -22,6 +22,41 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
   const [selectedAgent, setSelectedAgent] = useState('');
   const [auditResult, setAuditResult] = useState<any>(null);
 
+  const auditSteps = [
+    "Ritmo e naturalidade",
+    "Repetição de estruturas e padrões",
+    "Uso padronizado de conectivos",
+    "Frases simétricas e previsíveis",
+    "Generalizações e abstrações",
+    "Profundidade real vs aparente",
+    "Vocabulário artificial",
+    "Variação de tamanho de frases",
+    "Imperfeições naturais e voz autoral",
+    "Padrões clichês de introdução/conclusão",
+    "Consistência de estilo",
+    "Sinais de expansão artificial",
+    "Identificação de trechos genéricos"
+  ];
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (isAuditing) {
+      let i = 0;
+      setCurrentStepIndex(0);
+      const interval = setInterval(() => {
+        i = (i + 1) % auditSteps.length;
+        setCurrentStepIndex(i);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuditing]);
+
+  const getScoreTextColor = (score: number) => {
+    if (score < 30) return 'text-emerald-600';
+    if (score < 70) return 'text-amber-500';
+    return 'text-red-600';
+  };
+
   useEffect(() => {
     if (isOpen) {
       if (agents.length === 0) loadAgents();
@@ -97,8 +132,18 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="rounded-xl border-slate-200 text-slate-600 h-9 w-9" title="Auditoria de IA">
+        <Button 
+          variant="outline" 
+          size={auditResult ? "default" : "icon"} 
+          className={`rounded-xl border-slate-200 text-slate-600 h-9 ${auditResult ? 'px-3' : 'w-9'}`} 
+          title="Auditoria de IA"
+        >
           <ShieldAlert className="h-4 w-4" />
+          {auditResult && (
+            <span className={`ml-2 font-bold ${getScoreTextColor(auditResult.finalPercentage)}`}>
+              {auditResult.finalPercentage}%
+            </span>
+          )}
         </Button>
       </SheetTrigger>
       
@@ -145,6 +190,17 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
           >
             {isAuditing ? <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Auditando (Pode demorar)...</> : 'Iniciar Auditoria'}
           </Button>
+
+          {isAuditing && (
+            <div className="mt-4 text-center animate-in fade-in duration-500">
+              <div className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">
+                Analisando Etapa {currentStepIndex + 1}/13
+              </div>
+              <div className="text-sm text-brand-yellow font-bold animate-pulse">
+                {auditSteps[currentStepIndex]}...
+              </div>
+            </div>
+          )}
 
           {auditResult && (
             <div className="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
