@@ -1,30 +1,13 @@
 "use server";
 
-import prisma from "@/lib/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import OpenAI from "openai";
+import { runAiAgentTest } from "./ia";
 
 export async function auditBlogText(content: string, agentId: string) {
   try {
-    const settings = await prisma.appSetting.findUnique({ where: { id: "global" } });
-    if (!settings) throw new Error("Configurações não encontradas.");
-
-    let provider = 'gemini';
-    let apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || '';
-    let modelToUse = "gemini-1.5-flash";
-    
-    if (settings.openRouterApiKey) {
-      provider = 'openrouter';
-      apiKey = settings.openRouterApiKey;
-      modelToUse = "openai/gpt-4o-mini";
-    }
-
-    if (!apiKey) throw new Error("API Key não configurada.");
-
     const cleanContent = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     if (!cleanContent) throw new Error("Conteúdo vazio.");
 
-    const systemPrompt = `Você é um Auditor Especialista em Detecção de Texto Sintético (IA). Sua missão é ler o artigo fornecido e avaliá-lo rigorosamente usando um framework de 13 etapas.
+    const overrideSystemPrompt = `Você é um Auditor Especialista em Detecção de Texto Sintético (IA). Sua missão é ler o artigo fornecido e avaliá-lo rigorosamente usando um framework de 13 etapas.
 
 REGRA CRÍTICA: Você NÃO PODE pular nenhuma etapa. Você deve avaliar cada um dos 13 critérios de forma independente. Para cada critério, primeiro escreva a sua análise (citando trechos do texto) e depois atribua uma nota de 0 a 10 (onde 0 = Completamente humano, sem indícios daquela falha, e 10 = Fortíssimo indício de IA).
 
@@ -43,7 +26,7 @@ O framework de 13 etapas é:
 12. Sinais de texto humano polido/expandido artificialmente pela IA
 13. Identificação de outros trechos genéricos suspeitos que levantam suspeita de IA
 
-Sua resposta DEVE ser EXCLUSIVAMENTE um objeto JSON com a seguinte estrutura estrita:
+Sua resposta DEVE ser EXCLUSIVAMENTE um objeto JSON válido, sem formatação markdown ou blocos de código (\`\`\`json), com a seguinte estrutura estrita:
 {
   "analises": [
     {
@@ -55,50 +38,32 @@ Sua resposta DEVE ser EXCLUSIVAMENTE um objeto JSON com a seguinte estrutura est
     }
   ]
 }
-Nota: Certifique-se de que o array 'analises' tenha exatos 13 itens.`;
+Nota: Certifique-se de que o array 'analises' tenha exatos 13 itens. Não inclua NENHUM texto fora do JSON.`;
 
     const userMessage = `Artigo a ser auditado:\n\n${cleanContent.substring(0, 10000)}`;
 
-    if (provider === 'openrouter') {
-      const openai = new OpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1" });
-      const response = await openai.chat.completions.create({
-        model: modelToUse,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1,
-        max_tokens: 4000,
-      });
-      const text = response.choices[0]?.message?.content || '{}';
-      try {
-        const data = JSON.parse(text);
-        return { success: true, data };
-      } catch (err) {
-        return { success: false, error: 'Erro ao fazer parse do JSON do auditor.' };
-      }
-    } else {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ 
-        model: modelToUse, 
-        generationConfig: { responseMimeType: "application/json", temperature: 0.1 } 
-      });
-      const result = await model.generateContent({
-        contents: [
-          { role: "user", parts: [{ text: systemPrompt + "\n\n" + userMessage }] }
-        ],
-      });
-      const text = result.response.text();
-      try {
-        const data = JSON.parse(text);
-        return { success: true, data };
-      } catch (err) {
-        return { success: false, error: 'Erro ao fazer parse do JSON do auditor.' };
-      }
+    const result = await runAiAgentTest(agentId, userMessage, [], { 
+      disableTools: true,
+      overrideSystemPrompt 
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || "Erro na execução do agente.");
+    }
+
+    let text = result.response || '{}';
+    // Limpar possíveis blocos markdown (```json ... ```)
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    try {
+      const data = JSON.parse(text);
+      return { success: true, data };
+    } catch (err) {
+      console.error("[IA Auditor] JSON Parse error:", err, ". Text was:", text);
+      return { success: false, error: 'Erro ao fazer parse do JSON do auditor. O modelo não retornou um JSON válido.' };
     }
   } catch (error: any) {
-    console.error(error);
+    console.error("[IA Auditor] Error:", error);
     return { success: false, error: error.message || 'Erro na auditoria.' };
   }
 }
