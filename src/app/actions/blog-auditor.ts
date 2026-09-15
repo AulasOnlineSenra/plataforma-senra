@@ -69,6 +69,7 @@ Nota: Certifique-se de que o array 'analises' tenha exatos 13 itens.`;
         ],
         response_format: { type: "json_object" },
         temperature: 0.1,
+        max_tokens: 4000,
       });
       const text = response.choices[0]?.message?.content || '{}';
       try {
