@@ -762,7 +762,10 @@ export default function NewBlogPostPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="metaDescription" className="text-slate-700 font-bold">Meta Description (SEO)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="metaDescription" className="text-slate-700 font-bold">Meta Description (SEO)</Label>
+                    <AiSeoAssistant content={formData.content} title={formData.title} type="excerpt" onApply={(text) => handleChange('metaDescription', text)} />
+                  </div>
                   <Textarea
                     id="metaDescription"
                     placeholder="Resumo otimizado para o Google (máx 160 caracteres)"
