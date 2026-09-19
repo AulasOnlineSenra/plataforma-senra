@@ -17,6 +17,8 @@ export function CookieBanner() {
   const acceptCookies = () => {
     localStorage.setItem('cookie-consent', 'true');
     setIsVisible(false);
+    // Dispara um evento global para que scripts de terceiros (como AdSense) possam carregar
+    window.dispatchEvent(new Event('cookieConsentAccepted'));
   };
 
   if (!isVisible) return null;

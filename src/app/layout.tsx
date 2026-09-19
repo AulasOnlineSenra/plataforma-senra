@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { CookieBanner } from '@/components/cookie-banner';
+import AdSense from '@/components/adsense';
 
 export const metadata: Metadata = {
   title: 'Aulas Online Senra',
@@ -36,6 +37,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <CookieBanner />
+          <AdSense />
         </ThemeProvider>
       </body>
     </html>

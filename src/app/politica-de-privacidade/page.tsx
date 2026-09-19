@@ -158,8 +158,10 @@ export default function PoliticaDePrivacidadePage() {
                   <li>Google Ads</li>
                   <li>Google Analytics</li>
                 </ul>
-                <p>Fornecedores terceiros, incluindo o Google, podem utilizar cookies para exibir anúncios com base nas visitas anteriores dos usuários ao nosso site ou a outros sites.</p>
-                <p className="mt-4"> Os usuários podem desativar anúncios personalizados acessando as configurações de anúncios do Google.</p>
+                <p>Fornecedores terceiros, incluindo o Google, utilizam cookies para veicular anúncios com base em visitas anteriores do usuário a este site ou a outros sites na Internet.</p>
+                <p className="mt-4">Com o uso de cookies de publicidade, o Google e os parceiros dele podem veicular anúncios para os usuários com base nas visitas feitas a este e/ou a outros sites na Internet.</p>
+                <p className="mt-4">Os usuários podem desativar a publicidade personalizada acessando as <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">Configurações de anúncios do Google</a>.</p>
+                <p className="mt-4">Para entender detalhadamente como o Google utiliza os seus dados quando você usa sites de parceiros, consulte a página oficial: <a href="https://policies.google.com/technologies/partner-sites?hl=pt-BR" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">Como o Google usa informações de sites ou apps que utilizam nossos serviços</a>.</p>
               </div>
             </section>
 
