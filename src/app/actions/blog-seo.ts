@@ -13,14 +13,14 @@ export async function generateSeoSuggestion(content: string, type: 'title' | 'co
     let apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || '';
     let modelToUse = "gemini-1.5-flash"; // Default fallback
     
-    // Prioriza OpenRouter se existir, a menos que o agente force o gemini
-    if (settings.openRouterApiKey) {
+    // Se não tiver chave do Gemini, mas tiver do OpenRouter, usamos OpenRouter
+    if (!apiKey && settings.openRouterApiKey) {
       provider = 'openrouter';
       apiKey = settings.openRouterApiKey;
       modelToUse = "openai/gpt-4o-mini";
     }
 
-    if (!apiKey) throw new Error("Nenhuma chave de API configurada no painel de Integrações.");
+    if (!apiKey && !settings.openRouterApiKey) throw new Error("Nenhuma chave de API configurada no painel de Integrações.");
 
     // Se o usuário passou um agentId (salvo no localStorage), pegamos qual modelo aquele agente usa
     if (agentId) {

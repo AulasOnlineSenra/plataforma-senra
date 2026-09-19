@@ -13,7 +13,8 @@ export async function suggestRelatedLinks(content: string, publishedPosts: { id:
     let apiKey = settings.geminiApiKey?.split(/\r?\n|,/)[0].trim() || '';
     let modelToUse = "gemini-1.5-flash";
     
-    if (settings.openRouterApiKey) {
+    // Se não tiver chave do Gemini, mas tiver do OpenRouter, usamos OpenRouter
+    if (!apiKey && settings.openRouterApiKey) {
       provider = 'openrouter';
       apiKey = settings.openRouterApiKey;
       modelToUse = "openai/gpt-4o-mini";
