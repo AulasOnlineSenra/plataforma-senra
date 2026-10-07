@@ -582,3 +582,22 @@ model VestibularEvent {
   @@index([type])
   @@index([dateStart])
 }
+  
+model PasUnbLead {  
+  id              String   @id @default(cuid())  
+  createdAt       DateTime @default(now())  
+  studentName     String  
+  studentWhatsapp String  
+  parentName      String  
+  parentWhatsapp  String  
+  school          String?  
+  gradeStage      String  
+  targetCourse    String  
+  pas1Score       Float?   @default(0.0)  
+  pas2Score       Float?   @default(0.0)  
+  essayTarget     Float?   @default(7.5)  
+  projectedEf     Float  
+  riskZone        String  
+  leadStatus      String   @default("NOVO")  
+  ipAddress       String?  
+} 

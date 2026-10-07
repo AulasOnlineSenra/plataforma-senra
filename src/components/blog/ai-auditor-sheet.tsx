@@ -8,19 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { Loader2, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { getAiAgents, getBlogAgentDefaults, setBlogAgentDefaults } from '@/app/actions/ia';
-import { auditBlogText } from '@/app/actions/blog-auditor';
+import { auditBlogText, humanizeText } from '@/app/actions/blog-auditor';
 
 type AiAuditorSheetProps = {
   currentContent: string;
+  quillRef: React.RefObject<any>;
 };
 
-export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) {
+export default function AiAuditorSheet({ currentContent, quillRef }: AiAuditorSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [agents, setAgents] = useState<any[]>([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
   const [isAuditing, setIsAuditing] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState('');
   const [auditResult, setAuditResult] = useState<any>(null);
+  const [isHumanizing, setIsHumanizing] = useState<Record<string, boolean>>({});
 
   const auditSteps = [
     "Ritmo e naturalidade",
@@ -111,10 +113,51 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
       // Max score is 130
       const finalPercentage = Math.round((totalScore / 130) * 100);
       setAuditResult({ analises, finalPercentage });
+      
+      if (quillRef.current) {
+        const editor = quillRef.current.getEditor();
+        const text = editor.getText();
+        analises.forEach((analise: any) => {
+          if (analise.nota_ia >= 5 && analise.trechos_suspeitos) {
+            analise.trechos_suspeitos.forEach((trecho: string) => {
+              if (!trecho || trecho.length < 5) return;
+              const idx = text.indexOf(trecho);
+              if (idx !== -1) {
+                editor.formatText(idx, trecho.length, 'background', '#fef08a');
+              }
+            });
+          }
+        });
+      }
+
       toast({ title: 'Auditoria concluída!', className: 'bg-emerald-600 text-white' });
     } else {
       toast({ variant: 'destructive', title: 'Erro na auditoria', description: result.error || 'Falha ao processar.' });
     }
+  };
+
+  const handleHumanize = async (trecho: string) => {
+    if (!quillRef.current) return;
+    const editor = quillRef.current.getEditor();
+    const text = editor.getText();
+    const idx = text.indexOf(trecho);
+    if (idx === -1) {
+      toast({ variant: 'destructive', title: 'Trecho não encontrado', description: 'O texto pode ter sido modificado.' });
+      return;
+    }
+
+    setIsHumanizing(prev => ({ ...prev, [trecho]: true }));
+    const res = await humanizeText(trecho, selectedAgent);
+    
+    if (res.success && res.text) {
+      editor.deleteText(idx, trecho.length);
+      editor.insertText(idx, res.text);
+      editor.removeFormat(idx, res.text.length);
+      toast({ title: 'Trecho humanizado!', className: 'bg-emerald-600 text-white border-none' });
+    } else {
+      toast({ variant: 'destructive', title: 'Erro', description: res.error || 'Falha ao humanizar.' });
+    }
+    setIsHumanizing(prev => ({ ...prev, [trecho]: false }));
   };
 
   const getScoreColor = (score: number) => {
@@ -230,9 +273,22 @@ export default function AiAuditorSheet({ currentContent }: AiAuditorSheetProps) 
                       {item.trechos_suspeitos && item.trechos_suspeitos.length > 0 && item.trechos_suspeitos.some((t: string) => t.length > 0) && (
                         <div className="bg-white border border-slate-200 rounded-md p-3">
                           <span className="text-xs font-bold text-slate-500 mb-2 block">Trechos Suspeitos:</span>
-                          <ul className="list-disc pl-4 space-y-1">
+                          <ul className="list-disc pl-4 space-y-3">
                             {item.trechos_suspeitos.filter((t:string)=>t.length>0).map((trecho: string, i: number) => (
-                              <li key={i} className="text-slate-700 italic">"{trecho}"</li>
+                              <li key={i} className="text-slate-700 italic text-sm">
+                                <span className="block mb-2">"{trecho}"</span>
+                                {item.nota_ia >= 5 && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleHumanize(trecho)}
+                                    disabled={isHumanizing[trecho]}
+                                    className="h-7 text-xs rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                                  >
+                                    {isHumanizing[trecho] ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : "✨ Humanizar Trecho"}
+                                  </Button>
+                                )}
+                              </li>
                             ))}
                           </ul>
                         </div>

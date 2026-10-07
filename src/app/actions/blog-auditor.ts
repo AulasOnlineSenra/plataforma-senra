@@ -67,3 +67,24 @@ Nota: Certifique-se de que o array 'analises' tenha exatos 13 itens. Não inclua
     return { success: false, error: error.message || 'Erro na auditoria.' };
   }
 }
+
+export async function humanizeText(text: string, agentId: string) {
+  try {
+    const overrideSystemPrompt = `Você é um redator humano e coloquial. Reescreva o trecho fornecido para remover clichês, palavras pomposas e marcadores discursivos robóticos. Seja direto, natural e traga a imperfeição de uma voz autoral humana. Não adicione saudações, aspas extras ou explicações, apenas devolva estritamente o texto reescrito.`;
+    const result = await runAiAgentTest(agentId, text, [], {
+      disableTools: true,
+      overrideSystemPrompt 
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || "Erro ao humanizar texto.");
+    }
+
+    let newText = result.response || '';
+    newText = newText.replace(/^"|"$/g, '').trim();
+    return { success: true, text: newText };
+  } catch (error: any) {
+    console.error("[IA Auditor] Humanize Error:", error);
+    return { success: false, error: error.message || 'Erro na humanização.' };
+  }
+}

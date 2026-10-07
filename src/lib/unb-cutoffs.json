@@ -1,0 +1,17 @@
+[
+  { "course": "Medicina", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 135.5 },
+  { "course": "Direito", "campus": "Darcy Ribeiro", "shift": "Diurno", "cutoff": 85.2 },
+  { "course": "Direito", "campus": "Darcy Ribeiro", "shift": "Noturno", "cutoff": 75.8 },
+  { "course": "Engenharia de Software", "campus": "Gama", "shift": "Integral", "cutoff": 68.4 },
+  { "course": "Ciência da Computação", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 92.1 },
+  { "course": "Psicologia", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 102.3 },
+  { "course": "Relações Internacionais", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 88.5 },
+  { "course": "Administração", "campus": "Darcy Ribeiro", "shift": "Diurno", "cutoff": 55.0 },
+  { "course": "Administração", "campus": "Darcy Ribeiro", "shift": "Noturno", "cutoff": 48.0 },
+  { "course": "Odontologia", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 95.0 },
+  { "course": "Enfermagem", "campus": "Ceilândia", "shift": "Integral", "cutoff": 45.0 },
+  { "course": "Medicina Veterinária", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 82.0 },
+  { "course": "Arquitetura e Urbanismo", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 75.0 },
+  { "course": "Engenharia Mecânica", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 60.0 },
+  { "course": "Engenharia Civil", "campus": "Darcy Ribeiro", "shift": "Integral", "cutoff": 58.0 }
+]

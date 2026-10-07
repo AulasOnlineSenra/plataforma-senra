@@ -812,7 +812,7 @@ export default function EditBlogPostPage() {
             }}
           />
           )}
-          <AiAuditorSheet currentContent={formData.content} />
+          <AiAuditorSheet currentContent={formData.content} quillRef={quillRef} />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="rounded-xl border-slate-200 text-slate-600 h-9 w-9" title="Configurações">
@@ -993,9 +993,24 @@ export default function EditBlogPostPage() {
                         setIsSuggestingLinks(true);
                         const wordCount = formData.content.replace(/<[^>]+>/g, '').trim().split(/\s+/).filter(Boolean).length;
                         const maxLinks = wordCount < 1950 ? 3 : (wordCount < 2400 ? 4 : 5);
-                        toast({ title: 'IA Analisando...', description: `Buscando ${maxLinks} links...` });
                         
-                        const res = await suggestRelatedLinks(formData.content, publishedPosts, maxLinks);
+                        let agentId: string | undefined = undefined;
+                        if (typeof window !== 'undefined') {
+                          agentId = localStorage.getItem('lastUsedBlogAgentId_DRAFT')
+                            || localStorage.getItem('lastUsedBlogAgentId_REVIEW')
+                            || localStorage.getItem('lastUsedBlogAgentId')
+                            || undefined;
+                        }
+
+                        if (!agentId) {
+                          toast({ title: 'Aviso', description: 'Selecione um Agente IA primeiro no botão "Gerar com IA".', variant: 'destructive' });
+                          setIsSuggestingLinks(false);
+                          return;
+                        }
+
+                        toast({ title: 'IA Analisando...', description: `Buscando ${maxLinks} links usando Agente Central...` });
+                        
+                        const res = await suggestRelatedLinks(formData.content, publishedPosts, maxLinks, agentId);
                         setIsSuggestingLinks(false);
                         
                         if (res.success && res.data) {

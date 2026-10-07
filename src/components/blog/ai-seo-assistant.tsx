@@ -126,11 +126,13 @@ ${excerpt}`;
   }
 
   if (type === 'excerpt') {
-    return `Você é um especialista em SEO. Escreva UMA ÚNICA meta description (resumo) para o artigo.
+    return `Você é um especialista em SEO. Escreva 3 opções de meta description (resumo) para o artigo.
 Regras:
-- MÁXIMO absoluto de 160 caracteres. Seja conciso e direto.
+- MÁXIMO absoluto de 160 caracteres por resumo. Seja conciso e direto.
 - Use gatilhos de curiosidade para gerar cliques (CTR alto) no Google.
-- Retorne APENAS o texto do resumo, sem aspas, sem prefixos, sem a palavra "Resumo:".
+- Retorne APENAS as 3 opções.
+- Cada opção deve estar em uma linha separada por uma quebra de linha dupla.
+- Não use numeração, aspas, prefixos, marcadores ou qualquer outro texto.
 
 Conteúdo do Artigo (baseie-se apenas nisto):
 
@@ -326,9 +328,9 @@ export function AiSeoAssistant({ content, title, type, onApply, onApplyAlt }: Ai
               variant: 'destructive',
             });
           }
-        } else if (type === 'title') {
-          const titles = responseText.split('\n').filter((t: string) => t.trim().length > 0);
-          setResult(titles);
+        } else if (type === 'title' || type === 'excerpt') {
+          const items = responseText.split('\n').filter((t: string) => t.trim().length > 0);
+          setResult(items);
         } else {
           setResult(responseText);
         }
@@ -439,26 +441,26 @@ export function AiSeoAssistant({ content, title, type, onApply, onApplyAlt }: Ai
               )}
 
               {/* EXCERPT / RESUMO */}
-              {type === 'excerpt' && typeof result === 'string' && (
-                <div className="space-y-3">
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700 leading-relaxed">
-                    {result}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-                      <Check className="h-3 w-3 text-emerald-500" /> SEO Otimizado
-                    </span>
-                    <Button
-                      size="sm"
+              {type === 'excerpt' && Array.isArray(result) && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-slate-500 mb-1">Clique no resumo para aplicar:</p>
+                  {result.map((excerptStr: string, idx: number) => (
+                    <button
+                      key={idx}
                       onClick={() => {
-                        onApply?.(result);
+                        onApply?.(excerptStr);
                         setIsOpen(false);
                         toast({ title: 'Sucesso', description: 'Resumo aplicado!', className: 'bg-emerald-600 text-white border-none' });
                       }}
-                      className="h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs px-4"
+                      className="text-left text-sm text-slate-700 hover:text-brand-yellow-dark bg-slate-50 hover:bg-amber-50 border border-slate-100 hover:border-amber-200 rounded-lg p-3 transition-colors group"
                     >
-                      Aplicar Resumo
-                    </Button>
+                      {excerptStr}
+                    </button>
+                  ))}
+                  <div className="flex items-center justify-end mt-2">
+                    <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                      <Check className="h-3 w-3 text-emerald-500" /> SEO Otimizado
+                    </span>
                   </div>
                 </div>
               )}

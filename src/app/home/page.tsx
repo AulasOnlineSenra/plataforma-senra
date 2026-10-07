@@ -14,6 +14,7 @@ import {
   Briefcase,
   CalendarCheck,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   CreditCard,
   Facebook,
@@ -79,17 +80,25 @@ const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-image-1');
 const navLinks = [
   { href: '/', label: 'Início', storageKey: 'home-nav-inicio' },
   { href: '/blog', label: 'Blog', storageKey: 'home-nav-blog' },
-  { href: '/calendario', label: 'Calendário', storageKey: 'home-nav-calendario' },
   { href: '/dashboard/booking', label: 'Agendar Aulas', storageKey: 'home-nav-agendar' },
   { href: '/cronograma', label: 'Cronograma', storageKey: 'home-nav-cronograma' },
+  { 
+    label: 'Ferramentas', 
+    storageKey: 'home-nav-ferramentas', 
+    items: [
+      { href: '/calendario', label: 'Calendário', storageKey: 'home-nav-calendario' },
+      { href: '/simulador-pas', label: 'Simulador PAS UnB', storageKey: 'home-nav-simulador' }
+    ]
+  },
 ];
 
 const mobileNavLinks = [
   { href: '/', label: 'Inicio', storageKey: 'home-nav-inicio-mob' },
   { href: '/blog', label: 'Blog', storageKey: 'home-nav-blog-mob' },
-  { href: '/calendario', label: 'Calendário', storageKey: 'home-nav-calendario-mob' },
   { href: '/dashboard/booking', label: 'Agendar aulas', storageKey: 'home-nav-agendar-mob' },
   { href: '/cronograma', label: 'Montar cronograma', storageKey: 'home-nav-cronograma-mob' },
+  { href: '/calendario', label: 'Calendário', storageKey: 'home-nav-calendario-mob' },
+  { href: '/simulador-pas', label: 'Simulador PAS UnB', storageKey: 'home-nav-simulador-mob' },
   { href: '/contato', label: 'Contato', storageKey: 'home-nav-contato-mob' },
 ];
 
@@ -497,9 +506,25 @@ export default function HomePage() {
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-medium font-bold text-muted-foreground transition-colors hover:text-foreground">
-              <EditableText storageKey={link.storageKey}>{link.label}</EditableText>
-            </Link>
+            link.items ? (
+              <div key={link.label} className="relative group">
+                <span className="text-sm font-medium font-bold text-muted-foreground transition-colors hover:text-foreground cursor-pointer flex items-center gap-1">
+                  <EditableText storageKey={link.storageKey}>{link.label}</EditableText>
+                  <ChevronDown className="h-4 w-4" />
+                </span>
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col py-2">
+                  {link.items.map((subItem) => (
+                    <Link key={subItem.href} href={subItem.href} className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-amber-500 font-medium">
+                      <EditableText storageKey={subItem.storageKey}>{subItem.label}</EditableText>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link key={link.href} href={link.href!} className="text-sm font-medium font-bold text-muted-foreground transition-colors hover:text-foreground">
+                <EditableText storageKey={link.storageKey}>{link.label}</EditableText>
+              </Link>
+            )
           ))}
         </nav>
 
