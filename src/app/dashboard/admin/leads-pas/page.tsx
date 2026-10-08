@@ -33,14 +33,14 @@ export default function LeadsPasAdmin() {
   };
 
   const openWhatsApp = (phone: string, name: string, course: string, isParent: boolean, score: number) => {
-    const cleanPhone = phone.replace(/\\D/g, "");
+    const cleanPhone = phone.replace(/\D/g, "");
     let text = "";
     if (isParent) {
-      text = \`Olá, tudo bem? Sou da equipe do Prof. Senra. O(a) \${name} realizou o simulado do PAS UnB para \${course} na nossa plataforma e vimos que a projeção atual dele(a) está em \${score.toFixed(1)} pontos. Gostaria de agendar uma sessão estratégica rápida para entendermos como ajudar?\`;
+      text = `Olá, tudo bem? Sou da equipe do Prof. Senra. O(a) ${name} realizou o simulado do PAS UnB para ${course} na nossa plataforma e vimos que a projeção atual dele(a) está em ${score.toFixed(1)} pontos. Gostaria de agendar uma sessão estratégica rápida para entendermos como ajudar?`;
     } else {
-      text = \`Olá \${name}! Vi que você fez a simulação do PAS UnB para \${course} na nossa plataforma. Sua projeção atual é de \${score.toFixed(1)} pontos. Quer bater um papo rápido com o Prof. Senra para alinhar seu plano de estudos?\`;
+      text = `Olá ${name}! Vi que você fez a simulação do PAS UnB para ${course} na nossa plataforma. Sua projeção atual é de ${score.toFixed(1)} pontos. Quer bater um papo rápido com o Prof. Senra para alinhar seu plano de estudos?`;
     }
-    window.open(\`https://wa.me/55\${cleanPhone}?text=\${encodeURIComponent(text)}\`, "_blank");
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   return (

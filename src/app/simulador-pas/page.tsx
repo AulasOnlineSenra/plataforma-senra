@@ -76,7 +76,7 @@ export default function SimuladorPas() {
           <div className="w-full bg-slate-800 rounded-full h-1.5">
             <div 
               className="bg-brand-yellow h-1.5 rounded-full transition-all duration-500 ease-in-out"
-              style={{ width: \`\${(step / 4) * 100}%\` }}
+              style={{ width: `${(step / 4) * 100}%` }}
             />
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function SimuladorPas() {
                   </p>
                 </div>
 
-                <div className={\`p-6 rounded-2xl border mb-6 text-center \${getRiskColor(result.riskZone)}\`}>
+                <div className={`p-6 rounded-2xl border mb-6 text-center ${getRiskColor(result.riskZone)}`}>
                   <p className="text-sm font-semibold uppercase tracking-wider opacity-80 mb-1">Escore Final Projetado</p>
                   <p className="text-4xl font-black">{result.projectedEf.toFixed(1)}</p>
                   <p className="text-sm mt-3 font-medium">
@@ -209,7 +209,7 @@ export default function SimuladorPas() {
 
                 <div className="space-y-3">
                   <Button className="w-full bg-[#25D366] hover:bg-[#1DA851] text-white h-12 text-md" asChild>
-                    <a href={\`https://wa.me/5561993703508?text=Ol%C3%A1%20Prof.%20Senra!%20Fiz%20o%20simulado%20do%20PAS%20UnB%20para%20\${formData.targetCourse}%20e%20quero%20ajuda.\`} target="_blank" rel="noreferrer">
+                    <a href={`https://wa.me/5561993703508?text=Ol%C3%A1%20Prof.%20Senra!%20Fiz%20o%20simulado%20do%20PAS%20UnB%20para%20${formData.targetCourse}%20e%20quero%20ajuda.`} target="_blank" rel="noreferrer">
                       Falar com Prof. Senra no WhatsApp
                     </a>
                   </Button>
