@@ -471,6 +471,7 @@ model AiAgent {
   workflowSteps WorkflowStep[]
   supervisedWorkflows AutomationWorkflow[] @relation("SupervisorAgent")
   memories     AgentMemory[]
+  onboardingAutomations OnboardingAutomation[]
 }
 
 model AgentMemory {
@@ -639,3 +640,25 @@ model PasUnbLead {
   leadStatus      String   @default("NOVO")  
   ipAddress       String?  
 } 
+
+// ============================================================
+// ONBOARDING AUTOMATION
+// ============================================================
+
+model OnboardingAutomation {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  triggerType String   @default("NEW_USER") // NEW_USER, NEW_TEACHER, MANUAL
+  agentId     String?
+  isActive    Boolean  @default(false)
+  flowJson    String   @default("[]") // JSON array of FlowNode objects
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agent       AiAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([isActive])
+  @@index([triggerType])
+}
+

@@ -6,6 +6,7 @@ import { sendResetPasswordEmail } from "@/lib/mailer";
 import crypto from "crypto";
 import { applyReferralOnSignup } from "@/app/actions/users";
 import { revalidatePath } from "next/cache";
+import { triggerOnboardingForUser } from "@/app/actions/onboarding-automation";
 
 const ALLOWED_ROLES = new Set(["student", "teacher"]);
 
@@ -136,6 +137,11 @@ export async function registerUser(data: {
         revalidatePath("/dashboard/notifications");
       }
     }
+
+    // 🚀 Onboarding: dispara fluxo de boas-vindas em background (non-blocking)
+    triggerOnboardingForUser(newUser.id, normalizedRole as "student" | "teacher").catch(
+      (err) => console.error("[Onboarding] trigger background error:", err)
+    );
 
     return { success: true, user: newUser };
   } catch (error) {
