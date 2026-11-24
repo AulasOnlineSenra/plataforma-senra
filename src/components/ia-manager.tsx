@@ -70,7 +70,11 @@ import {
   updateAiAgent, 
   deleteAiAgent, 
   runAiAgentTest,
-  getAvailableProviders
+  getAvailableProviders,
+  getAgentMemories,
+  createAgentMemory,
+  deleteAgentMemory,
+  resetAgentMemories
 } from '@/app/actions/ia';
 
 interface Tool {
@@ -218,10 +222,63 @@ export function IaManager() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isRunningTest]);
 
-  // Limpar chat ao trocar de agente
+  // Limpar chat e carregar memórias ao trocar de agente
+  const [agentMemories, setAgentMemories] = useState<any[]>([]);
+  const [isLoadingMemories, setIsLoadingMemories] = useState(false);
+  const [newMemoryText, setNewMemoryText] = useState('');
+  const [newMemoryCategory, setNewMemoryCategory] = useState('diretriz');
+
+  const loadMemories = async (agentId: string) => {
+    setIsLoadingMemories(true);
+    try {
+      const res = await getAgentMemories(agentId);
+      if (res && res.success && res.data) {
+        setAgentMemories(res.data);
+      }
+    } finally {
+      setIsLoadingMemories(false);
+    }
+  };
+
   useEffect(() => {
     setChatMessages([]);
+    if (selectedAgent?.id) {
+      loadMemories(selectedAgent.id);
+    }
   }, [selectedAgent?.id]);
+
+  const handleAddMemory = async () => {
+    if (!selectedAgent?.id || !newMemoryText.trim()) return;
+    const res = await createAgentMemory(selectedAgent.id, newMemoryText, newMemoryCategory);
+    if (res && res.success) {
+      toast.success("Memória gravada com sucesso!");
+      setNewMemoryText('');
+      loadMemories(selectedAgent.id);
+    } else {
+      toast.error("Erro ao gravar memória.");
+    }
+  };
+
+  const handleDeleteMemory = async (id: string) => {
+    const res = await deleteAgentMemory(id);
+    if (res && res.success) {
+      toast.success("Memória descartada.");
+      if (selectedAgent?.id) loadMemories(selectedAgent.id);
+    } else {
+      toast.error("Erro ao excluir memória.");
+    }
+  };
+
+  const handleResetMemories = async () => {
+    if (!selectedAgent?.id) return;
+    if (confirm("Tem certeza que deseja apagar todas as memórias acumuladas deste agente?")) {
+      const res = await resetAgentMemories(selectedAgent.id);
+      if (res && res.success) {
+        toast.success("Todas as memórias foram apagadas.");
+        loadMemories(selectedAgent.id);
+      }
+    }
+  };
 
   const loadProviders = async () => {
     const result = await getAvailableProviders();
@@ -357,6 +414,10 @@ export function IaManager() {
         timestamp: new Date(),
       };
       setChatMessages(prev => [...prev, assistantMsg]);
+      // Recarrega memórias aprendidas em tempo real
+      setTimeout(() => {
+        if (selectedAgent?.id) loadMemories(selectedAgent.id);
+      }, 3000);
     } else {
       const errorMsg = result?.error || "Erro desconhecido ao testar agente";
       toast.error(errorMsg);
@@ -838,6 +899,117 @@ export function IaManager() {
                           <SelectItem value="JSON">Estrutura JSON (Obrigatório para Automações)</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    {/* SUB-BLOCO 3: MEMÓRIA CONTÍNUA & CURADORIA (MEM0 ENGINE) */}
+                    <div className="space-y-4 bg-slate-50/70 p-4 rounded-2xl border">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+                        <div>
+                          <Label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-purple-600" />
+                            3. Memória Contínua & Aprendizado (Mem0 Engine)
+                            <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200 ml-1">
+                              {agentMemories.length} {agentMemories.length === 1 ? 'memória' : 'memórias'}
+                            </Badge>
+                          </Label>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            O agente aprende, consolida preferências e descarta regras obsoletas a cada conversa no Sandbox ou manual.
+                          </p>
+                        </div>
+                        {agentMemories.length > 0 && (
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={handleResetMemories}
+                            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 h-8 self-start sm:self-auto"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                            Zerar Memórias
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* FORMULÁRIO DE ADIÇÃO MANUAL */}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                        <Input
+                          placeholder="Ex: Não use termos acadêmicos, mantenha tom informal..."
+                          value={newMemoryText}
+                          onChange={e => setNewMemoryText(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddMemory(); } }}
+                          className="text-xs rounded-xl bg-white flex-1"
+                        />
+                        <Select value={newMemoryCategory} onValueChange={setNewMemoryCategory}>
+                          <SelectTrigger className="w-full sm:w-[130px] rounded-xl text-xs bg-white">
+                            <SelectValue placeholder="Categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diretriz">Diretriz</SelectItem>
+                            <SelectItem value="estilo">Estilo</SelectItem>
+                            <SelectItem value="restricao">Restrição</SelectItem>
+                            <SelectItem value="fato">Fato</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          onClick={handleAddMemory}
+                          className="rounded-xl text-xs bg-purple-600 hover:bg-purple-700 text-white shrink-0"
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Gravar
+                        </Button>
+                      </div>
+
+                      {/* LISTA DE MEMÓRIAS CULTIVADAS */}
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {isLoadingMemories ? (
+                          <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Carregando memórias do agente...
+                          </div>
+                        ) : agentMemories.length === 0 ? (
+                          <div className="p-4 bg-white/60 border border-dashed rounded-xl text-center">
+                            <p className="text-xs text-muted-foreground">
+                              Nenhuma memória gravada ainda. Conforme você conversar com o agente no Sandbox ou adicionar regras acima, o Mem0 irá catalogar e aprender automaticamente.
+                            </p>
+                          </div>
+                        ) : (
+                          agentMemories.map(m => {
+                            const badgeColors: Record<string, string> = {
+                              diretriz: "bg-blue-50 text-blue-700 border-blue-200",
+                              estilo: "bg-purple-50 text-purple-700 border-purple-200",
+                              restricao: "bg-rose-50 text-rose-700 border-rose-200",
+                              fato: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                            };
+                            return (
+                              <div key={m.id} className="flex items-start justify-between gap-3 p-2.5 bg-white rounded-xl border shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className={`text-[10px] capitalize px-1.5 py-0 ${badgeColors[m.category] || badgeColors.diretriz}`}>
+                                      {m.category}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {new Date(m.createdAt).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-slate-800 leading-relaxed">{m.content}</p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteMemory(m.id)}
+                                  className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
+                                  title="Esquecer esta memória"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

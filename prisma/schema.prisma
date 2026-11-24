@@ -446,6 +446,20 @@ model AiAgent {
   
   workflowSteps WorkflowStep[]
   supervisedWorkflows AutomationWorkflow[] @relation("SupervisorAgent")
+  memories     AgentMemory[]
+}
+
+model AgentMemory {
+  id        String   @id @default(cuid())
+  agentId   String
+  content   String
+  category  String   @default("diretriz") // diretriz, estilo, fato, restricao
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  agent     AiAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
 }
 
 model AutomationWorkflow {
