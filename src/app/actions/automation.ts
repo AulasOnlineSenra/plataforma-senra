@@ -84,12 +84,15 @@ export async function runAiSupervisor() {
     
     if (stepDraft && redatorAgent) {
       const drafts = await prisma.blogPost.findMany({
-        where: { OR: [{ status: "DRAFT" }, { status: "", published: false }] },
+        where: { 
+          OR: [{ status: "DRAFT" }, { status: "", published: false }],
+          orchestrationStatus: { notIn: ["PAUSED", "AWAITING_ADMIN"] }
+        },
         orderBy: { updatedAt: orderDirection as any },
         take: batchSize
       });
 
-      console.log(`[MAESTRO] Encontrados ${drafts.length} rascunhos.`);
+      console.log(`[MAESTRO] Encontrados ${drafts.length} rascunhos elegíveis.`);
 
       if (drafts.length > 0) {
         await prisma.automationWorkflow.update({
@@ -103,7 +106,7 @@ export async function runAiSupervisor() {
       }
 
       for (const draft of drafts) {
-        console.log(`[MAESTRO] Redigindo artigo: ${draft.title}`);
+        console.log(`[MAESTRO] Redigindo artigo: ${draft.title} (Iteração ${(draft.loopIteration || 0) + 1})`);
         try {
           const systemPrompt = `
 Você é o agente: ${redatorAgent.name}.
@@ -121,12 +124,19 @@ Seu formato de saída DEVE ser estritamente um JSON válido contendo:
 }
 `;
 
-          const userPrompt = `
+          let userPrompt = `
 Escreva o artigo com base neste rascunho:
 Título Inicial: ${draft.title}
 Notas/Ideias Atuais: ${draft.excerpt || "Nenhuma anotação."}
 Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
 `;
+
+          if (draft.lastReviewFeedback) {
+            userPrompt += `\n⚠️ ATENÇÃO: O Revisor reprovou a versão anterior com o seguinte feedback:\n"${draft.lastReviewFeedback}"\nCorrija todos os pontos apontados para garantir aprovação.`;
+          }
+          if (draft.adminDirective) {
+            userPrompt += `\n📌 DIRECIONAMENTO DIRETO DO ADMINISTRADOR:\n"${draft.adminDirective}"\nSiga esta instrução com prioridade máxima.`;
+          }
 
           const isOpenRouter = redatorAgent.model?.startsWith('openrouter:');
           let text = "";
@@ -178,6 +188,7 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
           }
 
           const parsedData = JSON.parse(cleanJson);
+          const nextIteration = (draft.loopIteration || 0) + 1;
 
           // Atualizar o Banco
           await prisma.blogPost.update({
@@ -187,8 +198,23 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
               excerpt: parsedData.excerpt || draft.excerpt,
               content: parsedData.content || draft.content,
               metaDescription: parsedData.metaDescription || draft.metaDescription,
-              status: "REVIEW", // Avança a esteira
+              status: "REVIEW", // Avança a esteira para revisão
+              loopIteration: nextIteration,
               isProcessingAi: false
+            }
+          });
+
+          // Registrar no Log de Auditoria
+          await (prisma as any).agentLoopLog.create({
+            data: {
+              entityType: "BLOG_POST",
+              entityId: draft.id,
+              entityTitle: parsedData.title || draft.title,
+              iteration: nextIteration,
+              agentName: redatorAgent.name,
+              action: "DRAFT_GENERATED",
+              status: "IN_PROGRESS",
+              feedback: `Rascunho gerado pelo agente redator (Iteração ${nextIteration}) e enviado para avaliação do revisor.`,
             }
           });
 
@@ -204,13 +230,16 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
     }
 
     // ---------------------------------------------------------
-    // PASSO 2: REVIEW -> IMAGES (Revisão)
+    // PASSO 2: REVIEW -> IMAGES (Revisão com Qualidade & Trava)
     // ---------------------------------------------------------
     const stepReview = steps.find(s => s.triggerState === "REVIEW" && s.actionState === "IMAGES");
     
     if (stepReview && revisorAgent) {
       const reviews = await prisma.blogPost.findMany({
-        where: { status: "REVIEW" },
+        where: { 
+          status: "REVIEW",
+          orchestrationStatus: { notIn: ["PAUSED", "AWAITING_ADMIN"] }
+        },
         orderBy: { updatedAt: orderDirection as any },
         take: batchSize
       });
@@ -229,28 +258,36 @@ Conteúdo Base (se houver): ${draft.content || "Nenhum conteúdo."}
       }
 
       for (const rev of reviews) {
-        console.log(`[MAESTRO] Revisando artigo: ${rev.title}`);
+        const currentIteration = rev.loopIteration || 1;
+        console.log(`[MAESTRO] Revisando artigo: ${rev.title} (Iteração ${currentIteration})`);
         try {
           const systemPrompt = `
 Você é o agente: ${revisorAgent.name}.
-Papel: ${revisorAgent.role || "Revisor Técnico de SEO"}
-Objetivo: ${revisorAgent.goal || "Revisar o artigo, corrigir erros e garantir excelência SEO."}
+Papel: ${revisorAgent.role || "Revisor Técnico de SEO e Qualidade"}
+Objetivo: ${revisorAgent.goal || "Revisar criticamente o artigo, corrigir erros e atribuir nota de qualidade."}
 Regras Rígidas: ${revisorAgent.rules || "Não altere a estrutura básica."}
 ${revisorAgent.instructions ? `Instruções: ${revisorAgent.instructions}` : ""}
 
 Seu formato de saída DEVE ser estritamente um JSON válido contendo:
 {
+  "score": 85,
+  "feedback": "Justificativa da nota e o que pode melhorar",
   "content": "Conteúdo corrigido em HTML",
   "tags": "lista, de, palavras, chave, separadas, por, virgula"
 }
+Nota: Atribua um score inteiro de 0 a 100 baseado em clareza, relevância, formatação HTML e SEO. Scores iguais ou superiores a 80 aprovam o artigo.
 `;
 
-          const userPrompt = `
-Revise e aperfeiçoe este artigo:
+          let userPrompt = `
+Revise criticamente este artigo e atribua uma nota de 0 a 100:
 Título: ${rev.title}
 Conteúdo HTML Atual: 
 ${rev.content}
 `;
+
+          if (rev.adminDirective) {
+            userPrompt += `\n📌 DIRECIONAMENTO DIRETO DO ADMINISTRADOR:\n"${rev.adminDirective}"\nConsidere isso prioritário na sua revisão.`;
+          }
 
           const isOpenRouter = revisorAgent.model?.startsWith('openrouter:');
           let text = "";
@@ -279,10 +316,12 @@ ${rev.content}
                 responseSchema: {
                   type: SchemaType.OBJECT,
                   properties: {
+                    score: { type: SchemaType.INTEGER },
+                    feedback: { type: SchemaType.STRING },
                     content: { type: SchemaType.STRING },
                     tags: { type: SchemaType.STRING }
                   },
-                  required: ["content", "tags"]
+                  required: ["score", "feedback", "content", "tags"]
                 }
               }
             });
@@ -300,21 +339,109 @@ ${rev.content}
           }
 
           const parsedData = JSON.parse(cleanJson);
+          const score = typeof parsedData.score === 'number' ? parsedData.score : 80;
+          const feedback = parsedData.feedback || "Revisão e checagem de qualidade concluídas.";
+          const QUALITY_THRESHOLD = 80;
+          const MAX_LOOPS = 3;
 
-          // Atualizar o Banco
-          await prisma.blogPost.update({
-            where: { id: rev.id },
-            data: {
-              content: parsedData.content || rev.content,
-              tags: parsedData.tags || rev.tags,
-              status: "IMAGES", // Avança para a parada obrigatória humana
-              isProcessingAi: false
+          if (score >= QUALITY_THRESHOLD) {
+            // ==========================================
+            // CENÁRIO A: QUALIDADE APROVADA (Score >= 80)
+            // ==========================================
+            await prisma.blogPost.update({
+              where: { id: rev.id },
+              data: {
+                content: parsedData.content || rev.content,
+                tags: parsedData.tags || rev.tags,
+                status: "IMAGES", // Avança esteira para imagens
+                qualityScore: score,
+                lastReviewFeedback: feedback,
+                orchestrationStatus: "AUTO_APPROVED",
+                adminDirective: null, // Limpa diretiva após aprovação
+                isProcessingAi: false
+              }
+            });
+
+            await (prisma as any).agentLoopLog.create({
+              data: {
+                entityType: "BLOG_POST",
+                entityId: rev.id,
+                entityTitle: rev.title,
+                iteration: currentIteration,
+                agentName: revisorAgent.name,
+                action: "QUALITY_CHECK",
+                status: "APPROVED",
+                score,
+                feedback: `Aprovado com Score ${score}/100! ${feedback}`,
+              }
+            });
+
+            reviewsProcessed++;
+            actionsPerformed++;
+            console.log(`[MAESTRO] Aprovado! Score ${score}/100. ${rev.title} movido para IMAGES.`);
+
+          } else {
+            // ==========================================
+            // CENÁRIO B: SCORE INSUFICIENTE (< 80)
+            // ==========================================
+            if (currentIteration >= MAX_LOOPS) {
+              // TRAVA DE SEGURANÇA: Limite de iterações atingido (Circuit Breaker)
+              await prisma.blogPost.update({
+                where: { id: rev.id },
+                data: {
+                  qualityScore: score,
+                  lastReviewFeedback: feedback,
+                  orchestrationStatus: "AWAITING_ADMIN", // Pausa automática
+                  isProcessingAi: false
+                }
+              });
+
+              await (prisma as any).agentLoopLog.create({
+                data: {
+                  entityType: "BLOG_POST",
+                  entityId: rev.id,
+                  entityTitle: rev.title,
+                  iteration: currentIteration,
+                  agentName: revisorAgent.name,
+                  action: "ESCALATED_ADMIN",
+                  status: "ESCALATED_ADMIN",
+                  score,
+                  feedback: `TRAVA DE SEGURANÇA: Limite de ${MAX_LOOPS} ciclos atingido com Score ${score}/100. Requer intervenção humana do Administrador. Feedback: ${feedback}`,
+                }
+              });
+
+              console.warn(`[MAESTRO CIRCUIT BREAKER] Limite de ${MAX_LOOPS} ciclos atingido para '${rev.title}'. Escalado para o Administrador.`);
+            } else {
+              // Devolve para DRAFT para o Redator aperfeiçoar no próximo ciclo
+              await prisma.blogPost.update({
+                where: { id: rev.id },
+                data: {
+                  content: parsedData.content || rev.content,
+                  tags: parsedData.tags || rev.tags,
+                  status: "DRAFT", // Volta para redação
+                  qualityScore: score,
+                  lastReviewFeedback: feedback,
+                  isProcessingAi: false
+                }
+              });
+
+              await (prisma as any).agentLoopLog.create({
+                data: {
+                  entityType: "BLOG_POST",
+                  entityId: rev.id,
+                  entityTitle: rev.title,
+                  iteration: currentIteration,
+                  agentName: revisorAgent.name,
+                  action: "REVIEW_ANALYSIS",
+                  status: "NEEDS_REVISION",
+                  score,
+                  feedback: `Score ${score}/100 (mínimo ${QUALITY_THRESHOLD}). Devolvido ao Redator para correções. Feedback: ${feedback}`,
+                }
+              });
+
+              console.log(`[MAESTRO] Reprovado com Score ${score}/100. Devolvido para DRAFT (Ciclo ${currentIteration}/${MAX_LOOPS}).`);
             }
-          });
-
-          reviewsProcessed++;
-          actionsPerformed++;
-          console.log(`[MAESTRO] Sucesso! ${rev.title} movido para IMAGES.`);
+          }
         } catch (e: any) {
           console.error(`[MAESTRO] Falha ao revisar artigo ${rev.title}:`, e);
           await prisma.blogPost.update({ where: { id: rev.id }, data: { isProcessingAi: false } });

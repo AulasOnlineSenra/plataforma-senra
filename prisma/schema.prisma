@@ -97,8 +97,32 @@ model BlogPost {
   views         Int      @default(0)
   metaDescription String?
   isProcessingAi  Boolean  @default(false)
+  loopIteration       Int      @default(0)
+  qualityScore        Int?
+  lastReviewFeedback  String?
+  orchestrationStatus String   @default("NORMAL") // NORMAL, AWAITING_ADMIN, PAUSED, AUTO_APPROVED
+  adminDirective      String?  // Instrução enviada diretamente pelo administrador
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model AgentLoopLog {
+  id          String   @id @default(cuid())
+  entityType  String   @default("BLOG_POST") // BLOG_POST, LEAD, CRM, etc.
+  entityId    String   // e.g. blogPostId
+  entityTitle String?  // Título ou identificador legível da entidade
+  iteration   Int      @default(1)
+  agentName   String   // Redator, Revisor, Auditor, Administrador
+  action      String   // DRAFT_GENERATED, REVIEW_ANALYSIS, REVISION_APPLIED, QUALITY_CHECK, ESCALATED_ADMIN, HUMAN_APPROVED
+  status      String   @default("IN_PROGRESS") // IN_PROGRESS, APPROVED, NEEDS_REVISION, ESCALATED_ADMIN, PAUSED, REJECTED
+  score       Int?     // 0 to 100
+  feedback    String?  // Feedback do revisor ou justificativa
+  adminNote   String?  // Intervenção humana
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model ChatMessage {

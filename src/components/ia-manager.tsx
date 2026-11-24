@@ -38,7 +38,12 @@ import {
   RotateCcw,
   User,
   X,
-  Star
+  Star,
+  Activity,
+  CheckCircle2,
+  Pause,
+  Play,
+  Send
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -76,6 +81,11 @@ import {
   deleteAgentMemory,
   resetAgentMemories
 } from '@/app/actions/ia';
+import {
+  getAgentLoopLogs,
+  getOrchestratedEntities,
+  adminInterveneLoop
+} from '@/app/actions/orchestration';
 
 interface Tool {
   id: string;
@@ -277,6 +287,50 @@ export function IaManager() {
         toast.success("Todas as memórias foram apagadas.");
         loadMemories(selectedAgent.id);
       }
+    }
+  };
+
+  // Estado de Auditoria e Orquestração Multi-Agente
+  const [orchestratedItems, setOrchestratedItems] = useState<any[]>([]);
+  const [loopLogs, setLoopLogs] = useState<any[]>([]);
+  const [isLoadingOrchestration, setIsLoadingOrchestration] = useState(false);
+  const [directInstructions, setDirectInstructions] = useState<Record<string, string>>({});
+
+  const loadOrchestrationData = async () => {
+    setIsLoadingOrchestration(true);
+    try {
+      const [itemsRes, logsRes] = await Promise.all([
+        getOrchestratedEntities(),
+        getAgentLoopLogs({ limit: 40 })
+      ]);
+      if (itemsRes && itemsRes.success && itemsRes.data) setOrchestratedItems(itemsRes.data);
+      if (logsRes && logsRes.success && logsRes.data) setLoopLogs(logsRes.data);
+    } finally {
+      setIsLoadingOrchestration(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'orchestration') {
+      loadOrchestrationData();
+    }
+  }, [activeTab]);
+
+  const handleAdminIntervene = async (entityId: string, action: "APPROVE" | "PAUSE" | "RESUME" | "DIRECT") => {
+    const instruction = directInstructions[entityId] || "";
+    if (action === "DIRECT" && !instruction.trim()) {
+      toast.error("Por favor, digite a instrução a ser enviada ao agente.");
+      return;
+    }
+    const res = await adminInterveneLoop({ entityId, action, instruction });
+    if (res && res.success) {
+      toast.success(res.message);
+      if (action === "DIRECT") {
+        setDirectInstructions(prev => ({ ...prev, [entityId]: "" }));
+      }
+      loadOrchestrationData();
+    } else {
+      toast.error(res?.error || "Erro ao aplicar intervenção.");
     }
   };
 
@@ -587,6 +641,23 @@ export function IaManager() {
       <div>
         {selectedAgent ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex items-center justify-between pb-3">
+              <TabsList className="bg-slate-100/90 p-1 rounded-2xl border">
+                <TabsTrigger value="sandbox" className="rounded-xl gap-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <MessageSquare className="h-4 w-4 text-primary" /> Sandbox (Chat)
+                </TabsTrigger>
+                <TabsTrigger value="config" className="rounded-xl gap-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Settings2 className="h-4 w-4 text-slate-700" /> Configuração do Agente
+                </TabsTrigger>
+                <TabsTrigger value="orchestration" className="rounded-xl gap-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Activity className="h-4 w-4 text-emerald-600" /> Auditoria & Loops
+                  {orchestratedItems.some(i => i.orchestrationStatus === "AWAITING_ADMIN") && (
+                    <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse ml-0.5" />
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
             {/* ABA: CONFIGURAÇÕES */}
             <TabsContent value="config" className="mt-0">
               <Card className="rounded-[15px]">
@@ -1260,6 +1331,210 @@ export function IaManager() {
                     </Button>
                   </form>
                 </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* ABA: AUDITORIA & ORQUESTRAÇÃO MULTI-AGENTE */}
+            <TabsContent value="orchestration" className="mt-0 space-y-6">
+              <Card className="rounded-[15px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <div>
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-emerald-600" />
+                      Auditoria de Loops & Intervenção Humana (Multi-Agente)
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Acompanhe os ciclos entre Redator e Revisor, verifique notas de qualidade, travas de segurança e envie direcionamentos diretos.
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={loadOrchestrationData} 
+                    disabled={isLoadingOrchestration}
+                    className="rounded-xl text-xs gap-1.5"
+                  >
+                    <RotateCcw className={`h-3.5 w-3.5 ${isLoadingOrchestration ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  {/* SEÇÃO 1: ITENS ATIVOS NO LOOP COM PONTOS DE INTERVENÇÃO */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        <Cpu className="h-4 w-4 text-primary" />
+                        Itens em Processamento / Espera ({orchestratedItems.length})
+                      </Label>
+                    </div>
+
+                    {isLoadingOrchestration ? (
+                      <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Carregando itens do fluxo...
+                      </div>
+                    ) : orchestratedItems.length === 0 ? (
+                      <div className="p-6 bg-slate-50 border border-dashed rounded-xl text-center">
+                        <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                        <p className="text-xs font-medium text-slate-700">Nenhum item travado ou pendente de revisão no momento.</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Todos os artigos já foram aprovados ou o maestro está ocioso.</p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-3">
+                        {orchestratedItems.map(item => {
+                          const isAwaitingAdmin = item.orchestrationStatus === "AWAITING_ADMIN";
+                          const isPaused = item.orchestrationStatus === "PAUSED";
+                          const score = item.qualityScore;
+
+                          return (
+                            <div 
+                              key={item.id} 
+                              className={`p-4 rounded-xl border transition-all ${
+                                isAwaitingAdmin 
+                                  ? 'bg-rose-50/70 border-rose-300 ring-2 ring-rose-500/20 shadow-sm' 
+                                  : isPaused
+                                  ? 'bg-amber-50/50 border-amber-200'
+                                  : 'bg-white border-slate-200 shadow-2xs'
+                              }`}
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                <div className="space-y-1.5 flex-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="font-bold text-sm text-slate-900">{item.title}</h4>
+                                    {isAwaitingAdmin && (
+                                      <Badge className="bg-rose-600 text-white text-[10px] animate-pulse">
+                                        🚨 Trava Acionada: Requer Intervenção (3/3 ciclos)
+                                      </Badge>
+                                    )}
+                                    {isPaused && (
+                                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">
+                                        ⏸️ Pausado Manualmente
+                                      </Badge>
+                                    )}
+                                    <Badge variant="secondary" className="text-[10px]">
+                                      Status: {item.status} (Ciclo {item.loopIteration || 1}/3)
+                                    </Badge>
+                                    {score !== null && score !== undefined && (
+                                      <Badge className={`text-[10px] ${score >= 80 ? 'bg-emerald-600' : 'bg-amber-600'}`}>
+                                        Nota: {score}/100
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  {item.lastReviewFeedback && (
+                                    <p className="text-xs text-slate-600 bg-white/80 p-2 rounded-lg border border-slate-200/60 mt-1">
+                                      <span className="font-semibold text-slate-800">Último parecer do Revisor:</span> {item.lastReviewFeedback}
+                                    </p>
+                                  )}
+
+                                  {item.adminDirective && (
+                                    <p className="text-xs text-purple-900 bg-purple-50 p-2 rounded-lg border border-purple-200 mt-1">
+                                      <span className="font-semibold">Direcionamento ativo do Admin:</span> {item.adminDirective}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* BOTÕES DE AÇÃO RÁPIDA (HUMAN-IN-THE-LOOP) */}
+                                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => handleAdminIntervene(item.id, isPaused ? "RESUME" : "PAUSE")}
+                                    className="rounded-xl text-xs h-8"
+                                  >
+                                    {isPaused ? <Play className="h-3.5 w-3.5 mr-1 text-emerald-600" /> : <Pause className="h-3.5 w-3.5 mr-1 text-amber-600" />}
+                                    {isPaused ? "Retomar" : "Pausar"}
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleAdminIntervene(item.id, "APPROVE")}
+                                    className="rounded-xl text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                    Aprovar Manualmente
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* ENVIAR DIRECIONAMENTO HUMANO */}
+                              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-200/60">
+                                <Input 
+                                  placeholder="Digite uma instrução direta para o agente corrigir..."
+                                  value={directInstructions[item.id] || ""}
+                                  onChange={e => setDirectInstructions({ ...directInstructions, [item.id]: e.target.value })}
+                                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdminIntervene(item.id, "DIRECT"); } }}
+                                  className="h-8 text-xs rounded-xl bg-white"
+                                />
+                                <Button 
+                                  size="sm" 
+                                  variant="secondary"
+                                  onClick={() => handleAdminIntervene(item.id, "DIRECT")}
+                                  className="h-8 text-xs rounded-xl gap-1 shrink-0 bg-purple-100 hover:bg-purple-200 text-purple-800"
+                                >
+                                  <Send className="h-3 w-3" />
+                                  Direcionar
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SEÇÃO 2: LOGS DE AUDITORIA HISTÓRICA */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-slate-500" />
+                      Histórico Recente de Interações entre Agentes
+                    </Label>
+
+                    {loopLogs.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-2">Nenhum evento registrado ainda.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {loopLogs.map(log => {
+                          const actionLabels: Record<string, { label: string, color: string }> = {
+                            DRAFT_GENERATED: { label: "Rascunho Gerado", color: "bg-blue-50 text-blue-700 border-blue-200" },
+                            QUALITY_CHECK: { label: "Avaliação de Qualidade", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                            REVIEW_ANALYSIS: { label: "Ajuste Solicitado", color: "bg-amber-50 text-amber-700 border-amber-200" },
+                            ESCALATED_ADMIN: { label: "Trava de Segurança Acionada", color: "bg-rose-50 text-rose-700 border-rose-200" },
+                            HUMAN_APPROVED: { label: "Aprovação Manual", color: "bg-emerald-50 text-emerald-800 border-emerald-300" },
+                            HUMAN_PAUSED: { label: "Pausado pelo Admin", color: "bg-slate-100 text-slate-700 border-slate-300" },
+                            HUMAN_RESUMED: { label: "Retomado pelo Admin", color: "bg-blue-50 text-blue-700 border-blue-200" },
+                            HUMAN_DIRECTED: { label: "Direcionamento Humano", color: "bg-purple-50 text-purple-700 border-purple-200" },
+                          };
+                          const meta = actionLabels[log.action] || { label: log.action, color: "bg-slate-50 text-slate-700 border-slate-200" };
+
+                          return (
+                            <div key={log.id} className="p-2.5 bg-slate-50/70 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="space-y-0.5 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-900">{log.agentName}</span>
+                                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${meta.color}`}>
+                                    {meta.label}
+                                  </Badge>
+                                  {log.score !== null && (
+                                    <span className="font-mono text-[11px] font-semibold text-slate-700">
+                                      Score: {log.score}/100
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground ml-auto sm:ml-0">
+                                    {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                  </span>
+                                </div>
+                                <p className="text-slate-600 text-[11px] leading-relaxed">
+                                  <span className="font-medium text-slate-800">[{log.entityTitle || log.entityId}]</span> {log.feedback}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
