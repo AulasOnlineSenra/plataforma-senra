@@ -52,6 +52,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Users,
+  GraduationCap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -94,13 +95,6 @@ import {
   getOrchestratedEntities,
   adminInterveneLoop
 } from '@/app/actions/orchestration';
-import {
-  getOnboardingAutomations,
-  createOnboardingAutomation,
-  updateOnboardingAutomation,
-  deleteOnboardingAutomation,
-  type FlowNode,
-} from '@/app/actions/onboarding-automation';
 
 interface Tool {
   id: string;
@@ -347,109 +341,6 @@ export function IaManager() {
     } else {
       toast.error(res?.error || "Erro ao aplicar intervenção.");
     }
-  };
-
-  // ── Onboarding Automation State ─────────────────────────
-  const [onboardingAutomations, setOnboardingAutomations] = useState<any[]>([]);
-  const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(false);
-  const [editingFlow, setEditingFlow] = useState<{ automationId: string; nodes: FlowNode[] } | null>(null);
-  const [isCreatingOnboarding, setIsCreatingOnboarding] = useState(false);
-  const [newOnboardingName, setNewOnboardingName] = useState('');
-  const [newOnboardingTrigger, setNewOnboardingTrigger] = useState('NEW_USER');
-
-  const loadOnboardingAutomations = async () => {
-    setIsLoadingOnboarding(true);
-    try {
-      const res = await getOnboardingAutomations();
-      if (res?.success && res.data) setOnboardingAutomations(res.data);
-    } finally {
-      setIsLoadingOnboarding(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'automations') {
-      loadOnboardingAutomations();
-    }
-  }, [activeTab]);
-
-  const handleCreateOnboarding = async () => {
-    if (!newOnboardingName.trim()) { toast.error('Digite um nome para a automação.'); return; }
-    const res = await createOnboardingAutomation({
-      name: newOnboardingName,
-      triggerType: newOnboardingTrigger,
-    });
-    if (res?.success) {
-      toast.success('Automação criada com sucesso!');
-      setNewOnboardingName('');
-      setIsCreatingOnboarding(false);
-      loadOnboardingAutomations();
-    } else {
-      toast.error(res?.error || 'Erro ao criar automação.');
-    }
-  };
-
-  const handleToggleOnboarding = async (id: string, currentActive: boolean) => {
-    const res = await updateOnboardingAutomation(id, { isActive: !currentActive });
-    if (res?.success) {
-      toast.success(!currentActive ? 'Automação ativada!' : 'Automação pausada.');
-      loadOnboardingAutomations();
-    } else {
-      toast.error('Erro ao alterar status.');
-    }
-  };
-
-  const handleDeleteOnboarding = async (id: string) => {
-    if (!confirm('Excluir esta automação?')) return;
-    const res = await deleteOnboardingAutomation(id);
-    if (res?.success) {
-      toast.success('Automação excluída.');
-      loadOnboardingAutomations();
-      if (editingFlow?.automationId === id) setEditingFlow(null);
-    }
-  };
-
-  const handleAssignAgent = async (automationId: string, agentId: string) => {
-    const res = await updateOnboardingAutomation(automationId, { agentId: agentId === 'none' ? null : agentId });
-    if (res?.success) {
-      toast.success('Agente atribuído!');
-      loadOnboardingAutomations();
-    }
-  };
-
-  const handleSaveFlow = async () => {
-    if (!editingFlow) return;
-    const res = await updateOnboardingAutomation(editingFlow.automationId, {
-      flowJson: JSON.stringify(editingFlow.nodes),
-    });
-    if (res?.success) {
-      toast.success('Fluxo salvo com sucesso!');
-      loadOnboardingAutomations();
-    } else {
-      toast.error('Erro ao salvar fluxo.');
-    }
-  };
-
-  const handleUpdateFlowNode = (nodeId: string, field: keyof FlowNode, value: any) => {
-    if (!editingFlow) return;
-    setEditingFlow(prev => ({
-      ...prev!,
-      nodes: prev!.nodes.map(n => n.id === nodeId ? { ...n, [field]: value } : n),
-    }));
-  };
-
-  const handleAddFlowNode = (type: 'message' | 'question') => {
-    if (!editingFlow) return;
-    const newId = String(Date.now());
-    const newNode: FlowNode = type === 'message'
-      ? { id: newId, type: 'message', content: 'Nova mensagem...', next: 'end' }
-      : { id: newId, type: 'question', content: 'Nova pergunta?', options: [{ label: 'Opção 1', next: 'end' }] };
-    setEditingFlow(prev => ({ ...prev!, nodes: [...prev!.nodes, newNode] }));
-  };
-
-  const handleRemoveFlowNode = (nodeId: string) => {
-    if (!editingFlow) return;
-    setEditingFlow(prev => ({ ...prev!, nodes: prev!.nodes.filter(n => n.id !== nodeId) }));
   };
 
   const loadProviders = async () => {
@@ -772,9 +663,6 @@ export function IaManager() {
                   {orchestratedItems.some(i => i.orchestrationStatus === "AWAITING_ADMIN") && (
                     <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse ml-0.5" />
                   )}
-                </TabsTrigger>
-                <TabsTrigger value="automations" className="rounded-xl gap-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <GitBranch className="h-4 w-4 text-violet-600" /> Automações
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1655,190 +1543,6 @@ export function IaManager() {
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="automations" className="mt-0 space-y-6">
-              <Card className="rounded-[15px]">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2"><GitBranch className="h-5 w-5 text-violet-600" /> Fluxos de Onboarding & Atendimento</CardTitle>
-                    <CardDescription>Crie automações de boas-vindas com fluxos conversacionais ramificados para novos alunos e professores.</CardDescription>
-                  </div>
-                  <Button size="sm" onClick={() => setIsCreatingOnboarding(true)} className="gap-2">
-                    <Plus className="h-4 w-4" /> Novo Fluxo
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isCreatingOnboarding && (
-                    <div className="border rounded-xl p-4 bg-violet-50 space-y-3">
-                      <p className="text-sm font-semibold text-violet-800">Criar nova automação</p>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Nome</Label>
-                          <Input placeholder="Ex: Boas-vindas Aluno" value={newOnboardingName} onChange={e => setNewOnboardingName(e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Gatilho</Label>
-                          <Select value={newOnboardingTrigger} onValueChange={setNewOnboardingTrigger}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="NEW_USER">Novo Aluno</SelectItem>
-                              <SelectItem value="NEW_TEACHER">Novo Professor</SelectItem>
-                              <SelectItem value="MANUAL">Manual</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleCreateOnboarding}>Criar</Button>
-                        <Button size="sm" variant="outline" onClick={() => setIsCreatingOnboarding(false)}>Cancelar</Button>
-                      </div>
-                    </div>
-                  )}
-                  {isLoadingOnboarding ? (
-                    <div className="flex items-center gap-2 text-muted-foreground py-4"><Loader2 className="h-4 w-4 animate-spin" /> Carregando automações...</div>
-                  ) : onboardingAutomations.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <GitBranch className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                      <p className="text-sm">Nenhuma automação criada ainda. Clique em "Novo Fluxo" para começar.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {onboardingAutomations.map((automation: any) => (
-                        <div key={automation.id} className="border rounded-xl overflow-hidden">
-                          <div className="flex items-center justify-between p-3 bg-slate-50/80">
-                            <div className="flex items-center gap-3">
-                              <button onClick={() => handleToggleOnboarding(automation.id, automation.isActive)} className="shrink-0">
-                                {automation.isActive
-                                  ? <ToggleRight className="h-6 w-6 text-emerald-500" />
-                                  : <ToggleLeft className="h-6 w-6 text-slate-400" />}
-                              </button>
-                              <div>
-                                <p className="font-semibold text-sm">{automation.name}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <Badge variant="outline" className="text-[10px] px-1.5">
-                                    {automation.triggerType === 'NEW_USER' ? '?? Novo Aluno' : automation.triggerType === 'NEW_TEACHER' ? '?? Novo Professor' : '?? Manual'}
-                                  </Badge>
-                                  {automation.isActive && <Badge className="text-[10px] px-1.5 bg-emerald-500">Ativa</Badge>}
-                                  {automation.agent && <Badge variant="secondary" className="text-[10px] px-1.5">?? {automation.agent.name}</Badge>}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-40">
-                                <Select value={automation.agentId || 'none'} onValueChange={v => handleAssignAgent(automation.id, v)}>
-                                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Selecionar agente" /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">Sem agente</SelectItem>
-                                    {agents.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setEditingFlow({ automationId: automation.id, nodes: JSON.parse(automation.flowJson || '[]') })}>
-                                <Edit3 className="h-3 w-3" /> Editar Fluxo
-                              </Button>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-rose-500 hover:text-rose-600" onClick={() => handleDeleteOnboarding(automation.id)}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                          {editingFlow?.automationId === automation.id && (
-                            <div className="p-4 space-y-4 border-t bg-white">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-semibold text-violet-700 flex items-center gap-2"><GitBranch className="h-4 w-4" /> Editor de Fluxo Conversacional</p>
-                                <div className="flex gap-2">
-                                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleAddFlowNode('message')}>
-                                    <MessageCircleMore className="h-3 w-3" /> + Mensagem
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleAddFlowNode('question')}>
-                                    <HelpCircle className="h-3 w-3" /> + Pergunta
-                                  </Button>
-                                  <Button size="sm" className="h-7 text-xs gap-1" onClick={handleSaveFlow}>
-                                    <CheckCircle2 className="h-3 w-3" /> Salvar Fluxo
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                                {editingFlow.nodes.map((node, idx) => (
-                                  <div key={node.id} className={`border rounded-lg p-3 space-y-2 ${node.type === 'question' ? 'border-amber-300 bg-amber-50/50' : 'border-blue-200 bg-blue-50/50'}`}>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-500">#{idx + 1}</span>
-                                        <Badge variant="outline" className={`text-[10px] px-1.5 ${node.type === 'question' ? 'border-amber-400 text-amber-700' : 'border-blue-400 text-blue-700'}`}>
-                                          {node.type === 'question' ? <><HelpCircle className="h-2.5 w-2.5 inline mr-0.5" />Pergunta</> : <><MessageCircleMore className="h-2.5 w-2.5 inline mr-0.5" />Mensagem</>}
-                                        </Badge>
-                                        <span className="text-[10px] text-slate-400">id: {node.id}</span>
-                                      </div>
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-rose-400" onClick={() => handleRemoveFlowNode(node.id)}>
-                                        <X className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                    <Textarea
-                                      className="text-xs min-h-[60px] resize-none"
-                                      value={node.content}
-                                      onChange={e => handleUpdateFlowNode(node.id, 'content', e.target.value)}
-                                      placeholder="Conteúdo da mensagem ou pergunta..."
-                                    />
-                                    {node.type === 'message' && (
-                                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                                        <ArrowRight className="h-3 w-3" />
-                                        <span>Próximo nó:</span>
-                                        <Input
-                                          className="h-6 text-xs w-24 py-0"
-                                          value={node.next || 'end'}
-                                          onChange={e => handleUpdateFlowNode(node.id, 'next', e.target.value)}
-                                          placeholder="id ou 'end'"
-                                        />
-                                      </div>
-                                    )}
-                                    {node.type === 'question' && node.options && (
-                                      <div className="space-y-1.5">
-                                        <p className="text-[10px] font-semibold text-amber-700">Opções de resposta:</p>
-                                        {node.options.map((opt, oi) => (
-                                          <div key={oi} className="flex items-center gap-2">
-                                            <Input
-                                              className="h-6 text-xs flex-1 py-0"
-                                              value={opt.label}
-                                              onChange={e => {
-                                                const opts = [...(node.options || [])];
-                                                opts[oi] = { ...opts[oi], label: e.target.value };
-                                                handleUpdateFlowNode(node.id, 'options', opts);
-                                              }}
-                                              placeholder="Rótulo da opção"
-                                            />
-                                            <span className="text-[10px] text-slate-400 shrink-0">→</span>
-                                            <Input
-                                              className="h-6 text-xs w-20 py-0"
-                                              value={opt.next}
-                                              onChange={e => {
-                                                const opts = [...(node.options || [])];
-                                                opts[oi] = { ...opts[oi], next: e.target.value };
-                                                handleUpdateFlowNode(node.id, 'options', opts);
-                                              }}
-                                              placeholder="id/end"
-                                            />
-                                            <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-rose-400" onClick={() => {
-                                              const opts = (node.options || []).filter((_, i) => i !== oi);
-                                              handleUpdateFlowNode(node.id, 'options', opts);
-                                            }}><X className="h-2.5 w-2.5" /></Button>
-                                          </div>
-                                        ))}
-                                        <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => {
-                                          const opts = [...(node.options || []), { label: 'Nova opção', next: 'end' }];
-                                          handleUpdateFlowNode(node.id, 'options', opts);
-                                        }}>+ Adicionar opção</Button>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </TabsContent>
