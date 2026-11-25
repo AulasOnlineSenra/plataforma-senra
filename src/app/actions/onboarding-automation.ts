@@ -20,7 +20,7 @@ export type FlowNode = {
 
 // ─── Template padrão de boas-vindas ──────────────────────
 
-export const DEFAULT_ONBOARDING_FLOW: FlowNode[] = [
+const DEFAULT_ONBOARDING_FLOW: FlowNode[] = [
   {
     id: "1",
     type: "message",
@@ -76,6 +76,10 @@ export const DEFAULT_ONBOARDING_FLOW: FlowNode[] = [
     next: "end",
   },
 ];
+
+export async function getDefaultOnboardingFlow(): Promise<FlowNode[]> {
+  return DEFAULT_ONBOARDING_FLOW;
+}
 
 // ─── CRUD ────────────────────────────────────────────────
 

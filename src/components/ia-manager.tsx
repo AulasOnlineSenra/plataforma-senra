@@ -99,7 +99,6 @@ import {
   createOnboardingAutomation,
   updateOnboardingAutomation,
   deleteOnboardingAutomation,
-  DEFAULT_ONBOARDING_FLOW,
   type FlowNode,
 } from '@/app/actions/onboarding-automation';
 
