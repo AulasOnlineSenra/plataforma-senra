@@ -775,7 +775,7 @@ export function IaManager() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="automations" className="rounded-xl gap-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <GitBranch className="h-4 w-4 text-violet-600" /> Automações
+                  <GitBranch className="h-4 w-4 text-violet-600" /> AutomaÃ§Ãµes
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1664,7 +1664,7 @@ export function IaManager() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2"><GitBranch className="h-5 w-5 text-violet-600" /> Fluxos de Onboarding & Atendimento</CardTitle>
-                    <CardDescription>Crie automações de boas-vindas com fluxos conversacionais ramificados para novos alunos e professores.</CardDescription>
+                    <CardDescription>Crie automaÃ§Ãµes de boas-vindas com fluxos conversacionais ramificados para novos alunos e professores.</CardDescription>
                   </div>
                   <Button size="sm" onClick={() => setIsCreatingOnboarding(true)} className="gap-2">
                     <Plus className="h-4 w-4" /> Novo Fluxo
@@ -1673,7 +1673,7 @@ export function IaManager() {
                 <CardContent className="space-y-4">
                   {isCreatingOnboarding && (
                     <div className="border rounded-xl p-4 bg-violet-50 space-y-3">
-                      <p className="text-sm font-semibold text-violet-800">Criar nova automação</p>
+                      <p className="text-sm font-semibold text-violet-800">Criar nova automaÃ§Ã£o</p>
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-1">
                           <Label className="text-xs">Nome</Label>
@@ -1698,11 +1698,11 @@ export function IaManager() {
                     </div>
                   )}
                   {isLoadingOnboarding ? (
-                    <div className="flex items-center gap-2 text-muted-foreground py-4"><Loader2 className="h-4 w-4 animate-spin" /> Carregando automações...</div>
+                    <div className="flex items-center gap-2 text-muted-foreground py-4"><Loader2 className="h-4 w-4 animate-spin" /> Carregando automaÃ§Ãµes...</div>
                   ) : onboardingAutomations.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <GitBranch className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                      <p className="text-sm">Nenhuma automação criada ainda. Clique em "Novo Fluxo" para começar.</p>
+                      <p className="text-sm">Nenhuma automaÃ§Ã£o criada ainda. Clique em "Novo Fluxo" para comeÃ§ar.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1779,12 +1779,12 @@ export function IaManager() {
                                       className="text-xs min-h-[60px] resize-none"
                                       value={node.content}
                                       onChange={e => handleUpdateFlowNode(node.id, 'content', e.target.value)}
-                                      placeholder="Conteúdo da mensagem ou pergunta..."
+                                      placeholder="ConteÃºdo da mensagem ou pergunta..."
                                     />
                                     {node.type === 'message' && (
                                       <div className="flex items-center gap-2 text-xs text-slate-500">
                                         <ArrowRight className="h-3 w-3" />
-                                        <span>Próximo nó:</span>
+                                        <span>PrÃ³ximo nÃ³:</span>
                                         <Input
                                           className="h-6 text-xs w-24 py-0"
                                           value={node.next || 'end'}
@@ -1795,7 +1795,7 @@ export function IaManager() {
                                     )}
                                     {node.type === 'question' && node.options && (
                                       <div className="space-y-1.5">
-                                        <p className="text-[10px] font-semibold text-amber-700">Opções de resposta:</p>
+                                        <p className="text-[10px] font-semibold text-amber-700">OpÃ§Ãµes de resposta:</p>
                                         {node.options.map((opt, oi) => (
                                           <div key={oi} className="flex items-center gap-2">
                                             <Input
@@ -1806,9 +1806,9 @@ export function IaManager() {
                                                 opts[oi] = { ...opts[oi], label: e.target.value };
                                                 handleUpdateFlowNode(node.id, 'options', opts);
                                               }}
-                                              placeholder="Rótulo da opção"
+                                              placeholder="RÃ³tulo da opÃ§Ã£o"
                                             />
-                                            <span className="text-[10px] text-slate-400 shrink-0">?</span>
+                                            <span className="text-[10px] text-slate-400 shrink-0">â†’</span>
                                             <Input
                                               className="h-6 text-xs w-20 py-0"
                                               value={opt.next}
@@ -1826,9 +1826,9 @@ export function IaManager() {
                                           </div>
                                         ))}
                                         <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => {
-                                          const opts = [...(node.options || []), { label: 'Nova opção', next: 'end' }];
+                                          const opts = [...(node.options || []), { label: 'Nova opÃ§Ã£o', next: 'end' }];
                                           handleUpdateFlowNode(node.id, 'options', opts);
-                                        }}>+ Adicionar opção</Button>
+                                        }}>+ Adicionar opÃ§Ã£o</Button>
                                       </div>
                                     )}
                                   </div>
