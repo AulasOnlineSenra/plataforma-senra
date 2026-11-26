@@ -1147,7 +1147,7 @@ function StudentDetailPageComponent() {
                  setIsFileUploadDialogOpen(open);
                  if (!open) setSelectedFiles([]);
              }}>
-                 <DialogContent className="sm:max-w-[582px] w-full !rounded-[15px] sm:!rounded-[15px] overflow-hidden border-slate-100 shadow-2xl p-8">
+                 <DialogContent className="sm:max-w-[640px] max-w-[95vw] w-full !rounded-[15px] sm:!rounded-[15px] overflow-hidden border-slate-100 shadow-2xl p-6 sm:p-8">
                      <DialogHeader>
                          <DialogTitle className="text-2xl font-bold text-slate-900">Anexar Material</DialogTitle>
                          <DialogDescription className="text-slate-500 mt-1">Anexe um arquivo para a aula de <span className="font-bold text-slate-700">{subjectMap[selectedClassForMaterial?.subject ?? ''] || selectedClassForMaterial?.subject}</span>.</DialogDescription>
@@ -1167,12 +1167,15 @@ function StudentDetailPageComponent() {
                              {selectedFiles.length > 0 && (
                                  <div className="flex flex-col gap-2">
                                      {selectedFiles.map((file, idx) => (
-                                         <div key={idx} className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                             <File className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                                             <span className="text-sm font-medium text-amber-700 flex-1 truncate">{file.name}</span>
+                                         <div key={idx} className="flex items-center justify-between gap-3 p-3 bg-amber-50/90 border border-amber-200 rounded-xl">
+                                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                 <File className="h-5 w-5 text-amber-600 shrink-0" />
+                                                 <span className="text-sm font-medium text-amber-800 truncate" title={file.name}>{file.name}</span>
+                                             </div>
                                              <button 
                                                 onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                                                className="text-amber-600 hover:text-amber-800 flex-shrink-0"
+                                                className="p-1 rounded-lg text-amber-600 hover:text-amber-800 hover:bg-amber-100 shrink-0 transition-colors"
+                                                title="Remover arquivo"
                                              >
                                                  <X className="h-4 w-4" />
                                              </button>
