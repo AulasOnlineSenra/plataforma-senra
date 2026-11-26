@@ -36,23 +36,33 @@ export async function getChatUsers(
       return { success: true, data: users };
     }
 
-    // Aluno ou Professor: buscar apenas quem tem aulas agendadas + admins
+    // Aluno ou Professor: manter quem tem aulas agendadas/pendentes + retenção de 7 dias após aula concluída
     const lessonStatus = ["PENDING", "CONFIRMED", "scheduled"];
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
     let relatedUserIds: string[] = [];
 
     if (currentUserRole === "student") {
-      // Aluno: buscar professores que têm aulas com este aluno
+      // Aluno: buscar professores com aulas agendadas OU concluídas nos últimos 7 dias
       const lessons = await prisma.lesson.findMany({
         where: {
           studentId: currentUserId,
-          status: { in: lessonStatus },
+          OR: [
+            { status: { in: lessonStatus } },
+            {
+              status: { in: ["COMPLETED", "completed"] },
+              OR: [
+                { date: { gte: sevenDaysAgo } },
+                { updatedAt: { gte: sevenDaysAgo } }
+              ]
+            }
+          ]
         },
         select: { teacherId: true },
       });
       relatedUserIds = [...new Set(lessons.map((l) => l.teacherId))];
 
-      // Nova Regra: Alunos com autoSchedule ativo e créditos > 0 mantêm contato com professores do cronograma
+      // Regra existente: Alunos com autoSchedule ativo e créditos > 0 mantêm contato com professores do cronograma
       const student = await prisma.user.findUnique({
         where: { id: currentUserId },
         select: { credits: true, autoSchedule: true }
@@ -69,17 +79,26 @@ export async function getChatUsers(
         relatedUserIds = [...new Set([...relatedUserIds, ...scheduleTeacherIds])];
       }
     } else if (currentUserRole === "teacher") {
-      // Professor: buscar alunos que têm aulas com este professor
+      // Professor: buscar alunos com aulas agendadas OU concluídas nos últimos 7 dias
       const lessons = await prisma.lesson.findMany({
         where: {
           teacherId: currentUserId,
-          status: { in: lessonStatus },
+          OR: [
+            { status: { in: lessonStatus } },
+            {
+              status: { in: ["COMPLETED", "completed"] },
+              OR: [
+                { date: { gte: sevenDaysAgo } },
+                { updatedAt: { gte: sevenDaysAgo } }
+              ]
+            }
+          ]
         },
         select: { studentId: true },
       });
       relatedUserIds = [...new Set(lessons.map((l) => l.studentId))];
 
-      // Nova Regra: Incluir alunos que tem esse professor no cronograma, se tiverem autoSchedule ativo e créditos
+      // Regra existente: Incluir alunos que tem esse professor no cronograma, se tiverem autoSchedule ativo e créditos
       const scheduleBlocks = await prisma.scheduleStructure.findMany({
         where: { teacherId: currentUserId },
         select: { userId: true }

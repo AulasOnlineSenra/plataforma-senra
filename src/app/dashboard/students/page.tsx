@@ -15,6 +15,7 @@ import {
   Users,
   Tag,
   KeyRound,
+  BookOpen,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -313,15 +314,27 @@ function StudentList({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onOpenChat(student.id)}
-                        className="h-10 w-10 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-600"
-                        title="Chat Privado"
-                      >
-                        <MessageSquare className="h-5 w-5" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/dashboard/student/${student.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            title="Ver Perfil e Aulas"
+                          >
+                            <BookOpen className="h-5 w-5" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onOpenChat(student.id)}
+                          className="h-10 w-10 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+                          title="Chat Privado"
+                        >
+                          <MessageSquare className="h-5 w-5" />
+                        </Button>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
